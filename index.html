@@ -32,14 +32,15 @@
     header h1 { margin: 0; font-size: 18px; font-weight: 600; }
     header .sub { color: var(--muted); font-size: 13px; }
     .controls {
-      padding: 16px 24px;
+      padding: 12px 24px;
       display: flex;
+      align-items: center;
       gap: 8px;
       flex-wrap: wrap;
       border-bottom: 1px solid var(--border);
     }
     .chip {
-      padding: 6px 14px;
+      padding: 5px 13px;
       border: 1px solid var(--border);
       border-radius: 999px;
       background: var(--panel);
@@ -47,21 +48,45 @@
       cursor: pointer;
       font-size: 13px;
       user-select: none;
+      transition: opacity .15s;
     }
-    .chip.active {
+    .chip:hover { opacity: .8; }
+    .range-wrap {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .range-wrap .chip { padding: 4px 10px; font-size: 12px; }
+    .range-wrap .chip.active {
       background: var(--accent);
       color: #0d1117;
       border-color: var(--accent);
     }
-    .range {
-      margin-left: auto;
+    .date-inputs {
       display: flex;
+      align-items: center;
       gap: 4px;
+      font-size: 12px;
+      color: var(--muted);
     }
-    .range .chip { padding: 4px 10px; font-size: 12px; }
-    #chart { width: 100%; height: calc(100vh - 170px); min-height: 420px; }
+    .date-inputs input[type="date"] {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 12px;
+      padding: 3px 7px;
+      cursor: pointer;
+    }
+    .date-inputs input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(.6);
+      cursor: pointer;
+    }
+    #chart { width: 100%; height: calc(100vh - 150px); min-height: 420px; }
     .status {
-      padding: 10px 24px;
+      padding: 8px 24px;
       color: var(--muted);
       font-size: 12px;
       border-top: 1px solid var(--border);
@@ -71,17 +96,23 @@
 <body>
   <header>
     <h1>Market Trend</h1>
-    <span class="sub">VOO · QQQ · SPY · 0050 · VIX · Fear &amp; Greed</span>
+    <span class="sub">VOO · QQQ · SPY · 0050 · GLD · BTC · VIX · Fear &amp; Greed</span>
   </header>
 
   <div class="controls">
     <div id="series-picker"></div>
-    <div class="range" id="range-picker">
-      <span class="chip" data-range="1M">1M</span>
-      <span class="chip" data-range="6M">6M</span>
-      <span class="chip" data-range="1Y">1Y</span>
-      <span class="chip active" data-range="5Y">5Y</span>
-      <span class="chip" data-range="MAX">MAX</span>
+    <div class="range-wrap">
+      <div id="range-picker">
+        <span class="chip active" data-range="5Y">5Y</span>
+        <span class="chip" data-range="10Y">10Y</span>
+        <span class="chip" data-range="20Y">20Y</span>
+        <span class="chip" data-range="MAX">MAX</span>
+      </div>
+      <div class="date-inputs">
+        <input type="date" id="date-from" title="開始日期" />
+        <span>–</span>
+        <input type="date" id="date-to" title="結束日期" />
+      </div>
     </div>
   </div>
 
@@ -90,54 +121,76 @@
 
   <script>
     const SERIES = [
-      { key: "VOO",      file: "data/VOO.json",        color: "#58a6ff", yAxis: 0, default: true },
-      { key: "QQQ",      file: "data/QQQ.json",        color: "#f778ba", yAxis: 0, default: true },
-      { key: "SPY",      file: "data/SPY.json",        color: "#a371f7", yAxis: 0, default: false },
-      { key: "0050",     file: "data/0050.TW.json",    color: "#3fb950", yAxis: 0, default: false },
-      { key: "VIX",      file: "data/VIX.json",        color: "#f0883e", yAxis: 1, default: false },
-      { key: "F&G",      file: "data/fear_greed.json", color: "#e3b341", yAxis: 2, default: true },
+      { key: "VOO",  file: "data/VOO.json",        color: "#58a6ff", yAxis: 0, default: true  },
+      { key: "QQQ",  file: "data/QQQ.json",        color: "#f778ba", yAxis: 0, default: true  },
+      { key: "SPY",  file: "data/SPY.json",         color: "#a371f7", yAxis: 0, default: false },
+      { key: "0050", file: "data/0050.TW.json",     color: "#3fb950", yAxis: 3, default: false },
+      { key: "GLD",  file: "data/GLD.json",         color: "#d4a843", yAxis: 0, default: false },
+      { key: "BTC",  file: "data/BTC.json",         color: "#f7931a", yAxis: 4, default: false },
+      { key: "VIX",  file: "data/VIX.json",         color: "#f0883e", yAxis: 1, default: false },
+      { key: "F&G",  file: "data/fear_greed.json",  color: "#e3b341", yAxis: 2, default: true  },
     ];
 
     const chart = echarts.init(document.getElementById("chart"), "dark");
-    const loaded = {};    // key -> [[date, value], ...]
+    const loaded = {};
     const active = new Set(SERIES.filter(s => s.default).map(s => s.key));
-    let currentRange = "5Y";
 
-    function rangeStart(range) {
+    // range state
+    let rangePreset  = "5Y";
+    let customFrom   = "";
+    let customTo     = "";
+
+    const dateFrom = document.getElementById("date-from");
+    const dateTo   = document.getElementById("date-to");
+
+    function presetStart(preset) {
       const d = new Date();
-      if (range === "1M") d.setMonth(d.getMonth() - 1);
-      else if (range === "6M") d.setMonth(d.getMonth() - 6);
-      else if (range === "1Y") d.setFullYear(d.getFullYear() - 1);
-      else if (range === "5Y") d.setFullYear(d.getFullYear() - 5);
+      if (preset === "1Y")  d.setFullYear(d.getFullYear() - 1);
+      else if (preset === "5Y")  d.setFullYear(d.getFullYear() - 5);
+      else if (preset === "10Y") d.setFullYear(d.getFullYear() - 10);
+      else if (preset === "20Y") d.setFullYear(d.getFullYear() - 20);
       else return null;
       return d.toISOString().slice(0, 10);
     }
 
+    function currentWindow() {
+      if (customFrom) return { from: customFrom, to: customTo || new Date().toISOString().slice(0,10) };
+      const from = presetStart(rangePreset);
+      return { from, to: null };
+    }
+
     function filterRange(rows) {
-      const start = rangeStart(currentRange);
-      return start ? rows.filter(r => r[0] >= start) : rows;
+      const { from, to } = currentWindow();
+      let r = from ? rows.filter(r => r[0] >= from) : rows;
+      if (to) r = r.filter(row => row[0] <= to);
+      return r;
     }
 
     async function loadSeries(s) {
-      if (loaded[s.key]) return loaded[s.key];
+      if (loaded[s.key]) return;
       const resp = await fetch(s.file, { cache: "no-cache" });
       if (!resp.ok) throw new Error(`${s.key}: HTTP ${resp.status}`);
-      const json = await resp.json();
-      const rows = (json.data || []).map(r => [
+      const j = await resp.json();
+      loaded[s.key] = (j.data || []).map(r => [
         r.date,
         r.close !== undefined ? r.close : r.value,
       ]);
-      loaded[s.key] = rows;
-      return rows;
     }
 
     function render() {
       const series = [];
-      const yAxis = [
-        { name: "Price", position: "left",  axisLine: { lineStyle: { color: "#8b949e" } }, splitLine: { lineStyle: { color: "#21262d" } } },
-        { name: "VIX",   position: "right", axisLine: { lineStyle: { color: "#f0883e" } }, splitLine: { show: false } },
-        { name: "F&G",   position: "right", offset: 60, min: 0, max: 100,
+      const yAxisDef = [
+        { id: "price", name: "USD Price", position: "left",
+          axisLine: { lineStyle: { color: "#8b949e" } },
+          splitLine: { lineStyle: { color: "#21262d" } } },
+        { id: "vix",   name: "VIX",  position: "right",
+          axisLine: { lineStyle: { color: "#f0883e" } }, splitLine: { show: false } },
+        { id: "fg",    name: "F&G",  position: "right", offset: 55, min: 0, max: 100,
           axisLine: { lineStyle: { color: "#e3b341" } }, splitLine: { show: false } },
+        { id: "tw",    name: "TWD",  position: "left",  offset: 55,
+          axisLine: { lineStyle: { color: "#3fb950" } }, splitLine: { show: false } },
+        { id: "btc",   name: "BTC",  position: "right", offset: 110,
+          axisLine: { lineStyle: { color: "#f7931a" } }, splitLine: { show: false } },
       ];
 
       for (const s of SERIES) {
@@ -148,7 +201,6 @@
           data: filterRange(loaded[s.key]),
           yAxisIndex: s.yAxis,
           showSymbol: false,
-          smooth: false,
           lineStyle: { width: 1.5, color: s.color },
           itemStyle: { color: s.color },
           emphasis: { focus: "series" },
@@ -163,22 +215,27 @@
           backgroundColor: "#161b22",
           borderColor: "#30363d",
           textStyle: { color: "#e6edf3" },
+          formatter(params) {
+            let out = `<b>${params[0]?.axisValueLabel}</b><br/>`;
+            for (const p of params) {
+              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${
+                typeof p.value?.[1] === "number" ? p.value[1].toLocaleString() : "—"
+              }</b><br/>`;
+            }
+            return out;
+          },
         },
-        legend: {
-          data: series.map(s => s.name),
-          textStyle: { color: "#e6edf3" },
-          top: 8,
-        },
-        grid: { left: 60, right: 120, top: 50, bottom: 60 },
+        legend: { data: series.map(s => s.name), textStyle: { color: "#e6edf3" }, top: 6 },
+        grid: { left: 80, right: 160, top: 44, bottom: 56 },
         xAxis: {
           type: "time",
           axisLine: { lineStyle: { color: "#8b949e" } },
           splitLine: { show: false },
         },
-        yAxis,
+        yAxis: yAxisDef,
         dataZoom: [
           { type: "inside" },
-          { type: "slider", height: 20, bottom: 15 },
+          { type: "slider", height: 18, bottom: 14 },
         ],
         series,
       }, { notMerge: true });
@@ -189,11 +246,11 @@
       wrap.innerHTML = "";
       for (const s of SERIES) {
         const el = document.createElement("span");
-        el.className = "chip" + (active.has(s.key) ? " active" : "");
+        const on = active.has(s.key);
+        el.className = "chip";
         el.textContent = s.key;
-        el.style.borderColor = active.has(s.key) ? s.color : "";
-        el.style.color = active.has(s.key) ? s.color : "";
-        el.style.background = active.has(s.key) ? "transparent" : "";
+        el.style.borderColor = on ? s.color : "";
+        el.style.color       = on ? s.color : "";
         el.onclick = async () => {
           if (active.has(s.key)) { active.delete(s.key); }
           else { active.add(s.key); await loadSeries(s); }
@@ -204,13 +261,37 @@
       }
     }
 
-    document.getElementById("range-picker").addEventListener("click", (e) => {
-      const t = e.target.closest(".chip");
+    // preset range buttons
+    document.getElementById("range-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-range]");
       if (!t) return;
-      currentRange = t.dataset.range;
-      for (const c of e.currentTarget.children) c.classList.toggle("active", c === t);
+      rangePreset = t.dataset.range;
+      customFrom = "";
+      customTo   = "";
+      dateFrom.value = "";
+      dateTo.value   = "";
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
       render();
     });
+
+    // custom date inputs
+    function onDateChange() {
+      customFrom = dateFrom.value;
+      customTo   = dateTo.value;
+      if (customFrom || customTo) {
+        // deactivate preset highlights
+        for (const c of document.querySelectorAll("#range-picker .chip"))
+          c.classList.remove("active");
+      }
+      render();
+    }
+    dateFrom.addEventListener("change", onDateChange);
+    dateTo.addEventListener("change", onDateChange);
+
+    // init date-to = today
+    dateTo.value = new Date().toISOString().slice(0, 10);
+    dateTo.max   = dateTo.value;
 
     window.addEventListener("resize", () => chart.resize());
 
@@ -220,7 +301,6 @@
         await Promise.all(SERIES.filter(s => active.has(s.key)).map(loadSeries));
         renderSeriesPicker();
         render();
-        const updated = Object.keys(loaded)[0] ? "" : "";
         status.textContent = `已載入 ${Object.keys(loaded).length} 個指標 · 點選 chip 切換顯示`;
       } catch (err) {
         status.textContent = `載入失敗：${err.message}`;
