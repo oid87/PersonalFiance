@@ -103,6 +103,9 @@
     <div id="series-picker"></div>
     <div class="range-wrap">
       <div id="range-picker">
+        <span class="chip" data-range="6M">6M</span>
+        <span class="chip" data-range="1Y6M">1Y6M</span>
+        <span class="chip" data-range="3.5Y">3.5Y</span>
         <span class="chip active" data-range="5Y">5Y</span>
         <span class="chip" data-range="10Y">10Y</span>
         <span class="chip" data-range="20Y">20Y</span>
@@ -145,10 +148,12 @@
 
     function presetStart(preset) {
       const d = new Date();
-      if (preset === "1Y")  d.setFullYear(d.getFullYear() - 1);
-      else if (preset === "5Y")  d.setFullYear(d.getFullYear() - 5);
-      else if (preset === "10Y") d.setFullYear(d.getFullYear() - 10);
-      else if (preset === "20Y") d.setFullYear(d.getFullYear() - 20);
+      if      (preset === "6M")   d.setMonth(d.getMonth() - 6);
+      else if (preset === "1Y6M") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
+      else if (preset === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
+      else if (preset === "5Y")   d.setFullYear(d.getFullYear() - 5);
+      else if (preset === "10Y")  d.setFullYear(d.getFullYear() - 10);
+      else if (preset === "20Y")  d.setFullYear(d.getFullYear() - 20);
       else return null;
       return d.toISOString().slice(0, 10);
     }
