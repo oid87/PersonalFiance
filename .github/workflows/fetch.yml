@@ -1,0 +1,43 @@
+name: Fetch market data
+
+on:
+  schedule:
+    # 21:00 UTC Mon-Fri = 05:00 Tue-Sat Taipei (UTC+8)
+    - cron: "0 21 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install deps
+        run: pip install -r scripts/requirements.txt
+
+      - name: Fetch stock data
+        run: python scripts/fetch_stocks.py
+
+      - name: Fetch Fear & Greed
+        run: python scripts/fetch_fear_greed.py
+
+      - name: Commit updates
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: daily data update [skip ci]"
+            git push
+          fi
