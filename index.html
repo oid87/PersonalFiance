@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Finance — Market Trend</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg: #0e1117;
+      --panel: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+    header .sub { color: var(--muted); font-size: 13px; }
+    .controls {
+      padding: 16px 24px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+    }
+    .chip {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      user-select: none;
+    }
+    .chip.active {
+      background: var(--accent);
+      color: #0d1117;
+      border-color: var(--accent);
+    }
+    .range {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+    }
+    .range .chip { padding: 4px 10px; font-size: 12px; }
+    #chart { width: 100%; height: calc(100vh - 170px); min-height: 420px; }
+    .status {
+      padding: 10px 24px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Market Trend</h1>
+    <span class="sub">VOO · QQQ · SPY · 0050 · VIX · Fear &amp; Greed</span>
+  </header>
+
+  <div class="controls">
+    <div id="series-picker"></div>
+    <div class="range" id="range-picker">
+      <span class="chip" data-range="1M">1M</span>
+      <span class="chip" data-range="6M">6M</span>
+      <span class="chip" data-range="1Y">1Y</span>
+      <span class="chip active" data-range="5Y">5Y</span>
+      <span class="chip" data-range="MAX">MAX</span>
+    </div>
+  </div>
+
+  <div id="chart"></div>
+  <div class="status" id="status">載入中…</div>
+
+  <script>
+    const SERIES = [
+      { key: "VOO",      file: "data/VOO.json",        color: "#58a6ff", yAxis: 0, default: true },
+      { key: "QQQ",      file: "data/QQQ.json",        color: "#f778ba", yAxis: 0, default: true },
+      { key: "SPY",      file: "data/SPY.json",        color: "#a371f7", yAxis: 0, default: false },
+      { key: "0050",     file: "data/0050.TW.json",    color: "#3fb950", yAxis: 0, default: false },
+      { key: "VIX",      file: "data/VIX.json",        color: "#f0883e", yAxis: 1, default: false },
+      { key: "F&G",      file: "data/fear_greed.json", color: "#e3b341", yAxis: 2, default: true },
+    ];
+
+    const chart = echarts.init(document.getElementById("chart"), "dark");
+    const loaded = {};    // key -> [[date, value], ...]
+    const active = new Set(SERIES.filter(s => s.default).map(s => s.key));
+    let currentRange = "5Y";
+
+    function rangeStart(range) {
+      const d = new Date();
+      if (range === "1M") d.setMonth(d.getMonth() - 1);
+      else if (range === "6M") d.setMonth(d.getMonth() - 6);
+      else if (range === "1Y") d.setFullYear(d.getFullYear() - 1);
+      else if (range === "5Y") d.setFullYear(d.getFullYear() - 5);
+      else return null;
+      return d.toISOString().slice(0, 10);
+    }
+
+    function filterRange(rows) {
+      const start = rangeStart(currentRange);
+      return start ? rows.filter(r => r[0] >= start) : rows;
+    }
+
+    async function loadSeries(s) {
+      if (loaded[s.key]) return loaded[s.key];
+      const resp = await fetch(s.file, { cache: "no-cache" });
+      if (!resp.ok) throw new Error(`${s.key}: HTTP ${resp.status}`);
+      const json = await resp.json();
+      const rows = (json.data || []).map(r => [
+        r.date,
+        r.close !== undefined ? r.close : r.value,
+      ]);
+      loaded[s.key] = rows;
+      return rows;
+    }
+
+    function render() {
+      const series = [];
+      const yAxis = [
+        { name: "Price", position: "left",  axisLine: { lineStyle: { color: "#8b949e" } }, splitLine: { lineStyle: { color: "#21262d" } } },
+        { name: "VIX",   position: "right", axisLine: { lineStyle: { color: "#f0883e" } }, splitLine: { show: false } },
+        { name: "F&G",   position: "right", offset: 60, min: 0, max: 100,
+          axisLine: { lineStyle: { color: "#e3b341" } }, splitLine: { show: false } },
+      ];
+
+      for (const s of SERIES) {
+        if (!active.has(s.key) || !loaded[s.key]) continue;
+        series.push({
+          name: s.key,
+          type: "line",
+          data: filterRange(loaded[s.key]),
+          yAxisIndex: s.yAxis,
+          showSymbol: false,
+          smooth: false,
+          lineStyle: { width: 1.5, color: s.color },
+          itemStyle: { color: s.color },
+          emphasis: { focus: "series" },
+        });
+      }
+
+      chart.setOption({
+        backgroundColor: "transparent",
+        tooltip: {
+          trigger: "axis",
+          axisPointer: { type: "cross" },
+          backgroundColor: "#161b22",
+          borderColor: "#30363d",
+          textStyle: { color: "#e6edf3" },
+        },
+        legend: {
+          data: series.map(s => s.name),
+          textStyle: { color: "#e6edf3" },
+          top: 8,
+        },
+        grid: { left: 60, right: 120, top: 50, bottom: 60 },
+        xAxis: {
+          type: "time",
+          axisLine: { lineStyle: { color: "#8b949e" } },
+          splitLine: { show: false },
+        },
+        yAxis,
+        dataZoom: [
+          { type: "inside" },
+          { type: "slider", height: 20, bottom: 15 },
+        ],
+        series,
+      }, { notMerge: true });
+    }
+
+    function renderSeriesPicker() {
+      const wrap = document.getElementById("series-picker");
+      wrap.innerHTML = "";
+      for (const s of SERIES) {
+        const el = document.createElement("span");
+        el.className = "chip" + (active.has(s.key) ? " active" : "");
+        el.textContent = s.key;
+        el.style.borderColor = active.has(s.key) ? s.color : "";
+        el.style.color = active.has(s.key) ? s.color : "";
+        el.style.background = active.has(s.key) ? "transparent" : "";
+        el.onclick = async () => {
+          if (active.has(s.key)) { active.delete(s.key); }
+          else { active.add(s.key); await loadSeries(s); }
+          renderSeriesPicker();
+          render();
+        };
+        wrap.appendChild(el);
+      }
+    }
+
+    document.getElementById("range-picker").addEventListener("click", (e) => {
+      const t = e.target.closest(".chip");
+      if (!t) return;
+      currentRange = t.dataset.range;
+      for (const c of e.currentTarget.children) c.classList.toggle("active", c === t);
+      render();
+    });
+
+    window.addEventListener("resize", () => chart.resize());
+
+    (async () => {
+      const status = document.getElementById("status");
+      try {
+        await Promise.all(SERIES.filter(s => active.has(s.key)).map(loadSeries));
+        renderSeriesPicker();
+        render();
+        const updated = Object.keys(loaded)[0] ? "" : "";
+        status.textContent = `已載入 ${Object.keys(loaded).length} 個指標 · 點選 chip 切換顯示`;
+      } catch (err) {
+        status.textContent = `載入失敗：${err.message}`;
+      }
+    })();
+  </script>
+</body>
+</html>
