@@ -25,6 +25,8 @@ TICKERS: dict[str, tuple[str, str]] = {
     "QQQ":     ("QQQ",     "1999-03-10"),
     "SPY":     ("SPY",     "1993-01-29"),
     "^VIX":    ("VIX",     "1990-01-02"),
+    "GLD":     ("GLD",     "2004-11-18"),
+    "BTC-USD": ("BTC",     "2014-09-17"),
 }
 
 
