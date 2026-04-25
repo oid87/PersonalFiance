@@ -30,6 +30,9 @@ jobs:
       - name: Fetch Fear & Greed
         run: python scripts/fetch_fear_greed.py
 
+      - name: Fetch yield data
+        run: python scripts/fetch_yields.py
+
       - name: Commit updates
         run: |
           git config user.name  "github-actions[bot]"
