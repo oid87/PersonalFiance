@@ -243,6 +243,13 @@
       min-height: 300px;
     }
 
+    /* ── 估值 tab ─────────────────────────────────────────────────── */
+    #val-chart {
+      width: 100%;
+      height: calc(100vh - 194px);
+      min-height: 420px;
+    }
+
     .status {
       padding: 8px 24px;
       color: var(--muted);
@@ -295,6 +302,7 @@
     <button class="tab-btn" data-tab="corr">相關係數</button>
     <button class="tab-btn" data-tab="sector">產業輪動</button>
     <button class="tab-btn" data-tab="cashking">現金王</button>
+    <button class="tab-btn" data-tab="valuation">估值</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -444,6 +452,20 @@
     <div class="status" id="corr-status">切換至此 tab 自動載入全部標的…</div>
   </section>
 
+  <!-- ── 估值 tab ──────────────────────────────────────────────────── -->
+  <section id="tab-valuation" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">QQQ 估值位階 · Nasdaq-100 Forward P/E vs 跌幅</span>
+      <div id="val-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-val-range="3Y">3Y</span>
+        <span class="chip active" data-val-range="5Y">5Y</span>
+        <span class="chip" data-val-range="10Y">10Y</span>
+      </div>
+    </div>
+    <div id="val-chart"></div>
+    <div class="status" id="val-status">切換至此 tab 自動載入…</div>
+  </section>
+
   <script>
     const SERIES = [
       { key: "VOO",  file: "data/VOO.json",       color: "#58a6ff", yAxis: 0, default: true  },
@@ -504,6 +526,14 @@
     let ckWindow = 4;
     let ckWeeklyData = null;
     let ckInited = false;
+
+    // ── 估值 tab state ─────────────────────────────────────────────
+    let valChart       = null;
+    let valRangePreset = "5Y";
+    let valFPEData     = null;
+    let valInited      = false;
+    let _valDragDown   = null;
+    let _valDragUp     = null;
     const SECTOR_LABEL = {
       XLK:"科技", XLF:"金融", XLV:"醫療", XLE:"能源", XLI:"工業",
       XLY:"非必需消費", XLP:"必需消費", XLU:"公用", XLRE:"不動產", XLB:"材料", XLC:"通訊",
@@ -555,6 +585,11 @@
         renderSectorTab();
       }
       if (ckInited) renderCKTab();
+      if (valChart) {
+        valChart.dispose();
+        valChart = echarts.init(document.getElementById("val-chart"), light ? null : "dark");
+        renderValuationTab();
+      }
     }
 
     document.getElementById("theme-btn").addEventListener("click", () => applyTheme(!isLight()));
@@ -598,6 +633,13 @@
         setTimeout(() => { sectorChart.resize(); renderSectorTab(); }, 50);
       } else if (tabName === "cashking") {
         initCKTab();
+      } else if (tabName === "valuation") {
+        const el = document.getElementById("val-chart");
+        if (!valChart) {
+          valChart = echarts.init(el, isLight() ? null : "dark");
+          setupResizeHandler();
+        }
+        setTimeout(() => { valChart.resize(); renderValuationTab(); }, 50);
       }
     }
 
@@ -1942,6 +1984,224 @@
       for (const c of e.currentTarget.querySelectorAll(".chip"))
         c.classList.toggle("active", c === t);
       renderCorrTab();
+    });
+
+    // ── 估值 tab ───────────────────────────────────────────────────
+    function valPresetStart(preset) {
+      const d = new Date();
+      if      (preset === "3Y")  d.setFullYear(d.getFullYear() - 3);
+      else if (preset === "5Y")  d.setFullYear(d.getFullYear() - 5);
+      else if (preset === "10Y") d.setFullYear(d.getFullYear() - 10);
+      else return null;
+      return d.toISOString().slice(0, 10);
+    }
+
+    async function renderValuationTab() {
+      if (!valChart) return;
+      const statusEl = document.getElementById("val-status");
+      statusEl.textContent = "載入中…";
+
+      try {
+        await ensureLoaded("QQQ");
+        const qqqAll = loaded["QQQ"];
+        if (!qqqAll || qqqAll.length === 0) { statusEl.textContent = "QQQ 資料未載入"; return; }
+
+        if (!valFPEData) {
+          const resp = await fetch("data/QQQ_valuation.json", { cache: "no-cache" });
+          if (!resp.ok) throw new Error("QQQ_valuation.json HTTP " + resp.status);
+          valFPEData = (await resp.json()).data || [];
+        }
+
+        const fromDate    = valPresetStart(valRangePreset);
+        const qqqFiltered = fromDate ? qqqAll.filter(r => r[0] >= fromDate) : qqqAll;
+        const fpeFiltered = valFPEData.filter(r => r.date >= (qqqFiltered[0]?.[0] ?? ""));
+        const fpeData     = fpeFiltered.map(r => [r.date, r.fpe]);
+        const axisMin     = qqqFiltered[0]?.[0];
+        const axisMax     = qqqFiltered.at(-1)?.[0];
+
+        const axisClr = tc("#8b949e", "#57606a");
+        const gridClr = tc("#21262d", "#e1e4e8");
+        const tipBg   = tc("#161b22", "#ffffff");
+        const tipBdr  = tc("#30363d", "#d0d7de");
+        const tipText = tc("#e6edf3", "#1f2328");
+
+        const KEY_EVENTS = [
+          ["2022-06-16", "2022熊底", "rgba(239,68,68,0.7)"],
+          ["2025-04-08", "關稅底",   "rgba(240,136,62,0.7)"],
+          ["2026-03-30", "修正底",   "rgba(163,113,247,0.7)"],
+        ];
+
+        function eventMarkLines() {
+          return KEY_EVENTS.map(([xVal, label, color]) => ({
+            xAxis: xVal,
+            label: { formatter: label, color, fontSize: 10, position: "insideEndTop" },
+            lineStyle: { color, type: "dashed", width: 1 },
+          }));
+        }
+
+        valChart.setOption({
+          backgroundColor: "transparent",
+          tooltip: {
+            trigger: "axis",
+            axisPointer: { type: "line" },
+            backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText },
+            formatter(params) {
+              const date = params[0]?.axisValue != null
+                ? new Date(params[0].axisValue).toISOString().slice(0, 10)
+                : "";
+              let out = `<b>${date}</b><br/>`;
+              for (const p of params) {
+                if (p.value == null || p.value[1] == null) continue;
+                const v = p.value[1];
+                if (p.seriesName === "QQQ")
+                  out += `<span style="color:${p.color}">●</span> QQQ: <b>$${v.toFixed(2)}</b><br/>`;
+                else if (p.seriesName === "Forward PE")
+                  out += `<span style="color:${p.color}">●</span> Forward PE: <b>${v.toFixed(1)}x</b><br/>`;
+              }
+              return out;
+            },
+          },
+          grid: [
+            { top: 36, height: "44%", left: 72, right: 36 },
+            { top: "58%", bottom: 54, left: 72, right: 36 },
+          ],
+          xAxis: [
+            { gridIndex: 0, type: "time", min: axisMin, max: axisMax,
+              axisLine: { lineStyle: { color: axisClr } }, splitLine: { show: false },
+              axisLabel: { show: false } },
+            { gridIndex: 1, type: "time", min: axisMin, max: axisMax,
+              axisLine: { lineStyle: { color: axisClr } }, splitLine: { show: false },
+              axisLabel: { fontSize: 11, color: axisClr } },
+          ],
+          yAxis: [
+            { gridIndex: 0, name: "QQQ 價格", nameTextStyle: { color: axisClr, fontSize: 11 },
+              axisLine: { lineStyle: { color: axisClr } },
+              axisLabel: { formatter: v => "$" + v.toFixed(0), fontSize: 11 },
+              splitLine: { lineStyle: { color: gridClr } } },
+            { gridIndex: 1, name: "Forward PE", nameTextStyle: { color: axisClr, fontSize: 11 },
+              axisLine: { lineStyle: { color: axisClr } },
+              axisLabel: { formatter: v => v + "x", fontSize: 11 },
+              splitLine: { lineStyle: { color: gridClr } },
+              min: v => Math.floor(v.min - 2), max: v => Math.ceil(v.max + 2) },
+          ],
+          dataZoom: [
+            { type: "inside", xAxisIndex: [0, 1] },
+            { type: "slider", xAxisIndex: [0, 1], height: 18, bottom: 14,
+              borderColor: axisClr, textStyle: { color: axisClr } },
+          ],
+          series: [
+            {
+              name: "QQQ", type: "line", xAxisIndex: 0, yAxisIndex: 0,
+              data: qqqFiltered, showSymbol: false,
+              lineStyle: { color: "#58a6ff", width: 1.5 },
+              itemStyle: { color: "#58a6ff" },
+              markArea: { silent: true, data: [] },
+              markLine: { silent: true, symbol: "none", data: eventMarkLines() },
+            },
+            {
+              name: "Forward PE", type: "line", xAxisIndex: 1, yAxisIndex: 1,
+              data: fpeData, showSymbol: true, symbolSize: 5,
+              lineStyle: { color: "#f0883e", width: 2 },
+              itemStyle: { color: "#f0883e" },
+              markLine: {
+                silent: true, symbol: "none",
+                data: [
+                  ...eventMarkLines(),
+                  { yAxis: 21,
+                    lineStyle: { color: "rgba(239,68,68,0.35)", type: "dashed", width: 1 },
+                    label: { formatter: "21x (2022底)", color: "rgba(239,68,68,0.65)", fontSize: 10, position: "insideEndTop" } },
+                ],
+              },
+            },
+          ],
+        });
+
+        setupValDrag(qqqAll);
+
+        const latestFPE = fpeData.at(-1);
+        const latestQQQ = qqqFiltered.at(-1);
+        statusEl.textContent =
+          `QQQ 估值位階 · ${valRangePreset} · QQQ $${latestQQQ?.[1]?.toFixed(0)} · Forward PE ${latestFPE?.[1]?.toFixed(1)}x · 上方拖曳選區計算漲跌幅 · 前期 PE 為估計值`;
+      } catch (err) {
+        statusEl.textContent = `載入失敗：${err.message}`;
+      }
+    }
+
+    function setupValDrag(qqqAll) {
+      const el = document.getElementById("val-chart");
+      if (_valDragDown) el.removeEventListener("mousedown", _valDragDown);
+      if (_valDragUp)   document.removeEventListener("mouseup", _valDragUp);
+
+      function bisect(target) {
+        let lo = 0, hi = qqqAll.length;
+        while (lo < hi) { const mid = (lo + hi) >> 1; if (qqqAll[mid][0] < target) lo = mid + 1; else hi = mid; }
+        return lo;
+      }
+      function nearestPoint(tsMs) {
+        const target = new Date(tsMs).toISOString().slice(0, 10);
+        const idx = bisect(target);
+        if (idx >= qqqAll.length) return qqqAll[qqqAll.length - 1];
+        if (idx === 0) return qqqAll[0];
+        const prev = qqqAll[idx - 1], curr = qqqAll[idx];
+        return (new Date(curr[0]) - new Date(target)) < (new Date(target) - new Date(prev[0])) ? curr : prev;
+      }
+
+      let selDate0 = null, selPrice0 = null;
+
+      _valDragDown = e => {
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        if (y > el.offsetHeight * 0.52) return;
+        const coord = valChart.convertFromPixel({ gridIndex: 0 }, [x, y]);
+        if (!coord) return;
+        const [d, p] = nearestPoint(coord[0]);
+        selDate0 = d; selPrice0 = p;
+      };
+
+      _valDragUp = e => {
+        if (!selDate0) return;
+        const rect = el.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const coord = valChart.convertFromPixel({ gridIndex: 0 }, [x, y]);
+        if (!coord) { selDate0 = null; return; }
+        const [d1, p1] = nearestPoint(coord[0]);
+        if (d1 === selDate0) { selDate0 = null; return; }
+
+        const [dA, pA, dB, pB] = selDate0 < d1
+          ? [selDate0, selPrice0, d1, p1]
+          : [d1, p1, selDate0, selPrice0];
+
+        const pct = ((pB / pA - 1) * 100).toFixed(2);
+        const isUp = pB >= pA;
+        const areaClr = isUp ? "rgba(63,185,80,0.13)" : "rgba(239,68,68,0.13)";
+        const textClr = isUp ? "#3fb950" : "#f85149";
+
+        valChart.setOption({
+          series: [{ name: "QQQ", markArea: {
+            silent: true,
+            label: { show: true, formatter: `${isUp ? "+" : ""}${pct}%`, fontSize: 20, fontWeight: "bold", color: textClr, position: "inside" },
+            data: [[{ xAxis: dA, itemStyle: { color: areaClr } }, { xAxis: dB }]],
+          }}],
+        });
+
+        document.getElementById("val-status").textContent =
+          `選取 ${dA} → ${dB} · ${isUp ? "+" : ""}${pct}% · $${pA.toFixed(0)} → $${pB.toFixed(0)}`;
+        selDate0 = null;
+      };
+
+      el.addEventListener("mousedown", _valDragDown);
+      document.addEventListener("mouseup", _valDragUp);
+    }
+
+    document.getElementById("val-range-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-val-range]");
+      if (!t) return;
+      valRangePreset = t.dataset.valRange;
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
+      renderValuationTab();
     });
 
     // ── Init ───────────────────────────────────────────────────────
