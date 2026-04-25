@@ -53,6 +53,30 @@
       align-self: center;
     }
     #theme-btn:hover { color: var(--text); border-color: var(--text); }
+
+    /* ── Tab bar ──────────────────────────────────────────────────── */
+    .tab-bar {
+      display: flex;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 10px 18px;
+      margin-bottom: -1px;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-section[hidden] { display: none !important; }
+
+    /* ── Shared controls ──────────────────────────────────────────── */
     .controls {
       padding: 12px 24px;
       display: flex;
@@ -73,6 +97,11 @@
       transition: opacity .15s;
     }
     .chip:hover { opacity: .8; }
+    .chip.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
     .chip.fear-on {
       background: rgba(239,68,68,0.15);
       border-color: #ef4444;
@@ -91,11 +120,6 @@
       flex-wrap: wrap;
     }
     .range-wrap .chip { padding: 4px 10px; font-size: 12px; }
-    .range-wrap .chip.active {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
     .date-inputs {
       display: flex;
       align-items: center;
@@ -120,9 +144,10 @@
       filter: none;
     }
 
+    /* ── 趨勢 tab ─────────────────────────────────────────────────── */
     #chart {
       width: 100%;
-      height: calc(100vh - 150px - var(--fear-h));
+      height: calc(100vh - 194px - var(--fear-h));
       min-height: 300px;
       transition: height .2s ease;
     }
@@ -177,7 +202,6 @@
     body.light .neg { color: #d1242f; }
     .fear-val { color: #fca5a5; font-weight: 600; }
     body.light .fear-val { color: #cf222e; }
-
     #fear-threshold {
       width: 44px;
       background: var(--panel);
@@ -191,6 +215,20 @@
     #fear-threshold::-webkit-inner-spin-button,
     #fear-threshold::-webkit-outer-spin-button { -webkit-appearance: none; }
 
+    /* ── 五線譜 tab ───────────────────────────────────────────────── */
+    #penta-chart {
+      width: 100%;
+      height: calc(100vh - 194px);
+      min-height: 300px;
+    }
+
+    /* ── 宏觀 tab ─────────────────────────────────────────────────── */
+    #macro-chart {
+      width: 100%;
+      height: calc(100vh - 194px);
+      min-height: 300px;
+    }
+
     .status {
       padding: 8px 24px;
       color: var(--muted);
@@ -199,57 +237,106 @@
     }
   </style>
 </head>
-<body>
+<body class="light">
   <header>
     <h1>Market Trend</h1>
     <span class="sub">VOO · QQQ · SPY · 0050 · GLD · BTC · VIX · Fear &amp; Greed</span>
-    <button id="theme-btn" title="切換明暗主題">☀</button>
+    <button id="theme-btn" title="切換明暗主題">☾</button>
   </header>
 
-  <div class="controls">
-    <div id="series-picker"></div>
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="trend">趨勢</button>
+    <button class="tab-btn" data-tab="pentagram">五線譜</button>
+    <button class="tab-btn" data-tab="macro">宏觀</button>
+  </nav>
 
-    <span id="fear-toggle" class="chip" title="標示 F&G 極度恐懼區間">恐懼區</span>
-    <span style="font-size:12px;color:var(--muted)">≤</span>
-    <input type="number" id="fear-threshold" value="20" min="1" max="99" title="F&G 閾值" />
+  <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
+  <section id="tab-trend" class="tab-section">
+    <div class="controls">
+      <div id="series-picker"></div>
 
-    <div class="range-wrap">
-      <div id="range-picker">
-        <span class="chip" data-range="6M">0.5Y</span>
-        <span class="chip" data-range="1Y6M">1.5Y</span>
-        <span class="chip" data-range="3.5Y">3.5Y</span>
-        <span class="chip active" data-range="5Y">5Y</span>
-        <span class="chip" data-range="10Y">10Y</span>
-        <span class="chip" data-range="20Y">20Y</span>
-        <span class="chip" data-range="MAX">MAX</span>
+      <div id="ma-picker" style="display:flex;gap:4px">
+        <span class="chip" data-ma="20">MA20</span>
+        <span class="chip" data-ma="50">MA50</span>
+        <span class="chip" data-ma="200">MA200</span>
       </div>
-      <div class="date-inputs">
-        <input type="date" id="date-from" title="開始日期" />
-        <span>–</span>
-        <input type="date" id="date-to" title="結束日期" />
+
+      <span id="fear-toggle" class="chip" title="標示 F&G 極度恐懼區間">恐懼區</span>
+      <span style="font-size:12px;color:var(--muted)">≤</span>
+      <input type="number" id="fear-threshold" value="20" min="1" max="99" title="F&G 閾值" />
+
+      <div class="range-wrap">
+        <div id="range-picker">
+          <span class="chip" data-range="6M">0.5Y</span>
+          <span class="chip" data-range="1Y6M">1.5Y</span>
+          <span class="chip" data-range="3.5Y">3.5Y</span>
+          <span class="chip active" data-range="5Y">5Y</span>
+          <span class="chip" data-range="10Y">10Y</span>
+          <span class="chip" data-range="20Y">20Y</span>
+          <span class="chip" data-range="MAX">MAX</span>
+        </div>
+        <div class="date-inputs">
+          <input type="date" id="date-from" title="開始日期" />
+          <span>–</span>
+          <input type="date" id="date-to" title="結束日期" />
+        </div>
       </div>
     </div>
-  </div>
 
-  <div id="chart"></div>
+    <div id="chart"></div>
 
-  <div id="fear-panel">
-    <div class="fp-header">
-      <span>恐懼事件 · F&amp;G ≤ <b id="fear-thresh-label">20</b>
-        <span style="margin-left:4px;font-size:11px;opacity:.6">（橘=≤閾值 / 深紅=≤15）</span>
-      </span>
-      <span id="fear-ep-count" style="color:var(--accent)"></span>
-      <span id="fear-price-note"></span>
+    <div id="fear-panel">
+      <div class="fp-header">
+        <span>恐懼事件 · F&amp;G ≤ <b id="fear-thresh-label">20</b>
+          <span style="margin-left:4px;font-size:11px;opacity:.6">（橘=≤閾值 / 深紅=≤15）</span>
+        </span>
+        <span id="fear-ep-count" style="color:var(--accent)"></span>
+        <span id="fear-price-note"></span>
+      </div>
+      <div class="fp-table-wrap">
+        <table class="fp-table">
+          <thead id="fp-head"></thead>
+          <tbody id="fp-body"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="fp-table-wrap">
-      <table class="fp-table">
-        <thead id="fp-head"></thead>
-        <tbody id="fp-body"></tbody>
-      </table>
-    </div>
-  </div>
 
-  <div class="status" id="status">載入中…</div>
+    <div class="status" id="status">載入中…</div>
+  </section>
+
+  <!-- ── 五線譜 tab ──────────────────────────────────────────────── -->
+  <section id="tab-pentagram" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted);flex-shrink:0">標的</span>
+      <div id="penta-ticker-picker"></div>
+      <div id="penta-mode-picker" style="display:flex;gap:4px;margin-left:12px;flex-shrink:0">
+        <span class="chip active" data-mode="pentagram">五線譜</span>
+        <span class="chip" data-mode="channel">通道</span>
+      </div>
+      <div id="penta-period-picker" style="margin-left:auto;display:flex;gap:6px;flex-shrink:0">
+        <span class="chip" data-period="0.5Y">短期 0.5Y</span>
+        <span class="chip" data-period="1.5Y">中期 1.5Y</span>
+        <span class="chip active" data-period="3.5Y">長期 3.5Y</span>
+      </div>
+    </div>
+    <div id="penta-chart"></div>
+    <div class="status" id="penta-status">← 選擇標的以顯示五線譜</div>
+  </section>
+
+  <!-- ── 宏觀 tab ──────────────────────────────────────────────── -->
+  <section id="tab-macro" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">美債殖利率曲線 · 10Y / 2Y / 利差</span>
+      <div id="macro-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-macro-range="5Y">5Y</span>
+        <span class="chip active" data-macro-range="10Y">10Y</span>
+        <span class="chip" data-macro-range="20Y">20Y</span>
+        <span class="chip" data-macro-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="macro-chart"></div>
+    <div class="status" id="macro-status">載入中…</div>
+  </section>
 
   <script>
     const SERIES = [
@@ -263,8 +350,15 @@
       { key: "F&G",  file: "data/fear_greed.json",  color: "#e3b341", yAxis: 2, default: true  },
     ];
 
+    const PENTA_TICKERS = ["VOO", "QQQ", "SPY", "0050", "GLD", "BTC"];
+
     const chartEl = document.getElementById("chart");
-    let chart = echarts.init(chartEl, "dark");
+    let chart = echarts.init(chartEl, null); // light by default
+    let pentaChart = null;
+    let pentaActiveTicker = "VOO";
+    let pentaPeriod = "3.5Y";
+    let pentaMode = "pentagram";
+
     const loaded = {};
     const active = new Set(SERIES.filter(s => s.default).map(s => s.key));
 
@@ -274,31 +368,81 @@
     let fearActive    = false;
     let fearThreshold = 20;
 
+    const maActive = new Set();
+
+    let macroChart       = null;
+    let macroRangePreset = "10Y";
+    const macroLoaded    = {}; // { US10Y: [...], US2Y: [...] }
+
     const dateFrom = document.getElementById("date-from");
     const dateTo   = document.getElementById("date-to");
 
-    // ── Theme ─────────────────────────────────────────────────────
-    function isLight() { return document.body.classList.contains("light"); }
+    // ── Resize handler ─────────────────────────────────────────────
+    function setupResizeHandler() {
+      if (window._resizeHandler) window.removeEventListener("resize", window._resizeHandler);
+      window._resizeHandler = () => { chart.resize(); if (pentaChart) pentaChart.resize(); };
+      window.addEventListener("resize", window._resizeHandler);
+    }
+    setupResizeHandler();
 
+    // ── Theme ──────────────────────────────────────────────────────
+    function isLight() { return document.body.classList.contains("light"); }
     function tc(dark, light) { return isLight() ? light : dark; }
 
     function applyTheme(light) {
       document.body.classList.toggle("light", light);
       document.getElementById("theme-btn").textContent = light ? "☾" : "☀";
       localStorage.setItem("theme", light ? "light" : "dark");
+
       chart.dispose();
       chart = echarts.init(chartEl, light ? null : "dark");
-      window._resizeHandler && window.removeEventListener("resize", window._resizeHandler);
-      window._resizeHandler = () => chart.resize();
-      window.addEventListener("resize", window._resizeHandler);
+      setupResizeHandler();
       render();
+
+      if (pentaChart) {
+        pentaChart.dispose();
+        pentaChart = echarts.init(document.getElementById("penta-chart"), light ? null : "dark");
+        renderPentagram();
+      }
+      if (macroChart) {
+        macroChart.dispose();
+        macroChart = echarts.init(document.getElementById("macro-chart"), light ? null : "dark");
+        renderMacroTab();
+      }
     }
 
-    document.getElementById("theme-btn").addEventListener("click", () => {
-      applyTheme(!isLight());
-    });
+    document.getElementById("theme-btn").addEventListener("click", () => applyTheme(!isLight()));
 
-    // ── Date utils ────────────────────────────────────────────────
+    // ── Tab switching ──────────────────────────────────────────────
+    function switchTab(tabName) {
+      document.querySelectorAll(".tab-section").forEach(s => { s.hidden = true; });
+      document.getElementById("tab-" + tabName).hidden = false;
+      document.querySelectorAll(".tab-btn").forEach(b =>
+        b.classList.toggle("active", b.dataset.tab === tabName));
+
+      if (tabName === "trend") {
+        setTimeout(() => chart.resize(), 50);
+      } else if (tabName === "pentagram") {
+        const el = document.getElementById("penta-chart");
+        if (!pentaChart) {
+          pentaChart = echarts.init(el, isLight() ? null : "dark");
+          setupResizeHandler();
+        }
+        setTimeout(() => { pentaChart.resize(); renderPentagram(); }, 50);
+      } else if (tabName === "macro") {
+        const el = document.getElementById("macro-chart");
+        if (!macroChart) {
+          macroChart = echarts.init(el, isLight() ? null : "dark");
+          setupResizeHandler();
+        }
+        setTimeout(() => { macroChart.resize(); renderMacroTab(); }, 50);
+      }
+    }
+
+    document.querySelectorAll(".tab-btn").forEach(btn =>
+      btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
+
+    // ── Date utils ─────────────────────────────────────────────────
     function presetStart(preset) {
       const d = new Date();
       if      (preset === "6M")   d.setMonth(d.getMonth() - 6);
@@ -323,15 +467,33 @@
       return r;
     }
 
+    function computeMA(data, period) {
+      const out = [];
+      for (let i = period - 1; i < data.length; i++) {
+        let sum = 0;
+        for (let j = i - period + 1; j <= i; j++) sum += data[j][1];
+        out.push([data[i][0], +(sum / period).toFixed(4)]);
+      }
+      return out;
+    }
+
     function dateAddDays(dateStr, n) {
       const d = new Date(dateStr);
       d.setDate(d.getDate() + n);
       return d.toISOString().slice(0, 10);
     }
 
-    // ── Loading ───────────────────────────────────────────────────
+    // ── Loading ────────────────────────────────────────────────────
+    function isDataFresh(data) {
+      if (!data || data.length === 0) return false;
+      const lastDate = data[data.length - 1][0];
+      // stale if last entry is more than 4 calendar days ago (covers weekends + Monday)
+      return (Date.now() - new Date(lastDate + "T00:00:00Z")) / 86400000 <= 4;
+    }
+
     async function loadSeries(s) {
-      if (loaded[s.key]) return;
+      if (loaded[s.key] && isDataFresh(loaded[s.key])) return; // cache hit, still fresh
+      delete loaded[s.key]; // evict stale cache before re-fetch
       const resp = await fetch(s.file, { cache: "no-cache" });
       if (!resp.ok) throw new Error(`${s.key}: HTTP ${resp.status}`);
       const j = await resp.json();
@@ -346,7 +508,7 @@
       if (s) await loadSeries(s);
     }
 
-    // ── Fear helpers ──────────────────────────────────────────────
+    // ── Fear helpers ───────────────────────────────────────────────
     function closestOnOrAfter(key, dateStr) {
       const data = loaded[key];
       if (!data) return null;
@@ -399,7 +561,7 @@
       return out;
     }
 
-    // ── Fear panel ────────────────────────────────────────────────
+    // ── Fear panel ─────────────────────────────────────────────────
     function updateChartHeight() {
       const h = (fearActive && loaded["F&G"]) ? 212 : 0;
       document.documentElement.style.setProperty("--fear-h", h + "px");
@@ -461,7 +623,7 @@
       }).join("");
     }
 
-    // ── Chart render ──────────────────────────────────────────────
+    // ── Chart render ───────────────────────────────────────────────
     function render() {
       const series = [];
       const axisClr  = tc("#8b949e", "#57606a");
@@ -478,7 +640,7 @@
           axisLine: { lineStyle: { color: "#f0883e" } }, splitLine: { show: false } },
         { id: "fg",   name: "F&G",  position: "right", offset: 55, min: 0, max: 100,
           axisLine: { lineStyle: { color: "#e3b341" } }, splitLine: { show: false } },
-        { id: "tw",   name: "TWD",  position: "left",  offset: 55,
+        { id: "tw",   name: "TWD",  position: "left",  offset: 70,
           axisLine: { lineStyle: { color: "#3fb950" } }, splitLine: { show: false } },
         { id: "btc",  name: "BTC",  position: "right", offset: 110,
           axisLine: { lineStyle: { color: "#f7931a" } }, splitLine: { show: false } },
@@ -496,6 +658,32 @@
           itemStyle: { color: s.color },
           emphasis: { focus: "series" },
         });
+      }
+
+      if (maActive.size > 0) {
+        const MA_SKIP = new Set(["F&G", "VIX"]);
+        for (const s of SERIES) {
+          if (!active.has(s.key) || !loaded[s.key] || MA_SKIP.has(s.key)) continue;
+          for (const period of [20, 50, 200]) {
+            if (!maActive.has(period)) continue;
+            const maData   = computeMA(loaded[s.key], period);
+            const filtered = filterRange(maData);
+            series.push({
+              name: `__ma_${s.key}_${period}`,
+              type: "line",
+              data: filtered,
+              yAxisIndex: s.yAxis,
+              showSymbol: false,
+              lineStyle: { width: 1, color: s.color, type: "dashed", opacity: 0.55 },
+              itemStyle:  { color: s.color },
+              silent: true,
+              tooltip: {
+                formatter: () => "",
+                show: true,
+              },
+            });
+          }
+        }
       }
 
       if (fearActive && loaded["F&G"]) {
@@ -546,7 +734,7 @@
           textStyle: { color: tipText },
           top: 6,
         },
-        grid: { left: 80, right: 160, top: 44, bottom: 56 },
+        grid: { left: 115, right: 160, top: 44, bottom: 56 },
         xAxis: {
           type: "time",
           axisLine: { lineStyle: { color: axisClr } },
@@ -561,7 +749,7 @@
       }, { notMerge: true });
     }
 
-    // ── Series picker ─────────────────────────────────────────────
+    // ── Series picker ──────────────────────────────────────────────
     function renderSeriesPicker() {
       const wrap = document.getElementById("series-picker");
       wrap.innerHTML = "";
@@ -583,7 +771,18 @@
       }
     }
 
-    // ── Fear toggle & threshold ───────────────────────────────────
+    // ── MA picker ──────────────────────────────────────────────────
+    document.getElementById("ma-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-ma]");
+      if (!t) return;
+      const p = +t.dataset.ma;
+      if (maActive.has(p)) maActive.delete(p); else maActive.add(p);
+      document.querySelectorAll("#ma-picker .chip[data-ma]").forEach(el =>
+        el.classList.toggle("active", maActive.has(+el.dataset.ma)));
+      render();
+    });
+
+    // ── Fear toggle & threshold ────────────────────────────────────
     document.getElementById("fear-toggle").addEventListener("click", async () => {
       fearActive = !fearActive;
       document.getElementById("fear-toggle").classList.toggle("fear-on", fearActive);
@@ -607,7 +806,7 @@
       }, 300);
     });
 
-    // ── Range controls ────────────────────────────────────────────
+    // ── Range controls ─────────────────────────────────────────────
     document.getElementById("range-picker").addEventListener("click", e => {
       const t = e.target.closest(".chip[data-range]");
       if (!t) return;
@@ -633,19 +832,462 @@
     dateTo.value = new Date().toISOString().slice(0, 10);
     dateTo.max   = dateTo.value;
 
-    window._resizeHandler = () => chart.resize();
-    window.addEventListener("resize", window._resizeHandler);
+    // ── Pentagram: linear regression channel ───────────────────────
+    function getPentaData() {
+      const raw = loaded[pentaActiveTicker];
+      if (!raw) return [];
+      const d = new Date();
+      if      (pentaPeriod === "0.5Y") d.setMonth(d.getMonth() - 6);
+      else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
+      else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
+      const fromDate = d.toISOString().slice(0, 10);
+      return raw.filter(r => r[0] >= fromDate);
+    }
 
-    // ── Init ──────────────────────────────────────────────────────
+    function computeLinearRegression(data) {
+      const n = data.length;
+      if (n < 10) return null;
+      let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+      for (let i = 0; i < n; i++) {
+        sumX  += i;
+        sumY  += data[i][1];
+        sumXY += i * data[i][1];
+        sumX2 += i * i;
+      }
+      const denom = n * sumX2 - sumX * sumX;
+      if (denom === 0) return null;
+      const slope     = (n * sumXY - sumX * sumY) / denom;
+      const intercept = (sumY - slope * sumX) / n;
+      let sumR2 = 0;
+      for (let i = 0; i < n; i++) {
+        const r = data[i][1] - (slope * i + intercept);
+        sumR2 += r * r;
+      }
+      const sigma  = Math.sqrt(sumR2 / n);
+      const trend  = [], upper1 = [], upper2 = [], lower1 = [], lower2 = [];
+      for (let i = 0; i < n; i++) {
+        const date = data[i][0];
+        const reg  = slope * i + intercept;
+        trend.push( [date, +reg.toFixed(4)]);
+        upper1.push([date, +(reg + sigma).toFixed(4)]);
+        upper2.push([date, +(reg + 2 * sigma).toFixed(4)]);
+        lower1.push([date, +(reg - sigma).toFixed(4)]);
+        lower2.push([date, +(reg - 2 * sigma).toFixed(4)]);
+      }
+      return { trend, upper1, upper2, lower1, lower2 };
+    }
+
+    // ── Channel helpers ────────────────────────────────────────────
+    function toWeekly(dailyData) {
+      const byWeek = new Map();
+      for (const [date, close] of dailyData) {
+        const d = new Date(date + "T00:00:00Z");
+        const day = d.getUTCDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        const mon = new Date(d);
+        mon.setUTCDate(d.getUTCDate() + diff);
+        const key = mon.toISOString().slice(0, 10);
+        byWeek.set(key, [date, close]);
+      }
+      return [...byWeek.values()].sort((a, b) => a[0] < b[0] ? -1 : 1);
+    }
+
+    function computeChannelBands(weeklyAll) {
+      const N = 20;
+      const ma20 = [], upper = [], lower = [];
+      for (let i = N - 1; i < weeklyAll.length; i++) {
+        const slice = weeklyAll.slice(i - N + 1, i + 1);
+        const closes = slice.map(r => r[1]);
+        const mean = closes.reduce((a, b) => a + b, 0) / N;
+        const variance = closes.reduce((s, v) => s + (v - mean) ** 2, 0) / N;
+        const sigma = Math.sqrt(variance);
+        const date = weeklyAll[i][0];
+        ma20.push([date, +mean.toFixed(4)]);
+        upper.push([date, +(mean + 2 * sigma).toFixed(4)]);
+        lower.push([date, +(mean - 2 * sigma).toFixed(4)]);
+      }
+      return { ma20, upper, lower };
+    }
+
+    function renderChannelMode() {
+      if (!pentaChart) return;
+      const statusEl = document.getElementById("penta-status");
+
+      if (!pentaActiveTicker || !loaded[pentaActiveTicker]) {
+        pentaChart.clear();
+        statusEl.textContent = "← 選擇標的以顯示通道";
+        return;
+      }
+
+      const allDaily = loaded[pentaActiveTicker];
+      const weekly   = toWeekly(allDaily);
+      const bands    = computeChannelBands(weekly);
+
+      if (!bands.ma20.length) {
+        statusEl.textContent = "數據不足";
+        pentaChart.clear();
+        return;
+      }
+
+      const d = new Date();
+      if      (pentaPeriod === "0.5Y") d.setMonth(d.getMonth() - 6);
+      else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
+      else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
+      const fromDate = d.toISOString().slice(0, 10);
+
+      const priceW  = allDaily.filter(r => r[0] >= fromDate);
+      const ma20w   = bands.ma20.filter(r => r[0] >= fromDate);
+      const upperW  = bands.upper.filter(r => r[0] >= fromDate);
+      const lowerW  = bands.lower.filter(r => r[0] >= fromDate);
+
+      const s        = SERIES.find(x => x.key === pentaActiveTicker);
+      const axisClr  = tc("#8b949e", "#57606a");
+      const gridClr  = tc("#21262d", "#e1e4e8");
+      const tipBg    = tc("#161b22", "#ffffff");
+      const tipBdr   = tc("#30363d", "#d0d7de");
+      const tipText  = tc("#e6edf3", "#1f2328");
+      const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
+
+      pentaChart.setOption({
+        backgroundColor: "transparent",
+        tooltip: {
+          trigger: "axis",
+          axisPointer: { type: "cross" },
+          backgroundColor: tipBg,
+          borderColor: tipBdr,
+          textStyle: { color: tipText },
+          formatter(params) {
+            const ts = params[0]?.axisValue;
+            const dateLabel = ts ? new Date(ts).toISOString().slice(0, 10) : "";
+            let out = `<b>${dateLabel}</b><br/>`;
+            for (const p of params) {
+              const v = p.value?.[1];
+              if (v == null) continue;
+              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${
+                v.toLocaleString(undefined, { maximumFractionDigits: 2 })
+              }</b><br/>`;
+            }
+            return out;
+          },
+        },
+        legend: {
+          data: ["上軌 +2σ", "MA20", "價格", "下軌 -2σ"],
+          textStyle: { color: tipText, fontSize: 13 },
+          top: 6,
+        },
+        grid: { left: 72, right: 24, top: 48, bottom: 56 },
+        xAxis: {
+          type: "time",
+          axisLine: { lineStyle: { color: axisClr } },
+          axisLabel: { fontSize: 12 },
+          splitLine: { show: false },
+        },
+        yAxis: {
+          scale: true,
+          axisLine: { lineStyle: { color: axisClr } },
+          axisLabel: { fontSize: 12 },
+          splitLine: { lineStyle: { color: gridClr } },
+        },
+        dataZoom: [
+          { type: "inside" },
+          { type: "slider", height: 18, bottom: 14 },
+        ],
+        series: [
+          { ...lineBase, name: "上軌 +2σ", data: upperW,    lineStyle: { width: 1.5, color: "#e91e63" },                  itemStyle: { color: "#e91e63" } },
+          { ...lineBase, name: "MA20",     data: ma20w,    lineStyle: { width: 1.5, color: "#9e9e9e", type: "dashed" }, itemStyle: { color: "#9e9e9e" } },
+          { ...lineBase, name: "價格",     data: priceW,    lineStyle: { width: 1.8, color: s.color },                   itemStyle: { color: s.color } },
+          { ...lineBase, name: "下軌 -2σ", data: lowerW,   lineStyle: { width: 1.5, color: "#1565c0" },                  itemStyle: { color: "#1565c0" } },
+        ],
+      }, { notMerge: true });
+
+      statusEl.textContent =
+        `${pentaActiveTicker} 樂活通道 · ${pentaPeriod} · MA20 週線 ±2σ · ${weekly.length} 週完整歷史`;
+    }
+
+    // ── Pentagram render ───────────────────────────────────────────
+    function renderPentagram() {
+      if (pentaMode === "channel") { renderChannelMode(); return; }
+      if (!pentaChart) return;
+      const statusEl = document.getElementById("penta-status");
+
+      if (!pentaActiveTicker || !loaded[pentaActiveTicker]) {
+        pentaChart.clear();
+        statusEl.textContent = "← 選擇標的以顯示五線譜";
+        return;
+      }
+
+      const data   = getPentaData();
+      const result = computeLinearRegression(data);
+
+      if (!result) {
+        statusEl.textContent = `數據不足`;
+        pentaChart.clear();
+        return;
+      }
+
+      const s        = SERIES.find(x => x.key === pentaActiveTicker);
+      const axisClr  = tc("#8b949e", "#57606a");
+      const gridClr  = tc("#21262d", "#e1e4e8");
+      const tipBg    = tc("#161b22", "#ffffff");
+      const tipBdr   = tc("#30363d", "#d0d7de");
+      const tipText  = tc("#e6edf3", "#1f2328");
+      const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
+
+      pentaChart.setOption({
+        backgroundColor: "transparent",
+        tooltip: {
+          trigger: "axis",
+          axisPointer: { type: "cross" },
+          backgroundColor: tipBg,
+          borderColor: tipBdr,
+          textStyle: { color: tipText },
+          formatter(params) {
+            const ts = params[0]?.axisValue;
+            const dateLabel = ts ? new Date(ts).toISOString().slice(0, 10) : "";
+            let out = `<b>${dateLabel}</b><br/>`;
+            for (const p of params) {
+              const v = p.value?.[1];
+              if (v == null) continue;
+              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${
+                v.toLocaleString(undefined, { maximumFractionDigits: 2 })
+              }</b><br/>`;
+            }
+            return out;
+          },
+        },
+        legend: {
+          data: ["極度貪婪", "貪婪", "價格", "趨勢線", "恐懼", "極度恐懼"],
+          textStyle: { color: tipText, fontSize: 13 },
+          top: 6,
+        },
+        grid: { left: 72, right: 24, top: 48, bottom: 56 },
+        xAxis: {
+          type: "time",
+          axisLine: { lineStyle: { color: axisClr } },
+          axisLabel: { fontSize: 12 },
+          splitLine: { show: false },
+        },
+        yAxis: {
+          scale: true,
+          axisLine: { lineStyle: { color: axisClr } },
+          axisLabel: { fontSize: 12 },
+          splitLine: { lineStyle: { color: gridClr } },
+        },
+        dataZoom: [
+          { type: "inside" },
+          { type: "slider", height: 18, bottom: 14 },
+        ],
+        series: [
+          { ...lineBase, name: "極度貪婪", data: result.upper2, lineStyle: { width: 1.5, color: "#e91e63" }, itemStyle: { color: "#e91e63" } },
+          { ...lineBase, name: "貪婪",     data: result.upper1, lineStyle: { width: 1.5, color: "#f48fb1" }, itemStyle: { color: "#f48fb1" } },
+          { ...lineBase, name: "價格",     data,                lineStyle: { width: 1.5, color: s.color },   itemStyle: { color: s.color } },
+          { ...lineBase, name: "趨勢線",   data: result.trend,  lineStyle: { width: 1.5, color: "#9e9e9e" }, itemStyle: { color: "#9e9e9e" } },
+          { ...lineBase, name: "恐懼",     data: result.lower1, lineStyle: { width: 1.5, color: "#64b5f6" }, itemStyle: { color: "#64b5f6" } },
+          { ...lineBase, name: "極度恐懼", data: result.lower2, lineStyle: { width: 1.5, color: "#1565c0" }, itemStyle: { color: "#1565c0" } },
+        ],
+      }, { notMerge: true });
+
+      statusEl.textContent =
+        `${pentaActiveTicker} 五線譜 · ${pentaPeriod} · 線性迴歸通道 · ${data.length} 筆日線`;
+    }
+
+    // ── Pentagram ticker picker ────────────────────────────────────
+    function renderPentaTickerPicker() {
+      const wrap = document.getElementById("penta-ticker-picker");
+      wrap.innerHTML = "";
+      for (const key of PENTA_TICKERS) {
+        const s  = SERIES.find(x => x.key === key);
+        const on = pentaActiveTicker === key;
+        const el = document.createElement("span");
+        el.className = "chip";
+        el.textContent = key;
+        el.style.borderColor = on ? s.color : "";
+        el.style.color       = on ? s.color : "";
+        el.onclick = async () => {
+          pentaActiveTicker = key;
+          renderPentaTickerPicker();
+          if (!loaded[key]) {
+            document.getElementById("penta-status").textContent = "載入中…";
+            await loadSeries(s);
+          }
+          renderPentagram();
+        };
+        wrap.appendChild(el);
+      }
+    }
+
+    // ── Pentagram period picker ────────────────────────────────────
+    document.getElementById("penta-period-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-period]");
+      if (!t) return;
+      pentaPeriod = t.dataset.period;
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
+      renderPentagram();
+    });
+
+    // ── Pentagram mode picker ──────────────────────────────────────
+    document.getElementById("penta-mode-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-mode]");
+      if (!t) return;
+      pentaMode = t.dataset.mode;
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
+      renderPentagram();
+    });
+
+    // ── Macro: yield curve ─────────────────────────────────────────
+    function filterMacroRange(rows) {
+      if (macroRangePreset === "MAX") return rows;
+      const d = new Date();
+      if      (macroRangePreset === "5Y")  d.setFullYear(d.getFullYear() - 5);
+      else if (macroRangePreset === "10Y") d.setFullYear(d.getFullYear() - 10);
+      else if (macroRangePreset === "20Y") d.setFullYear(d.getFullYear() - 20);
+      const from = d.toISOString().slice(0, 10);
+      return rows.filter(r => r[0] >= from);
+    }
+
+    async function loadMacroData() {
+      for (const stem of ["US10Y", "US2Y"]) {
+        if (macroLoaded[stem]) continue;
+        const resp = await fetch(`data/${stem}.json`, { cache: "no-cache" });
+        if (!resp.ok) throw new Error(`${stem}: HTTP ${resp.status}`);
+        const j = await resp.json();
+        macroLoaded[stem] = (j.data || []).map(r => [r.date, r.value]);
+      }
+    }
+
+    function renderMacroTab() {
+      if (!macroChart) return;
+      const statusEl = document.getElementById("macro-status");
+      const us10y = macroLoaded["US10Y"];
+      const us2y  = macroLoaded["US2Y"];
+      if (!us10y || !us2y) { statusEl.textContent = "數據未載入"; return; }
+
+      const map2y = new Map(us2y.map(r => [r[0], r[1]]));
+      const spreadRaw = [];
+      for (const [date, v10] of us10y) {
+        const v2 = map2y.get(date);
+        if (v2 != null) spreadRaw.push([date, +(v10 - v2).toFixed(4)]);
+      }
+
+      const y10f    = filterMacroRange(us10y);
+      const y2f     = filterMacroRange(us2y);
+      const spreadF = filterMacroRange(spreadRaw);
+
+      const invZones = [];
+      let invStart = null, invLast = null;
+      for (const [date, v] of spreadF) {
+        if (v < 0)    { if (!invStart) invStart = date; invLast = date; }
+        else if (invStart) { invZones.push([invStart, invLast]); invStart = null; }
+      }
+      if (invStart) invZones.push([invStart, invLast]);
+
+      const markAreaData = invZones.map(([s, e]) => [
+        { xAxis: s, itemStyle: { color: "rgba(239,68,68,0.12)" } },
+        { xAxis: e },
+      ]);
+
+      const axisClr = tc("#8b949e", "#57606a");
+      const gridClr = tc("#21262d", "#e1e4e8");
+      const tipBg   = tc("#161b22", "#ffffff");
+      const tipBdr  = tc("#30363d", "#d0d7de");
+      const tipText = tc("#e6edf3", "#1f2328");
+      const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
+
+      macroChart.setOption({
+        backgroundColor: "transparent",
+        tooltip: {
+          trigger: "axis",
+          axisPointer: { type: "cross" },
+          backgroundColor: tipBg,
+          borderColor: tipBdr,
+          textStyle: { color: tipText },
+          formatter(params) {
+            const ts = params[0]?.axisValue;
+            const dateLabel = ts ? new Date(ts).toISOString().slice(0, 10) : "";
+            let out = `<b>${dateLabel}</b><br/>`;
+            for (const p of params) {
+              if (p.seriesName.startsWith("__")) continue;
+              const v = p.value?.[1];
+              if (v == null) continue;
+              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${v.toFixed(2)}%</b><br/>`;
+            }
+            return out;
+          },
+        },
+        legend: {
+          data: ["美債10Y", "美債2Y", "利差 10Y-2Y"],
+          textStyle: { color: tipText },
+          top: 6,
+        },
+        grid: { left: 72, right: 24, top: 44, bottom: 56 },
+        xAxis: {
+          type: "time",
+          axisLine: { lineStyle: { color: axisClr } },
+          splitLine: { show: false },
+        },
+        yAxis: {
+          scale: true,
+          axisLine:  { lineStyle: { color: axisClr } },
+          axisLabel: { formatter: v => v + "%", fontSize: 12 },
+          splitLine: { lineStyle: { color: gridClr } },
+        },
+        dataZoom: [
+          { type: "inside" },
+          { type: "slider", height: 18, bottom: 14 },
+        ],
+        series: [
+          { ...lineBase, name: "美債10Y",     data: y10f,    lineStyle: { width: 1.8, color: "#58a6ff" }, itemStyle: { color: "#58a6ff" } },
+          { ...lineBase, name: "美債2Y",      data: y2f,     lineStyle: { width: 1.8, color: "#f778ba" }, itemStyle: { color: "#f778ba" } },
+          {
+            ...lineBase, name: "利差 10Y-2Y", data: spreadF,
+            lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" },
+            itemStyle:  { color: "#e3b341" },
+            markArea: { silent: true, data: markAreaData },
+            markLine: {
+              silent: true, symbol: "none",
+              data: [{ yAxis: 0, lineStyle: { color: "rgba(239,68,68,0.55)", type: "solid", width: 1 } }],
+              label: { show: false },
+            },
+          },
+        ],
+      }, { notMerge: true });
+
+      const latestSpread = spreadF.at(-1)?.[1];
+      const spreadStr = latestSpread != null
+        ? `${latestSpread >= 0 ? "+" : ""}${latestSpread.toFixed(2)}%` : "—";
+      const latestDate = y10f.at(-1)?.[0] ?? "—";
+      statusEl.textContent =
+        `美債殖利率曲線 · ${macroRangePreset} · 目前利差 ${spreadStr} · 倒掛事件 ${invZones.length} 次 · 最新 ${latestDate}`;
+    }
+
+    document.getElementById("macro-range-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-macro-range]");
+      if (!t) return;
+      macroRangePreset = t.dataset.macroRange;
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
+      renderMacroTab();
+    });
+
+    // ── Init ───────────────────────────────────────────────────────
     (async () => {
       const status = document.getElementById("status");
-      // restore saved theme
-      if (localStorage.getItem("theme") === "light") applyTheme(true);
+      // default = light; override only if user explicitly saved dark
+      if (localStorage.getItem("theme") === "dark") applyTheme(false);
       try {
         await Promise.all(SERIES.filter(s => active.has(s.key)).map(loadSeries));
         renderSeriesPicker();
         render();
-        status.textContent = `已載入 ${Object.keys(loaded).length} 個指標 · 點選 chip 切換顯示`;
+        renderPentaTickerPicker();
+        const lastDates = Object.values(loaded).map(d => d[d.length - 1]?.[0]).filter(Boolean);
+        const latestDate = lastDates.sort().at(-1);
+        const allFresh = Object.values(loaded).every(isDataFresh);
+        status.textContent = `已載入 ${Object.keys(loaded).length} 個指標 · 最新資料 ${latestDate}${allFresh ? "" : " ⚠ 部分資料可能過期"} · 點選 chip 切換顯示`;
+
+        // Pre-load macro data in background (non-blocking)
+        loadMacroData().catch(() => {});
       } catch (err) {
         status.textContent = `載入失敗：${err.message}`;
       }
