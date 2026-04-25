@@ -15,6 +15,14 @@
       --accent: #58a6ff;
       --fear-h: 0px;
     }
+    body.light {
+      --bg: #ffffff;
+      --panel: #f6f8fa;
+      --border: #d0d7de;
+      --text: #1f2328;
+      --muted: #57606a;
+      --accent: #0969da;
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -32,6 +40,19 @@
     }
     header h1 { margin: 0; font-size: 18px; font-weight: 600; }
     header .sub { color: var(--muted); font-size: 13px; }
+    #theme-btn {
+      margin-left: auto;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 15px;
+      padding: 2px 10px;
+      line-height: 1.6;
+      align-self: center;
+    }
+    #theme-btn:hover { color: var(--text); border-color: var(--text); }
     .controls {
       padding: 12px 24px;
       display: flex;
@@ -57,6 +78,11 @@
       border-color: #ef4444;
       color: #fca5a5;
     }
+    body.light .chip.fear-on {
+      background: rgba(207,34,46,0.08);
+      border-color: #cf222e;
+      color: #cf222e;
+    }
     .range-wrap {
       margin-left: auto;
       display: flex;
@@ -67,7 +93,7 @@
     .range-wrap .chip { padding: 4px 10px; font-size: 12px; }
     .range-wrap .chip.active {
       background: var(--accent);
-      color: #0d1117;
+      color: #fff;
       border-color: var(--accent);
     }
     .date-inputs {
@@ -89,6 +115,9 @@
     .date-inputs input[type="date"]::-webkit-calendar-picker-indicator {
       filter: invert(.6);
       cursor: pointer;
+    }
+    body.light .date-inputs input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: none;
     }
 
     #chart {
@@ -138,12 +167,16 @@
     .fp-table td {
       padding: 4px 10px;
       text-align: right;
-      border-bottom: 1px solid #21262d;
+      border-bottom: 1px solid var(--border);
       white-space: nowrap;
     }
     .fp-table td:nth-child(-n+2) { text-align: left; }
     .pos { color: #3fb950; }
     .neg { color: #f78166; }
+    body.light .pos { color: #1a7f37; }
+    body.light .neg { color: #d1242f; }
+    .fear-val { color: #fca5a5; font-weight: 600; }
+    body.light .fear-val { color: #cf222e; }
 
     #fear-threshold {
       width: 44px;
@@ -170,6 +203,7 @@
   <header>
     <h1>Market Trend</h1>
     <span class="sub">VOO · QQQ · SPY · 0050 · GLD · BTC · VIX · Fear &amp; Greed</span>
+    <button id="theme-btn" title="切換明暗主題">☀</button>
   </header>
 
   <div class="controls">
@@ -229,7 +263,8 @@
       { key: "F&G",  file: "data/fear_greed.json",  color: "#e3b341", yAxis: 2, default: true  },
     ];
 
-    const chart = echarts.init(document.getElementById("chart"), "dark");
+    const chartEl = document.getElementById("chart");
+    let chart = echarts.init(chartEl, "dark");
     const loaded = {};
     const active = new Set(SERIES.filter(s => s.default).map(s => s.key));
 
@@ -241,6 +276,27 @@
 
     const dateFrom = document.getElementById("date-from");
     const dateTo   = document.getElementById("date-to");
+
+    // ── Theme ─────────────────────────────────────────────────────
+    function isLight() { return document.body.classList.contains("light"); }
+
+    function tc(dark, light) { return isLight() ? light : dark; }
+
+    function applyTheme(light) {
+      document.body.classList.toggle("light", light);
+      document.getElementById("theme-btn").textContent = light ? "☾" : "☀";
+      localStorage.setItem("theme", light ? "light" : "dark");
+      chart.dispose();
+      chart = echarts.init(chartEl, light ? null : "dark");
+      window._resizeHandler && window.removeEventListener("resize", window._resizeHandler);
+      window._resizeHandler = () => chart.resize();
+      window.addEventListener("resize", window._resizeHandler);
+      render();
+    }
+
+    document.getElementById("theme-btn").addEventListener("click", () => {
+      applyTheme(!isLight());
+    });
 
     // ── Date utils ────────────────────────────────────────────────
     function presetStart(preset) {
@@ -394,7 +450,7 @@
           <td style="color:var(--muted)">${eps.length - i}</td>
           <td>${ep.start} ~ ${ep.end}</td>
           <td style="color:var(--muted)">${ep.days}天</td>
-          <td style="color:#fca5a5;font-weight:600">${ep.fgMin}</td>
+          <td class="fear-val">${ep.fgMin}</td>
           <td><b>${f(minP?.price)}</b></td>
           <td style="color:var(--muted);font-size:11px">${minP?.date ?? "—"}</td>
           <td>${f(p3m)}</td>
@@ -408,10 +464,16 @@
     // ── Chart render ──────────────────────────────────────────────
     function render() {
       const series = [];
+      const axisClr  = tc("#8b949e", "#57606a");
+      const gridClr  = tc("#21262d", "#e1e4e8");
+      const tipBg    = tc("#161b22", "#ffffff");
+      const tipBdr   = tc("#30363d", "#d0d7de");
+      const tipText  = tc("#e6edf3", "#1f2328");
+
       const yAxisDef = [
         { id: "price", name: "USD Price", position: "left",
-          axisLine: { lineStyle: { color: "#8b949e" } },
-          splitLine: { lineStyle: { color: "#21262d" } } },
+          axisLine: { lineStyle: { color: axisClr } },
+          splitLine: { lineStyle: { color: gridClr } } },
         { id: "vix",  name: "VIX",  position: "right",
           axisLine: { lineStyle: { color: "#f0883e" } }, splitLine: { show: false } },
         { id: "fg",   name: "F&G",  position: "right", offset: 55, min: 0, max: 100,
@@ -436,7 +498,6 @@
         });
       }
 
-      // Fear zone markArea: ≤threshold (light) + ≤15 overlay (deep)
       if (fearActive && loaded["F&G"]) {
         const DEEP = 15;
         const markAreaData = [
@@ -466,9 +527,9 @@
         tooltip: {
           trigger: "axis",
           axisPointer: { type: "cross" },
-          backgroundColor: "#161b22",
-          borderColor: "#30363d",
-          textStyle: { color: "#e6edf3" },
+          backgroundColor: tipBg,
+          borderColor: tipBdr,
+          textStyle: { color: tipText },
           formatter(params) {
             let out = `<b>${params[0]?.axisValueLabel}</b><br/>`;
             for (const p of params) {
@@ -482,13 +543,13 @@
         },
         legend: {
           data: series.filter(s => !s.name.startsWith("__")).map(s => s.name),
-          textStyle: { color: "#e6edf3" },
+          textStyle: { color: tipText },
           top: 6,
         },
         grid: { left: 80, right: 160, top: 44, bottom: 56 },
         xAxis: {
           type: "time",
-          axisLine: { lineStyle: { color: "#8b949e" } },
+          axisLine: { lineStyle: { color: axisClr } },
           splitLine: { show: false },
         },
         yAxis: yAxisDef,
@@ -572,11 +633,14 @@
     dateTo.value = new Date().toISOString().slice(0, 10);
     dateTo.max   = dateTo.value;
 
-    window.addEventListener("resize", () => chart.resize());
+    window._resizeHandler = () => chart.resize();
+    window.addEventListener("resize", window._resizeHandler);
 
     // ── Init ──────────────────────────────────────────────────────
     (async () => {
       const status = document.getElementById("status");
+      // restore saved theme
+      if (localStorage.getItem("theme") === "light") applyTheme(true);
       try {
         await Promise.all(SERIES.filter(s => active.has(s.key)).map(loadSeries));
         renderSeriesPicker();
