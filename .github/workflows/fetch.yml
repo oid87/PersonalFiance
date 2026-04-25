@@ -36,6 +36,9 @@ jobs:
       - name: Fetch CAPE data
         run: python scripts/fetch_cape.py
 
+      - name: Fetch QQQ valuation (forward PE)
+        run: python scripts/fetch_qqq_valuation.py
+
       - name: Commit updates
         run: |
           git config user.name  "github-actions[bot]"
