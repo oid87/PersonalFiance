@@ -236,6 +236,13 @@
       min-height: 300px;
     }
 
+    /* ── 產業輪動 tab ─────────────────────────────────────────────── */
+    #sector-chart {
+      width: 100%;
+      height: calc(100vh - 194px);
+      min-height: 300px;
+    }
+
     .status {
       padding: 8px 24px;
       color: var(--muted);
@@ -256,6 +263,7 @@
     <button class="tab-btn" data-tab="pentagram">五線譜</button>
     <button class="tab-btn" data-tab="macro">宏觀</button>
     <button class="tab-btn" data-tab="corr">相關係數</button>
+    <button class="tab-btn" data-tab="sector">產業輪動</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -336,6 +344,7 @@
     <div class="controls">
       <span style="font-size:13px;color:var(--muted)">美債殖利率曲線 · 10Y / 2Y / 利差</span>
       <span id="m2-toggle" class="chip" title="M2 貨幣供給年增率（右軸）">M2年增率</span>
+      <span id="cape-toggle" class="chip" title="Shiller CAPE / P/E10（右軸）">CAPE</span>
       <div id="macro-range-picker" style="margin-left:auto;display:flex;gap:4px">
         <span class="chip" data-macro-range="5Y">5Y</span>
         <span class="chip active" data-macro-range="10Y">10Y</span>
@@ -345,6 +354,20 @@
     </div>
     <div id="macro-chart"></div>
     <div class="status" id="macro-status">載入中…</div>
+  </section>
+
+  <!-- ── 產業輪動 tab ────────────────────────────────────────────── -->
+  <section id="tab-sector" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">美股11大產業 ETF · 各期間報酬率</span>
+      <div id="sector-sort-picker" style="display:flex;gap:4px;margin-left:auto">
+        <span class="chip active" data-sector-col="1M">1M排序</span>
+        <span class="chip" data-sector-col="3M">3M排序</span>
+        <span class="chip" data-sector-col="1Y">1Y排序</span>
+      </div>
+    </div>
+    <div id="sector-chart"></div>
+    <div class="status" id="sector-status">切換至此 tab 自動載入產業數據…</div>
   </section>
 
   <!-- ── 相關係數 tab ────────────────────────────────────────────── -->
@@ -399,8 +422,19 @@
     let macroShowM2      = false;
     const macroLoaded    = {}; // { US10Y: [...], US2Y: [...], M2: [...] }
 
+    let macroShowCAPE    = false;
+
     let corrChart  = null;
     let corrPeriod = "1Y";
+
+    let sectorChart   = null;
+    let sectorSortCol = "1M";
+    const sectorLoaded = {}; // { XLK: [...], XLF: [...], ... }
+    const SECTOR_ETFS  = ["XLK","XLF","XLV","XLE","XLI","XLY","XLP","XLU","XLRE","XLB","XLC"];
+    const SECTOR_LABEL = {
+      XLK:"科技", XLF:"金融", XLV:"醫療", XLE:"能源", XLI:"工業",
+      XLY:"非必需消費", XLP:"必需消費", XLU:"公用", XLRE:"不動產", XLB:"材料", XLC:"通訊",
+    };
 
     const dateFrom = document.getElementById("date-from");
     const dateTo   = document.getElementById("date-to");
@@ -442,6 +476,11 @@
         corrChart = echarts.init(document.getElementById("corr-chart"), light ? null : "dark");
         renderCorrTab();
       }
+      if (sectorChart) {
+        sectorChart.dispose();
+        sectorChart = echarts.init(document.getElementById("sector-chart"), light ? null : "dark");
+        renderSectorTab();
+      }
     }
 
     document.getElementById("theme-btn").addEventListener("click", () => applyTheme(!isLight()));
@@ -476,6 +515,13 @@
           setupResizeHandler();
         }
         setTimeout(() => { corrChart.resize(); renderCorrTab(); }, 50);
+      } else if (tabName === "sector") {
+        const el = document.getElementById("sector-chart");
+        if (!sectorChart) {
+          sectorChart = echarts.init(el, isLight() ? null : "dark");
+          setupResizeHandler();
+        }
+        setTimeout(() => { sectorChart.resize(); renderSectorTab(); }, 50);
       }
     }
 
@@ -1218,7 +1264,7 @@
     }
 
     async function loadMacroData() {
-      for (const stem of ["US10Y", "US2Y", "M2"]) {
+      for (const stem of ["US10Y", "US2Y", "M2", "CAPE"]) {
         if (macroLoaded[stem]) continue;
         const resp = await fetch(`data/${stem}.json`, { cache: "no-cache" });
         if (!resp.ok) throw new Error(`${stem}: HTTP ${resp.status}`);
@@ -1265,29 +1311,41 @@
       const tipText = tc("#e6edf3", "#1f2328");
       const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
 
-      // M2 YoY series (optional)
-      let m2yoyF = [];
-      if (macroShowM2 && macroLoaded["M2"]) {
-        m2yoyF = filterMacroRange(computeM2YoY(macroLoaded["M2"]));
-      }
-
-      const legendData = ["美債10Y", "美債2Y", "利差 10Y-2Y"];
-      if (macroShowM2) legendData.push("M2年增率");
-
-      const yAxisCfg = macroShowM2 ? [
+      // Build dynamic right-axis overlays
+      const yAxisList = [
         { scale: true, axisLine: { lineStyle: { color: axisClr } },
           axisLabel: { formatter: v => v + "%", fontSize: 12 },
           splitLine: { lineStyle: { color: gridClr } } },
-        { scale: true, position: "right",
+      ];
+      let m2AxisIdx = -1, capeAxisIdx = -1;
+      if (macroShowM2) {
+        m2AxisIdx = yAxisList.length;
+        yAxisList.push({ scale: true, position: "right", offset: 0,
           axisLine: { lineStyle: { color: "#3fb950" } },
           axisLabel: { formatter: v => v + "%", fontSize: 11, color: "#3fb950" },
-          splitLine: { show: false } },
-      ] : {
-        scale: true,
-        axisLine:  { lineStyle: { color: axisClr } },
-        axisLabel: { formatter: v => v + "%", fontSize: 12 },
-        splitLine: { lineStyle: { color: gridClr } },
-      };
+          splitLine: { show: false } });
+      }
+      if (macroShowCAPE) {
+        capeAxisIdx = yAxisList.length;
+        yAxisList.push({ scale: true, position: "right", offset: macroShowM2 ? 70 : 0,
+          axisLine: { lineStyle: { color: "#a371f7" } },
+          axisLabel: { fontSize: 11, color: "#a371f7" },
+          splitLine: { show: false } });
+      }
+      const yAxisCfg = yAxisList.length === 1 ? yAxisList[0] : yAxisList;
+
+      const overlayCount = (macroShowM2 ? 1 : 0) + (macroShowCAPE ? 1 : 0);
+      const gridRight = overlayCount === 0 ? 24 : overlayCount === 1 ? 72 : 130;
+
+      let m2yoyF = [];
+      if (macroShowM2 && macroLoaded["M2"]) m2yoyF = filterMacroRange(computeM2YoY(macroLoaded["M2"]));
+
+      let capeF = [];
+      if (macroShowCAPE && macroLoaded["CAPE"]) capeF = filterMacroRange(macroLoaded["CAPE"]);
+
+      const legendData = ["美債10Y", "美債2Y", "利差 10Y-2Y"];
+      if (macroShowM2)   legendData.push("M2年增率");
+      if (macroShowCAPE) legendData.push("CAPE");
 
       const seriesList = [
         { ...lineBase, name: "美債10Y", data: y10f, yAxisIndex: 0,
@@ -1298,23 +1356,24 @@
           lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" },
           itemStyle: { color: "#e3b341" },
           markArea: { silent: true, data: markAreaData },
-          markLine: {
-            silent: true, symbol: "none",
+          markLine: { silent: true, symbol: "none",
             data: [{ yAxis: 0, lineStyle: { color: "rgba(239,68,68,0.55)", type: "solid", width: 1 } }],
-            label: { show: false },
-          },
+            label: { show: false } },
         },
       ];
-      if (macroShowM2) {
-        seriesList.push({ ...lineBase, name: "M2年增率", data: m2yoyF, yAxisIndex: 1,
-          lineStyle: { width: 1.5, color: "#3fb950" }, itemStyle: { color: "#3fb950" } });
-      }
+      if (macroShowM2)   seriesList.push({ ...lineBase, name: "M2年增率", data: m2yoyF,
+        yAxisIndex: m2AxisIdx, lineStyle: { width: 1.5, color: "#3fb950" }, itemStyle: { color: "#3fb950" } });
+      if (macroShowCAPE) seriesList.push({ ...lineBase, name: "CAPE", data: capeF,
+        yAxisIndex: capeAxisIdx, lineStyle: { width: 1.5, color: "#a371f7" }, itemStyle: { color: "#a371f7" },
+        markLine: { silent: true, symbol: "none",
+          data: [{ yAxis: 16.8, lineStyle: { color: "rgba(163,113,247,0.45)", type: "dashed", width: 1 } }],
+          label: { formatter: "均值 16.8", color: "#a371f7", fontSize: 10, position: "insideEndTop" } },
+      });
 
       macroChart.setOption({
         backgroundColor: "transparent",
         tooltip: {
-          trigger: "axis",
-          axisPointer: { type: "cross" },
+          trigger: "axis", axisPointer: { type: "cross" },
           backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText },
           formatter(params) {
             const ts = params[0]?.axisValue;
@@ -1324,13 +1383,14 @@
               if (p.seriesName.startsWith("__")) continue;
               const v = p.value?.[1];
               if (v == null) continue;
-              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${v.toFixed(2)}%</b><br/>`;
+              const unit = p.seriesName === "CAPE" ? "" : "%";
+              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${v.toFixed(2)}${unit}</b><br/>`;
             }
             return out;
           },
         },
         legend: { data: legendData, textStyle: { color: tipText }, top: 6 },
-        grid: { left: 72, right: macroShowM2 ? 72 : 24, top: 44, bottom: 56 },
+        grid: { left: 72, right: gridRight, top: 44, bottom: 56 },
         xAxis: { type: "time", axisLine: { lineStyle: { color: axisClr } }, splitLine: { show: false } },
         yAxis: yAxisCfg,
         dataZoom: [{ type: "inside" }, { type: "slider", height: 18, bottom: 14 }],
@@ -1351,6 +1411,12 @@
       renderMacroTab();
     });
 
+    document.getElementById("cape-toggle").addEventListener("click", () => {
+      macroShowCAPE = !macroShowCAPE;
+      document.getElementById("cape-toggle").classList.toggle("active", macroShowCAPE);
+      renderMacroTab();
+    });
+
     document.getElementById("macro-range-picker").addEventListener("click", e => {
       const t = e.target.closest(".chip[data-macro-range]");
       if (!t) return;
@@ -1358,6 +1424,125 @@
       for (const c of e.currentTarget.querySelectorAll(".chip"))
         c.classList.toggle("active", c === t);
       renderMacroTab();
+    });
+
+    // ── Sector rotation ────────────────────────────────────────────
+    async function loadSectorData() {
+      await Promise.all(SECTOR_ETFS.map(async etf => {
+        if (sectorLoaded[etf]) return;
+        const resp = await fetch(`data/${etf}.json`, { cache: "no-cache" });
+        if (!resp.ok) throw new Error(`${etf}: HTTP ${resp.status}`);
+        const j = await resp.json();
+        sectorLoaded[etf] = (j.data || []).map(r => [r.date, r.close]);
+      }));
+    }
+
+    function sectorReturn(data, nDays, ytd) {
+      if (!data || data.length < 2) return null;
+      const latest = data[data.length - 1][1];
+      if (ytd) {
+        const yearStart = data[data.length - 1][0].slice(0, 4) + "-01-01";
+        const base = data.find(r => r[0] >= yearStart);
+        return base ? (latest / base[1] - 1) * 100 : null;
+      }
+      if (data.length <= nDays) return null;
+      const base = data[data.length - 1 - nDays][1];
+      return base > 0 ? (latest / base - 1) * 100 : null;
+    }
+
+    const SECTOR_PERIODS = ["1W","1M","3M","6M","YTD","1Y"];
+    const SECTOR_DAYS    = { "1W": 5, "1M": 21, "3M": 63, "6M": 126, "1Y": 252 };
+
+    async function renderSectorTab() {
+      if (!sectorChart) return;
+      const statusEl = document.getElementById("sector-status");
+      statusEl.textContent = "載入中…";
+      try { await loadSectorData(); } catch(e) { statusEl.textContent = `載入失敗：${e.message}`; return; }
+
+      // Compute returns for each ETF × period
+      const returns = {};
+      for (const etf of SECTOR_ETFS) {
+        returns[etf] = {};
+        for (const p of SECTOR_PERIODS) {
+          returns[etf][p] = p === "YTD"
+            ? sectorReturn(sectorLoaded[etf], 0, true)
+            : sectorReturn(sectorLoaded[etf], SECTOR_DAYS[p], false);
+        }
+      }
+
+      // Sort ETFs by selected column
+      const sortedETFs = [...SECTOR_ETFS].sort((a, b) => {
+        const va = returns[a][sectorSortCol] ?? -Infinity;
+        const vb = returns[b][sectorSortCol] ?? -Infinity;
+        return vb - va;
+      });
+
+      // ECharts heatmap: rows = periods, cols = ETFs (sorted)
+      const heatData = [];
+      for (let pi = 0; pi < SECTOR_PERIODS.length; pi++) {
+        for (let ei = 0; ei < sortedETFs.length; ei++) {
+          const v = returns[sortedETFs[ei]][SECTOR_PERIODS[pi]];
+          heatData.push([ei, pi, v != null ? +v.toFixed(2) : null]);
+        }
+      }
+
+      const maxAbs = heatData.reduce((m, d) => d[2] != null ? Math.max(m, Math.abs(d[2])) : m, 1);
+      const tipBg   = tc("#161b22","#ffffff"), tipBdr = tc("#30363d","#d0d7de");
+      const tipText = tc("#e6edf3","#1f2328"), axisClr = tc("#8b949e","#57606a");
+
+      const xLabels = sortedETFs.map(e => `${SECTOR_LABEL[e]}\n${e}`);
+
+      sectorChart.setOption({
+        backgroundColor: "transparent",
+        tooltip: {
+          trigger: "item", backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText },
+          formatter: p => {
+            const v = p.value?.[2];
+            const etf = sortedETFs[p.value?.[0]];
+            const per = SECTOR_PERIODS[p.value?.[1]];
+            if (v == null || !etf) return "";
+            return `<b>${etf} ${SECTOR_LABEL[etf]}</b><br/>${per}: <b style="color:${v>=0?"#3fb950":"#f78166"}">${v>=0?"+":""}${v.toFixed(2)}%</b>`;
+          },
+        },
+        visualMap: {
+          min: -maxAbs, max: maxAbs, calculable: false,
+          orient: "horizontal", left: "center", bottom: 10,
+          itemWidth: 12, itemHeight: 120,
+          text: ["+", "−"], textStyle: { color: tipText, fontSize: 11 },
+          inRange: { color: ["#c62828","#ef9a9a","#f5f5f5","#a5d6a7","#1b5e20"] },
+        },
+        grid: { top: 16, bottom: 72, left: 56, right: 16 },
+        xAxis: {
+          type: "category", data: xLabels, splitArea: { show: true },
+          axisLine: { lineStyle: { color: axisClr } },
+          axisLabel: { color: tipText, fontSize: 11, interval: 0 },
+        },
+        yAxis: {
+          type: "category", data: SECTOR_PERIODS, splitArea: { show: true },
+          axisLine: { lineStyle: { color: axisClr } },
+          axisLabel: { color: tipText, fontSize: 12 },
+        },
+        series: [{
+          type: "heatmap", data: heatData,
+          label: {
+            show: true, fontSize: 11,
+            formatter: p => p.value?.[2] != null ? (p.value[2] >= 0 ? "+" : "") + p.value[2].toFixed(1) + "%" : "—",
+          },
+          emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,.3)" } },
+        }],
+      }, { notMerge: true });
+
+      const latest = SECTOR_ETFS.map(e => sectorLoaded[e]?.at(-1)?.[0]).filter(Boolean).sort().at(-1) ?? "—";
+      statusEl.textContent = `美股11大產業 ETF · 以${sectorSortCol}排序 · 資料截至 ${latest}`;
+    }
+
+    document.getElementById("sector-sort-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-sector-col]");
+      if (!t) return;
+      sectorSortCol = t.dataset.sectorCol;
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
+      renderSectorTab();
     });
 
     // ── Correlation matrix ─────────────────────────────────────────

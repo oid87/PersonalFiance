@@ -33,6 +33,9 @@ jobs:
       - name: Fetch yield data
         run: python scripts/fetch_yields.py
 
+      - name: Fetch CAPE data
+        run: python scripts/fetch_cape.py
+
       - name: Commit updates
         run: |
           git config user.name  "github-actions[bot]"
