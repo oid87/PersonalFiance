@@ -13,6 +13,7 @@
       --text: #e6edf3;
       --muted: #8b949e;
       --accent: #58a6ff;
+      --fear-h: 0px;
     }
     * { box-sizing: border-box; }
     body {
@@ -51,6 +52,11 @@
       transition: opacity .15s;
     }
     .chip:hover { opacity: .8; }
+    .chip.fear-on {
+      background: rgba(239,68,68,0.15);
+      border-color: #ef4444;
+      color: #fca5a5;
+    }
     .range-wrap {
       margin-left: auto;
       display: flex;
@@ -84,7 +90,74 @@
       filter: invert(.6);
       cursor: pointer;
     }
-    #chart { width: 100%; height: calc(100vh - 150px); min-height: 420px; }
+
+    #chart {
+      width: 100%;
+      height: calc(100vh - 150px - var(--fear-h));
+      min-height: 300px;
+      transition: height .2s ease;
+    }
+
+    /* Fear panel */
+    #fear-panel {
+      display: none;
+      border-top: 1px solid var(--border);
+    }
+    .fp-header {
+      padding: 8px 24px 4px;
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .fp-header b { color: var(--text); }
+    .fp-table-wrap {
+      max-height: 162px;
+      overflow: auto;
+      padding: 0 24px 8px;
+    }
+    .fp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      min-width: 700px;
+    }
+    .fp-table th {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      text-align: right;
+      color: var(--muted);
+      padding: 4px 10px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      font-weight: 500;
+    }
+    .fp-table th:nth-child(-n+2) { text-align: left; }
+    .fp-table td {
+      padding: 4px 10px;
+      text-align: right;
+      border-bottom: 1px solid #21262d;
+      white-space: nowrap;
+    }
+    .fp-table td:nth-child(-n+2) { text-align: left; }
+    .pos { color: #3fb950; }
+    .neg { color: #f78166; }
+
+    #fear-threshold {
+      width: 44px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 12px;
+      padding: 3px 6px;
+      text-align: center;
+    }
+    #fear-threshold::-webkit-inner-spin-button,
+    #fear-threshold::-webkit-outer-spin-button { -webkit-appearance: none; }
+
     .status {
       padding: 8px 24px;
       color: var(--muted);
@@ -101,6 +174,11 @@
 
   <div class="controls">
     <div id="series-picker"></div>
+
+    <span id="fear-toggle" class="chip" title="標示 F&G 極度恐懼區間">恐懼區</span>
+    <span style="font-size:12px;color:var(--muted)">≤</span>
+    <input type="number" id="fear-threshold" value="20" min="1" max="99" title="F&G 閾值" />
+
     <div class="range-wrap">
       <div id="range-picker">
         <span class="chip" data-range="6M">0.5Y</span>
@@ -120,11 +198,28 @@
   </div>
 
   <div id="chart"></div>
+
+  <div id="fear-panel">
+    <div class="fp-header">
+      <span>恐懼事件 · F&amp;G ≤ <b id="fear-thresh-label">20</b>
+        <span style="margin-left:4px;font-size:11px;opacity:.6">（橘=≤閾值 / 深紅=≤15）</span>
+      </span>
+      <span id="fear-ep-count" style="color:var(--accent)"></span>
+      <span id="fear-price-note"></span>
+    </div>
+    <div class="fp-table-wrap">
+      <table class="fp-table">
+        <thead id="fp-head"></thead>
+        <tbody id="fp-body"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div class="status" id="status">載入中…</div>
 
   <script>
     const SERIES = [
-      { key: "VOO",  file: "data/VOO.json",        color: "#58a6ff", yAxis: 0, default: true  },
+      { key: "VOO",  file: "data/VOO.json",       color: "#58a6ff", yAxis: 0, default: true  },
       { key: "QQQ",  file: "data/QQQ.json",        color: "#f778ba", yAxis: 0, default: true  },
       { key: "SPY",  file: "data/SPY.json",         color: "#a371f7", yAxis: 0, default: false },
       { key: "0050", file: "data/0050.TW.json",     color: "#3fb950", yAxis: 3, default: false },
@@ -138,14 +233,16 @@
     const loaded = {};
     const active = new Set(SERIES.filter(s => s.default).map(s => s.key));
 
-    // range state
-    let rangePreset  = "5Y";
-    let customFrom   = "";
-    let customTo     = "";
+    let rangePreset   = "5Y";
+    let customFrom    = "";
+    let customTo      = "";
+    let fearActive    = false;
+    let fearThreshold = 20;
 
     const dateFrom = document.getElementById("date-from");
     const dateTo   = document.getElementById("date-to");
 
+    // ── Date utils ────────────────────────────────────────────────
     function presetStart(preset) {
       const d = new Date();
       if      (preset === "6M")   d.setMonth(d.getMonth() - 6);
@@ -160,8 +257,7 @@
 
     function currentWindow() {
       if (customFrom) return { from: customFrom, to: customTo || new Date().toISOString().slice(0,10) };
-      const from = presetStart(rangePreset);
-      return { from, to: null };
+      return { from: presetStart(rangePreset), to: null };
     }
 
     function filterRange(rows) {
@@ -171,6 +267,13 @@
       return r;
     }
 
+    function dateAddDays(dateStr, n) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + n);
+      return d.toISOString().slice(0, 10);
+    }
+
+    // ── Loading ───────────────────────────────────────────────────
     async function loadSeries(s) {
       if (loaded[s.key]) return;
       const resp = await fetch(s.file, { cache: "no-cache" });
@@ -182,19 +285,140 @@
       ]);
     }
 
+    async function ensureLoaded(key) {
+      const s = SERIES.find(x => x.key === key);
+      if (s) await loadSeries(s);
+    }
+
+    // ── Fear helpers ──────────────────────────────────────────────
+    function closestOnOrAfter(key, dateStr) {
+      const data = loaded[key];
+      if (!data) return null;
+      for (const [d, c] of data) if (d >= dateStr) return c;
+      return null;
+    }
+
+    function minBetween(key, t0, t1) {
+      const data = loaded[key];
+      if (!data) return null;
+      let min = Infinity, minDate = null;
+      for (const [d, c] of data) {
+        if (d > t1) break;
+        if (d >= t0 && c < min) { min = c; minDate = d; }
+      }
+      return min === Infinity ? null : { price: min, date: minDate };
+    }
+
+    function fearZones(threshold) {
+      const fg = loaded["F&G"];
+      if (!fg) return [];
+      const out = [];
+      let s = null, last = null;
+      for (const [d, v] of fg) {
+        if (v <= threshold) { if (!s) s = d; last = d; }
+        else if (s)         { out.push([s, last]); s = null; }
+      }
+      if (s) out.push([s, last]);
+      return out;
+    }
+
+    function fearEpisodes(threshold) {
+      const fg = loaded["F&G"];
+      if (!fg) return [];
+      const out = [];
+      let s = null, fgMin = 100, last = null;
+      for (const [d, v] of fg) {
+        if (v <= threshold) {
+          if (!s) { s = d; fgMin = 100; }
+          if (v < fgMin) fgMin = v;
+          last = d;
+        } else if (s) {
+          out.push({ start: s, end: last, fgMin,
+            days: Math.round((new Date(last) - new Date(s)) / 86400000) + 1 });
+          s = null;
+        }
+      }
+      if (s) out.push({ start: s, end: last, fgMin,
+        days: Math.round((new Date(last) - new Date(s)) / 86400000) + 1 });
+      return out;
+    }
+
+    // ── Fear panel ────────────────────────────────────────────────
+    function updateChartHeight() {
+      const h = (fearActive && loaded["F&G"]) ? 212 : 0;
+      document.documentElement.style.setProperty("--fear-h", h + "px");
+      setTimeout(() => chart.resize(), 220);
+    }
+
+    function renderFearPanel() {
+      const panel = document.getElementById("fear-panel");
+      if (!fearActive || !loaded["F&G"]) {
+        panel.style.display = "none";
+        updateChartHeight();
+        return;
+      }
+      panel.style.display = "block";
+      document.getElementById("fear-thresh-label").textContent = fearThreshold;
+      updateChartHeight();
+
+      const pk = loaded["SPY"] ? "SPY" : (loaded["VOO"] ? "VOO" : null);
+      const eps = fearEpisodes(fearThreshold).reverse();
+
+      document.getElementById("fear-ep-count").textContent = `${eps.length} 個事件`;
+      document.getElementById("fear-price-note").textContent =
+        pk ? `以 ${pk} 計算` : "（請啟用 SPY 或 VOO 顯示價格）";
+
+      document.getElementById("fp-head").innerHTML = `<tr>
+        <th>#</th><th>期間</th><th>天數</th><th>F&G低</th>
+        ${pk ? `<th>${pk}最低</th><th>最低日</th><th>3M後</th><th>6M後</th><th>漲幅3M</th><th>漲幅6M</th>` : ""}
+      </tr>`;
+
+      if (!pk) {
+        document.getElementById("fp-body").innerHTML =
+          `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:10px">啟用 SPY 或 VOO 以顯示價格欄位</td></tr>`;
+        return;
+      }
+
+      const f  = v => v != null ? "$" + v.toFixed(2) : "—";
+      const fp = (base, v) => {
+        if (base == null || v == null) return `<td style="color:var(--muted)">—</td>`;
+        const pct = (v / base - 1) * 100;
+        return `<td class="${pct >= 0 ? "pos" : "neg"}">${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%</td>`;
+      };
+
+      document.getElementById("fp-body").innerHTML = eps.map((ep, i) => {
+        const minP = minBetween(pk, ep.start, ep.end);
+        const p3m  = closestOnOrAfter(pk, dateAddDays(ep.end, 90));
+        const p6m  = closestOnOrAfter(pk, dateAddDays(ep.end, 180));
+        return `<tr>
+          <td style="color:var(--muted)">${eps.length - i}</td>
+          <td>${ep.start} ~ ${ep.end}</td>
+          <td style="color:var(--muted)">${ep.days}天</td>
+          <td style="color:#fca5a5;font-weight:600">${ep.fgMin}</td>
+          <td><b>${f(minP?.price)}</b></td>
+          <td style="color:var(--muted);font-size:11px">${minP?.date ?? "—"}</td>
+          <td>${f(p3m)}</td>
+          <td>${f(p6m)}</td>
+          ${fp(minP?.price, p3m)}
+          ${fp(minP?.price, p6m)}
+        </tr>`;
+      }).join("");
+    }
+
+    // ── Chart render ──────────────────────────────────────────────
     function render() {
       const series = [];
       const yAxisDef = [
         { id: "price", name: "USD Price", position: "left",
           axisLine: { lineStyle: { color: "#8b949e" } },
           splitLine: { lineStyle: { color: "#21262d" } } },
-        { id: "vix",   name: "VIX",  position: "right",
+        { id: "vix",  name: "VIX",  position: "right",
           axisLine: { lineStyle: { color: "#f0883e" } }, splitLine: { show: false } },
-        { id: "fg",    name: "F&G",  position: "right", offset: 55, min: 0, max: 100,
+        { id: "fg",   name: "F&G",  position: "right", offset: 55, min: 0, max: 100,
           axisLine: { lineStyle: { color: "#e3b341" } }, splitLine: { show: false } },
-        { id: "tw",    name: "TWD",  position: "left",  offset: 55,
+        { id: "tw",   name: "TWD",  position: "left",  offset: 55,
           axisLine: { lineStyle: { color: "#3fb950" } }, splitLine: { show: false } },
-        { id: "btc",   name: "BTC",  position: "right", offset: 110,
+        { id: "btc",  name: "BTC",  position: "right", offset: 110,
           axisLine: { lineStyle: { color: "#f7931a" } }, splitLine: { show: false } },
       ];
 
@@ -212,6 +436,31 @@
         });
       }
 
+      // Fear zone markArea: ≤threshold (light) + ≤15 overlay (deep)
+      if (fearActive && loaded["F&G"]) {
+        const DEEP = 15;
+        const markAreaData = [
+          ...fearZones(fearThreshold).map(([s, e]) => [
+            { xAxis: s, itemStyle: { color: "rgba(239,68,68,0.10)" } },
+            { xAxis: e },
+          ]),
+          ...(fearThreshold > DEEP ? fearZones(DEEP) : []).map(([s, e]) => [
+            { xAxis: s, itemStyle: { color: "rgba(185,28,28,0.22)" } },
+            { xAxis: e },
+          ]),
+        ];
+        series.push({
+          name: "__fearZone",
+          type: "line",
+          data: [],
+          yAxisIndex: 0,
+          lineStyle: { width: 0 },
+          symbol: "none",
+          silent: true,
+          markArea: { silent: true, data: markAreaData },
+        });
+      }
+
       chart.setOption({
         backgroundColor: "transparent",
         tooltip: {
@@ -223,6 +472,7 @@
           formatter(params) {
             let out = `<b>${params[0]?.axisValueLabel}</b><br/>`;
             for (const p of params) {
+              if (p.seriesName.startsWith("__")) continue;
               out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${
                 typeof p.value?.[1] === "number" ? p.value[1].toLocaleString() : "—"
               }</b><br/>`;
@@ -230,7 +480,11 @@
             return out;
           },
         },
-        legend: { data: series.map(s => s.name), textStyle: { color: "#e6edf3" }, top: 6 },
+        legend: {
+          data: series.filter(s => !s.name.startsWith("__")).map(s => s.name),
+          textStyle: { color: "#e6edf3" },
+          top: 6,
+        },
         grid: { left: 80, right: 160, top: 44, bottom: 56 },
         xAxis: {
           type: "time",
@@ -246,12 +500,13 @@
       }, { notMerge: true });
     }
 
+    // ── Series picker ─────────────────────────────────────────────
     function renderSeriesPicker() {
       const wrap = document.getElementById("series-picker");
       wrap.innerHTML = "";
       for (const s of SERIES) {
-        const el = document.createElement("span");
         const on = active.has(s.key);
+        const el = document.createElement("span");
         el.className = "chip";
         el.textContent = s.key;
         el.style.borderColor = on ? s.color : "";
@@ -261,45 +516,65 @@
           else { active.add(s.key); await loadSeries(s); }
           renderSeriesPicker();
           render();
+          if (fearActive) renderFearPanel();
         };
         wrap.appendChild(el);
       }
     }
 
-    // preset range buttons
+    // ── Fear toggle & threshold ───────────────────────────────────
+    document.getElementById("fear-toggle").addEventListener("click", async () => {
+      fearActive = !fearActive;
+      document.getElementById("fear-toggle").classList.toggle("fear-on", fearActive);
+      if (fearActive) {
+        await Promise.all([ensureLoaded("F&G"), ensureLoaded("SPY")]);
+      }
+      render();
+      renderFearPanel();
+    });
+
+    let fThreshTimer = null;
+    document.getElementById("fear-threshold").addEventListener("input", e => {
+      clearTimeout(fThreshTimer);
+      fThreshTimer = setTimeout(() => {
+        const v = parseInt(e.target.value);
+        if (!isNaN(v) && v >= 1 && v <= 99) {
+          fearThreshold = v;
+          render();
+          if (fearActive) renderFearPanel();
+        }
+      }, 300);
+    });
+
+    // ── Range controls ────────────────────────────────────────────
     document.getElementById("range-picker").addEventListener("click", e => {
       const t = e.target.closest(".chip[data-range]");
       if (!t) return;
       rangePreset = t.dataset.range;
-      customFrom = "";
-      customTo   = "";
-      dateFrom.value = "";
-      dateTo.value   = "";
+      customFrom = ""; customTo = "";
+      dateFrom.value = ""; dateTo.value = "";
       for (const c of e.currentTarget.querySelectorAll(".chip"))
         c.classList.toggle("active", c === t);
       render();
     });
 
-    // custom date inputs
     function onDateChange() {
       customFrom = dateFrom.value;
       customTo   = dateTo.value;
-      if (customFrom || customTo) {
-        // deactivate preset highlights
+      if (customFrom || customTo)
         for (const c of document.querySelectorAll("#range-picker .chip"))
           c.classList.remove("active");
-      }
       render();
     }
     dateFrom.addEventListener("change", onDateChange);
     dateTo.addEventListener("change", onDateChange);
 
-    // init date-to = today
     dateTo.value = new Date().toISOString().slice(0, 10);
     dateTo.max   = dateTo.value;
 
     window.addEventListener("resize", () => chart.resize());
 
+    // ── Init ──────────────────────────────────────────────────────
     (async () => {
       const status = document.getElementById("status");
       try {
