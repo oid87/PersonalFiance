@@ -19,6 +19,7 @@ DATA_DIR.mkdir(exist_ok=True)
 SERIES = {
     "DGS10": "US10Y",  # 10-Year Treasury Constant Maturity Rate
     "DGS2":  "US2Y",   # 2-Year Treasury Constant Maturity Rate
+    "M2SL":  "M2",     # M2 Money Stock, seasonally adjusted, billions USD, monthly
 }
 
 
