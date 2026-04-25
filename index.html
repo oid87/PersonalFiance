@@ -229,6 +229,13 @@
       min-height: 300px;
     }
 
+    /* ── 相關係數 tab ─────────────────────────────────────────────── */
+    #corr-chart {
+      width: 100%;
+      height: calc(100vh - 194px);
+      min-height: 300px;
+    }
+
     .status {
       padding: 8px 24px;
       color: var(--muted);
@@ -248,6 +255,7 @@
     <button class="tab-btn active" data-tab="trend">趨勢</button>
     <button class="tab-btn" data-tab="pentagram">五線譜</button>
     <button class="tab-btn" data-tab="macro">宏觀</button>
+    <button class="tab-btn" data-tab="corr">相關係數</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -327,6 +335,7 @@
   <section id="tab-macro" class="tab-section" hidden>
     <div class="controls">
       <span style="font-size:13px;color:var(--muted)">美債殖利率曲線 · 10Y / 2Y / 利差</span>
+      <span id="m2-toggle" class="chip" title="M2 貨幣供給年增率（右軸）">M2年增率</span>
       <div id="macro-range-picker" style="margin-left:auto;display:flex;gap:4px">
         <span class="chip" data-macro-range="5Y">5Y</span>
         <span class="chip active" data-macro-range="10Y">10Y</span>
@@ -336,6 +345,21 @@
     </div>
     <div id="macro-chart"></div>
     <div class="status" id="macro-status">載入中…</div>
+  </section>
+
+  <!-- ── 相關係數 tab ────────────────────────────────────────────── -->
+  <section id="tab-corr" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">日報酬率 Pearson 相關係數</span>
+      <div id="corr-period-picker" style="display:flex;gap:4px;margin-left:12px">
+        <span class="chip" data-corr-period="6M">6M</span>
+        <span class="chip active" data-corr-period="1Y">1Y</span>
+        <span class="chip" data-corr-period="2Y">2Y</span>
+        <span class="chip" data-corr-period="5Y">5Y</span>
+      </div>
+    </div>
+    <div id="corr-chart"></div>
+    <div class="status" id="corr-status">切換至此 tab 自動載入全部標的…</div>
   </section>
 
   <script>
@@ -372,7 +396,11 @@
 
     let macroChart       = null;
     let macroRangePreset = "10Y";
-    const macroLoaded    = {}; // { US10Y: [...], US2Y: [...] }
+    let macroShowM2      = false;
+    const macroLoaded    = {}; // { US10Y: [...], US2Y: [...], M2: [...] }
+
+    let corrChart  = null;
+    let corrPeriod = "1Y";
 
     const dateFrom = document.getElementById("date-from");
     const dateTo   = document.getElementById("date-to");
@@ -409,6 +437,11 @@
         macroChart = echarts.init(document.getElementById("macro-chart"), light ? null : "dark");
         renderMacroTab();
       }
+      if (corrChart) {
+        corrChart.dispose();
+        corrChart = echarts.init(document.getElementById("corr-chart"), light ? null : "dark");
+        renderCorrTab();
+      }
     }
 
     document.getElementById("theme-btn").addEventListener("click", () => applyTheme(!isLight()));
@@ -436,6 +469,13 @@
           setupResizeHandler();
         }
         setTimeout(() => { macroChart.resize(); renderMacroTab(); }, 50);
+      } else if (tabName === "corr") {
+        const el = document.getElementById("corr-chart");
+        if (!corrChart) {
+          corrChart = echarts.init(el, isLight() ? null : "dark");
+          setupResizeHandler();
+        }
+        setTimeout(() => { corrChart.resize(); renderCorrTab(); }, 50);
       }
     }
 
@@ -473,6 +513,36 @@
         let sum = 0;
         for (let j = i - period + 1; j <= i; j++) sum += data[j][1];
         out.push([data[i][0], +(sum / period).toFixed(4)]);
+      }
+      return out;
+    }
+
+    function toArithReturns(data) {
+      const out = [];
+      for (let i = 1; i < data.length; i++) {
+        const prev = data[i-1][1];
+        if (prev !== 0) out.push([data[i][0], (data[i][1] - prev) / prev]);
+      }
+      return out;
+    }
+
+    function pearsonCorr(x, y) {
+      const n = x.length;
+      if (n < 30) return NaN;
+      let sx = 0, sy = 0, sxy = 0, sx2 = 0, sy2 = 0;
+      for (let i = 0; i < n; i++) {
+        sx += x[i]; sy += y[i]; sxy += x[i]*y[i]; sx2 += x[i]*x[i]; sy2 += y[i]*y[i];
+      }
+      const num = n*sxy - sx*sy;
+      const den = Math.sqrt((n*sx2 - sx*sx) * (n*sy2 - sy*sy));
+      return den === 0 ? NaN : num / den;
+    }
+
+    function computeM2YoY(m2data) {
+      const out = [];
+      for (let i = 12; i < m2data.length; i++) {
+        const prev = m2data[i-12][1];
+        if (prev > 0) out.push([m2data[i][0], +((m2data[i][1]/prev - 1)*100).toFixed(2)]);
       }
       return out;
     }
@@ -1148,7 +1218,7 @@
     }
 
     async function loadMacroData() {
-      for (const stem of ["US10Y", "US2Y"]) {
+      for (const stem of ["US10Y", "US2Y", "M2"]) {
         if (macroLoaded[stem]) continue;
         const resp = await fetch(`data/${stem}.json`, { cache: "no-cache" });
         if (!resp.ok) throw new Error(`${stem}: HTTP ${resp.status}`);
@@ -1195,14 +1265,57 @@
       const tipText = tc("#e6edf3", "#1f2328");
       const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
 
+      // M2 YoY series (optional)
+      let m2yoyF = [];
+      if (macroShowM2 && macroLoaded["M2"]) {
+        m2yoyF = filterMacroRange(computeM2YoY(macroLoaded["M2"]));
+      }
+
+      const legendData = ["美債10Y", "美債2Y", "利差 10Y-2Y"];
+      if (macroShowM2) legendData.push("M2年增率");
+
+      const yAxisCfg = macroShowM2 ? [
+        { scale: true, axisLine: { lineStyle: { color: axisClr } },
+          axisLabel: { formatter: v => v + "%", fontSize: 12 },
+          splitLine: { lineStyle: { color: gridClr } } },
+        { scale: true, position: "right",
+          axisLine: { lineStyle: { color: "#3fb950" } },
+          axisLabel: { formatter: v => v + "%", fontSize: 11, color: "#3fb950" },
+          splitLine: { show: false } },
+      ] : {
+        scale: true,
+        axisLine:  { lineStyle: { color: axisClr } },
+        axisLabel: { formatter: v => v + "%", fontSize: 12 },
+        splitLine: { lineStyle: { color: gridClr } },
+      };
+
+      const seriesList = [
+        { ...lineBase, name: "美債10Y", data: y10f, yAxisIndex: 0,
+          lineStyle: { width: 1.8, color: "#58a6ff" }, itemStyle: { color: "#58a6ff" } },
+        { ...lineBase, name: "美債2Y",  data: y2f,  yAxisIndex: 0,
+          lineStyle: { width: 1.8, color: "#f778ba" }, itemStyle: { color: "#f778ba" } },
+        { ...lineBase, name: "利差 10Y-2Y", data: spreadF, yAxisIndex: 0,
+          lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" },
+          itemStyle: { color: "#e3b341" },
+          markArea: { silent: true, data: markAreaData },
+          markLine: {
+            silent: true, symbol: "none",
+            data: [{ yAxis: 0, lineStyle: { color: "rgba(239,68,68,0.55)", type: "solid", width: 1 } }],
+            label: { show: false },
+          },
+        },
+      ];
+      if (macroShowM2) {
+        seriesList.push({ ...lineBase, name: "M2年增率", data: m2yoyF, yAxisIndex: 1,
+          lineStyle: { width: 1.5, color: "#3fb950" }, itemStyle: { color: "#3fb950" } });
+      }
+
       macroChart.setOption({
         backgroundColor: "transparent",
         tooltip: {
           trigger: "axis",
           axisPointer: { type: "cross" },
-          backgroundColor: tipBg,
-          borderColor: tipBdr,
-          textStyle: { color: tipText },
+          backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText },
           formatter(params) {
             const ts = params[0]?.axisValue;
             const dateLabel = ts ? new Date(ts).toISOString().slice(0, 10) : "";
@@ -1216,42 +1329,12 @@
             return out;
           },
         },
-        legend: {
-          data: ["美債10Y", "美債2Y", "利差 10Y-2Y"],
-          textStyle: { color: tipText },
-          top: 6,
-        },
-        grid: { left: 72, right: 24, top: 44, bottom: 56 },
-        xAxis: {
-          type: "time",
-          axisLine: { lineStyle: { color: axisClr } },
-          splitLine: { show: false },
-        },
-        yAxis: {
-          scale: true,
-          axisLine:  { lineStyle: { color: axisClr } },
-          axisLabel: { formatter: v => v + "%", fontSize: 12 },
-          splitLine: { lineStyle: { color: gridClr } },
-        },
-        dataZoom: [
-          { type: "inside" },
-          { type: "slider", height: 18, bottom: 14 },
-        ],
-        series: [
-          { ...lineBase, name: "美債10Y",     data: y10f,    lineStyle: { width: 1.8, color: "#58a6ff" }, itemStyle: { color: "#58a6ff" } },
-          { ...lineBase, name: "美債2Y",      data: y2f,     lineStyle: { width: 1.8, color: "#f778ba" }, itemStyle: { color: "#f778ba" } },
-          {
-            ...lineBase, name: "利差 10Y-2Y", data: spreadF,
-            lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" },
-            itemStyle:  { color: "#e3b341" },
-            markArea: { silent: true, data: markAreaData },
-            markLine: {
-              silent: true, symbol: "none",
-              data: [{ yAxis: 0, lineStyle: { color: "rgba(239,68,68,0.55)", type: "solid", width: 1 } }],
-              label: { show: false },
-            },
-          },
-        ],
+        legend: { data: legendData, textStyle: { color: tipText }, top: 6 },
+        grid: { left: 72, right: macroShowM2 ? 72 : 24, top: 44, bottom: 56 },
+        xAxis: { type: "time", axisLine: { lineStyle: { color: axisClr } }, splitLine: { show: false } },
+        yAxis: yAxisCfg,
+        dataZoom: [{ type: "inside" }, { type: "slider", height: 18, bottom: 14 }],
+        series: seriesList,
       }, { notMerge: true });
 
       const latestSpread = spreadF.at(-1)?.[1];
@@ -1262,6 +1345,12 @@
         `美債殖利率曲線 · ${macroRangePreset} · 目前利差 ${spreadStr} · 倒掛事件 ${invZones.length} 次 · 最新 ${latestDate}`;
     }
 
+    document.getElementById("m2-toggle").addEventListener("click", () => {
+      macroShowM2 = !macroShowM2;
+      document.getElementById("m2-toggle").classList.toggle("active", macroShowM2);
+      renderMacroTab();
+    });
+
     document.getElementById("macro-range-picker").addEventListener("click", e => {
       const t = e.target.closest(".chip[data-macro-range]");
       if (!t) return;
@@ -1269,6 +1358,114 @@
       for (const c of e.currentTarget.querySelectorAll(".chip"))
         c.classList.toggle("active", c === t);
       renderMacroTab();
+    });
+
+    // ── Correlation matrix ─────────────────────────────────────────
+    async function renderCorrTab() {
+      if (!corrChart) return;
+      const statusEl = document.getElementById("corr-status");
+      statusEl.textContent = "載入資料中…";
+
+      try {
+        await Promise.all(SERIES.map(loadSeries));
+      } catch (e) {
+        statusEl.textContent = `載入失敗：${e.message}`; return;
+      }
+
+      const d = new Date();
+      if      (corrPeriod === "6M") d.setMonth(d.getMonth() - 6);
+      else if (corrPeriod === "1Y") d.setFullYear(d.getFullYear() - 1);
+      else if (corrPeriod === "2Y") d.setFullYear(d.getFullYear() - 2);
+      else if (corrPeriod === "5Y") d.setFullYear(d.getFullYear() - 5);
+      const fromDate = d.toISOString().slice(0, 10);
+
+      const keys = SERIES.map(s => s.key).filter(k => loaded[k]);
+
+      // Arithmetic returns per ticker, filtered to period
+      const retMaps = {};
+      for (const k of keys) {
+        const rets = toArithReturns(loaded[k]).filter(r => r[0] >= fromDate);
+        retMaps[k] = new Map(rets.map(r => [r[0], r[1]]));
+      }
+
+      // Intersection of trading dates across all tickers
+      const dateSets = Object.values(retMaps).map(m => new Set(m.keys()));
+      let common = dateSets[0];
+      for (const s of dateSets.slice(1)) common = new Set([...common].filter(x => s.has(x)));
+      const dates = [...common].sort();
+
+      if (dates.length < 30) {
+        corrChart.clear();
+        statusEl.textContent = "共同交易日不足（< 30）"; return;
+      }
+
+      const aligned = {};
+      for (const k of keys) aligned[k] = dates.map(dt => retMaps[k].get(dt) ?? NaN);
+
+      const heatData = [];
+      for (let i = 0; i < keys.length; i++) {
+        for (let j = 0; j < keys.length; j++) {
+          const r = pearsonCorr(aligned[keys[i]], aligned[keys[j]]);
+          heatData.push([j, i, isNaN(r) ? null : +r.toFixed(3)]);
+        }
+      }
+
+      const tipBg   = tc("#161b22", "#ffffff");
+      const tipBdr  = tc("#30363d", "#d0d7de");
+      const tipText = tc("#e6edf3", "#1f2328");
+      const axisClr = tc("#8b949e", "#57606a");
+
+      corrChart.setOption({
+        backgroundColor: "transparent",
+        tooltip: {
+          trigger: "item",
+          backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText },
+          formatter: p => {
+            const v = p.value?.[2];
+            if (v == null) return "";
+            return `<b>${keys[p.value[1]]} × ${keys[p.value[0]]}</b><br/>r = <b>${v.toFixed(3)}</b>`;
+          },
+        },
+        visualMap: {
+          min: -1, max: 1, orient: "horizontal", left: "center", bottom: 14,
+          itemWidth: 12, itemHeight: 100,
+          text: ["+1", "−1"], textStyle: { color: tipText, fontSize: 11 },
+          inRange: { color: ["#1565c0", "#c8d8f0", "#f5f5f5", "#f5c0c0", "#c62828"] },
+        },
+        grid: { top: 24, bottom: 72, left: 56, right: 20 },
+        xAxis: {
+          type: "category", data: keys, splitArea: { show: true },
+          axisLine: { lineStyle: { color: axisClr } },
+          axisLabel: { color: tipText, fontSize: 12 },
+        },
+        yAxis: {
+          type: "category", data: keys, splitArea: { show: true },
+          axisLine: { lineStyle: { color: axisClr } },
+          axisLabel: { color: tipText, fontSize: 12 },
+        },
+        series: [{
+          type: "heatmap",
+          data: heatData,
+          label: {
+            show: true,
+            fontSize: 12,
+            formatter: p => p.value?.[2] != null ? p.value[2].toFixed(2) : "—",
+          },
+          emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,.3)" } },
+        }],
+      }, { notMerge: true });
+
+      statusEl.textContent =
+        `日報酬率相關係數 · ${corrPeriod} · ${dates.length} 個共同交易日 · 對角線 = 完全正相關`;
+    }
+
+    document.getElementById("corr-period-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-corr-period]");
+      if (!t) return;
+      corrPeriod = t.dataset.corrPeriod;
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
+      renderCorrTab();
     });
 
     // ── Init ───────────────────────────────────────────────────────
