@@ -27,6 +27,7 @@ TICKERS: dict[str, tuple[str, str]] = {
     "^VIX":    ("VIX",     "1990-01-02"),
     "GLD":     ("GLD",     "2004-11-18"),
     "BTC-USD": ("BTC",     "2014-09-17"),
+    "TLT":     ("TLT",     "2002-07-30"),  # iShares 20+ Year Treasury Bond ETF
     # US Sector ETFs (SPDR) — used in 產業輪動 tab
     "XLK":     ("XLK",     "1998-12-22"),  # Technology
     "XLF":     ("XLF",     "1998-12-22"),  # Financials

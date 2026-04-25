@@ -249,6 +249,36 @@
       font-size: 12px;
       border-top: 1px solid var(--border);
     }
+
+    /* ── 現金王 tab ─────────────────────────────────────────────── */
+    #ck-summary {
+      display: flex;
+      gap: 24px;
+      padding: 10px 24px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      font-size: 13px;
+      align-items: center;
+    }
+    .ck-stat-val { font-size: 16px; font-weight: 600; margin-right: 2px; }
+    .ck-badge {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #c62828;
+      color: #fff;
+    }
+    #ck-table-wrap {
+      max-height: calc(100vh - 250px);
+      overflow-y: auto;
+      padding: 0 24px 8px;
+    }
+    .ck-row-4 > td { background: rgba(239,68,68,0.10); }
+    .ck-row-3 > td { background: rgba(251,146,60,0.07); }
+    .ck-badge-gold { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #d4a843; color: #1a1a1a; }
+    .ck-row-gold > td { background: rgba(212,168,67,0.08); }
   </style>
 </head>
 <body class="light">
@@ -264,6 +294,7 @@
     <button class="tab-btn" data-tab="macro">宏觀</button>
     <button class="tab-btn" data-tab="corr">相關係數</button>
     <button class="tab-btn" data-tab="sector">產業輪動</button>
+    <button class="tab-btn" data-tab="cashking">現金王</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -370,6 +401,34 @@
     <div class="status" id="sector-status">切換至此 tab 自動載入產業數據…</div>
   </section>
 
+  <!-- ── 現金王 tab ────────────────────────────────────────────── -->
+  <section id="tab-cashking" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">GLD · BTC · TLT · QQQ — 4週累積同跌 · 現金為王訊號</span>
+      <div id="ck-window-picker" style="display:flex;gap:4px;margin-left:auto">
+        <span class="chip active" data-ck-window="4">4週窗口</span>
+        <span class="chip" data-ck-window="8">8週窗口</span>
+      </div>
+      <div id="ck-mode-picker" style="display:flex;gap:4px">
+        <span class="chip" data-ck-mode="week">週報酬</span>
+        <span class="chip active" data-ck-mode="4w">累積%</span>
+      </div>
+      <div id="ck-filter-picker" style="display:flex;gap:4px">
+        <span class="chip active" data-ck-filter="all">全部</span>
+        <span class="chip" data-ck-filter="3">≥3/4 跌</span>
+        <span class="chip" data-ck-filter="4">4/4 全跌</span>
+      </div>
+    </div>
+    <div id="ck-summary"></div>
+    <div id="ck-table-wrap">
+      <table class="fp-table">
+        <thead id="ck-head"></thead>
+        <tbody id="ck-body"></tbody>
+      </table>
+    </div>
+    <div class="status" id="ck-status">切換至此 tab 自動載入…</div>
+  </section>
+
   <!-- ── 相關係數 tab ────────────────────────────────────────────── -->
   <section id="tab-corr" class="tab-section" hidden>
     <div class="controls">
@@ -431,6 +490,20 @@
     let sectorSortCol = "1M";
     const sectorLoaded = {}; // { XLK: [...], XLF: [...], ... }
     const SECTOR_ETFS  = ["XLK","XLF","XLV","XLE","XLI","XLY","XLP","XLU","XLRE","XLB","XLC"];
+
+    // ── 現金王 state ───────────────────────────────────────────────
+    const CK_ASSETS = [
+      { key: "GLD", color: "#d4a843", file: "data/GLD.json" },
+      { key: "BTC", color: "#f7931a", file: "data/BTC.json" },
+      { key: "TLT", color: "#58d9f9", file: "data/TLT.json" },
+      { key: "QQQ", color: "#f778ba", file: "data/QQQ.json" },
+    ];
+    const ckRaw = {};
+    let ckFilter = "all";
+    let ckMode = "4w";
+    let ckWindow = 4;
+    let ckWeeklyData = null;
+    let ckInited = false;
     const SECTOR_LABEL = {
       XLK:"科技", XLF:"金融", XLV:"醫療", XLE:"能源", XLI:"工業",
       XLY:"非必需消費", XLP:"必需消費", XLU:"公用", XLRE:"不動產", XLB:"材料", XLC:"通訊",
@@ -481,6 +554,7 @@
         sectorChart = echarts.init(document.getElementById("sector-chart"), light ? null : "dark");
         renderSectorTab();
       }
+      if (ckInited) renderCKTab();
     }
 
     document.getElementById("theme-btn").addEventListener("click", () => applyTheme(!isLight()));
@@ -522,6 +596,8 @@
           setupResizeHandler();
         }
         setTimeout(() => { sectorChart.resize(); renderSectorTab(); }, 50);
+      } else if (tabName === "cashking") {
+        initCKTab();
       }
     }
 
@@ -1008,6 +1084,10 @@
       return [...byWeek.values()].sort((a, b) => a[0] < b[0] ? -1 : 1);
     }
 
+    // 樂活通道倍數：sentimentinsideout 對 QQQ 0.5Y 的 555/611/666 對應到
+    // MA20 ± 2.5σ（我們算 611.74 ± 2.5×21.71 = [557.5, 666.0]）。
+    const CHANNEL_SIGMA_MULT = 2.5;
+
     function computeChannelBands(weeklyAll) {
       const N = 20;
       const ma20 = [], upper = [], lower = [];
@@ -1019,8 +1099,8 @@
         const sigma = Math.sqrt(variance);
         const date = weeklyAll[i][0];
         ma20.push([date, +mean.toFixed(4)]);
-        upper.push([date, +(mean + 2 * sigma).toFixed(4)]);
-        lower.push([date, +(mean - 2 * sigma).toFixed(4)]);
+        upper.push([date, +(mean + CHANNEL_SIGMA_MULT * sigma).toFixed(4)]);
+        lower.push([date, +(mean - CHANNEL_SIGMA_MULT * sigma).toFixed(4)]);
       }
       return { ma20, upper, lower };
     }
@@ -1051,7 +1131,7 @@
       else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
       const fromDate = d.toISOString().slice(0, 10);
 
-      const priceW  = allDaily.filter(r => r[0] >= fromDate);
+      const priceW  = weekly.filter(r => r[0] >= fromDate);
       const ma20w   = bands.ma20.filter(r => r[0] >= fromDate);
       const upperW  = bands.upper.filter(r => r[0] >= fromDate);
       const lowerW  = bands.lower.filter(r => r[0] >= fromDate);
@@ -1087,7 +1167,7 @@
           },
         },
         legend: {
-          data: ["上軌 +2σ", "MA20", "價格", "下軌 -2σ"],
+          data: ["上軌 +2.5σ", "MA20", "價格", "下軌 -2.5σ"],
           textStyle: { color: tipText, fontSize: 13 },
           top: 6,
         },
@@ -1109,15 +1189,15 @@
           { type: "slider", height: 18, bottom: 14 },
         ],
         series: [
-          { ...lineBase, name: "上軌 +2σ", data: upperW,    lineStyle: { width: 1.5, color: "#e91e63" },                  itemStyle: { color: "#e91e63" } },
-          { ...lineBase, name: "MA20",     data: ma20w,    lineStyle: { width: 1.5, color: "#9e9e9e", type: "dashed" }, itemStyle: { color: "#9e9e9e" } },
-          { ...lineBase, name: "價格",     data: priceW,    lineStyle: { width: 1.8, color: s.color },                   itemStyle: { color: s.color } },
-          { ...lineBase, name: "下軌 -2σ", data: lowerW,   lineStyle: { width: 1.5, color: "#1565c0" },                  itemStyle: { color: "#1565c0" } },
+          { ...lineBase, name: "上軌 +2.5σ", data: upperW,    lineStyle: { width: 1.5, color: "#e91e63" },                  itemStyle: { color: "#e91e63" } },
+          { ...lineBase, name: "MA20",       data: ma20w,    lineStyle: { width: 1.5, color: "#9e9e9e", type: "dashed" }, itemStyle: { color: "#9e9e9e" } },
+          { ...lineBase, name: "價格",       data: priceW,    lineStyle: { width: 1.8, color: s.color },                   itemStyle: { color: s.color } },
+          { ...lineBase, name: "下軌 -2.5σ", data: lowerW,   lineStyle: { width: 1.5, color: "#1565c0" },                  itemStyle: { color: "#1565c0" } },
         ],
       }, { notMerge: true });
 
       statusEl.textContent =
-        `${pentaActiveTicker} 樂活通道 · ${pentaPeriod} · MA20 週線 ±2σ · ${weekly.length} 週完整歷史`;
+        `${pentaActiveTicker} 樂活通道 · ${pentaPeriod} · MA20 週線 ±2.5σ · ${weekly.length} 週完整歷史`;
     }
 
     // ── Pentagram render ───────────────────────────────────────────
@@ -1545,6 +1625,215 @@
       renderSectorTab();
     });
 
+    // ── 現金王 tab ────────────────────────────────────────────────
+    async function loadCKData() {
+      await Promise.all([
+        ...CK_ASSETS.map(async ({ key, file }) => {
+          if (ckRaw[key]) return;
+          const resp = await fetch(file, { cache: "no-cache" });
+          if (!resp.ok) throw new Error(`${key}: HTTP ${resp.status}`);
+          const j = await resp.json();
+          ckRaw[key] = (j.data || []).map(r => [r.date, r.close]);
+        }),
+        (async () => {
+          if (ckRaw["F&G"]) return;
+          const resp = await fetch("data/fear_greed.json", { cache: "no-cache" });
+          if (!resp.ok) throw new Error("F&G: HTTP " + resp.status);
+          const j = await resp.json();
+          ckRaw["F&G"] = (j.data || []).map(r => [r.date, r.value]);
+        })(),
+      ]);
+    }
+
+    function ckWeekStart(dateStr) {
+      const d = new Date(dateStr + "T12:00:00Z");
+      const day = d.getUTCDay();
+      d.setUTCDate(d.getUTCDate() - (day === 0 ? 6 : day - 1));
+      return d.toISOString().slice(0, 10);
+    }
+
+    function ckWeeklyCloses(data) {
+      const m = {};
+      for (const [d, c] of data) m[ckWeekStart(d)] = c;
+      return m;
+    }
+
+    function computeCKWeekly() {
+      const closes = {};
+      for (const { key } of CK_ASSETS) {
+        closes[key] = ckRaw[key] ? ckWeeklyCloses(ckRaw[key]) : {};
+      }
+
+      // F&G min per week
+      const fgWk = {};
+      for (const [d, v] of (ckRaw["F&G"] || [])) {
+        const w = ckWeekStart(d);
+        if (!(w in fgWk) || v < fgWk[w]) fgWk[w] = v;
+      }
+
+      // Use QQQ weeks as reference timeline from 2014-10
+      const weeks = Object.keys(closes["QQQ"]).filter(w => w >= "2014-10-01").sort();
+
+      const rows = [];
+      for (let i = 8; i < weeks.length; i++) {
+        const w = weeks[i], wPrev = weeks[i - 1];
+        const w4 = weeks[i - 4], w8 = weeks[i - 8];
+
+        const weekRets = {}, cum4Rets = {}, cum8Rets = {};
+        let weekDown = 0, cum4Down = 0, cum8Down = 0;
+
+        for (const { key } of CK_ASSETS) {
+          const cW = closes[key][w], cP = closes[key][wPrev];
+          const c4 = closes[key][w4], c8 = closes[key][w8];
+          weekRets[key] = (cP && cW) ? (cW - cP) / cP : null;
+          cum4Rets[key] = (c4 && cW) ? (cW - c4) / c4 : null;
+          cum8Rets[key] = (c8 && cW) ? (cW - c8) / c8 : null;
+          if (weekRets[key] != null && weekRets[key] < 0) weekDown++;
+          if (cum4Rets[key] != null && cum4Rets[key] < 0) cum4Down++;
+          if (cum8Rets[key] != null && cum8Rets[key] < 0) cum8Down++;
+        }
+
+        // F&G min across 4-week and 8-week windows
+        let fgMin4w = null, fgMin8w = null;
+        for (let j = i - 7; j <= i; j++) {
+          const v = fgWk[weeks[j]];
+          if (v == null) continue;
+          if (fgMin8w == null || v < fgMin8w) fgMin8w = v;
+          if (j >= i - 3 && (fgMin4w == null || v < fgMin4w)) fgMin4w = v;
+        }
+
+        const cNow = closes["QQQ"][w];
+        const cF4  = i + 4  < weeks.length ? closes["QQQ"][weeks[i + 4]]  : null;
+        const cF8  = i + 8  < weeks.length ? closes["QQQ"][weeks[i + 8]]  : null;
+
+        const ftg4w = ["QQQ","BTC","TLT"].every(k => cum4Rets[k] != null && cum4Rets[k] < 0)
+          && cum4Rets["GLD"] != null && cum4Rets["GLD"] > 0;
+        const ftg8w = ["QQQ","BTC","TLT"].every(k => cum8Rets[k] != null && cum8Rets[k] < 0)
+          && cum8Rets["GLD"] != null && cum8Rets["GLD"] > 0;
+
+        rows.push({
+          w, weekRets, cum4Rets, cum8Rets,
+          weekDown, cum4Down, cum8Down,
+          fgMin4w, fgMin8w, ftg4w, ftg8w,
+          fwd4w: (cNow && cF4) ? (cF4 / cNow - 1) : null,
+          fwd8w: (cNow && cF8) ? (cF8 / cNow - 1) : null,
+        });
+      }
+      return rows;
+    }
+
+    function renderCKTab() {
+      if (!ckWeeklyData) return;
+      const pct = v => v != null ? `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%` : "—";
+      const clr = v => v == null ? "" : v >= 0 ? "pos" : "neg";
+      const use4w = ckMode === "4w";
+      const wn = ckWindow; // 4 or 8
+      const cumRetsKey  = wn === 8 ? "cum8Rets"  : "cum4Rets";
+      const cumDownKey  = wn === 8 ? "cum8Down"  : "cum4Down";
+      const fgMinKey    = wn === 8 ? "fgMin8w"   : "fgMin4w";
+      const ftgKey      = wn === 8 ? "ftg8w"     : "ftg4w";
+
+      const ckAll4 = ckWeeklyData.filter(r => r[cumDownKey] === 4);
+      const signalRows = ckAll4.filter(r => r[fgMinKey] != null && r[fgMinKey] < 25);
+      const flightRows = ckWeeklyData.filter(r => r[ftgKey] && r[fgMinKey] != null && r[fgMinKey] < 25);
+      const f4 = ckAll4.filter(r => r.fwd4w != null), f8 = ckAll4.filter(r => r.fwd8w != null);
+      const avg4w = f4.length ? f4.reduce((s, r) => s + r.fwd4w, 0) / f4.length : null;
+      const avg8w = f8.length ? f8.reduce((s, r) => s + r.fwd8w, 0) / f8.length : null;
+
+      document.getElementById("ck-summary").innerHTML = `
+        <span>4/4 全跌（${wn}週）<span class="ck-stat-val">${ckAll4.length}</span> 週</span>
+        <span><span class="ck-badge">現金王</span> +F&amp;G&lt;25：<span class="ck-stat-val">${signalRows.length}</span> 週</span>
+        <span><span class="ck-badge-gold">逃往黃金</span> +F&amp;G&lt;25：<span class="ck-stat-val">${flightRows.length}</span> 週</span>
+        <span>現金王後4W QQQ：<span class="ck-stat-val ${clr(avg4w)}">${pct(avg4w)}</span></span>
+        <span>現金王後8W QQQ：<span class="ck-stat-val ${clr(avg8w)}">${pct(avg8w)}</span></span>
+      `;
+
+      const filtered = ckWeeklyData.filter(r => {
+        const dc = r[cumDownKey];
+        if (ckFilter === "4") return dc === 4;
+        if (ckFilter === "3") return dc >= 3;
+        return true;
+      }).slice().reverse();
+
+      const modeLabel = use4w ? `${wn}週累積` : "當週";
+      document.getElementById("ck-head").innerHTML = `<tr>
+        <th style="text-align:left">週(一)</th>
+        <th style="color:#d4a843">GLD<br/><span style="font-weight:400;font-size:10px;opacity:.7">${modeLabel}</span></th>
+        <th style="color:#f7931a">BTC<br/><span style="font-weight:400;font-size:10px;opacity:.7">${modeLabel}</span></th>
+        <th style="color:#58d9f9">TLT<br/><span style="font-weight:400;font-size:10px;opacity:.7">${modeLabel}</span></th>
+        <th style="color:#f778ba">QQQ<br/><span style="font-weight:400;font-size:10px;opacity:.7">${modeLabel}</span></th>
+        <th>${wn}週下跌</th>
+        <th>F&amp;G低<br/><span style="font-weight:400;font-size:10px;opacity:.7">${wn}週內</span></th>
+        <th>訊號</th>
+      </tr>`;
+
+      document.getElementById("ck-body").innerHTML = filtered.map(r => {
+        const rets     = use4w ? r[cumRetsKey] : r.weekRets;
+        const cumDown  = r[cumDownKey];
+        const fgMin    = r[fgMinKey];
+        const isSignal   = cumDown === 4 && fgMin != null && fgMin < 25;
+        const isFlight   = r[ftgKey] && fgMin != null && fgMin < 25;
+        const rowCls     = isSignal ? "ck-row-4" : isFlight ? "ck-row-gold" : cumDown === 4 ? "ck-row-3" : "";
+        const badge      = isSignal
+          ? `<span class="ck-badge">現金王</span>`
+          : isFlight
+            ? `<span class="ck-badge-gold">逃往黃金</span>`
+            : cumDown === 4 ? `<span style="color:var(--muted);font-size:11px">4/4</span>` : "";
+        const fgCls    = fgMin != null && fgMin < 25 ? "fear-val" : "";
+        return `<tr class="${rowCls}">
+          <td style="text-align:left;font-weight:500;font-size:11px">${r.w}</td>
+          ${CK_ASSETS.map(a => `<td class="${clr(rets[a.key])}">${pct(rets[a.key])}</td>`).join("")}
+          <td style="color:var(--muted)">${cumDown}/4</td>
+          <td class="${fgCls}">${fgMin != null ? fgMin : "—"}</td>
+          <td>${badge}</td>
+        </tr>`;
+      }).join("");
+
+      document.getElementById("ck-status").textContent =
+        `顯示 ${filtered.length} 週 · 資料 2014/10 起 · 訊號 = ${wn}週累積全跌 + F&G < 25`;
+    }
+
+    async function initCKTab() {
+      if (ckInited) { renderCKTab(); return; }
+      const statusEl = document.getElementById("ck-status");
+      statusEl.textContent = "載入中…";
+      try {
+        await loadCKData();
+        ckWeeklyData = computeCKWeekly();
+        ckInited = true;
+        renderCKTab();
+      } catch (e) {
+        statusEl.textContent = `載入失敗：${e.message}`;
+      }
+    }
+
+    document.getElementById("ck-filter-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-ck-filter]");
+      if (!t) return;
+      ckFilter = t.dataset.ckFilter;
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
+      if (ckInited) renderCKTab();
+    });
+
+    document.getElementById("ck-mode-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-ck-mode]");
+      if (!t) return;
+      ckMode = t.dataset.ckMode;
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
+      if (ckInited) renderCKTab();
+    });
+
+    document.getElementById("ck-window-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-ck-window]");
+      if (!t) return;
+      ckWindow = +t.dataset.ckWindow;
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
+      if (ckInited) renderCKTab();
+    });
+
     // ── Correlation matrix ─────────────────────────────────────────
     async function renderCorrTab() {
       if (!corrChart) return;
@@ -1564,7 +1853,9 @@
       else if (corrPeriod === "5Y") d.setFullYear(d.getFullYear() - 5);
       const fromDate = d.toISOString().slice(0, 10);
 
-      const keys = SERIES.map(s => s.key).filter(k => loaded[k]);
+      // F&G is a 0–100 sentiment oscillator, not a price series — arithmetic
+      // returns on a bounded index don't carry the same meaning as on prices.
+      const keys = SERIES.map(s => s.key).filter(k => loaded[k] && k !== "F&G");
 
       // Arithmetic returns per ticker, filtered to period
       const retMaps = {};
