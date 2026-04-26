@@ -26,8 +26,12 @@ TICKERS: dict[str, tuple[str, str]] = {
     "SPY":     ("SPY",     "1993-01-29"),
     "^VIX":    ("VIX",     "1990-01-02"),
     "GLD":     ("GLD",     "2004-11-18"),
+    "GC=F":    ("GCF",     "2000-01-01"),  # Gold Futures (continuous) — 3資產模式用，比GLD早
     "BTC-USD": ("BTC",     "2014-09-17"),
     "TLT":     ("TLT",     "2002-07-30"),  # iShares 20+ Year Treasury Bond ETF
+    # Credit spread proxy — used in 情緒 tab
+    "HYG":     ("HYG",     "2007-04-11"),  # iShares HY Corporate Bond ETF
+    "LQD":     ("LQD",     "2002-07-30"),  # iShares IG Corporate Bond ETF
     # US Sector ETFs (SPDR) — used in 產業輪動 tab
     "XLK":     ("XLK",     "1998-12-22"),  # Technology
     "XLF":     ("XLF",     "1998-12-22"),  # Financials
@@ -40,6 +44,8 @@ TICKERS: dict[str, tuple[str, str]] = {
     "XLRE":    ("XLRE",    "2015-10-09"),  # Real Estate
     "XLB":     ("XLB",     "1998-12-22"),  # Materials
     "XLC":     ("XLC",     "2018-06-18"),  # Communication Services
+    # Semiconductor ETF — used in 五線譜 tab
+    "SOXX":    ("SOXX",    "2001-07-10"),  # iShares PHLX Semiconductor ETF
 }
 
 
