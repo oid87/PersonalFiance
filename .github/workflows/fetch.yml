@@ -39,6 +39,12 @@ jobs:
       - name: Fetch QQQ valuation (forward PE)
         run: python scripts/fetch_qqq_valuation.py
 
+      - name: Fetch S&P 500 trailing PE
+        run: python scripts/fetch_sp500_pe.py
+
+      - name: Compute sentiment score
+        run: python scripts/compute_sentiment.py
+
       - name: Commit updates
         run: |
           git config user.name  "github-actions[bot]"

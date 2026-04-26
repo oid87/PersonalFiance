@@ -74,6 +74,7 @@
     }
     .tab-btn:hover { color: var(--text); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-btn[data-tooltip]::after { bottom: auto; top: calc(100% + 8px); }
     .tab-section[hidden] { display: none !important; }
 
     /* ── Shared controls ──────────────────────────────────────────── */
@@ -112,6 +113,39 @@
       border-color: #cf222e;
       color: #cf222e;
     }
+    .chip.fg-on {
+      background: rgba(227,179,65,0.15);
+      border-color: #e3b341;
+      color: #e3b341;
+    }
+    body.light .chip.fg-on {
+      background: rgba(176,136,0,0.08);
+      border-color: #b08800;
+      color: #b08800;
+    }
+    /* ── Chip hover tooltips ─────────────────────── */
+    [data-tooltip] { position: relative; }
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15,23,42,.96);
+      color: #e2e8f0;
+      font-size: 11.5px;
+      line-height: 1.5;
+      padding: 6px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .18s;
+      z-index: 9999;
+      border: 1px solid rgba(255,255,255,.1);
+      box-shadow: 0 4px 14px rgba(0,0,0,.5);
+    }
+    [data-tooltip]:hover::after { opacity: 1; }
     .range-wrap {
       margin-left: auto;
       display: flex;
@@ -244,10 +278,36 @@
     }
 
     /* ── 估值 tab ─────────────────────────────────────────────────── */
-    #val-chart {
-      width: 100%;
-      height: calc(100vh - 194px);
-      min-height: 420px;
+    .val-link-card {
+      display: flex; align-items: center; gap: 20px;
+      padding: 22px 28px; border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.04);
+      text-decoration: none; color: inherit;
+      transition: background .15s, border-color .15s, transform .12s;
+    }
+    .val-link-card:hover {
+      background: rgba(255,255,255,.09);
+      border-color: rgba(255,255,255,.22);
+      transform: translateY(-1px);
+    }
+    .val-link-icon {
+      font-size: 28px; line-height: 1; opacity: .7; flex-shrink: 0;
+    }
+    .val-link-title {
+      font-size: 17px; font-weight: 600; margin-bottom: 5px;
+    }
+    .val-link-sub {
+      font-size: 13px; color: var(--muted);
+    }
+    .val-link-badge {
+      margin-left: auto; flex-shrink: 0; text-align: right;
+    }
+    .val-link-badge .badge-val {
+      font-size: 26px; font-weight: 700; letter-spacing: -.5px;
+    }
+    .val-link-badge .badge-label {
+      font-size: 11px; color: var(--muted); margin-top: 2px;
     }
 
     .status {
@@ -286,6 +346,70 @@
     .ck-row-3 > td { background: rgba(251,146,60,0.07); }
     .ck-badge-gold { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #d4a843; color: #1a1a1a; }
     .ck-row-gold > td { background: rgba(212,168,67,0.08); }
+
+    /* ── 情緒 tab ─────────────────────────────────────────────────── */
+    #sentiment-top {
+      display: flex; gap: 24px; padding: 16px 24px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center;
+    }
+    #sentiment-gauge { width: 260px; height: 170px; flex-shrink: 0; }
+    .sent-label-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: -8px; padding: 0 4px; font-size: 12px; color: var(--muted);
+    }
+    .sent-label-row b { color: var(--text); font-size: 14px; }
+    .sent-indicators { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 11px; }
+    .sent-ind-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .sent-ind-label { width: 170px; color: var(--muted); flex-shrink: 0; font-size: 12px; }
+    .sent-ind-bar-bg {
+      flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+    }
+    .sent-ind-bar { height: 100%; border-radius: 4px; transition: width .4s ease; }
+    .sent-ind-val { width: 38px; text-align: right; font-weight: 600; font-size: 13px; }
+    #sentiment-chart {
+      width: 100%; height: calc(100vh - 430px); min-height: 280px;
+    }
+    .sent-backtest { padding: 10px 24px 16px; border-top: 1px solid var(--border); }
+    .sent-bt-title { font-size: 13px; font-weight: 600; margin: 10px 0 6px; color: var(--text); }
+    .sent-stats-row {
+      display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 10px; font-size: 13px;
+    }
+    .sent-stat-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
+    .sent-stat-val { font-size: 18px; font-weight: 700; }
+    .sent-bt-wrap { max-height: 220px; overflow-y: auto; margin-bottom: 14px; }
+    .sent-bt-table {
+      width: 100%; border-collapse: collapse; font-size: 12px; min-width: 520px;
+    }
+    .sent-bt-table th {
+      position: sticky; top: 0; background: var(--bg);
+      text-align: right; color: var(--muted); padding: 4px 10px;
+      border-bottom: 1px solid var(--border); font-weight: 500; white-space: nowrap;
+    }
+    .sent-bt-table th:nth-child(-n+2) { text-align: left; }
+    .sent-bt-table td {
+      padding: 4px 10px; text-align: right;
+      border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    .sent-bt-table td:nth-child(-n+2) { text-align: left; }
+    .sent-bt-table tr.avg-row td {
+      font-weight: 700; background: rgba(88,166,255,0.06);
+    }
+    /* ── 說明面板 ─────────────────────────────────────────────────── */
+    .info-panel { margin: 0 24px 20px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .info-panel-header {
+      display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+      cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted);
+      background: var(--panel); user-select: none;
+    }
+    .info-panel-header:hover { color: var(--text); }
+    .info-panel-header .chevron { display: inline-block; transition: transform .2s; font-style: normal; font-size: 10px; }
+    .info-panel-header.open .chevron { transform: rotate(90deg); }
+    .info-panel-body { display: none; padding: 14px 20px 16px; font-size: 13px; line-height: 1.75; border-top: 1px solid var(--border); }
+    .info-panel-body.open { display: block; }
+    .info-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12px; }
+    .info-table th { padding: 5px 10px; text-align: left; background: var(--panel); color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+    .info-table td { padding: 5px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+    .info-table tr:last-child td { border-bottom: none; }
   </style>
 </head>
 <body class="light">
@@ -296,13 +420,14 @@
   </header>
 
   <nav class="tab-bar">
-    <button class="tab-btn active" data-tab="trend">趨勢</button>
-    <button class="tab-btn" data-tab="pentagram">五線譜</button>
-    <button class="tab-btn" data-tab="macro">宏觀</button>
-    <button class="tab-btn" data-tab="corr">相關係數</button>
-    <button class="tab-btn" data-tab="sector">產業輪動</button>
-    <button class="tab-btn" data-tab="cashking">現金王</button>
-    <button class="tab-btn" data-tab="valuation">估值</button>
+    <button class="tab-btn active" data-tab="trend" data-tooltip="S&P 500 / QQQ 走勢 · 移動均線 · 恐懼貪婪區間">趨勢</button>
+    <button class="tab-btn" data-tab="pentagram" data-tooltip="各資產相對均值偏離程度（±σ通道）">五線譜</button>
+    <button class="tab-btn" data-tab="macro" data-tooltip="美債殖利率曲線 · M2貨幣供給 · Shiller CAPE">宏觀</button>
+    <button class="tab-btn" data-tab="corr" data-tooltip="各資產日報酬率 Pearson 相關係數熱力圖">相關係數</button>
+    <button class="tab-btn" data-tab="sector" data-tooltip="美股11大產業 ETF 各期間報酬排名">產業輪動</button>
+    <button class="tab-btn" data-tab="cashking" data-tooltip="GLD/BTC/TLT/QQQ 同跌 + F&G 低 → 持現金訊號">現金為王時刻</button>
+    <button class="tab-btn" data-tab="valuation" data-tooltip="Forward P/E 估值連結 · MacroMicro（QQQ / SPY）">估值</button>
+    <button class="tab-btn" data-tab="sentiment" data-tooltip="VIX · 信用利差 · SPY趨勢 · 避險資金 — 4指標複合情緒 + 回測">情緒</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -311,9 +436,9 @@
       <div id="series-picker"></div>
 
       <div id="ma-picker" style="display:flex;gap:4px">
-        <span class="chip" data-ma="20">MA20</span>
-        <span class="chip" data-ma="50">MA50</span>
-        <span class="chip" data-ma="200">MA200</span>
+        <span class="chip" data-ma="20" data-tooltip="20日均線：短期趨勢，常見支撐壓力位">MA20</span>
+        <span class="chip" data-ma="50" data-tooltip="50日均線：中期趨勢，機構常用基準線">MA50</span>
+        <span class="chip" data-ma="200" data-tooltip="200日均線：長期牛熊分界，站上為多頭訊號">MA200</span>
       </div>
 
       <span id="fear-toggle" class="chip" title="標示 F&G 極度恐懼區間">恐懼區</span>
@@ -322,13 +447,13 @@
 
       <div class="range-wrap">
         <div id="range-picker">
-          <span class="chip" data-range="6M">0.5Y</span>
-          <span class="chip" data-range="1Y6M">1.5Y</span>
-          <span class="chip" data-range="3.5Y">3.5Y</span>
-          <span class="chip active" data-range="5Y">5Y</span>
-          <span class="chip" data-range="10Y">10Y</span>
-          <span class="chip" data-range="20Y">20Y</span>
-          <span class="chip" data-range="MAX">MAX</span>
+          <span class="chip" data-range="6M" data-tooltip="顯示近半年走勢">0.5Y</span>
+          <span class="chip" data-range="1Y6M" data-tooltip="顯示近1.5年走勢">1.5Y</span>
+          <span class="chip" data-range="3.5Y" data-tooltip="顯示近3.5年走勢">3.5Y</span>
+          <span class="chip active" data-range="5Y" data-tooltip="顯示近5年走勢">5Y</span>
+          <span class="chip" data-range="10Y" data-tooltip="顯示近10年走勢">10Y</span>
+          <span class="chip" data-range="20Y" data-tooltip="顯示近20年走勢">20Y</span>
+          <span class="chip" data-range="MAX" data-tooltip="顯示全部可用歷史數據">MAX</span>
         </div>
         <div class="date-inputs">
           <input type="date" id="date-from" title="開始日期" />
@@ -365,30 +490,52 @@
       <span style="font-size:13px;color:var(--muted);flex-shrink:0">標的</span>
       <div id="penta-ticker-picker"></div>
       <div id="penta-mode-picker" style="display:flex;gap:4px;margin-left:12px;flex-shrink:0">
-        <span class="chip active" data-mode="pentagram">五線譜</span>
-        <span class="chip" data-mode="channel">通道</span>
+        <span class="chip active" data-mode="pentagram" data-tooltip="以均值為中心，顯示±1σ/±2σ通道位置">五線譜</span>
+        <span class="chip" data-mode="channel" data-tooltip="以滾動高低點為上下緣的價格通道">通道</span>
       </div>
+      <span id="penta-fg-toggle" class="chip" style="margin-left:8px;flex-shrink:0" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
       <div id="penta-period-picker" style="margin-left:auto;display:flex;gap:6px;flex-shrink:0">
-        <span class="chip" data-period="0.5Y">短期 0.5Y</span>
-        <span class="chip" data-period="1.5Y">中期 1.5Y</span>
-        <span class="chip active" data-period="3.5Y">長期 3.5Y</span>
+        <span class="chip" data-period="0.5Y" data-tooltip="用近0.5年數據算均值/標準差，較敏感">短期 0.5Y</span>
+        <span class="chip" data-period="1.5Y" data-tooltip="用近1.5年數據算均值/標準差，均衡參考">中期 1.5Y</span>
+        <span class="chip active" data-period="3.5Y" data-tooltip="用近3.5年數據算均值/標準差，過濾短期雜訊">長期 3.5Y</span>
       </div>
     </div>
     <div id="penta-chart"></div>
     <div class="status" id="penta-status">← 選擇標的以顯示五線譜</div>
+    <div class="info-panel">
+      <div class="info-panel-header">
+        <i class="chevron">▶</i> 什麼是樂活五線譜？
+      </div>
+      <div class="info-panel-body">
+        <p>以長期股價均值為中心，向上下各畫出 <b>±1σ / ±2σ</b> 標準差通道，形成五條平行線。股價越靠近下緣代表相對便宜，靠近上緣代表相對昂貴，適合長期存股者達低分批佈局、達高分批減碼。</p>
+        <table class="info-table">
+          <thead><tr><th>區間</th><th>判讀</th></tr></thead>
+          <tbody>
+            <tr><td>高於 +2σ</td><td>超漲，獲利了結</td></tr>
+            <tr><td>+1σ ～ +2σ</td><td>偏貴，不宜追高</td></tr>
+            <tr><td>均值 ～ +1σ</td><td>中性偏強</td></tr>
+            <tr><td>-1σ ～ 均值</td><td>中性偏弱</td></tr>
+            <tr><td>-2σ ～ -1σ</td><td>偏便宜，分批佈局</td></tr>
+            <tr><td>低於 -2σ</td><td>超跌，逢低進場</td></tr>
+          </tbody>
+        </table>
+        <p><b>市場情緒應用：</b>把多支股票的五線譜位置擺在一起看——若多數個股集中在 -2σ 以下，代表市場整體悲觀（超賣）；集中在 +2σ 以上，則整體過熱（超買）。適合大盤修正或急漲時快速掃描情緒極端程度。</p>
+        <p style="color:var(--muted);margin-top:6px">搭配 MA60 季線方向更穩——季線向上時偏多操作，季線向下時保守對待反彈訊號。</p>
+      </div>
+    </div>
   </section>
 
   <!-- ── 宏觀 tab ──────────────────────────────────────────────── -->
   <section id="tab-macro" class="tab-section" hidden>
     <div class="controls">
       <span style="font-size:13px;color:var(--muted)">美債殖利率曲線 · 10Y / 2Y / 利差</span>
-      <span id="m2-toggle" class="chip" title="M2 貨幣供給年增率（右軸）">M2年增率</span>
-      <span id="cape-toggle" class="chip" title="Shiller CAPE / P/E10（右軸）">CAPE</span>
+      <span id="m2-toggle" class="chip" data-tooltip="M2貨幣供給年增率（右軸）：流動性寬鬆/緊縮指標">M2年增率</span>
+      <span id="cape-toggle" class="chip" data-tooltip="Shiller CAPE / P/E10（右軸）：長期市場估值指標">CAPE</span>
       <div id="macro-range-picker" style="margin-left:auto;display:flex;gap:4px">
-        <span class="chip" data-macro-range="5Y">5Y</span>
-        <span class="chip active" data-macro-range="10Y">10Y</span>
-        <span class="chip" data-macro-range="20Y">20Y</span>
-        <span class="chip" data-macro-range="MAX">MAX</span>
+        <span class="chip" data-macro-range="5Y" data-tooltip="顯示近5年總經數據">5Y</span>
+        <span class="chip active" data-macro-range="10Y" data-tooltip="顯示近10年總經數據">10Y</span>
+        <span class="chip" data-macro-range="20Y" data-tooltip="顯示近20年總經數據">20Y</span>
+        <span class="chip" data-macro-range="MAX" data-tooltip="顯示全部歷史總經數據">MAX</span>
       </div>
     </div>
     <div id="macro-chart"></div>
@@ -400,9 +547,9 @@
     <div class="controls">
       <span style="font-size:13px;color:var(--muted)">美股11大產業 ETF · 各期間報酬率</span>
       <div id="sector-sort-picker" style="display:flex;gap:4px;margin-left:auto">
-        <span class="chip active" data-sector-col="1M">1M排序</span>
-        <span class="chip" data-sector-col="3M">3M排序</span>
-        <span class="chip" data-sector-col="1Y">1Y排序</span>
+        <span class="chip active" data-sector-col="1M" data-tooltip="依最近1個月報酬率，由高至低排列各產業">1M排序</span>
+        <span class="chip" data-sector-col="3M" data-tooltip="依最近3個月報酬率，由高至低排列各產業">3M排序</span>
+        <span class="chip" data-sector-col="1Y" data-tooltip="依最近1年報酬率，由高至低排列各產業">1Y排序</span>
       </div>
     </div>
     <div id="sector-chart"></div>
@@ -412,19 +559,23 @@
   <!-- ── 現金王 tab ────────────────────────────────────────────── -->
   <section id="tab-cashking" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">GLD · BTC · TLT · QQQ — 4週累積同跌 · 現金為王訊號</span>
-      <div id="ck-window-picker" style="display:flex;gap:4px;margin-left:auto">
-        <span class="chip active" data-ck-window="4">4週窗口</span>
-        <span class="chip" data-ck-window="8">8週窗口</span>
+      <span id="ck-desc" style="font-size:13px;color:var(--muted)">GLD · BTC · TLT · QQQ — 4週累積同跌 · 現金為王訊號</span>
+      <div id="ck-asset-picker" style="display:flex;gap:4px;margin-left:auto">
+        <span class="chip active" data-ck-asset="4a" data-tooltip="含BTC，2014/10起（10年回測）">4資產</span>
+        <span class="chip" data-ck-asset="3a" data-tooltip="黃金期貨+TLT+QQQ，2002/08起（23年回測）">3資產</span>
+      </div>
+      <div id="ck-window-picker" style="display:flex;gap:4px">
+        <span class="chip active" data-ck-window="4" data-tooltip="觀察近4週累積報酬，訊號較敏感">4週窗口</span>
+        <span class="chip" data-ck-window="8" data-tooltip="觀察近8週累積報酬，訊號較穩定">8週窗口</span>
       </div>
       <div id="ck-mode-picker" style="display:flex;gap:4px">
-        <span class="chip" data-ck-mode="week">週報酬</span>
-        <span class="chip active" data-ck-mode="4w">累積%</span>
+        <span class="chip" data-ck-mode="week" data-tooltip="每週各資產個別報酬（%）">週報酬</span>
+        <span class="chip active" data-ck-mode="4w" data-tooltip="選定視窗內各資產累積報酬">累積%</span>
       </div>
       <div id="ck-filter-picker" style="display:flex;gap:4px">
-        <span class="chip active" data-ck-filter="all">全部</span>
-        <span class="chip" data-ck-filter="3">≥3/4 跌</span>
-        <span class="chip" data-ck-filter="4">4/4 全跌</span>
+        <span class="chip active" data-ck-filter="all" data-tooltip="顯示所有週次，不篩選">全部</span>
+        <span class="chip" data-ck-filter="3" data-tooltip="至少N-1個資產同週下跌">≥3/4 跌</span>
+        <span class="chip" data-ck-filter="4" data-tooltip="全部資產同週下跌，現金為王時刻最強訊號">4/4 全跌</span>
       </div>
     </div>
     <div id="ck-summary"></div>
@@ -442,10 +593,10 @@
     <div class="controls">
       <span style="font-size:13px;color:var(--muted)">日報酬率 Pearson 相關係數</span>
       <div id="corr-period-picker" style="display:flex;gap:4px;margin-left:12px">
-        <span class="chip" data-corr-period="6M">6M</span>
-        <span class="chip active" data-corr-period="1Y">1Y</span>
-        <span class="chip" data-corr-period="2Y">2Y</span>
-        <span class="chip" data-corr-period="5Y">5Y</span>
+        <span class="chip" data-corr-period="6M" data-tooltip="計算近6個月日報酬率相關係數">6M</span>
+        <span class="chip active" data-corr-period="1Y" data-tooltip="計算近1年日報酬率相關係數">1Y</span>
+        <span class="chip" data-corr-period="2Y" data-tooltip="計算近2年日報酬率相關係數">2Y</span>
+        <span class="chip" data-corr-period="5Y" data-tooltip="計算近5年日報酬率相關係數">5Y</span>
       </div>
     </div>
     <div id="corr-chart"></div>
@@ -455,15 +606,122 @@
   <!-- ── 估值 tab ──────────────────────────────────────────────────── -->
   <section id="tab-valuation" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">QQQ 估值位階 · Nasdaq-100 Forward P/E vs 跌幅</span>
-      <div id="val-range-picker" style="margin-left:auto;display:flex;gap:4px">
-        <span class="chip" data-val-range="3Y">3Y</span>
-        <span class="chip active" data-val-range="5Y">5Y</span>
-        <span class="chip" data-val-range="10Y">10Y</span>
+      <span style="font-size:13px;color:var(--muted)">Forward P/E 估值 · 外部圖表（MacroMicro）</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;padding:12px 0">
+      <a class="val-link-card"
+         href="https://www.macromicro.me/charts/148300/NASDAQ-100-Index-Forward-PE-Ratio"
+         target="_blank" rel="noopener noreferrer">
+        <div class="val-link-icon">📈</div>
+        <div>
+          <div class="val-link-title">NASDAQ 100 · Forward P/E</div>
+          <div class="val-link-sub">MacroMicro · 含 6M / 24M 均線 · 日更新</div>
+        </div>
+        <div class="val-link-badge">
+          <div class="badge-label">點擊開啟 MacroMicro ↗</div>
+        </div>
+      </a>
+      <a class="val-link-card"
+         href="https://www.macromicro.me/charts/148296/US-S-amp-P-500-Forward-PE-Ratio"
+         target="_blank" rel="noopener noreferrer">
+        <div class="val-link-icon">📊</div>
+        <div>
+          <div class="val-link-title">S&amp;P 500 · Forward P/E</div>
+          <div class="val-link-sub">MacroMicro · 含 63D / 252D 均線 · 日更新</div>
+        </div>
+        <div class="val-link-badge">
+          <div class="badge-label">點擊開啟 MacroMicro ↗</div>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ── 情緒 tab ──────────────────────────────────────────────────── -->
+  <section id="tab-sentiment" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">4指標複合情緒 · VIX · 信用利差 · SPY趨勢 · 避險資金</span>
+      <div id="sent-range-picker" class="range-wrap" style="margin-left:auto">
+        <span class="chip" data-sent-range="3Y">3Y</span>
+        <span class="chip active" data-sent-range="5Y">5Y</span>
+        <span class="chip" data-sent-range="10Y">10Y</span>
+        <span class="chip" data-sent-range="all">全部</span>
       </div>
     </div>
-    <div id="val-chart"></div>
-    <div class="status" id="val-status">切換至此 tab 自動載入…</div>
+    <div id="sentiment-top">
+      <div style="display:flex;flex-direction:column">
+        <div id="sentiment-gauge"></div>
+        <div class="sent-label-row" style="width:260px">
+          <span>極度恐懼</span>
+          <span id="sent-score-label" style="font-weight:600">中性</span>
+          <span>極度貪婪</span>
+        </div>
+      </div>
+      <div class="sent-indicators" id="sent-indicators">
+        <div class="sent-ind-row">
+          <span class="sent-ind-label">VIX 恐懼指數（反向）</span>
+          <div class="sent-ind-bar-bg"><div class="sent-ind-bar" id="bar-vix" style="width:50%;background:#f0883e"></div></div>
+          <span class="sent-ind-val" id="val-vix">—</span>
+        </div>
+        <div class="sent-ind-row">
+          <span class="sent-ind-label">信用利差（HYG/LQD 反向）</span>
+          <div class="sent-ind-bar-bg"><div class="sent-ind-bar" id="bar-credit" style="width:50%;background:#58d9f9"></div></div>
+          <span class="sent-ind-val" id="val-credit">—</span>
+        </div>
+        <div class="sent-ind-row">
+          <span class="sent-ind-label">SPY vs 200日均線</span>
+          <div class="sent-ind-bar-bg"><div class="sent-ind-bar" id="bar-trend" style="width:50%;background:#3fb950"></div></div>
+          <span class="sent-ind-val" id="val-trend">—</span>
+        </div>
+        <div class="sent-ind-row">
+          <span class="sent-ind-label">黃金 避險資金（反向）</span>
+          <div class="sent-ind-bar-bg"><div class="sent-ind-bar" id="bar-safety" style="width:50%;background:#a371f7"></div></div>
+          <span class="sent-ind-val" id="val-safety">—</span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px" id="sent-updated"></div>
+      </div>
+    </div>
+    <div id="sentiment-chart"></div>
+    <div class="sent-backtest">
+      <div class="sent-bt-title">極度恐懼訊號回測（複合分數 &lt; 25，30天去重）</div>
+      <div class="sent-stats-row" id="sent-fear-stats"></div>
+      <div class="sent-bt-wrap">
+        <table class="sent-bt-table"><thead id="sent-fear-thead"></thead><tbody id="sent-fear-tbody"></tbody></table>
+      </div>
+      <div class="sent-bt-title">極度貪婪訊號回測（複合分數 &gt; 85，30天去重）</div>
+      <div class="sent-stats-row" id="sent-greed-stats"></div>
+      <div class="sent-bt-wrap">
+        <table class="sent-bt-table"><thead id="sent-greed-thead"></thead><tbody id="sent-greed-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="status" id="sent-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header">
+        <i class="chevron">▶</i> 如何解讀複合情緒分數？
+      </div>
+      <div class="info-panel-body">
+        <p>由 4 個子指標各佔 25% 合成，綜合反映當前市場恐慌或貪婪程度：</p>
+        <table class="info-table">
+          <thead><tr><th>子指標</th><th>方向</th><th>邏輯</th></tr></thead>
+          <tbody>
+            <tr><td>VIX 恐懼指數</td><td>反向</td><td>VIX 越高，情緒越偏恐慌</td></tr>
+            <tr><td>信用利差（HYG/LQD）</td><td>反向</td><td>利差越大，市場對企業債越謹慎</td></tr>
+            <tr><td>SPY vs 200日均線</td><td>正向</td><td>價格站上均線，市場趨勢偏多</td></tr>
+            <tr><td>黃金 避險資金</td><td>反向</td><td>黃金強勢代表避險情緒升溫</td></tr>
+          </tbody>
+        </table>
+        <table class="info-table" style="margin-top:14px">
+          <thead><tr><th>分數</th><th>情緒狀態</th><th>歷史意涵</th></tr></thead>
+          <tbody>
+            <tr><td>0 – 25</td><td style="color:#f85149">極度恐慌</td><td>歷史上常為中長期買點</td></tr>
+            <tr><td>25 – 45</td><td style="color:#f0883e">恐慌</td><td>市場悲觀，可開始觀察</td></tr>
+            <tr><td>45 – 55</td><td style="color:var(--muted)">中立</td><td>情緒均衡</td></tr>
+            <tr><td>55 – 75</td><td style="color:#3fb950">貪婪</td><td>樂觀情緒，謹慎追高</td></tr>
+            <tr><td>75 – 100</td><td style="color:#e91e63">極度貪婪</td><td>過熱，歷史上常為警戒區</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px;color:var(--muted)">參考概念：台灣市場的 SIO 恐慌貪婪指標（jacksu.tw）以 AII 投資者情緒調查、CBOE P/C Ratio 8日均、SMT 動能、VIX 合成類似指數，讀數邏輯相通。</p>
+      </div>
+    </div>
   </section>
 
   <script>
@@ -474,11 +732,12 @@
       { key: "0050", file: "data/0050.TW.json",     color: "#3fb950", yAxis: 3, default: false },
       { key: "GLD",  file: "data/GLD.json",         color: "#d4a843", yAxis: 0, default: false },
       { key: "BTC",  file: "data/BTC.json",         color: "#f7931a", yAxis: 4, default: false },
+      { key: "SOXX", file: "data/SOXX.json",        color: "#22d3ee", yAxis: 0, default: false },
       { key: "VIX",  file: "data/VIX.json",         color: "#f0883e", yAxis: 1, default: false },
       { key: "F&G",  file: "data/fear_greed.json",  color: "#e3b341", yAxis: 2, default: true  },
     ];
 
-    const PENTA_TICKERS = ["VOO", "QQQ", "SPY", "0050", "GLD", "BTC"];
+    const PENTA_TICKERS = ["VOO", "QQQ", "SPY", "0050", "GLD", "BTC", "SOXX"];
 
     const chartEl = document.getElementById("chart");
     let chart = echarts.init(chartEl, null); // light by default
@@ -486,6 +745,7 @@
     let pentaActiveTicker = "VOO";
     let pentaPeriod = "3.5Y";
     let pentaMode = "pentagram";
+    let pentaFgActive = false;
 
     const loaded = {};
     const active = new Set(SERIES.filter(s => s.default).map(s => s.key));
@@ -508,6 +768,12 @@
     let corrChart  = null;
     let corrPeriod = "1Y";
 
+    // ── 情緒 tab state ─────────────────────────────────────────────
+    let sentChart       = null;
+    let sentGaugeChart  = null;
+    let sentData        = null;
+    let sentRangePreset = "5Y";
+
     let sectorChart   = null;
     let sectorSortCol = "1M";
     const sectorLoaded = {}; // { XLK: [...], XLF: [...], ... }
@@ -515,8 +781,13 @@
 
     // ── 現金王 state ───────────────────────────────────────────────
     const CK_ASSETS = [
-      { key: "GLD", color: "#d4a843", file: "data/GLD.json" },
+      { key: "GLD", color: "#d4a843", file: "data/GLD.json", isGold: true },
       { key: "BTC", color: "#f7931a", file: "data/BTC.json" },
+      { key: "TLT", color: "#58d9f9", file: "data/TLT.json" },
+      { key: "QQQ", color: "#f778ba", file: "data/QQQ.json" },
+    ];
+    const CK_ASSETS_3 = [
+      { key: "GCF", label: "黃金", color: "#d4a843", file: "data/GCF.json", isGold: true },
       { key: "TLT", color: "#58d9f9", file: "data/TLT.json" },
       { key: "QQQ", color: "#f778ba", file: "data/QQQ.json" },
     ];
@@ -524,16 +795,11 @@
     let ckFilter = "all";
     let ckMode = "4w";
     let ckWindow = 4;
-    let ckWeeklyData = null;
+    let ckAssetMode = "4a";   // "4a" = GLD/BTC/TLT/QQQ | "3a" = GLD/TLT/QQQ
+    let ckData4a = null;
+    let ckData3a = null;
     let ckInited = false;
 
-    // ── 估值 tab state ─────────────────────────────────────────────
-    let valChart       = null;
-    let valRangePreset = "5Y";
-    let valFPEData     = null;
-    let valInited      = false;
-    let _valDragDown   = null;
-    let _valDragUp     = null;
     const SECTOR_LABEL = {
       XLK:"科技", XLF:"金融", XLV:"醫療", XLE:"能源", XLI:"工業",
       XLY:"非必需消費", XLP:"必需消費", XLU:"公用", XLRE:"不動產", XLB:"材料", XLC:"通訊",
@@ -585,10 +851,15 @@
         renderSectorTab();
       }
       if (ckInited) renderCKTab();
-      if (valChart) {
-        valChart.dispose();
-        valChart = echarts.init(document.getElementById("val-chart"), light ? null : "dark");
-        renderValuationTab();
+      if (sentChart) {
+        sentChart.dispose();
+        sentChart = echarts.init(document.getElementById("sentiment-chart"), light ? null : "dark");
+        renderSentimentChart();
+      }
+      if (sentGaugeChart) {
+        sentGaugeChart.dispose();
+        sentGaugeChart = echarts.init(document.getElementById("sentiment-gauge"), light ? null : "dark");
+        renderSentimentGauge(sentData.latest.composite);
       }
     }
 
@@ -633,13 +904,8 @@
         setTimeout(() => { sectorChart.resize(); renderSectorTab(); }, 50);
       } else if (tabName === "cashking") {
         initCKTab();
-      } else if (tabName === "valuation") {
-        const el = document.getElementById("val-chart");
-        if (!valChart) {
-          valChart = echarts.init(el, isLight() ? null : "dark");
-          setupResizeHandler();
-        }
-        setTimeout(() => { valChart.resize(); renderValuationTab(); }, 50);
+      } else if (tabName === "sentiment") {
+        initSentimentTab();
       }
     }
 
@@ -1078,6 +1344,17 @@
       return raw.filter(r => r[0] >= fromDate);
     }
 
+    function getPentaFgData() {
+      const fg = loaded["F&G"];
+      if (!fg) return [];
+      const d = new Date();
+      if      (pentaPeriod === "0.5Y") d.setMonth(d.getMonth() - 6);
+      else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
+      else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
+      const fromDate = d.toISOString().slice(0, 10);
+      return fg.filter(r => r[0] >= fromDate);
+    }
+
     function computeLinearRegression(data) {
       const n = data.length;
       if (n < 10) return null;
@@ -1186,6 +1463,13 @@
       const tipText  = tc("#e6edf3", "#1f2328");
       const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
 
+      const fgDataCh = pentaFgActive && loaded["F&G"] ? getPentaFgData() : null;
+      const fgYAxisCh = {
+        min: 0, max: 100, position: "right",
+        axisLine: { lineStyle: { color: "#e3b341" } },
+        axisLabel: { fontSize: 11, color: "#e3b341" },
+        splitLine: { show: false },
+      };
       pentaChart.setOption({
         backgroundColor: "transparent",
         tooltip: {
@@ -1201,40 +1485,39 @@
             for (const p of params) {
               const v = p.value?.[1];
               if (v == null) continue;
-              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${
-                v.toLocaleString(undefined, { maximumFractionDigits: 2 })
-              }</b><br/>`;
+              const fmt = p.seriesName === "F&G"
+                ? v.toFixed(0)
+                : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${fmt}</b><br/>`;
             }
             return out;
           },
         },
         legend: {
-          data: ["上軌 +2.5σ", "MA20", "價格", "下軌 -2.5σ"],
+          data: fgDataCh ? ["上軌 +2.5σ", "MA20", "價格", "下軌 -2.5σ", "F&G"] : ["上軌 +2.5σ", "MA20", "價格", "下軌 -2.5σ"],
           textStyle: { color: tipText, fontSize: 13 },
           top: 6,
         },
-        grid: { left: 72, right: 24, top: 48, bottom: 56 },
+        grid: { left: 72, right: fgDataCh ? 58 : 24, top: 48, bottom: 56 },
         xAxis: {
           type: "time",
           axisLine: { lineStyle: { color: axisClr } },
           axisLabel: { fontSize: 12 },
           splitLine: { show: false },
         },
-        yAxis: {
-          scale: true,
-          axisLine: { lineStyle: { color: axisClr } },
-          axisLabel: { fontSize: 12 },
-          splitLine: { lineStyle: { color: gridClr } },
-        },
+        yAxis: fgDataCh
+          ? [{ scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } }, fgYAxisCh]
+          : { scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } },
         dataZoom: [
           { type: "inside" },
           { type: "slider", height: 18, bottom: 14 },
         ],
         series: [
-          { ...lineBase, name: "上軌 +2.5σ", data: upperW,    lineStyle: { width: 1.5, color: "#e91e63" },                  itemStyle: { color: "#e91e63" } },
-          { ...lineBase, name: "MA20",       data: ma20w,    lineStyle: { width: 1.5, color: "#9e9e9e", type: "dashed" }, itemStyle: { color: "#9e9e9e" } },
-          { ...lineBase, name: "價格",       data: priceW,    lineStyle: { width: 1.8, color: s.color },                   itemStyle: { color: s.color } },
-          { ...lineBase, name: "下軌 -2.5σ", data: lowerW,   lineStyle: { width: 1.5, color: "#1565c0" },                  itemStyle: { color: "#1565c0" } },
+          { ...lineBase, name: "上軌 +2.5σ", data: upperW, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#e91e63" },                  itemStyle: { color: "#e91e63" } },
+          { ...lineBase, name: "MA20",       data: ma20w,  yAxisIndex: 0, lineStyle: { width: 1.5, color: "#9e9e9e", type: "dashed" }, itemStyle: { color: "#9e9e9e" } },
+          { ...lineBase, name: "價格",       data: priceW, yAxisIndex: 0, lineStyle: { width: 1.8, color: s.color },                   itemStyle: { color: s.color } },
+          { ...lineBase, name: "下軌 -2.5σ", data: lowerW, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#1565c0" },                  itemStyle: { color: "#1565c0" } },
+          ...(fgDataCh ? [{ ...lineBase, name: "F&G", data: fgDataCh, yAxisIndex: 1, lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" }, areaStyle: { color: "rgba(227,179,65,0.06)" } }] : []),
         ],
       }, { notMerge: true });
 
@@ -1271,6 +1554,13 @@
       const tipText  = tc("#e6edf3", "#1f2328");
       const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
 
+      const fgDataPt = pentaFgActive && loaded["F&G"] ? getPentaFgData() : null;
+      const fgYAxisPt = {
+        min: 0, max: 100, position: "right",
+        axisLine: { lineStyle: { color: "#e3b341" } },
+        axisLabel: { fontSize: 11, color: "#e3b341" },
+        splitLine: { show: false },
+      };
       pentaChart.setOption({
         backgroundColor: "transparent",
         tooltip: {
@@ -1286,42 +1576,43 @@
             for (const p of params) {
               const v = p.value?.[1];
               if (v == null) continue;
-              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${
-                v.toLocaleString(undefined, { maximumFractionDigits: 2 })
-              }</b><br/>`;
+              const fmt = p.seriesName === "F&G"
+                ? v.toFixed(0)
+                : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${fmt}</b><br/>`;
             }
             return out;
           },
         },
         legend: {
-          data: ["極度貪婪", "貪婪", "價格", "趨勢線", "恐懼", "極度恐懼"],
+          data: fgDataPt
+            ? ["極度貪婪", "貪婪", "價格", "趨勢線", "恐懼", "極度恐懼", "F&G"]
+            : ["極度貪婪", "貪婪", "價格", "趨勢線", "恐懼", "極度恐懼"],
           textStyle: { color: tipText, fontSize: 13 },
           top: 6,
         },
-        grid: { left: 72, right: 24, top: 48, bottom: 56 },
+        grid: { left: 72, right: fgDataPt ? 58 : 24, top: 48, bottom: 56 },
         xAxis: {
           type: "time",
           axisLine: { lineStyle: { color: axisClr } },
           axisLabel: { fontSize: 12 },
           splitLine: { show: false },
         },
-        yAxis: {
-          scale: true,
-          axisLine: { lineStyle: { color: axisClr } },
-          axisLabel: { fontSize: 12 },
-          splitLine: { lineStyle: { color: gridClr } },
-        },
+        yAxis: fgDataPt
+          ? [{ scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } }, fgYAxisPt]
+          : { scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } },
         dataZoom: [
           { type: "inside" },
           { type: "slider", height: 18, bottom: 14 },
         ],
         series: [
-          { ...lineBase, name: "極度貪婪", data: result.upper2, lineStyle: { width: 1.5, color: "#e91e63" }, itemStyle: { color: "#e91e63" } },
-          { ...lineBase, name: "貪婪",     data: result.upper1, lineStyle: { width: 1.5, color: "#f48fb1" }, itemStyle: { color: "#f48fb1" } },
-          { ...lineBase, name: "價格",     data,                lineStyle: { width: 1.5, color: s.color },   itemStyle: { color: s.color } },
-          { ...lineBase, name: "趨勢線",   data: result.trend,  lineStyle: { width: 1.5, color: "#9e9e9e" }, itemStyle: { color: "#9e9e9e" } },
-          { ...lineBase, name: "恐懼",     data: result.lower1, lineStyle: { width: 1.5, color: "#64b5f6" }, itemStyle: { color: "#64b5f6" } },
-          { ...lineBase, name: "極度恐懼", data: result.lower2, lineStyle: { width: 1.5, color: "#1565c0" }, itemStyle: { color: "#1565c0" } },
+          { ...lineBase, name: "極度貪婪", data: result.upper2, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#e91e63" }, itemStyle: { color: "#e91e63" } },
+          { ...lineBase, name: "貪婪",     data: result.upper1, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#f48fb1" }, itemStyle: { color: "#f48fb1" } },
+          { ...lineBase, name: "價格",     data,                yAxisIndex: 0, lineStyle: { width: 1.5, color: s.color },   itemStyle: { color: s.color } },
+          { ...lineBase, name: "趨勢線",   data: result.trend,  yAxisIndex: 0, lineStyle: { width: 1.5, color: "#9e9e9e" }, itemStyle: { color: "#9e9e9e" } },
+          { ...lineBase, name: "恐懼",     data: result.lower1, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#64b5f6" }, itemStyle: { color: "#64b5f6" } },
+          { ...lineBase, name: "極度恐懼", data: result.lower2, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#1565c0" }, itemStyle: { color: "#1565c0" } },
+          ...(fgDataPt ? [{ ...lineBase, name: "F&G", data: fgDataPt, yAxisIndex: 1, lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" }, areaStyle: { color: "rgba(227,179,65,0.06)" } }] : []),
         ],
       }, { notMerge: true });
 
@@ -1371,6 +1662,16 @@
       pentaMode = t.dataset.mode;
       for (const c of e.currentTarget.querySelectorAll(".chip"))
         c.classList.toggle("active", c === t);
+      renderPentagram();
+    });
+
+    // ── Pentagram F&G toggle ───────────────────────────────────────
+    document.getElementById("penta-fg-toggle").addEventListener("click", async () => {
+      pentaFgActive = !pentaFgActive;
+      document.getElementById("penta-fg-toggle").classList.toggle("fg-on", pentaFgActive);
+      if (pentaFgActive && !loaded["F&G"]) {
+        await loadSeries(SERIES.find(x => x.key === "F&G"));
+      }
       renderPentagram();
     });
 
@@ -1669,8 +1970,10 @@
 
     // ── 現金王 tab ────────────────────────────────────────────────
     async function loadCKData() {
+      const allAssets = [...CK_ASSETS,
+        ...CK_ASSETS_3.filter(a => !CK_ASSETS.some(b => b.key === a.key))];
       await Promise.all([
-        ...CK_ASSETS.map(async ({ key, file }) => {
+        ...allAssets.map(async ({ key, file }) => {
           if (ckRaw[key]) return;
           const resp = await fetch(file, { cache: "no-cache" });
           if (!resp.ok) throw new Error(`${key}: HTTP ${resp.status}`);
@@ -1700,9 +2003,10 @@
       return m;
     }
 
-    function computeCKWeekly() {
+    function computeCKWeekly(assets, startDate) {
+      const n = assets.length;
       const closes = {};
-      for (const { key } of CK_ASSETS) {
+      for (const { key } of assets) {
         closes[key] = ckRaw[key] ? ckWeeklyCloses(ckRaw[key]) : {};
       }
 
@@ -1713,8 +2017,11 @@
         if (!(w in fgWk) || v < fgWk[w]) fgWk[w] = v;
       }
 
-      // Use QQQ weeks as reference timeline from 2014-10
-      const weeks = Object.keys(closes["QQQ"]).filter(w => w >= "2014-10-01").sort();
+      // 逃往黃金: all non-gold assets down, gold asset up
+      const goldKey = (assets.find(a => a.isGold) || {}).key;
+      const ftgKeys = assets.map(a => a.key).filter(k => k !== goldKey);
+
+      const weeks = Object.keys(closes["QQQ"]).filter(w => w >= startDate).sort();
 
       const rows = [];
       for (let i = 8; i < weeks.length; i++) {
@@ -1724,7 +2031,7 @@
         const weekRets = {}, cum4Rets = {}, cum8Rets = {};
         let weekDown = 0, cum4Down = 0, cum8Down = 0;
 
-        for (const { key } of CK_ASSETS) {
+        for (const { key } of assets) {
           const cW = closes[key][w], cP = closes[key][wPrev];
           const c4 = closes[key][w4], c8 = closes[key][w8];
           weekRets[key] = (cP && cW) ? (cW - cP) / cP : null;
@@ -1745,13 +2052,13 @@
         }
 
         const cNow = closes["QQQ"][w];
-        const cF4  = i + 4  < weeks.length ? closes["QQQ"][weeks[i + 4]]  : null;
-        const cF8  = i + 8  < weeks.length ? closes["QQQ"][weeks[i + 8]]  : null;
+        const cF4  = i + 4 < weeks.length ? closes["QQQ"][weeks[i + 4]] : null;
+        const cF8  = i + 8 < weeks.length ? closes["QQQ"][weeks[i + 8]] : null;
 
-        const ftg4w = ["QQQ","BTC","TLT"].every(k => cum4Rets[k] != null && cum4Rets[k] < 0)
-          && cum4Rets["GLD"] != null && cum4Rets["GLD"] > 0;
-        const ftg8w = ["QQQ","BTC","TLT"].every(k => cum8Rets[k] != null && cum8Rets[k] < 0)
-          && cum8Rets["GLD"] != null && cum8Rets["GLD"] > 0;
+        const ftg4w = goldKey && ftgKeys.every(k => cum4Rets[k] != null && cum4Rets[k] < 0)
+          && cum4Rets[goldKey] != null && cum4Rets[goldKey] > 0;
+        const ftg8w = goldKey && ftgKeys.every(k => cum8Rets[k] != null && cum8Rets[k] < 0)
+          && cum8Rets[goldKey] != null && cum8Rets[goldKey] > 0;
 
         rows.push({
           w, weekRets, cum4Rets, cum8Rets,
@@ -1764,75 +2071,97 @@
       return rows;
     }
 
+    function ckActiveAssets() { return ckAssetMode === "3a" ? CK_ASSETS_3 : CK_ASSETS; }
+    function getCKData() {
+      if (ckAssetMode === "3a") {
+        if (!ckData3a) ckData3a = computeCKWeekly(CK_ASSETS_3, "2002-08-01");
+        return ckData3a;
+      }
+      if (!ckData4a) ckData4a = computeCKWeekly(CK_ASSETS, "2014-10-01");
+      return ckData4a;
+    }
+
     function renderCKTab() {
-      if (!ckWeeklyData) return;
+      const data = getCKData();
+      if (!data) return;
+      const assets = ckActiveAssets();
+      const n = assets.length;
       const pct = v => v != null ? `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%` : "—";
       const clr = v => v == null ? "" : v >= 0 ? "pos" : "neg";
       const use4w = ckMode === "4w";
-      const wn = ckWindow; // 4 or 8
-      const cumRetsKey  = wn === 8 ? "cum8Rets"  : "cum4Rets";
-      const cumDownKey  = wn === 8 ? "cum8Down"  : "cum4Down";
-      const fgMinKey    = wn === 8 ? "fgMin8w"   : "fgMin4w";
-      const ftgKey      = wn === 8 ? "ftg8w"     : "ftg4w";
+      const wn = ckWindow;
+      const cumRetsKey = wn === 8 ? "cum8Rets" : "cum4Rets";
+      const cumDownKey = wn === 8 ? "cum8Down" : "cum4Down";
+      const fgMinKey   = wn === 8 ? "fgMin8w"  : "fgMin4w";
+      const ftgKey     = wn === 8 ? "ftg8w"    : "ftg4w";
+      const startLabel = ckAssetMode === "3a" ? "2002/08" : "2014/10";
 
-      const ckAll4 = ckWeeklyData.filter(r => r[cumDownKey] === 4);
-      const signalRows = ckAll4.filter(r => r[fgMinKey] != null && r[fgMinKey] < 25);
-      const flightRows = ckWeeklyData.filter(r => r[ftgKey] && r[fgMinKey] != null && r[fgMinKey] < 25);
-      const f4 = ckAll4.filter(r => r.fwd4w != null), f8 = ckAll4.filter(r => r.fwd8w != null);
+      // Update description + filter chip labels
+      document.getElementById("ck-desc").textContent =
+        ckAssetMode === "3a"
+          ? "黃金期貨 · TLT · QQQ — 累積同跌 · 現金為王訊號 · 2002/08 起"
+          : "GLD · BTC · TLT · QQQ — 累積同跌 · 現金為王訊號";
+      document.getElementById("ck-filter-picker").innerHTML = `
+        <span class="chip ${ckFilter==="all"?"active":""}" data-ck-filter="all" data-tooltip="顯示所有週次，不篩選">全部</span>
+        <span class="chip ${ckFilter==="3"?"active":""}" data-ck-filter="3" data-tooltip="${n}資產中至少${n-1}個同週下跌">≥${n-1}/${n} 跌</span>
+        <span class="chip ${ckFilter==="4"?"active":""}" data-ck-filter="4" data-tooltip="${n}資產全部同週下跌，現金為王時刻最強訊號">${n}/${n} 全跌</span>
+      `;
+
+      const ckAllN = data.filter(r => r[cumDownKey] === n);
+      const signalRows = ckAllN.filter(r => r[fgMinKey] != null && r[fgMinKey] < 25);
+      const flightRows = data.filter(r => r[ftgKey] && r[fgMinKey] != null && r[fgMinKey] < 25);
+      const f4 = ckAllN.filter(r => r.fwd4w != null), f8 = ckAllN.filter(r => r.fwd8w != null);
       const avg4w = f4.length ? f4.reduce((s, r) => s + r.fwd4w, 0) / f4.length : null;
       const avg8w = f8.length ? f8.reduce((s, r) => s + r.fwd8w, 0) / f8.length : null;
 
       document.getElementById("ck-summary").innerHTML = `
-        <span>4/4 全跌（${wn}週）<span class="ck-stat-val">${ckAll4.length}</span> 週</span>
-        <span><span class="ck-badge">現金王</span> +F&amp;G&lt;25：<span class="ck-stat-val">${signalRows.length}</span> 週</span>
+        <span>${n}/${n} 全跌（${wn}週）<span class="ck-stat-val">${ckAllN.length}</span> 週</span>
+        <span><span class="ck-badge">現金為王</span> +F&amp;G&lt;25：<span class="ck-stat-val">${signalRows.length}</span> 週</span>
         <span><span class="ck-badge-gold">逃往黃金</span> +F&amp;G&lt;25：<span class="ck-stat-val">${flightRows.length}</span> 週</span>
-        <span>現金王後4W QQQ：<span class="ck-stat-val ${clr(avg4w)}">${pct(avg4w)}</span></span>
-        <span>現金王後8W QQQ：<span class="ck-stat-val ${clr(avg8w)}">${pct(avg8w)}</span></span>
+        <span>現金為王後4W QQQ：<span class="ck-stat-val ${clr(avg4w)}">${pct(avg4w)}</span></span>
+        <span>現金為王後8W QQQ：<span class="ck-stat-val ${clr(avg8w)}">${pct(avg8w)}</span></span>
       `;
 
-      const filtered = ckWeeklyData.filter(r => {
+      const filtered = data.filter(r => {
         const dc = r[cumDownKey];
-        if (ckFilter === "4") return dc === 4;
-        if (ckFilter === "3") return dc >= 3;
+        if (ckFilter === "4") return dc === n;
+        if (ckFilter === "3") return dc >= n - 1;
         return true;
       }).slice().reverse();
 
       const modeLabel = use4w ? `${wn}週累積` : "當週";
       document.getElementById("ck-head").innerHTML = `<tr>
         <th style="text-align:left">週(一)</th>
-        <th style="color:#d4a843">GLD<br/><span style="font-weight:400;font-size:10px;opacity:.7">${modeLabel}</span></th>
-        <th style="color:#f7931a">BTC<br/><span style="font-weight:400;font-size:10px;opacity:.7">${modeLabel}</span></th>
-        <th style="color:#58d9f9">TLT<br/><span style="font-weight:400;font-size:10px;opacity:.7">${modeLabel}</span></th>
-        <th style="color:#f778ba">QQQ<br/><span style="font-weight:400;font-size:10px;opacity:.7">${modeLabel}</span></th>
+        ${assets.map(a => `<th style="color:${a.color}">${a.label||a.key}<br/><span style="font-weight:400;font-size:10px;opacity:.7">${modeLabel}</span></th>`).join("")}
         <th>${wn}週下跌</th>
         <th>F&amp;G低<br/><span style="font-weight:400;font-size:10px;opacity:.7">${wn}週內</span></th>
         <th>訊號</th>
       </tr>`;
 
       document.getElementById("ck-body").innerHTML = filtered.map(r => {
-        const rets     = use4w ? r[cumRetsKey] : r.weekRets;
-        const cumDown  = r[cumDownKey];
-        const fgMin    = r[fgMinKey];
-        const isSignal   = cumDown === 4 && fgMin != null && fgMin < 25;
-        const isFlight   = r[ftgKey] && fgMin != null && fgMin < 25;
-        const rowCls     = isSignal ? "ck-row-4" : isFlight ? "ck-row-gold" : cumDown === 4 ? "ck-row-3" : "";
-        const badge      = isSignal
-          ? `<span class="ck-badge">現金王</span>`
+        const rets    = use4w ? r[cumRetsKey] : r.weekRets;
+        const cumDown = r[cumDownKey];
+        const fgMin   = r[fgMinKey];
+        const isSignal = cumDown === n && fgMin != null && fgMin < 25;
+        const isFlight = r[ftgKey] && fgMin != null && fgMin < 25;
+        const rowCls   = isSignal ? "ck-row-4" : isFlight ? "ck-row-gold" : cumDown === n ? "ck-row-3" : "";
+        const badge    = isSignal
+          ? `<span class="ck-badge">現金為王</span>`
           : isFlight
             ? `<span class="ck-badge-gold">逃往黃金</span>`
-            : cumDown === 4 ? `<span style="color:var(--muted);font-size:11px">4/4</span>` : "";
-        const fgCls    = fgMin != null && fgMin < 25 ? "fear-val" : "";
+            : cumDown === n ? `<span style="color:var(--muted);font-size:11px">${n}/${n}</span>` : "";
+        const fgCls = fgMin != null && fgMin < 25 ? "fear-val" : "";
         return `<tr class="${rowCls}">
           <td style="text-align:left;font-weight:500;font-size:11px">${r.w}</td>
-          ${CK_ASSETS.map(a => `<td class="${clr(rets[a.key])}">${pct(rets[a.key])}</td>`).join("")}
-          <td style="color:var(--muted)">${cumDown}/4</td>
+          ${assets.map(a => `<td class="${clr(rets[a.key])}">${pct(rets[a.key])}</td>`).join("")}
+          <td style="color:var(--muted)">${cumDown}/${n}</td>
           <td class="${fgCls}">${fgMin != null ? fgMin : "—"}</td>
           <td>${badge}</td>
         </tr>`;
       }).join("");
 
       document.getElementById("ck-status").textContent =
-        `顯示 ${filtered.length} 週 · 資料 2014/10 起 · 訊號 = ${wn}週累積全跌 + F&G < 25`;
+        `顯示 ${filtered.length} 週 · 資料 ${startLabel} 起 · 訊號 = ${wn}週累積全跌 + F&G < 25`;
     }
 
     async function initCKTab() {
@@ -1841,13 +2170,21 @@
       statusEl.textContent = "載入中…";
       try {
         await loadCKData();
-        ckWeeklyData = computeCKWeekly();
         ckInited = true;
         renderCKTab();
       } catch (e) {
         statusEl.textContent = `載入失敗：${e.message}`;
       }
     }
+
+    document.getElementById("ck-asset-picker").addEventListener("click", e => {
+      const t = e.target.closest(".chip[data-ck-asset]");
+      if (!t) return;
+      ckAssetMode = t.dataset.ckAsset;
+      for (const c of e.currentTarget.querySelectorAll(".chip"))
+        c.classList.toggle("active", c === t);
+      if (ckInited) renderCKTab();
+    });
 
     document.getElementById("ck-filter-picker").addEventListener("click", e => {
       const t = e.target.closest(".chip[data-ck-filter]");
@@ -1986,223 +2323,6 @@
       renderCorrTab();
     });
 
-    // ── 估值 tab ───────────────────────────────────────────────────
-    function valPresetStart(preset) {
-      const d = new Date();
-      if      (preset === "3Y")  d.setFullYear(d.getFullYear() - 3);
-      else if (preset === "5Y")  d.setFullYear(d.getFullYear() - 5);
-      else if (preset === "10Y") d.setFullYear(d.getFullYear() - 10);
-      else return null;
-      return d.toISOString().slice(0, 10);
-    }
-
-    async function renderValuationTab() {
-      if (!valChart) return;
-      const statusEl = document.getElementById("val-status");
-      statusEl.textContent = "載入中…";
-
-      try {
-        await ensureLoaded("QQQ");
-        const qqqAll = loaded["QQQ"];
-        if (!qqqAll || qqqAll.length === 0) { statusEl.textContent = "QQQ 資料未載入"; return; }
-
-        if (!valFPEData) {
-          const resp = await fetch("data/QQQ_valuation.json", { cache: "no-cache" });
-          if (!resp.ok) throw new Error("QQQ_valuation.json HTTP " + resp.status);
-          valFPEData = (await resp.json()).data || [];
-        }
-
-        const fromDate    = valPresetStart(valRangePreset);
-        const qqqFiltered = fromDate ? qqqAll.filter(r => r[0] >= fromDate) : qqqAll;
-        const fpeFiltered = valFPEData.filter(r => r.date >= (qqqFiltered[0]?.[0] ?? ""));
-        const fpeData     = fpeFiltered.map(r => [r.date, r.fpe]);
-        const axisMin     = qqqFiltered[0]?.[0];
-        const axisMax     = qqqFiltered.at(-1)?.[0];
-
-        const axisClr = tc("#8b949e", "#57606a");
-        const gridClr = tc("#21262d", "#e1e4e8");
-        const tipBg   = tc("#161b22", "#ffffff");
-        const tipBdr  = tc("#30363d", "#d0d7de");
-        const tipText = tc("#e6edf3", "#1f2328");
-
-        const KEY_EVENTS = [
-          ["2022-06-16", "2022熊底", "rgba(239,68,68,0.7)"],
-          ["2025-04-08", "關稅底",   "rgba(240,136,62,0.7)"],
-          ["2026-03-30", "修正底",   "rgba(163,113,247,0.7)"],
-        ];
-
-        function eventMarkLines() {
-          return KEY_EVENTS.map(([xVal, label, color]) => ({
-            xAxis: xVal,
-            label: { formatter: label, color, fontSize: 10, position: "insideEndTop" },
-            lineStyle: { color, type: "dashed", width: 1 },
-          }));
-        }
-
-        valChart.setOption({
-          backgroundColor: "transparent",
-          tooltip: {
-            trigger: "axis",
-            axisPointer: { type: "line" },
-            backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText },
-            formatter(params) {
-              const date = params[0]?.axisValue != null
-                ? new Date(params[0].axisValue).toISOString().slice(0, 10)
-                : "";
-              let out = `<b>${date}</b><br/>`;
-              for (const p of params) {
-                if (p.value == null || p.value[1] == null) continue;
-                const v = p.value[1];
-                if (p.seriesName === "QQQ")
-                  out += `<span style="color:${p.color}">●</span> QQQ: <b>$${v.toFixed(2)}</b><br/>`;
-                else if (p.seriesName === "Forward PE")
-                  out += `<span style="color:${p.color}">●</span> Forward PE: <b>${v.toFixed(1)}x</b><br/>`;
-              }
-              return out;
-            },
-          },
-          grid: [
-            { top: 36, height: "44%", left: 72, right: 36 },
-            { top: "58%", bottom: 54, left: 72, right: 36 },
-          ],
-          xAxis: [
-            { gridIndex: 0, type: "time", min: axisMin, max: axisMax,
-              axisLine: { lineStyle: { color: axisClr } }, splitLine: { show: false },
-              axisLabel: { show: false } },
-            { gridIndex: 1, type: "time", min: axisMin, max: axisMax,
-              axisLine: { lineStyle: { color: axisClr } }, splitLine: { show: false },
-              axisLabel: { fontSize: 11, color: axisClr } },
-          ],
-          yAxis: [
-            { gridIndex: 0, name: "QQQ 價格", nameTextStyle: { color: axisClr, fontSize: 11 },
-              axisLine: { lineStyle: { color: axisClr } },
-              axisLabel: { formatter: v => "$" + v.toFixed(0), fontSize: 11 },
-              splitLine: { lineStyle: { color: gridClr } } },
-            { gridIndex: 1, name: "Forward PE", nameTextStyle: { color: axisClr, fontSize: 11 },
-              axisLine: { lineStyle: { color: axisClr } },
-              axisLabel: { formatter: v => v + "x", fontSize: 11 },
-              splitLine: { lineStyle: { color: gridClr } },
-              min: v => Math.floor(v.min - 2), max: v => Math.ceil(v.max + 2) },
-          ],
-          dataZoom: [
-            { type: "inside", xAxisIndex: [0, 1] },
-            { type: "slider", xAxisIndex: [0, 1], height: 18, bottom: 14,
-              borderColor: axisClr, textStyle: { color: axisClr } },
-          ],
-          series: [
-            {
-              name: "QQQ", type: "line", xAxisIndex: 0, yAxisIndex: 0,
-              data: qqqFiltered, showSymbol: false,
-              lineStyle: { color: "#58a6ff", width: 1.5 },
-              itemStyle: { color: "#58a6ff" },
-              markArea: { silent: true, data: [] },
-              markLine: { silent: true, symbol: "none", data: eventMarkLines() },
-            },
-            {
-              name: "Forward PE", type: "line", xAxisIndex: 1, yAxisIndex: 1,
-              data: fpeData, showSymbol: true, symbolSize: 5,
-              lineStyle: { color: "#f0883e", width: 2 },
-              itemStyle: { color: "#f0883e" },
-              markLine: {
-                silent: true, symbol: "none",
-                data: [
-                  ...eventMarkLines(),
-                  { yAxis: 21,
-                    lineStyle: { color: "rgba(239,68,68,0.35)", type: "dashed", width: 1 },
-                    label: { formatter: "21x (2022底)", color: "rgba(239,68,68,0.65)", fontSize: 10, position: "insideEndTop" } },
-                ],
-              },
-            },
-          ],
-        });
-
-        setupValDrag(qqqAll);
-
-        const latestFPE = fpeData.at(-1);
-        const latestQQQ = qqqFiltered.at(-1);
-        statusEl.textContent =
-          `QQQ 估值位階 · ${valRangePreset} · QQQ $${latestQQQ?.[1]?.toFixed(0)} · Forward PE ${latestFPE?.[1]?.toFixed(1)}x · 上方拖曳選區計算漲跌幅 · 前期 PE 為估計值`;
-      } catch (err) {
-        statusEl.textContent = `載入失敗：${err.message}`;
-      }
-    }
-
-    function setupValDrag(qqqAll) {
-      const el = document.getElementById("val-chart");
-      if (_valDragDown) el.removeEventListener("mousedown", _valDragDown);
-      if (_valDragUp)   document.removeEventListener("mouseup", _valDragUp);
-
-      function bisect(target) {
-        let lo = 0, hi = qqqAll.length;
-        while (lo < hi) { const mid = (lo + hi) >> 1; if (qqqAll[mid][0] < target) lo = mid + 1; else hi = mid; }
-        return lo;
-      }
-      function nearestPoint(tsMs) {
-        const target = new Date(tsMs).toISOString().slice(0, 10);
-        const idx = bisect(target);
-        if (idx >= qqqAll.length) return qqqAll[qqqAll.length - 1];
-        if (idx === 0) return qqqAll[0];
-        const prev = qqqAll[idx - 1], curr = qqqAll[idx];
-        return (new Date(curr[0]) - new Date(target)) < (new Date(target) - new Date(prev[0])) ? curr : prev;
-      }
-
-      let selDate0 = null, selPrice0 = null;
-
-      _valDragDown = e => {
-        const rect = el.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        if (y > el.offsetHeight * 0.52) return;
-        const coord = valChart.convertFromPixel({ gridIndex: 0 }, [x, y]);
-        if (!coord) return;
-        const [d, p] = nearestPoint(coord[0]);
-        selDate0 = d; selPrice0 = p;
-      };
-
-      _valDragUp = e => {
-        if (!selDate0) return;
-        const rect = el.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        const coord = valChart.convertFromPixel({ gridIndex: 0 }, [x, y]);
-        if (!coord) { selDate0 = null; return; }
-        const [d1, p1] = nearestPoint(coord[0]);
-        if (d1 === selDate0) { selDate0 = null; return; }
-
-        const [dA, pA, dB, pB] = selDate0 < d1
-          ? [selDate0, selPrice0, d1, p1]
-          : [d1, p1, selDate0, selPrice0];
-
-        const pct = ((pB / pA - 1) * 100).toFixed(2);
-        const isUp = pB >= pA;
-        const areaClr = isUp ? "rgba(63,185,80,0.13)" : "rgba(239,68,68,0.13)";
-        const textClr = isUp ? "#3fb950" : "#f85149";
-
-        valChart.setOption({
-          series: [{ name: "QQQ", markArea: {
-            silent: true,
-            label: { show: true, formatter: `${isUp ? "+" : ""}${pct}%`, fontSize: 20, fontWeight: "bold", color: textClr, position: "inside" },
-            data: [[{ xAxis: dA, itemStyle: { color: areaClr } }, { xAxis: dB }]],
-          }}],
-        });
-
-        document.getElementById("val-status").textContent =
-          `選取 ${dA} → ${dB} · ${isUp ? "+" : ""}${pct}% · $${pA.toFixed(0)} → $${pB.toFixed(0)}`;
-        selDate0 = null;
-      };
-
-      el.addEventListener("mousedown", _valDragDown);
-      document.addEventListener("mouseup", _valDragUp);
-    }
-
-    document.getElementById("val-range-picker").addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-val-range]");
-      if (!t) return;
-      valRangePreset = t.dataset.valRange;
-      for (const c of e.currentTarget.querySelectorAll(".chip"))
-        c.classList.toggle("active", c === t);
-      renderValuationTab();
-    });
 
     // ── Init ───────────────────────────────────────────────────────
     (async () => {
@@ -2221,10 +2341,248 @@
 
         // Pre-load macro data in background (non-blocking)
         loadMacroData().catch(() => {});
+
       } catch (err) {
         status.textContent = `載入失敗：${err.message}`;
       }
     })();
+
+    // ── 情緒 tab ───────────────────────────────────────────────────
+
+    async function initSentimentTab() {
+      const status = document.getElementById("sent-status");
+      if (sentData) { renderSentimentTab(); return; }
+      status.textContent = "載入中…";
+      try {
+        const [sResp, spyResp, fgResp] = await Promise.all([
+          fetch("data/sentiment.json"),
+          fetch("data/SPY.json"),
+          fetch("data/fear_greed.json"),
+        ]);
+        sentData = await sResp.json();
+        const spyJson = await spyResp.json();
+        const fgJson  = await fgResp.json();
+        sentData._spy = {};
+        for (const r of spyJson.data) sentData._spy[r.date] = r.close;
+        sentData._fg = {};
+        for (const r of fgJson.data) sentData._fg[r.date] = r.value;
+
+        document.querySelectorAll("[data-sent-range]").forEach(el => {
+          el.addEventListener("click", () => {
+            sentRangePreset = el.dataset.sentRange;
+            document.querySelectorAll("[data-sent-range]").forEach(e =>
+              e.classList.toggle("active", e.dataset.sentRange === sentRangePreset));
+            renderSentimentChart();
+          });
+        });
+
+        renderSentimentTab();
+        status.textContent = `已載入 ${sentData.data.length} 日資料 · 更新至 ${sentData.updated}`;
+      } catch (err) {
+        status.textContent = `載入失敗：${err.message}`;
+      }
+    }
+
+    function sentLabel(v) {
+      if (v < 20) return "極度恐懼";
+      if (v < 40) return "恐懼";
+      if (v < 60) return "中性";
+      if (v < 80) return "貪婪";
+      return "極度貪婪";
+    }
+
+    function sentColor(v) {
+      if (v < 20) return "#ef4444";
+      if (v < 40) return "#f97316";
+      if (v < 60) return "#eab308";
+      if (v < 80) return "#22c55e";
+      return "#16a34a";
+    }
+
+    function renderSentimentTab() {
+      const lat = sentData.latest;
+      document.getElementById("sent-score-label").textContent = sentLabel(lat.composite);
+      document.getElementById("sent-score-label").style.color = sentColor(lat.composite);
+      document.getElementById("sent-updated").textContent = `資料截至 ${lat.date}`;
+
+      function setBar(id, val) {
+        document.getElementById("bar-" + id).style.width = val + "%";
+        document.getElementById("val-" + id).textContent = Math.round(val);
+        document.getElementById("val-" + id).style.color = sentColor(val);
+      }
+      setBar("vix",    lat.vix_pct);
+      setBar("credit", lat.credit_pct);
+      setBar("trend",  lat.trend_pct);
+      setBar("safety", lat.safety_pct);
+
+      if (!sentGaugeChart) {
+        sentGaugeChart = echarts.init(document.getElementById("sentiment-gauge"), isLight() ? null : "dark");
+      }
+      renderSentimentGauge(lat.composite);
+
+      if (!sentChart) {
+        sentChart = echarts.init(document.getElementById("sentiment-chart"), isLight() ? null : "dark");
+        window.addEventListener("resize", () => sentChart && sentChart.resize());
+      }
+      renderSentimentChart();
+      renderSentimentBacktest(sentData.backtest);
+    }
+
+    function renderSentimentGauge(score) {
+      sentGaugeChart.setOption({
+        backgroundColor: "transparent",
+        series: [{
+          type: "gauge",
+          startAngle: 180, endAngle: 0,
+          min: 0, max: 100,
+          radius: "95%", center: ["50%", "82%"],
+          axisLine: {
+            lineStyle: {
+              width: 20,
+              color: [[0.2,"#ef4444"],[0.4,"#f97316"],[0.6,"#eab308"],[0.8,"#22c55e"],[1,"#16a34a"]]
+            }
+          },
+          pointer: { length: "60%", width: 5, itemStyle: { color: "auto" } },
+          axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false },
+          detail: {
+            offsetCenter: [0, "-25%"], fontSize: 42, fontWeight: 700,
+            color: sentColor(score), formatter: v => Math.round(v)
+          },
+          title: { show: false },
+          data: [{ value: Math.round(score) }],
+        }]
+      });
+    }
+
+    function renderSentimentChart() {
+      if (!sentData || !sentChart) return;
+      const fromDate = sentRangePreset === "all" ? null : (() => {
+        const d = new Date();
+        d.setFullYear(d.getFullYear() - parseInt(sentRangePreset));
+        return d.toISOString().slice(0, 10);
+      })();
+      const rows = fromDate ? sentData.data.filter(r => r.date >= fromDate) : sentData.data;
+
+      const sentSeries = rows.map(r => [r.date, r.composite]);
+      const spySeries  = rows.map(r => [r.date, sentData._spy[r.date] ?? null]).filter(r => r[1] != null);
+      const fgSeries   = rows.map(r => [r.date, sentData._fg[r.date]  ?? null]).filter(r => r[1] != null);
+
+      const tipBg = tc("#161b22","#ffffff"), tipBdr = tc("#30363d","#d0d7de");
+      const tipTx = tc("#e6edf3","#1f2328"), axCl = tc("#8b949e","#57606a");
+      const gridCl = tc("rgba(48,54,61,0.5)","rgba(208,215,222,0.4)");
+
+      sentChart.setOption({
+        backgroundColor: "transparent",
+        tooltip: {
+          trigger: "axis",
+          backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipTx, fontSize: 12 },
+          formatter: params => {
+            const raw = params[0]?.axisValue;
+            const date = new Date(typeof raw === "number" ? raw : raw).toISOString().slice(0,10);
+            let html = `<b>${date}</b><br/>`;
+            for (const p of params) {
+              if (!p.value?.[1]) continue;
+              const v = p.value[1];
+              if (p.seriesName === "情緒指數")
+                html += `<span style="color:${sentColor(v)}">● 情緒: <b>${v.toFixed(1)}</b> ${sentLabel(v)}</span><br/>`;
+              else if (p.seriesName === "CNN F&G")
+                html += `<span style="color:#e3b341">● CNN F&G: <b>${v.toFixed(0)}</b></span><br/>`;
+              else
+                html += `<span style="color:#58a6ff">● SPY: <b>$${v.toFixed(2)}</b></span><br/>`;
+            }
+            return html;
+          }
+        },
+        legend: { data:["情緒指數","CNN F&G","SPY"], top:8, right:24, textStyle:{ color:axCl, fontSize:12 } },
+        grid: { top:44, right:70, bottom:40, left:54 },
+        xAxis: { type:"time", splitLine:{show:false}, axisLabel:{color:axCl,fontSize:11} },
+        yAxis: [
+          { type:"value", min:0, max:100, name:"情緒", nameTextStyle:{color:axCl,fontSize:11},
+            splitLine:{lineStyle:{color:gridCl}}, axisLabel:{color:axCl,fontSize:11} },
+          { type:"value", name:"SPY", nameTextStyle:{color:"#58a6ff",fontSize:11},
+            position:"right", splitLine:{show:false}, axisLabel:{color:"#58a6ff",fontSize:11} },
+        ],
+        series: [
+          {
+            name:"情緒指數", type:"line", data:sentSeries, yAxisIndex:0, symbol:"none",
+            lineStyle:{ color:"#f778ba", width:1.5 },
+            areaStyle:{ color:{ type:"linear",x:0,y:0,x2:0,y2:1,
+              colorStops:[{offset:0,color:"rgba(247,120,186,0.2)"},{offset:1,color:"rgba(247,120,186,0.01)"}] } },
+            markArea:{ silent:true, data:[
+              [{yAxis:0},{yAxis:25,itemStyle:{color:"rgba(239,68,68,0.07)"}}],
+              [{yAxis:85},{yAxis:100,itemStyle:{color:"rgba(34,197,94,0.07)"}}],
+            ]},
+            markLine:{ silent:true, symbol:"none", data:[
+              {yAxis:25,lineStyle:{color:"#ef4444",type:"dashed",width:1},
+               label:{show:true,formatter:"恐懼<25",color:"#ef4444",fontSize:10,position:"end"}},
+              {yAxis:85,lineStyle:{color:"#22c55e",type:"dashed",width:1},
+               label:{show:true,formatter:"貪婪>85",color:"#22c55e",fontSize:10,position:"end"}},
+            ]}
+          },
+          { name:"CNN F&G", type:"line", data:fgSeries, yAxisIndex:0, symbol:"none",
+            lineStyle:{ color:"#e3b341", width:1.2, type:"dashed" } },
+          { name:"SPY", type:"line", data:spySeries, yAxisIndex:1, symbol:"none",
+            lineStyle:{ color:"#58a6ff", width:1.5 } },
+        ],
+        dataZoom:[
+          {type:"inside",xAxisIndex:0},
+          {type:"slider",xAxisIndex:0,height:18,bottom:4,
+           fillerColor:"rgba(88,166,255,0.1)",borderColor:tc("#30363d","#d0d7de")},
+        ],
+      });
+    }
+
+    function renderSentimentBacktest(bt) {
+      const thead = `<tr><th>日期</th><th>分數</th><th>1M SPY</th><th>3M SPY</th><th>6M SPY</th><th>1Y SPY</th></tr>`;
+      function pct(v) {
+        if (v == null) return `<span style="color:var(--muted)">—</span>`;
+        return `<span class="${v>=0?"pos":"neg"}">${v>=0?"+":""}${v.toFixed(2)}%</span>`;
+      }
+      function buildTable(signals, thi, tbi) {
+        document.getElementById(thi).innerHTML = thead;
+        const tbody = document.getElementById(tbi);
+        if (!signals.length) {
+          tbody.innerHTML = `<tr><td colspan="6" style="color:var(--muted);text-align:center">無訊號</td></tr>`;
+          return;
+        }
+        const keys = ["spy_ret_1m","spy_ret_3m","spy_ret_6m","spy_ret_1y"];
+        tbody.innerHTML = signals.map(s => `<tr>
+          <td>${s.date}</td>
+          <td style="color:${sentColor(s.composite)};font-weight:600">${s.composite.toFixed(1)}</td>
+          ${keys.map(k => `<td>${pct(s[k])}</td>`).join("")}
+        </tr>`).join("");
+      }
+      function buildStats(signals, sid) {
+        const el = document.getElementById(sid);
+        if (!signals.length) { el.innerHTML = ""; return; }
+        const keys = ["spy_ret_1m","spy_ret_3m","spy_ret_6m","spy_ret_1y"];
+        const labels = ["1個月後","3個月後","6個月後","1年後"];
+        const avgs = keys.map(k => {
+          const vals = signals.map(s=>s[k]).filter(v=>v!=null);
+          return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+        });
+        el.innerHTML = `
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">SPY 平均報酬（n=${signals.length} 個訊號）</div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap">
+            ${avgs.map((v,i)=>`<div>
+              <div class="sent-stat-label">${labels[i]}</div>
+              <div class="sent-stat-val" style="color:${v!=null&&v>=0?"#3fb950":"#f78166"}">
+                ${v!=null?(v>=0?"+":"")+v.toFixed(2)+"%":"—"}
+              </div>
+            </div>`).join("")}
+          </div>`;
+      }
+      buildTable(bt.fear_signals,  "sent-fear-thead",  "sent-fear-tbody");
+      buildStats(bt.fear_signals,  "sent-fear-stats");
+      buildTable(bt.greed_signals, "sent-greed-thead", "sent-greed-tbody");
+      buildStats(bt.greed_signals, "sent-greed-stats");
+    }
+    document.querySelectorAll(".info-panel-header").forEach(h => {
+      h.addEventListener("click", () => {
+        h.classList.toggle("open");
+        h.nextElementSibling.classList.toggle("open");
+      });
+    });
   </script>
 </body>
 </html>
