@@ -45,6 +45,9 @@ jobs:
       - name: Compute sentiment score
         run: python scripts/compute_sentiment.py
 
+      - name: Compute S&P 500 market breadth
+        run: python scripts/fetch_breadth.py
+
       - name: Commit updates
         run: |
           git config user.name  "github-actions[bot]"
