@@ -123,6 +123,16 @@
       border-color: #b08800;
       color: #b08800;
     }
+    .chip.vix-on {
+      background: rgba(240,136,62,0.15);
+      border-color: #f0883e;
+      color: #f0883e;
+    }
+    body.light .chip.vix-on {
+      background: rgba(220,100,20,0.08);
+      border-color: #d46414;
+      color: #d46414;
+    }
     /* ── Chip hover tooltips ─────────────────────── */
     [data-tooltip] { position: relative; }
     [data-tooltip]::after {
@@ -376,7 +386,7 @@
     }
     .sent-stat-label { font-size: 11px; color: var(--muted); margin-bottom: 2px; }
     .sent-stat-val { font-size: 18px; font-weight: 700; }
-    .sent-bt-wrap { max-height: 220px; overflow-y: auto; margin-bottom: 14px; }
+    .sent-bt-wrap { max-height: 220px; overflow-x: auto; overflow-y: auto; margin-bottom: 14px; }
     .sent-bt-table {
       width: 100%; border-collapse: collapse; font-size: 12px; min-width: 520px;
     }
@@ -410,6 +420,64 @@
     .info-table th { padding: 5px 10px; text-align: left; background: var(--panel); color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
     .info-table td { padding: 5px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
     .info-table tr:last-child td { border-bottom: none; }
+
+    /* ── 市場廣度 tab ────────────────────────────────────────────── */
+    #breadth-top {
+      display: flex; gap: 24px; padding: 16px 24px;
+      border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center;
+    }
+    .breadth-card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+      padding: 14px 20px; min-width: 150px;
+    }
+    .bc-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .bc-main  { display: flex; align-items: baseline; gap: 3px; }
+    .bc-pct   { font-size: 32px; font-weight: 700; letter-spacing: -1px; }
+    .bc-unit  { font-size: 16px; color: var(--muted); }
+    .bc-count { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .bc-signal{ font-size: 13px; font-weight: 600; margin-top: 4px; }
+    #breadth-range-picker { display: flex; gap: 4px; margin-left: auto; }
+    #breadth-chart { width: 100%; height: calc(100vh - 310px); min-height: 280px; }
+
+    /* ── Mobile RWD ───────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      header { padding: 10px 12px; gap: 8px; }
+      header .sub { font-size: 11px; }
+
+      .tab-bar {
+        padding: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .tab-bar::-webkit-scrollbar { display: none; }
+      .tab-btn { padding: 8px 12px; font-size: 13px; flex-shrink: 0; }
+
+      .controls { padding: 8px 12px; }
+      .fp-header { padding: 6px 12px 4px; }
+      .fp-table-wrap { padding: 0 12px 8px; }
+      #ck-summary { padding: 8px 12px; gap: 12px; }
+      #ck-table-wrap { padding: 0 12px 8px; max-height: calc(100dvh - 230px); }
+      .sent-backtest { padding: 8px 12px 14px; }
+      .info-panel { margin: 0 12px 16px; }
+      .status { padding: 6px 12px; }
+
+      #chart { height: calc(100dvh - 160px - var(--fear-h)); }
+      #penta-chart, #macro-chart, #corr-chart, #sector-chart { height: calc(100dvh - 160px); }
+      #sentiment-chart { height: calc(100dvh - 380px); min-height: 220px; }
+      #breadth-top { padding: 12px; gap: 12px; }
+      #breadth-chart { height: calc(100dvh - 300px); min-height: 220px; }
+
+      #sentiment-top { padding: 12px; gap: 12px; }
+      #sentiment-gauge { width: 100%; max-width: 220px; height: 140px; }
+      .sent-label-row { width: 100% !important; max-width: 220px; }
+      .sent-indicators { min-width: unset; }
+      .sent-ind-label { width: 120px; }
+
+      .val-link-card { padding: 14px 16px; gap: 12px; }
+      .val-link-title { font-size: 14px; }
+      .val-link-badge .badge-val { font-size: 20px; }
+    }
   </style>
 </head>
 <body class="light">
@@ -428,6 +496,7 @@
     <button class="tab-btn" data-tab="cashking" data-tooltip="GLD/BTC/TLT/QQQ 同跌 + F&G 低 → 持現金訊號">現金為王時刻</button>
     <button class="tab-btn" data-tab="valuation" data-tooltip="Forward P/E 估值連結 · MacroMicro（QQQ / SPY）">估值</button>
     <button class="tab-btn" data-tab="sentiment" data-tooltip="VIX · 信用利差 · SPY趨勢 · 避險資金 — 4指標複合情緒 + 回測">情緒</button>
+    <button class="tab-btn" data-tab="breadth" data-tooltip="S&P 500 成份股站上 50日/200日均線比例 — 市場廣度與多空健康度">市場廣度</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -493,7 +562,8 @@
         <span class="chip active" data-mode="pentagram" data-tooltip="以均值為中心，顯示±1σ/±2σ通道位置">五線譜</span>
         <span class="chip" data-mode="channel" data-tooltip="以滾動高低點為上下緣的價格通道">通道</span>
       </div>
-      <span id="penta-fg-toggle" class="chip" style="margin-left:8px;flex-shrink:0" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
+      <span id="penta-vix-toggle" class="chip" style="margin-left:8px;flex-shrink:0" data-tooltip="疊加 VIX 恐慌指數（右軸，疫情高點 ~89）">VIX</span>
+      <span id="penta-fg-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
       <div id="penta-period-picker" style="margin-left:auto;display:flex;gap:6px;flex-shrink:0">
         <span class="chip" data-period="0.5Y" data-tooltip="用近0.5年數據算均值/標準差，較敏感">短期 0.5Y</span>
         <span class="chip" data-period="1.5Y" data-tooltip="用近1.5年數據算均值/標準差，均衡參考">中期 1.5Y</span>
@@ -724,6 +794,66 @@
     </div>
   </section>
 
+  <!-- ── 市場廣度 tab ──────────────────────────────────────────── -->
+  <section id="tab-breadth" class="tab-section" hidden>
+    <div id="breadth-top">
+      <div class="breadth-card">
+        <div class="bc-label">50日均線以上</div>
+        <div class="bc-main">
+          <span class="bc-pct" id="bc-50-pct">—</span>
+          <span class="bc-unit">%</span>
+        </div>
+        <div class="bc-count" id="bc-50-count">— / —</div>
+        <div class="bc-signal" id="bc-50-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">200日均線以上</div>
+        <div class="bc-main">
+          <span class="bc-pct" id="bc-200-pct">—</span>
+          <span class="bc-unit">%</span>
+        </div>
+        <div class="bc-count" id="bc-200-count">— / —</div>
+        <div class="bc-signal" id="bc-200-signal">—</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap">
+        <span id="breadth-vix-toggle" class="chip" data-tooltip="疊加 VIX 恐慌指數（右軸）">VIX</span>
+        <span id="breadth-fg-toggle"  class="chip" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
+        <div id="breadth-range-picker" style="display:flex;gap:4px">
+          <span class="chip" data-breadth-range="1Y" data-tooltip="近1年">1Y</span>
+          <span class="chip active" data-breadth-range="2Y" data-tooltip="近2年">2Y</span>
+          <span class="chip" data-breadth-range="5Y" data-tooltip="近5年">5Y</span>
+          <span class="chip" data-breadth-range="MAX" data-tooltip="全部歷史">MAX</span>
+        </div>
+      </div>
+    </div>
+    <div id="breadth-chart"></div>
+    <div class="status" id="breadth-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 如何解讀市場廣度？</div>
+      <div class="info-panel-body">
+        <p>市場廣度衡量 S&amp;P 500 全部成份股中，有多少比例的個股價格站在移動均線之上。比指數本身更能反映市場「內部健康度」——即便指數創高，若廣度下滑，代表漲勢由少數大型股撐起，潛藏風險。</p>
+        <table class="info-table">
+          <thead><tr><th>均線</th><th>意義</th></tr></thead>
+          <tbody>
+            <tr><td>50日均線（10週線）</td><td>中期趨勢；多數股票站上代表短中期動能強勁</td></tr>
+            <tr><td>200日均線（年線）</td><td>長期牛熊分界；多數股票站上代表整體市場處於長多格局</td></tr>
+          </tbody>
+        </table>
+        <table class="info-table" style="margin-top:14px">
+          <thead><tr><th>比例</th><th>50日均線訊號</th><th>200日均線訊號</th></tr></thead>
+          <tbody>
+            <tr><td>&gt; 75%</td><td style="color:#3fb950">強勢多頭</td><td style="color:#3fb950">長期多頭確認</td></tr>
+            <tr><td>55 – 75%</td><td style="color:#7ee787">多方主導</td><td style="color:#7ee787">偏多格局</td></tr>
+            <tr><td>35 – 55%</td><td style="color:var(--muted)">多空拉鋸</td><td style="color:var(--muted)">整理格局</td></tr>
+            <tr><td>20 – 35%</td><td style="color:#f0883e">空方壓力</td><td style="color:#f0883e">偏空格局</td></tr>
+            <tr><td>&lt; 20%</td><td style="color:#f85149">弱勢超賣</td><td style="color:#f85149">長期空頭警戒</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px;color:var(--muted)">觀察重點：當指數走高但廣度下滑（背離），通常是警示訊號；廣度由低點大幅回升，往往是新一波行情啟動的先行指標。</p>
+      </div>
+    </div>
+  </section>
+
   <script>
     const SERIES = [
       { key: "VOO",  file: "data/VOO.json",       color: "#58a6ff", yAxis: 0, default: true  },
@@ -745,7 +875,8 @@
     let pentaActiveTicker = "VOO";
     let pentaPeriod = "3.5Y";
     let pentaMode = "pentagram";
-    let pentaFgActive = false;
+    let pentaFgActive  = false;
+    let pentaVixActive = false;
 
     const loaded = {};
     const active = new Set(SERIES.filter(s => s.default).map(s => s.key));
@@ -779,6 +910,16 @@
     const sectorLoaded = {}; // { XLK: [...], XLF: [...], ... }
     const SECTOR_ETFS  = ["XLK","XLF","XLV","XLE","XLI","XLY","XLP","XLU","XLRE","XLB","XLC"];
 
+    // ── 市場廣度 state ─────────────────────────────────────────────
+    let breadthChart     = null;
+    let breadthData      = null;
+    let breadthSpy       = {};   // { date: close }
+    let breadthVixMap    = {};   // { date: value }
+    let breadthFgMap     = {};   // { date: value }
+    let breadthVixActive = false;
+    let breadthFgActive  = false;
+    let breadthRange     = "2Y";
+
     // ── 現金王 state ───────────────────────────────────────────────
     const CK_ASSETS = [
       { key: "GLD", color: "#d4a843", file: "data/GLD.json", isGold: true },
@@ -811,7 +952,16 @@
     // ── Resize handler ─────────────────────────────────────────────
     function setupResizeHandler() {
       if (window._resizeHandler) window.removeEventListener("resize", window._resizeHandler);
-      window._resizeHandler = () => { chart.resize(); if (pentaChart) pentaChart.resize(); };
+      window._resizeHandler = () => {
+        chart.resize();
+        if (pentaChart)  pentaChart.resize();
+        if (macroChart)  macroChart.resize();
+        if (corrChart)   corrChart.resize();
+        if (sectorChart) sectorChart.resize();
+        if (sentChart)   sentChart.resize();
+        if (sentGaugeChart) sentGaugeChart.resize();
+        if (breadthChart) breadthChart.resize();
+      };
       window.addEventListener("resize", window._resizeHandler);
     }
     setupResizeHandler();
@@ -819,6 +969,7 @@
     // ── Theme ──────────────────────────────────────────────────────
     function isLight() { return document.body.classList.contains("light"); }
     function tc(dark, light) { return isLight() ? light : dark; }
+    function mob() { return window.innerWidth < 600; }
 
     function applyTheme(light) {
       document.body.classList.toggle("light", light);
@@ -860,6 +1011,11 @@
         sentGaugeChart.dispose();
         sentGaugeChart = echarts.init(document.getElementById("sentiment-gauge"), light ? null : "dark");
         renderSentimentGauge(sentData.latest.composite);
+      }
+      if (breadthChart) {
+        breadthChart.dispose();
+        breadthChart = echarts.init(document.getElementById("breadth-chart"), light ? null : "dark");
+        renderBreadthChart();
       }
     }
 
@@ -906,6 +1062,8 @@
         initCKTab();
       } else if (tabName === "sentiment") {
         initSentimentTab();
+      } else if (tabName === "breadth") {
+        initBreadthTab();
       }
     }
 
@@ -1132,17 +1290,18 @@
       const tipBdr   = tc("#30363d", "#d0d7de");
       const tipText  = tc("#e6edf3", "#1f2328");
 
+      const isMob = mob();
       const yAxisDef = [
         { id: "price", name: "USD Price", position: "left",
           axisLine: { lineStyle: { color: axisClr } },
           splitLine: { lineStyle: { color: gridClr } } },
         { id: "vix",  name: "VIX",  position: "right",
           axisLine: { lineStyle: { color: "#f0883e" } }, splitLine: { show: false } },
-        { id: "fg",   name: "F&G",  position: "right", offset: 55, min: 0, max: 100,
+        { id: "fg",   name: "F&G",  position: "right", offset: isMob ? 35 : 55, min: 0, max: 100,
           axisLine: { lineStyle: { color: "#e3b341" } }, splitLine: { show: false } },
-        { id: "tw",   name: "TWD",  position: "left",  offset: 70,
+        { id: "tw",   name: "TWD",  position: "left",  offset: isMob ? 45 : 70,
           axisLine: { lineStyle: { color: "#3fb950" } }, splitLine: { show: false } },
-        { id: "btc",  name: "BTC",  position: "right", offset: 110,
+        { id: "btc",  name: "BTC",  position: "right", offset: isMob ? 65 : 110,
           axisLine: { lineStyle: { color: "#f7931a" } }, splitLine: { show: false } },
       ];
 
@@ -1234,7 +1393,7 @@
           textStyle: { color: tipText },
           top: 6,
         },
-        grid: { left: 115, right: 160, top: 44, bottom: 56 },
+        grid: { left: isMob ? 75 : 115, right: isMob ? 100 : 160, top: 44, bottom: 56 },
         xAxis: {
           type: "time",
           axisLine: { lineStyle: { color: axisClr } },
@@ -1355,6 +1514,17 @@
       return fg.filter(r => r[0] >= fromDate);
     }
 
+    function getPentaVixData() {
+      const vix = loaded["VIX_H"]; // daily high, not close
+      if (!vix) return [];
+      const d = new Date();
+      if      (pentaPeriod === "0.5Y") d.setMonth(d.getMonth() - 6);
+      else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
+      else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
+      const fromDate = d.toISOString().slice(0, 10);
+      return vix.filter(r => r[0] >= fromDate);
+    }
+
     function computeLinearRegression(data) {
       const n = data.length;
       if (n < 10) return null;
@@ -1463,13 +1633,29 @@
       const tipText  = tc("#e6edf3", "#1f2328");
       const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
 
-      const fgDataCh = pentaFgActive && loaded["F&G"] ? getPentaFgData() : null;
-      const fgYAxisCh = {
-        min: 0, max: 100, position: "right",
-        axisLine: { lineStyle: { color: "#e3b341" } },
-        axisLabel: { fontSize: 11, color: "#e3b341" },
-        splitLine: { show: false },
-      };
+      const isMobCh   = mob();
+      const axisOffCh = isMobCh ? 42 : 55;
+      const vixDataCh = pentaVixActive && loaded["VIX_H"] ? getPentaVixData() : null;
+      const fgDataCh  = pentaFgActive  && loaded["F&G"] ? getPentaFgData()  : null;
+
+      const rightAxesCh = [];
+      let vixIdxCh = -1, fgIdxCh = -1;
+      if (vixDataCh) {
+        vixIdxCh = 1 + rightAxesCh.length;
+        rightAxesCh.push({ scale: true, position: "right", offset: rightAxesCh.length * axisOffCh,
+          axisLine: { lineStyle: { color: "#f0883e" } }, axisLabel: { fontSize: 11, color: "#f0883e" }, splitLine: { show: false } });
+      }
+      if (fgDataCh) {
+        fgIdxCh = 1 + rightAxesCh.length;
+        rightAxesCh.push({ min: 0, max: 100, position: "right", offset: rightAxesCh.length * axisOffCh,
+          axisLine: { lineStyle: { color: "#e3b341" } }, axisLabel: { fontSize: 11, color: "#e3b341" }, splitLine: { show: false } });
+      }
+      const priceAxisCh = { scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } };
+      const yAxisCh = rightAxesCh.length > 0 ? [priceAxisCh, ...rightAxesCh] : priceAxisCh;
+      const gridRCh = rightAxesCh.length === 0 ? (isMobCh ? 12 : 24)
+                    : rightAxesCh.length === 1 ? (isMobCh ? 38 : 58)
+                    : (isMobCh ? 65 : 105);
+
       pentaChart.setOption({
         backgroundColor: "transparent",
         tooltip: {
@@ -1485,29 +1671,28 @@
             for (const p of params) {
               const v = p.value?.[1];
               if (v == null) continue;
-              const fmt = p.seriesName === "F&G"
-                ? v.toFixed(0)
-                : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+              const fmt = p.seriesName === "F&G" ? v.toFixed(0)
+                        : p.seriesName === "VIX" ? v.toFixed(2)
+                        : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
               out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${fmt}</b><br/>`;
             }
             return out;
           },
         },
         legend: {
-          data: fgDataCh ? ["上軌 +2.5σ", "MA20", "價格", "下軌 -2.5σ", "F&G"] : ["上軌 +2.5σ", "MA20", "價格", "下軌 -2.5σ"],
+          data: ["上軌 +2.5σ", "MA20", "價格", "下軌 -2.5σ",
+                 ...(vixIdxCh >= 0 ? ["VIX"] : []), ...(fgIdxCh >= 0 ? ["F&G"] : [])],
           textStyle: { color: tipText, fontSize: 13 },
           top: 6,
         },
-        grid: { left: 72, right: fgDataCh ? 58 : 24, top: 48, bottom: 56 },
+        grid: { left: isMobCh ? 45 : 72, right: gridRCh, top: 48, bottom: 56 },
         xAxis: {
           type: "time",
           axisLine: { lineStyle: { color: axisClr } },
           axisLabel: { fontSize: 12 },
           splitLine: { show: false },
         },
-        yAxis: fgDataCh
-          ? [{ scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } }, fgYAxisCh]
-          : { scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } },
+        yAxis: yAxisCh,
         dataZoom: [
           { type: "inside" },
           { type: "slider", height: 18, bottom: 14 },
@@ -1517,7 +1702,8 @@
           { ...lineBase, name: "MA20",       data: ma20w,  yAxisIndex: 0, lineStyle: { width: 1.5, color: "#9e9e9e", type: "dashed" }, itemStyle: { color: "#9e9e9e" } },
           { ...lineBase, name: "價格",       data: priceW, yAxisIndex: 0, lineStyle: { width: 1.8, color: s.color },                   itemStyle: { color: s.color } },
           { ...lineBase, name: "下軌 -2.5σ", data: lowerW, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#1565c0" },                  itemStyle: { color: "#1565c0" } },
-          ...(fgDataCh ? [{ ...lineBase, name: "F&G", data: fgDataCh, yAxisIndex: 1, lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" }, areaStyle: { color: "rgba(227,179,65,0.06)" } }] : []),
+          ...(vixIdxCh >= 0 ? [{ ...lineBase, name: "VIX", data: vixDataCh, yAxisIndex: vixIdxCh, lineStyle: { width: 1.5, color: "#f0883e", type: "dashed" }, itemStyle: { color: "#f0883e" }, areaStyle: { color: "rgba(240,136,62,0.06)" } }] : []),
+          ...(fgIdxCh  >= 0 ? [{ ...lineBase, name: "F&G", data: fgDataCh,  yAxisIndex: fgIdxCh,  lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" }, areaStyle: { color: "rgba(227,179,65,0.06)" } }] : []),
         ],
       }, { notMerge: true });
 
@@ -1554,13 +1740,29 @@
       const tipText  = tc("#e6edf3", "#1f2328");
       const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
 
-      const fgDataPt = pentaFgActive && loaded["F&G"] ? getPentaFgData() : null;
-      const fgYAxisPt = {
-        min: 0, max: 100, position: "right",
-        axisLine: { lineStyle: { color: "#e3b341" } },
-        axisLabel: { fontSize: 11, color: "#e3b341" },
-        splitLine: { show: false },
-      };
+      const isMobPt   = mob();
+      const axisOffPt = isMobPt ? 42 : 55;
+      const vixDataPt = pentaVixActive && loaded["VIX_H"] ? getPentaVixData() : null;
+      const fgDataPt  = pentaFgActive  && loaded["F&G"] ? getPentaFgData()  : null;
+
+      const rightAxesPt = [];
+      let vixIdxPt = -1, fgIdxPt = -1;
+      if (vixDataPt) {
+        vixIdxPt = 1 + rightAxesPt.length;
+        rightAxesPt.push({ scale: true, position: "right", offset: rightAxesPt.length * axisOffPt,
+          axisLine: { lineStyle: { color: "#f0883e" } }, axisLabel: { fontSize: 11, color: "#f0883e" }, splitLine: { show: false } });
+      }
+      if (fgDataPt) {
+        fgIdxPt = 1 + rightAxesPt.length;
+        rightAxesPt.push({ min: 0, max: 100, position: "right", offset: rightAxesPt.length * axisOffPt,
+          axisLine: { lineStyle: { color: "#e3b341" } }, axisLabel: { fontSize: 11, color: "#e3b341" }, splitLine: { show: false } });
+      }
+      const priceAxisPt = { scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } };
+      const yAxisPt = rightAxesPt.length > 0 ? [priceAxisPt, ...rightAxesPt] : priceAxisPt;
+      const gridRPt = rightAxesPt.length === 0 ? (isMobPt ? 12 : 24)
+                    : rightAxesPt.length === 1 ? (isMobPt ? 38 : 58)
+                    : (isMobPt ? 65 : 105);
+
       pentaChart.setOption({
         backgroundColor: "transparent",
         tooltip: {
@@ -1576,31 +1778,28 @@
             for (const p of params) {
               const v = p.value?.[1];
               if (v == null) continue;
-              const fmt = p.seriesName === "F&G"
-                ? v.toFixed(0)
-                : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+              const fmt = p.seriesName === "F&G" ? v.toFixed(0)
+                        : p.seriesName === "VIX" ? v.toFixed(2)
+                        : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
               out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${fmt}</b><br/>`;
             }
             return out;
           },
         },
         legend: {
-          data: fgDataPt
-            ? ["極度貪婪", "貪婪", "價格", "趨勢線", "恐懼", "極度恐懼", "F&G"]
-            : ["極度貪婪", "貪婪", "價格", "趨勢線", "恐懼", "極度恐懼"],
+          data: ["極度貪婪", "貪婪", "價格", "趨勢線", "恐懼", "極度恐懼",
+                 ...(vixIdxPt >= 0 ? ["VIX"] : []), ...(fgIdxPt >= 0 ? ["F&G"] : [])],
           textStyle: { color: tipText, fontSize: 13 },
           top: 6,
         },
-        grid: { left: 72, right: fgDataPt ? 58 : 24, top: 48, bottom: 56 },
+        grid: { left: isMobPt ? 45 : 72, right: gridRPt, top: 48, bottom: 56 },
         xAxis: {
           type: "time",
           axisLine: { lineStyle: { color: axisClr } },
           axisLabel: { fontSize: 12 },
           splitLine: { show: false },
         },
-        yAxis: fgDataPt
-          ? [{ scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } }, fgYAxisPt]
-          : { scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } },
+        yAxis: yAxisPt,
         dataZoom: [
           { type: "inside" },
           { type: "slider", height: 18, bottom: 14 },
@@ -1612,7 +1811,8 @@
           { ...lineBase, name: "趨勢線",   data: result.trend,  yAxisIndex: 0, lineStyle: { width: 1.5, color: "#9e9e9e" }, itemStyle: { color: "#9e9e9e" } },
           { ...lineBase, name: "恐懼",     data: result.lower1, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#64b5f6" }, itemStyle: { color: "#64b5f6" } },
           { ...lineBase, name: "極度恐懼", data: result.lower2, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#1565c0" }, itemStyle: { color: "#1565c0" } },
-          ...(fgDataPt ? [{ ...lineBase, name: "F&G", data: fgDataPt, yAxisIndex: 1, lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" }, areaStyle: { color: "rgba(227,179,65,0.06)" } }] : []),
+          ...(vixIdxPt >= 0 ? [{ ...lineBase, name: "VIX", data: vixDataPt, yAxisIndex: vixIdxPt, lineStyle: { width: 1.5, color: "#f0883e", type: "dashed" }, itemStyle: { color: "#f0883e" }, areaStyle: { color: "rgba(240,136,62,0.06)" } }] : []),
+          ...(fgIdxPt  >= 0 ? [{ ...lineBase, name: "F&G", data: fgDataPt,  yAxisIndex: fgIdxPt,  lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" }, areaStyle: { color: "rgba(227,179,65,0.06)" } }] : []),
         ],
       }, { notMerge: true });
 
@@ -1662,6 +1862,18 @@
       pentaMode = t.dataset.mode;
       for (const c of e.currentTarget.querySelectorAll(".chip"))
         c.classList.toggle("active", c === t);
+      renderPentagram();
+    });
+
+    // ── Pentagram VIX toggle ───────────────────────────────────────
+    document.getElementById("penta-vix-toggle").addEventListener("click", async () => {
+      pentaVixActive = !pentaVixActive;
+      document.getElementById("penta-vix-toggle").classList.toggle("vix-on", pentaVixActive);
+      if (pentaVixActive && !loaded["VIX_H"]) {
+        const resp = await fetch("data/VIX.json", { cache: "no-cache" });
+        const j = await resp.json();
+        loaded["VIX_H"] = (j.data || []).map(r => [r.date, r.high]);
+      }
       renderPentagram();
     });
 
@@ -1750,7 +1962,7 @@
       }
       if (macroShowCAPE) {
         capeAxisIdx = yAxisList.length;
-        yAxisList.push({ scale: true, position: "right", offset: macroShowM2 ? 70 : 0,
+        yAxisList.push({ scale: true, position: "right", offset: macroShowM2 ? (mob() ? 42 : 70) : 0,
           axisLine: { lineStyle: { color: "#a371f7" } },
           axisLabel: { fontSize: 11, color: "#a371f7" },
           splitLine: { show: false } });
@@ -1758,7 +1970,9 @@
       const yAxisCfg = yAxisList.length === 1 ? yAxisList[0] : yAxisList;
 
       const overlayCount = (macroShowM2 ? 1 : 0) + (macroShowCAPE ? 1 : 0);
-      const gridRight = overlayCount === 0 ? 24 : overlayCount === 1 ? 72 : 130;
+      const gridRight = mob()
+        ? (overlayCount === 0 ? 12 : overlayCount === 1 ? 42 : 80)
+        : (overlayCount === 0 ? 24 : overlayCount === 1 ? 72 : 130);
 
       let m2yoyF = [];
       if (macroShowM2 && macroLoaded["M2"]) m2yoyF = filterMacroRange(computeM2YoY(macroLoaded["M2"]));
@@ -1813,7 +2027,7 @@
           },
         },
         legend: { data: legendData, textStyle: { color: tipText }, top: 6 },
-        grid: { left: 72, right: gridRight, top: 44, bottom: 56 },
+        grid: { left: mob() ? 45 : 72, right: gridRight, top: 44, bottom: 56 },
         xAxis: { type: "time", axisLine: { lineStyle: { color: axisClr } }, splitLine: { show: false } },
         yAxis: yAxisCfg,
         dataZoom: [{ type: "inside" }, { type: "slider", height: 18, bottom: 14 }],
@@ -1934,7 +2148,7 @@
           text: ["+", "−"], textStyle: { color: tipText, fontSize: 11 },
           inRange: { color: ["#c62828","#ef9a9a","#f5f5f5","#a5d6a7","#1b5e20"] },
         },
-        grid: { top: 16, bottom: 72, left: 56, right: 16 },
+        grid: { top: 16, bottom: 72, left: mob() ? 40 : 56, right: 16 },
         xAxis: {
           type: "category", data: xLabels, splitArea: { show: true },
           axisLine: { lineStyle: { color: axisClr } },
@@ -2287,7 +2501,7 @@
           text: ["+1", "−1"], textStyle: { color: tipText, fontSize: 11 },
           inRange: { color: ["#1565c0", "#c8d8f0", "#f5f5f5", "#f5c0c0", "#c62828"] },
         },
-        grid: { top: 24, bottom: 72, left: 56, right: 20 },
+        grid: { top: 24, bottom: 72, left: mob() ? 40 : 56, right: 20 },
         xAxis: {
           type: "category", data: keys, splitArea: { show: true },
           axisLine: { lineStyle: { color: axisClr } },
@@ -2494,7 +2708,7 @@
           }
         },
         legend: { data:["情緒指數","CNN F&G","SPY"], top:8, right:24, textStyle:{ color:axCl, fontSize:12 } },
-        grid: { top:44, right:70, bottom:40, left:54 },
+        grid: { top:44, right: mob() ? 50 : 70, bottom:40, left: mob() ? 40 : 54 },
         xAxis: { type:"time", splitLine:{show:false}, axisLabel:{color:axCl,fontSize:11} },
         yAxis: [
           { type:"value", min:0, max:100, name:"情緒", nameTextStyle:{color:axCl,fontSize:11},
@@ -2577,6 +2791,243 @@
       buildTable(bt.greed_signals, "sent-greed-thead", "sent-greed-tbody");
       buildStats(bt.greed_signals, "sent-greed-stats");
     }
+    // ── 市場廣度 tab ───────────────────────────────────────────────
+
+    function breadthSignal(pct, is200) {
+      if (pct == null) return { label: "—", color: "var(--muted)" };
+      if (is200) {
+        if (pct >= 70) return { label: "長期多頭確認", color: "#3fb950" };
+        if (pct >= 55) return { label: "偏多格局",     color: "#7ee787" };
+        if (pct >= 35) return { label: "整理格局",     color: "#f0883e" };
+        if (pct >= 20) return { label: "偏空格局",     color: "#f0883e" };
+        return                { label: "長期空頭警戒", color: "#f85149" };
+      }
+      if (pct >= 75) return { label: "強勢多頭", color: "#3fb950" };
+      if (pct >= 55) return { label: "多方主導", color: "#7ee787" };
+      if (pct >= 35) return { label: "多空拉鋸", color: "#e3b341" };
+      if (pct >= 20) return { label: "空方壓力", color: "#f0883e" };
+      return               { label: "弱勢超賣", color: "#f85149" };
+    }
+
+    async function initBreadthTab() {
+      const status = document.getElementById("breadth-status");
+      if (breadthData) { renderBreadthChart(); return; }
+      status.textContent = "載入中…";
+      try {
+        const [bResp, spyResp] = await Promise.all([
+          fetch("data/breadth.json", { cache: "no-cache" }),
+          fetch("data/SPY.json",     { cache: "no-cache" }),
+        ]);
+        if (!bResp.ok) throw new Error(`HTTP ${bResp.status}`);
+        breadthData = await bResp.json();
+        const spyJson = await spyResp.json();
+        breadthSpy = {};
+        for (const r of spyJson.data) breadthSpy[r.date] = r.close;
+
+        document.querySelectorAll("[data-breadth-range]").forEach(el => {
+          el.addEventListener("click", () => {
+            breadthRange = el.dataset.breadthRange;
+            document.querySelectorAll("[data-breadth-range]").forEach(e =>
+              e.classList.toggle("active", e.dataset.breadthRange === breadthRange));
+            renderBreadthChart();
+          });
+        });
+
+        async function loadAndToggle(key, mapRef, file, btnId) {
+          const active = key === "VIX" ? breadthVixActive : breadthFgActive;
+          document.getElementById(btnId).classList.toggle("active", active);
+          if (active && Object.keys(mapRef).length === 0) {
+            try {
+              const r = await fetch(file, { cache: "no-cache" });
+              const j = await r.json();
+              for (const row of (j.data || []))
+                mapRef[row.date] = row.close !== undefined ? row.close : row.value;
+            } catch (e) { console.warn("breadth overlay load failed:", e); }
+          }
+          renderBreadthChart();
+        }
+
+        document.getElementById("breadth-vix-toggle").addEventListener("click", () => {
+          breadthVixActive = !breadthVixActive;
+          loadAndToggle("VIX", breadthVixMap, "data/VIX.json", "breadth-vix-toggle");
+        });
+        document.getElementById("breadth-fg-toggle").addEventListener("click", () => {
+          breadthFgActive = !breadthFgActive;
+          loadAndToggle("F&G", breadthFgMap, "data/fear_greed.json", "breadth-fg-toggle");
+        });
+
+        const rows   = breadthData.data;
+        const latest = rows[rows.length - 1];
+
+        function setCard(suffix, pct, count, total, is200) {
+          document.getElementById(`bc-${suffix}-pct`).textContent =
+            pct != null ? pct.toFixed(1) : "—";
+          document.getElementById(`bc-${suffix}-count`).textContent =
+            count != null ? `${count} / ${total}` : "— / —";
+          const sig = breadthSignal(pct, is200);
+          const el  = document.getElementById(`bc-${suffix}-signal`);
+          el.textContent  = sig.label;
+          el.style.color  = sig.color;
+        }
+        setCard("50",  latest.above50_pct,  latest.above50_count,  latest.total, false);
+        setCard("200", latest.above200_pct, latest.above200_count, latest.total, true);
+
+        if (!breadthChart) {
+          breadthChart = echarts.init(
+            document.getElementById("breadth-chart"), isLight() ? null : "dark");
+          setupResizeHandler();
+        }
+        renderBreadthChart();
+        status.textContent =
+          `S&P 500 市場廣度 · ${rows.length} 個交易日 · 更新至 ${breadthData.updated}`;
+      } catch (err) {
+        status.textContent = `載入失敗：${err.message}`;
+      }
+    }
+
+    function renderBreadthChart() {
+      if (!breadthData || !breadthChart) return;
+      const axisClr = tc("#8b949e", "#57606a");
+      const gridClr = tc("#21262d", "#e1e4e8");
+      const tipBg   = tc("#161b22", "#ffffff");
+      const tipBdr  = tc("#30363d", "#d0d7de");
+      const tipText = tc("#e6edf3", "#1f2328");
+
+      let rows = breadthData.data;
+      if (breadthRange !== "MAX") {
+        const years   = breadthRange === "1Y" ? 1 : breadthRange === "2Y" ? 2 : 3;
+        const cutoff  = new Date();
+        cutoff.setFullYear(cutoff.getFullYear() - years);
+        const cutoffStr = cutoff.toISOString().slice(0, 10);
+        rows = rows.filter(r => r.date >= cutoffStr);
+      }
+
+      const dates    = rows.map(r => r.date);
+      const above50  = rows.map(r => r.above50_pct  != null ? r.above50_pct  : null);
+      const above200 = rows.map(r => r.above200_pct != null ? r.above200_pct : null);
+      const spyVals  = rows.map(r => breadthSpy[r.date]   != null ? +breadthSpy[r.date].toFixed(2)   : null);
+      const vixVals  = rows.map(r => breadthVixMap[r.date] != null ? +breadthVixMap[r.date].toFixed(2) : null);
+      const fgVals   = rows.map(r => breadthFgMap[r.date]  != null ? +breadthFgMap[r.date].toFixed(1)  : null);
+
+      // ── build dynamic yAxis list ──────────────────────────────────
+      const yAxes = [
+        { // [0] left: breadth %
+          type: "value", min: 0, max: 100,
+          splitLine: { lineStyle: { color: gridClr } },
+          axisLine: { show: false },
+          axisLabel: { color: axisClr, fontSize: 11, formatter: v => v + "%" },
+        },
+        { // [1] right: SPY price
+          type: "value", position: "right", offset: 0,
+          splitLine: { show: false }, axisLine: { show: false }, axisTick: { show: false },
+          axisLabel: { color: "#a371f7", fontSize: 10, formatter: v => "$" + v },
+        },
+      ];
+      let overlayIdx = -1;
+      if (breadthVixActive || breadthFgActive) {
+        overlayIdx = yAxes.length;
+        yAxes.push({
+          type: "value", position: "right", offset: mob() ? 44 : 58,
+          scale: true,
+          splitLine: { show: false }, axisLine: { show: false }, axisTick: { show: false },
+          axisLabel: { show: false },
+        });
+      }
+
+      // ── tooltip formatter ─────────────────────────────────────────
+      const overlayFmt = { VIX: v => v.toFixed(1), "F&G": v => v.toFixed(0) };
+
+      breadthChart.setOption({
+        backgroundColor: "transparent",
+        tooltip: {
+          trigger: "axis",
+          backgroundColor: tipBg, borderColor: tipBdr,
+          textStyle: { color: tipText, fontSize: 12 },
+          formatter(params) {
+            const d   = params[0].axisValue;
+            const row = rows[params[0].dataIndex];
+            let html  = `<div style="margin-bottom:4px;font-size:11px;color:${axisClr}">${d}</div>`;
+            for (const p of params) {
+              if (p.value == null) continue;
+              let val;
+              if (p.seriesName === "SPY")        val = `$${p.value.toFixed(2)}`;
+              else if (p.seriesName === "VIX")   val = p.value.toFixed(1);
+              else if (p.seriesName === "F&G")   val = p.value.toFixed(0);
+              else                               val = `${p.value.toFixed(1)}%`;
+              html += `<div>${p.marker}${p.seriesName}: <b>${val}</b></div>`;
+            }
+            if (row) html +=
+              `<div style="margin-top:4px;font-size:11px;color:${axisClr}">` +
+              `50MA: ${row.above50_count}/${row.total} · 200MA: ${row.above200_count ?? "—"}/${row.total}</div>`;
+            return html;
+          },
+        },
+        grid: { top: 28, bottom: 36, left: mob() ? 48 : 56,
+                right: mob() ? 56 : (overlayIdx >= 0 ? 112 : 68) },
+        xAxis: {
+          type: "category", data: dates, boundaryGap: false,
+          axisLine: { lineStyle: { color: axisClr } },
+          axisTick: { show: false },
+          axisLabel: { color: axisClr, fontSize: 11 },
+        },
+        yAxis: yAxes,
+        series: [
+          {
+            name: "SPY",
+            type: "line", data: spyVals, smooth: 0.3, symbol: "none",
+            yAxisIndex: 1, z: 1,
+            lineStyle: { width: 1.5, color: "#a371f7", opacity: 0.7 },
+          },
+          {
+            name: "50日均線以上",
+            type: "line", data: above50, smooth: 0.3, symbol: "none",
+            yAxisIndex: 0, z: 3,
+            lineStyle: { width: 2, color: "#58a6ff" },
+            areaStyle: { color: "rgba(88,166,255,0.08)" },
+            markLine: {
+              silent: true, symbol: "none",
+              data: [
+                { yAxis: 20, lineStyle: { type: "dashed", color: "rgba(248,81,73,0.5)",  width: 1 },
+                  label: { formatter: "20%", color: "#f85149", fontSize: 10, position: "insideEndTop" } },
+                { yAxis: 50, lineStyle: { type: "dashed", color: "rgba(139,148,158,0.4)", width: 1 },
+                  label: { formatter: "50%", color: axisClr,   fontSize: 10, position: "insideEndTop" } },
+                { yAxis: 80, lineStyle: { type: "dashed", color: "rgba(63,185,80,0.5)",  width: 1 },
+                  label: { formatter: "80%", color: "#3fb950",  fontSize: 10, position: "insideEndTop" } },
+              ],
+            },
+            markArea: {
+              silent: true,
+              data: [
+                [{ yAxis: 0,  itemStyle: { color: "rgba(248,81,73,0.06)" } }, { yAxis: 20  }],
+                [{ yAxis: 80, itemStyle: { color: "rgba(63,185,80,0.06)"  } }, { yAxis: 100 }],
+              ],
+            },
+          },
+          {
+            name: "200日均線以上",
+            type: "line", data: above200, smooth: 0.3, symbol: "none",
+            yAxisIndex: 0, z: 2,
+            lineStyle: { width: 2, color: "#3fb950" },
+            areaStyle: { color: "rgba(63,185,80,0.05)" },
+          },
+          ...(breadthVixActive ? [{
+            name: "VIX",
+            type: "line", data: vixVals, smooth: 0.3, symbol: "none",
+            yAxisIndex: overlayIdx, z: 2,
+            lineStyle: { width: 1.5, color: "#f0883e", type: "dashed" },
+            areaStyle: { color: "rgba(240,136,62,0.06)" },
+          }] : []),
+          ...(breadthFgActive ? [{
+            name: "F&G",
+            type: "line", data: fgVals, smooth: 0.3, symbol: "none",
+            yAxisIndex: overlayIdx, z: 2,
+            lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" },
+            areaStyle: { color: "rgba(227,179,65,0.05)" },
+          }] : []),
+        ],
+      }, { notMerge: true });
+    }
+
     document.querySelectorAll(".info-panel-header").forEach(h => {
       h.addEventListener("click", () => {
         h.classList.toggle("open");
