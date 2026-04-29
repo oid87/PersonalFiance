@@ -133,6 +133,16 @@
       border-color: #d46414;
       color: #d46414;
     }
+    .chip.ma125-on {
+      background: rgba(255,152,0,0.15);
+      border-color: #ff9800;
+      color: #ff9800;
+    }
+    body.light .chip.ma125-on {
+      background: rgba(230,100,0,0.08);
+      border-color: #e65100;
+      color: #e65100;
+    }
     /* ── Chip hover tooltips ─────────────────────── */
     [data-tooltip] { position: relative; }
     [data-tooltip]::after {
@@ -446,14 +456,30 @@
 
       .tab-bar {
         padding: 0;
+        position: relative;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
       }
       .tab-bar::-webkit-scrollbar { display: none; }
+      .tab-bar::after {
+        content: "";
+        position: absolute;
+        right: 0; top: 0; bottom: 0;
+        width: 36px;
+        background: linear-gradient(to right, transparent, var(--bg));
+        pointer-events: none;
+      }
       .tab-btn { padding: 8px 12px; font-size: 13px; flex-shrink: 0; }
 
-      .controls { padding: 8px 12px; }
+      .controls {
+        padding: 8px 12px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .controls::-webkit-scrollbar { display: none; }
       .fp-header { padding: 6px 12px 4px; }
       .fp-table-wrap { padding: 0 12px 8px; }
       #ck-summary { padding: 8px 12px; gap: 12px; }
@@ -477,6 +503,33 @@
       .val-link-card { padding: 14px 16px; gap: 12px; }
       .val-link-title { font-size: 14px; }
       .val-link-badge .badge-val { font-size: 20px; }
+    }
+
+    /* ── Landscape mobile (e.g. iPhone XR 896×414) ──────────────────── */
+    @media (max-height: 500px) {
+      header { padding: 6px 12px; }
+      .tab-btn { padding: 6px 10px; font-size: 12px; }
+
+      .controls {
+        padding: 6px 12px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+      .controls::-webkit-scrollbar { display: none; }
+
+      #chart { height: calc(100dvh - 120px - var(--fear-h)); min-height: 150px; }
+      #penta-chart, #macro-chart, #corr-chart, #sector-chart {
+        height: calc(100dvh - 120px); min-height: 150px;
+      }
+      #sentiment-top { padding: 8px 12px; gap: 8px; }
+      #sentiment-gauge { width: 130px; height: 90px; }
+      .sent-label-row { max-width: 130px; }
+      #sentiment-chart { height: calc(100dvh - 260px); min-height: 100px; }
+      #breadth-top { padding: 8px 12px; gap: 8px; }
+      #breadth-chart { height: calc(100dvh - 210px); min-height: 100px; }
+      #ck-table-wrap { max-height: calc(100dvh - 180px); }
     }
   </style>
 </head>
@@ -564,6 +617,7 @@
       </div>
       <span id="penta-vix-toggle" class="chip" style="margin-left:8px;flex-shrink:0" data-tooltip="疊加 VIX 恐慌指數（右軸，疫情高點 ~89）">VIX</span>
       <span id="penta-fg-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
+      <span id="penta-ma125-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="自訂均線（預設125日，可手動調整天數）">MA</span><input id="penta-ma-period" type="number" min="5" max="999" value="125" readonly style="width:64px;margin-left:2px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--muted);font-size:13px;text-align:center;outline:none;cursor:default;pointer-events:none" />
       <div id="penta-period-picker" style="margin-left:auto;display:flex;gap:6px;flex-shrink:0">
         <span class="chip" data-period="0.5Y" data-tooltip="用近0.5年數據算均值/標準差，較敏感">短期 0.5Y</span>
         <span class="chip" data-period="1.5Y" data-tooltip="用近1.5年數據算均值/標準差，均衡參考">中期 1.5Y</span>
@@ -875,8 +929,10 @@
     let pentaActiveTicker = "VOO";
     let pentaPeriod = "3.5Y";
     let pentaMode = "pentagram";
-    let pentaFgActive  = false;
-    let pentaVixActive = false;
+    let pentaFgActive   = false;
+    let pentaVixActive  = false;
+    let penta125Active  = false;
+    let pentaMaPeriod   = 125;
 
     const loaded = {};
     const active = new Set(SERIES.filter(s => s.default).map(s => s.key));
@@ -969,7 +1025,7 @@
     // ── Theme ──────────────────────────────────────────────────────
     function isLight() { return document.body.classList.contains("light"); }
     function tc(dark, light) { return isLight() ? light : dark; }
-    function mob() { return window.innerWidth < 600; }
+    function mob() { return window.innerWidth < 600 || window.innerHeight < 500; }
 
     function applyTheme(light) {
       document.body.classList.toggle("light", light);
@@ -1525,6 +1581,16 @@
       return vix.filter(r => r[0] >= fromDate);
     }
 
+    function computeCustomMA(dailyData, N) {
+      const out = [];
+      for (let i = N - 1; i < dailyData.length; i++) {
+        let sum = 0;
+        for (let j = i - N + 1; j <= i; j++) sum += dailyData[j][1];
+        out.push([dailyData[i][0], +(sum / N).toFixed(4)]);
+      }
+      return out;
+    }
+
     function computeLinearRegression(data) {
       const n = data.length;
       if (n < 10) return null;
@@ -1620,10 +1686,12 @@
       else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
       const fromDate = d.toISOString().slice(0, 10);
 
-      const priceW  = weekly.filter(r => r[0] >= fromDate);
-      const ma20w   = bands.ma20.filter(r => r[0] >= fromDate);
-      const upperW  = bands.upper.filter(r => r[0] >= fromDate);
-      const lowerW  = bands.lower.filter(r => r[0] >= fromDate);
+      const priceW   = weekly.filter(r => r[0] >= fromDate);
+      const ma20w    = bands.ma20.filter(r => r[0] >= fromDate);
+      const upperW   = bands.upper.filter(r => r[0] >= fromDate);
+      const lowerW   = bands.lower.filter(r => r[0] >= fromDate);
+      const maLabel  = `MA${pentaMaPeriod}`;
+      const ma125Chw = penta125Active ? computeCustomMA(allDaily, pentaMaPeriod).filter(r => r[0] >= fromDate) : null;
 
       const s        = SERIES.find(x => x.key === pentaActiveTicker);
       const axisClr  = tc("#8b949e", "#57606a");
@@ -1668,7 +1736,14 @@
             const ts = params[0]?.axisValue;
             const dateLabel = ts ? new Date(ts).toISOString().slice(0, 10) : "";
             let out = `<b>${dateLabel}</b><br/>`;
-            for (const p of params) {
+            const sideNames = new Set(["VIX", "F&G"]);
+            const sorted = [...params].sort((a, b) => {
+              const aIs = sideNames.has(a.seriesName);
+              const bIs = sideNames.has(b.seriesName);
+              if (aIs !== bIs) return aIs ? 1 : -1;
+              return (b.value?.[1] ?? -Infinity) - (a.value?.[1] ?? -Infinity);
+            });
+            for (const p of sorted) {
               const v = p.value?.[1];
               if (v == null) continue;
               const fmt = p.seriesName === "F&G" ? v.toFixed(0)
@@ -1681,6 +1756,7 @@
         },
         legend: {
           data: ["上軌 +2.5σ", "MA20", "價格", "下軌 -2.5σ",
+                 ...(ma125Chw ? [maLabel] : []),
                  ...(vixIdxCh >= 0 ? ["VIX"] : []), ...(fgIdxCh >= 0 ? ["F&G"] : [])],
           textStyle: { color: tipText, fontSize: 13 },
           top: 6,
@@ -1702,6 +1778,7 @@
           { ...lineBase, name: "MA20",       data: ma20w,  yAxisIndex: 0, lineStyle: { width: 1.5, color: "#9e9e9e", type: "dashed" }, itemStyle: { color: "#9e9e9e" } },
           { ...lineBase, name: "價格",       data: priceW, yAxisIndex: 0, lineStyle: { width: 1.8, color: s.color },                   itemStyle: { color: s.color } },
           { ...lineBase, name: "下軌 -2.5σ", data: lowerW, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#1565c0" },                  itemStyle: { color: "#1565c0" } },
+          ...(ma125Chw ? [{ ...lineBase, name: maLabel, data: ma125Chw, yAxisIndex: 0, lineStyle: { width: 2, color: "#ff9800" }, itemStyle: { color: "#ff9800" } }] : []),
           ...(vixIdxCh >= 0 ? [{ ...lineBase, name: "VIX", data: vixDataCh, yAxisIndex: vixIdxCh, lineStyle: { width: 1.5, color: "#f0883e", type: "dashed" }, itemStyle: { color: "#f0883e" }, areaStyle: { color: "rgba(240,136,62,0.06)" } }] : []),
           ...(fgIdxCh  >= 0 ? [{ ...lineBase, name: "F&G", data: fgDataCh,  yAxisIndex: fgIdxCh,  lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" }, areaStyle: { color: "rgba(227,179,65,0.06)" } }] : []),
         ],
@@ -1730,6 +1807,42 @@
         statusEl.textContent = `數據不足`;
         pentaChart.clear();
         return;
+      }
+
+      // ── Zone badge: detect current position ───────────────────────
+      const rLen      = result.upper2.length;
+      const lastDate  = data[data.length - 1][0];
+      const lastPrice = data[data.length - 1][1];
+      const lastU2    = result.upper2[rLen - 1][1];
+      const lastU1    = result.upper1[rLen - 1][1];
+      const lastTr    = result.trend [rLen - 1][1];
+      const lastL1    = result.lower1[rLen - 1][1];
+      const lastL2    = result.lower2[rLen - 1][1];
+      let zoneName, zoneClr;
+      if      (lastPrice >= lastU2) { zoneName = "超漲"; zoneClr = "#e91e63"; }
+      else if (lastPrice >= lastU1) { zoneName = "偏貴"; zoneClr = "#f06292"; }
+      else if (lastPrice >= lastTr) { zoneName = "偏強"; zoneClr = "#78909c"; }
+      else if (lastPrice >= lastL1) { zoneName = "偏弱"; zoneClr = "#64b5f6"; }
+      else if (lastPrice >= lastL2) { zoneName = "便宜"; zoneClr = "#1976d2"; }
+      else                          { zoneName = "超跌"; zoneClr = "#1565c0"; }
+      // Badge goes below the dot when price is high (to avoid clipping at top edge)
+      const badgePos = lastPrice >= lastTr ? "bottom" : "top";
+
+      // ── Custom MA ─────────────────────────────────────────────────
+      const maLabelPt   = `MA${pentaMaPeriod}`;
+      const fromDatePt  = data.length > 0 ? data[0][0] : "";
+      const ma125DataPt = penta125Active
+        ? computeCustomMA(loaded[pentaActiveTicker], pentaMaPeriod).filter(r => r[0] >= fromDatePt)
+        : null;
+
+      // 乖離率：(price - MA) / MA × 100%
+      let deviationStr = "";
+      let badgeLabel   = zoneName;
+      if (ma125DataPt && ma125DataPt.length > 0) {
+        const lastMA = ma125DataPt[ma125DataPt.length - 1][1];
+        const dev    = (lastPrice - lastMA) / lastMA * 100;
+        deviationStr = `${dev >= 0 ? "+" : ""}${dev.toFixed(2)}%`;
+        badgeLabel   = `${zoneName}  ${deviationStr}`;
       }
 
       const s        = SERIES.find(x => x.key === pentaActiveTicker);
@@ -1763,6 +1876,35 @@
                     : rightAxesPt.length === 1 ? (isMobPt ? 38 : 58)
                     : (isMobPt ? 65 : 105);
 
+      // Build series objects — price inserted at its zone position so tooltip/legend order matches value
+      const sU2 = { ...lineBase, name: "極度貪婪", data: result.upper2, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#e91e63" }, itemStyle: { color: "#e91e63" } };
+      const sU1 = { ...lineBase, name: "貪婪",     data: result.upper1, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#f48fb1" }, itemStyle: { color: "#f48fb1" } };
+      const sTr = { ...lineBase, name: "趨勢線",   data: result.trend,  yAxisIndex: 0, lineStyle: { width: 1.5, color: "#9e9e9e" }, itemStyle: { color: "#9e9e9e" } };
+      const sL1 = { ...lineBase, name: "恐懼",     data: result.lower1, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#64b5f6" }, itemStyle: { color: "#64b5f6" } };
+      const sL2 = { ...lineBase, name: "極度恐懼", data: result.lower2, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#1565c0" }, itemStyle: { color: "#1565c0" } };
+      const sPr = { ...lineBase, name: "價格",     data,                yAxisIndex: 0, lineStyle: { width: 1.5, color: s.color },   itemStyle: { color: s.color },
+        markPoint: {
+          silent: true, animation: false,
+          data: [{
+            coord: [lastDate, lastPrice],
+            symbol: "circle", symbolSize: 10,
+            itemStyle: { color: zoneClr, borderColor: "#fff", borderWidth: 2 },
+            label: {
+              show: true, formatter: badgeLabel, position: badgePos, distance: 8,
+              color: "#fff", backgroundColor: zoneClr, borderRadius: 4,
+              padding: [3, 8], fontSize: 12, fontWeight: "bold",
+            }
+          }]
+        }
+      };
+      let bandsSorted;
+      if      (lastPrice >= lastU2) bandsSorted = [sPr, sU2, sU1, sTr, sL1, sL2];
+      else if (lastPrice >= lastU1) bandsSorted = [sU2, sPr, sU1, sTr, sL1, sL2];
+      else if (lastPrice >= lastTr) bandsSorted = [sU2, sU1, sPr, sTr, sL1, sL2];
+      else if (lastPrice >= lastL1) bandsSorted = [sU2, sU1, sTr, sPr, sL1, sL2];
+      else if (lastPrice >= lastL2) bandsSorted = [sU2, sU1, sTr, sL1, sPr, sL2];
+      else                          bandsSorted = [sU2, sU1, sTr, sL1, sL2, sPr];
+
       pentaChart.setOption({
         backgroundColor: "transparent",
         tooltip: {
@@ -1775,19 +1917,34 @@
             const ts = params[0]?.axisValue;
             const dateLabel = ts ? new Date(ts).toISOString().slice(0, 10) : "";
             let out = `<b>${dateLabel}</b><br/>`;
-            for (const p of params) {
+            const sideNames = new Set(["VIX", "F&G"]);
+            const sorted = [...params].sort((a, b) => {
+              const aIs = sideNames.has(a.seriesName);
+              const bIs = sideNames.has(b.seriesName);
+              if (aIs !== bIs) return aIs ? 1 : -1;
+              return (b.value?.[1] ?? -Infinity) - (a.value?.[1] ?? -Infinity);
+            });
+            const priceV = params.find(p => p.seriesName === "價格")?.value?.[1];
+            for (const p of sorted) {
               const v = p.value?.[1];
               if (v == null) continue;
               const fmt = p.seriesName === "F&G" ? v.toFixed(0)
                         : p.seriesName === "VIX" ? v.toFixed(2)
                         : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
-              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${fmt}</b><br/>`;
+              out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${fmt}</b>`;
+              if (p.seriesName === maLabelPt && priceV != null) {
+                const dev = (priceV - v) / v * 100;
+                const clr = dev >= 0 ? "#f48fb1" : "#64b5f6";
+                out += `  <span style="color:${clr};font-size:11px">${dev >= 0 ? "+" : ""}${dev.toFixed(2)}%</span>`;
+              }
+              out += "<br/>";
             }
             return out;
           },
         },
         legend: {
-          data: ["極度貪婪", "貪婪", "價格", "趨勢線", "恐懼", "極度恐懼",
+          data: [...bandsSorted.map(x => x.name),
+                 ...(ma125DataPt ? [maLabelPt] : []),
                  ...(vixIdxPt >= 0 ? ["VIX"] : []), ...(fgIdxPt >= 0 ? ["F&G"] : [])],
           textStyle: { color: tipText, fontSize: 13 },
           top: 6,
@@ -1805,19 +1962,15 @@
           { type: "slider", height: 18, bottom: 14 },
         ],
         series: [
-          { ...lineBase, name: "極度貪婪", data: result.upper2, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#e91e63" }, itemStyle: { color: "#e91e63" } },
-          { ...lineBase, name: "貪婪",     data: result.upper1, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#f48fb1" }, itemStyle: { color: "#f48fb1" } },
-          { ...lineBase, name: "價格",     data,                yAxisIndex: 0, lineStyle: { width: 1.5, color: s.color },   itemStyle: { color: s.color } },
-          { ...lineBase, name: "趨勢線",   data: result.trend,  yAxisIndex: 0, lineStyle: { width: 1.5, color: "#9e9e9e" }, itemStyle: { color: "#9e9e9e" } },
-          { ...lineBase, name: "恐懼",     data: result.lower1, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#64b5f6" }, itemStyle: { color: "#64b5f6" } },
-          { ...lineBase, name: "極度恐懼", data: result.lower2, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#1565c0" }, itemStyle: { color: "#1565c0" } },
+          ...bandsSorted,
+          ...(ma125DataPt ? [{ ...lineBase, name: maLabelPt, data: ma125DataPt, yAxisIndex: 0, lineStyle: { width: 2, color: "#ff9800" }, itemStyle: { color: "#ff9800" } }] : []),
           ...(vixIdxPt >= 0 ? [{ ...lineBase, name: "VIX", data: vixDataPt, yAxisIndex: vixIdxPt, lineStyle: { width: 1.5, color: "#f0883e", type: "dashed" }, itemStyle: { color: "#f0883e" }, areaStyle: { color: "rgba(240,136,62,0.06)" } }] : []),
           ...(fgIdxPt  >= 0 ? [{ ...lineBase, name: "F&G", data: fgDataPt,  yAxisIndex: fgIdxPt,  lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" }, areaStyle: { color: "rgba(227,179,65,0.06)" } }] : []),
         ],
       }, { notMerge: true });
 
       statusEl.textContent =
-        `${pentaActiveTicker} 五線譜 · ${pentaPeriod} · 線性迴歸通道 · ${data.length} 筆日線`;
+        `${pentaActiveTicker} 五線譜 · ${pentaPeriod} · 線性迴歸通道 · ${data.length} 筆日線 · 目前：${zoneName}${deviationStr ? ` · ${maLabelPt} 乖離：${deviationStr}` : ""}`;
     }
 
     // ── Pentagram ticker picker ────────────────────────────────────
@@ -1886,6 +2039,14 @@
       }
       renderPentagram();
     });
+
+    // ── Pentagram MA toggle ────────────────────────────────────────
+    document.getElementById("penta-ma125-toggle").addEventListener("click", () => {
+      penta125Active = !penta125Active;
+      document.getElementById("penta-ma125-toggle").classList.toggle("ma125-on", penta125Active);
+      renderPentagram();
+    });
+
 
     // ── Macro: yield curve ─────────────────────────────────────────
     function filterMacroRange(rows) {
@@ -2162,7 +2323,7 @@
         series: [{
           type: "heatmap", data: heatData,
           label: {
-            show: true, fontSize: 11,
+            show: !mob(), fontSize: 11,
             formatter: p => p.value?.[2] != null ? (p.value[2] >= 0 ? "+" : "") + p.value[2].toFixed(1) + "%" : "—",
           },
           emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,.3)" } },
