@@ -12,6 +12,8 @@ import json
 from datetime import date, timedelta
 from pathlib import Path
 
+import time
+
 import requests
 from io import StringIO
 
@@ -44,25 +46,47 @@ def load_existing() -> list[dict]:
         return []
 
 
+CHUNK_SIZE = 50  # tickers per yfinance batch to avoid rate limiting
+
+
 def fetch_prices(tickers: list[str], start: str) -> pd.DataFrame:
-    end = (date.today() + timedelta(days=1)).isoformat()
-    print(f"  Downloading {len(tickers)} tickers from {start} to {end} ...")
-    df = yf.download(
-        tickers,
-        start=start,
-        end=end,
-        auto_adjust=True,
-        progress=False,
-        threads=True,
-    )
-    if df.empty:
-        raise RuntimeError("yfinance returned empty DataFrame")
-    # Multi-level columns: (field, ticker) → keep only "Close"
-    if isinstance(df.columns, pd.MultiIndex):
-        df = df["Close"]
-    df = df.sort_index()
-    print(f"  Got {len(df)} trading days × {df.shape[1]} tickers")
-    return df
+    """Download closing prices in chunks to avoid Yahoo Finance rate limits."""
+    end    = (date.today() + timedelta(days=1)).isoformat()
+    chunks = [tickers[i:i + CHUNK_SIZE] for i in range(0, len(tickers), CHUNK_SIZE)]
+    print(f"  Downloading {len(tickers)} tickers in {len(chunks)} chunks of ≤{CHUNK_SIZE} ...")
+
+    frames: list[pd.DataFrame] = []
+    for idx, chunk in enumerate(chunks):
+        df = pd.DataFrame()
+        for attempt in range(3):
+            try:
+                df = yf.download(
+                    chunk, start=start, end=end,
+                    auto_adjust=True, progress=False, threads=True,
+                )
+                if not df.empty:
+                    break
+            except Exception as exc:
+                print(f"  [chunk {idx+1}] attempt {attempt+1} error: {exc}")
+            if attempt < 2:
+                time.sleep(3)
+
+        if df.empty:
+            print(f"  [chunk {idx+1}/{len(chunks)}] no data, skipping")
+            continue
+        if isinstance(df.columns, pd.MultiIndex):
+            df = df["Close"]
+        frames.append(df)
+        if idx < len(chunks) - 1:
+            time.sleep(1)  # brief pause between batches
+
+    if not frames:
+        raise RuntimeError("All chunks returned empty data from yfinance")
+
+    combined = pd.concat(frames, axis=1)
+    combined = combined.loc[~combined.index.duplicated(keep="last")].sort_index()
+    print(f"  Got {len(combined)} trading days × {combined.shape[1]} tickers")
+    return combined
 
 
 def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
@@ -108,17 +132,21 @@ def merge(existing: list[dict], new_records: list[dict]) -> list[dict]:
 
 def main() -> None:
     existing = load_existing()
-    tickers  = get_sp500_tickers()
-    print(f"S&P 500 constituent count: {len(tickers)}")
+    today    = date.today()
 
-    today = date.today()
-
+    # ── Freshness check FIRST — skip Wikipedia + yfinance if not needed ──
     if existing:
         last_date  = existing[-1]["date"]
         days_stale = (today - date.fromisoformat(last_date)).days
         if days_stale <= FRESHNESS_DAYS:
             print(f"Data is fresh (last: {last_date}), skipping.")
             return
+
+    tickers = get_sp500_tickers()
+    print(f"S&P 500 constituent count: {len(tickers)}")
+
+    if existing:
+        last_date       = existing[-1]["date"]
         start           = (today - timedelta(days=INCREMENTAL_CAL)).isoformat()
         recompute_from  = (date.fromisoformat(last_date) - timedelta(days=30)).isoformat()
         print(f"Incremental update: download from {start}, recompute from {recompute_from}")

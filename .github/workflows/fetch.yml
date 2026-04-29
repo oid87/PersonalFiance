@@ -46,6 +46,7 @@ jobs:
         run: python scripts/compute_sentiment.py
 
       - name: Compute S&P 500 market breadth
+        continue-on-error: true
         run: python scripts/fetch_breadth.py
 
       - name: Commit updates
