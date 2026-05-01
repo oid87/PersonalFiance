@@ -2,8 +2,8 @@ name: Fetch market data
 
 on:
   schedule:
-    # 21:00 UTC Mon-Fri = 05:00 Tue-Sat Taipei (UTC+8)
-    - cron: "0 21 * * 1-5"
+    # 22:00 UTC Mon-Fri = 06:00 Tue-Sat Taipei (UTC+8)
+    - cron: "0 22 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -44,6 +44,14 @@ jobs:
 
       - name: Compute sentiment score
         run: python scripts/compute_sentiment.py
+
+      - name: Fetch earnings dates
+        continue-on-error: true
+        run: python scripts/fetch_earnings.py
+
+      - name: Fetch investor conference dates (法說日, MOPS)
+        continue-on-error: true
+        run: python scripts/fetch_investor_conf.py
 
       - name: Compute S&P 500 market breadth
         continue-on-error: true
