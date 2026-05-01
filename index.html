@@ -95,6 +95,7 @@
       cursor: pointer;
       font-size: 13px;
       user-select: none;
+      white-space: nowrap;
       transition: opacity .15s;
     }
     .chip:hover { opacity: .8; }
@@ -142,6 +143,43 @@
       background: rgba(230,100,0,0.08);
       border-color: #e65100;
       color: #e65100;
+    }
+    /* ── Earnings calendar ───────────────────────── */
+    #earnings-cal { padding: 16px 0; }
+    .earn-months  { display: flex; gap: 32px; flex-wrap: wrap; }
+    .earn-month   { flex: 0 0 auto; }
+    .earn-month h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; }
+    .earn-grid    { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; min-width: 280px; }
+    .earn-dow     { text-align: center; font-size: 11px; color: var(--muted); padding: 4px 0; }
+    .earn-day     { min-height: 52px; padding: 4px 5px; border: 1px solid var(--border);
+                    border-radius: 4px; background: var(--panel); }
+    .earn-day.empty { border-color: transparent; background: transparent; }
+    .earn-day.today { border-color: var(--accent); }
+    .earn-day.has-earn { background: rgba(88,166,255,.08); }
+    .earn-day-num  { font-size: 12px; color: var(--muted); line-height: 1.2; }
+    .earn-day.today .earn-day-num { color: var(--accent); font-weight: 700; }
+    .earn-tickers  { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 3px; }
+    .earn-tick     { font-size: 10px; padding: 1px 4px; border-radius: 3px;
+                     background: rgba(88,166,255,.18); color: #58a6ff; font-weight: 600; }
+    .earn-tick.conf { background: rgba(255,180,0,.18); color: #e3a000; }
+    /* ── Signal panel ────────────────────────────── */
+    #signal-panel {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      padding: 6px 10px; margin-bottom: 6px;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    }
+    .sig-chip {
+      padding: 2px 8px; border-radius: 12px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--muted); white-space: nowrap; font-size: 12px;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .sig-chip.hit {
+      background: rgba(63,185,80,.12); border-color: #3fb950;
+      color: #3fb950; font-weight: 600;
+    }
+    body.light .sig-chip.hit {
+      background: rgba(26,127,55,.08); border-color: #1a7f37; color: #1a7f37;
     }
     /* ── Chip hover tooltips ─────────────────────── */
     [data-tooltip] { position: relative; }
@@ -547,9 +585,10 @@
     <button class="tab-btn" data-tab="corr" data-tooltip="各資產日報酬率 Pearson 相關係數熱力圖">相關係數</button>
     <button class="tab-btn" data-tab="sector" data-tooltip="美股11大產業 ETF 各期間報酬排名">產業輪動</button>
     <button class="tab-btn" data-tab="cashking" data-tooltip="GLD/BTC/TLT/QQQ 同跌 + F&G 低 → 持現金訊號">現金為王時刻</button>
-    <button class="tab-btn" data-tab="valuation" data-tooltip="Forward P/E 估值連結 · MacroMicro（QQQ / SPY）">估值</button>
+    <button class="tab-btn" data-tab="valuation" data-tooltip="Forward P/E 估值連結 · MacroMicro（QQQ / SPY / 台股）">估值</button>
     <button class="tab-btn" data-tab="sentiment" data-tooltip="VIX · 信用利差 · SPY趨勢 · 避險資金 — 4指標複合情緒 + 回測">情緒</button>
     <button class="tab-btn" data-tab="breadth" data-tooltip="S&P 500 成份股站上 50日/200日均線比例 — 市場廣度與多空健康度">市場廣度</button>
+    <button class="tab-btn" data-tab="earnings" data-tooltip="Mag7 + TSMC 財報日月曆（近三個月）">財報日</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -567,6 +606,9 @@
       <span style="font-size:12px;color:var(--muted)">≤</span>
       <input type="number" id="fear-threshold" value="20" min="1" max="99" title="F&G 閾值" />
 
+      <span id="dd-toggle" class="chip" data-tooltip="標示 QQQ 12週回撤 ≥10% 的歷史修正區間（淡紅背景）">回撤區</span>
+      <span id="sig-zone-toggle" class="chip" data-tooltip="訊號同時達 ≥4 個的歷史區間（綠色背景 = 潛在極端低點）">訊號≥4</span>
+
       <div class="range-wrap">
         <div id="range-picker">
           <span class="chip" data-range="6M" data-tooltip="顯示近半年走勢">0.5Y</span>
@@ -583,6 +625,19 @@
           <input type="date" id="date-to" title="結束日期" />
         </div>
       </div>
+    </div>
+
+    <div id="signal-panel">
+      <span style="color:var(--muted);font-weight:600;font-size:12px;white-space:nowrap">QQQ 極端低點</span>
+      <span class="sig-chip" id="sig-kd"  data-tooltip="週KD K值 < 30 → 超賣">週K —</span>
+      <span class="sig-chip" id="sig-rsi" data-tooltip="週RSI < 30 → 超賣">週RSI —</span>
+      <span class="sig-chip" id="sig-fg"  data-tooltip="恐懼貪婪 < 25 → 極度恐懼">F&amp;G —</span>
+      <span class="sig-chip" id="sig-vix" data-tooltip="VIX > 20 → 恐慌">VIX —</span>
+      <span class="sig-chip" id="sig-ma"  data-tooltip="QQQ 收盤低於 MA200">MA200 —</span>
+      <span class="sig-chip" id="sig-td"  data-tooltip="週神奇九轉下跌計數 ≥ 7">九轉 —</span>
+      <span class="sig-chip" id="sig-dd"  data-tooltip="12週最大回撤 ≥ 10%">12W —</span>
+      <span class="sig-chip" id="sig-vol"  data-tooltip="QQQ 日成交量 > 8000萬股 → 爆量">量 —</span>
+      <span id="sig-count" style="font-weight:700;font-size:13px;margin-left:4px;color:var(--muted)">0/8</span>
     </div>
 
     <div id="chart"></div>
@@ -617,6 +672,7 @@
       </div>
       <span id="penta-vix-toggle" class="chip" style="margin-left:8px;flex-shrink:0" data-tooltip="疊加 VIX 恐慌指數（右軸，疫情高點 ~89）">VIX</span>
       <span id="penta-fg-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
+      <span id="penta-weekly-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="五線譜改用週線計算（資料點更少、噪音更低）">週線</span>
       <span id="penta-ma125-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="自訂均線（預設125日，可手動調整天數）">MA</span><input id="penta-ma-period" type="number" min="5" max="999" value="125" readonly style="width:64px;margin-left:2px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--muted);font-size:13px;text-align:center;outline:none;cursor:default;pointer-events:none" />
       <div id="penta-period-picker" style="margin-left:auto;display:flex;gap:6px;flex-shrink:0">
         <span class="chip" data-period="0.5Y" data-tooltip="用近0.5年數據算均值/標準差，較敏感">短期 0.5Y</span>
@@ -752,6 +808,18 @@
         <div>
           <div class="val-link-title">S&amp;P 500 · Forward P/E</div>
           <div class="val-link-sub">MacroMicro · 含 63D / 252D 均線 · 日更新</div>
+        </div>
+        <div class="val-link-badge">
+          <div class="badge-label">點擊開啟 MacroMicro ↗</div>
+        </div>
+      </a>
+      <a class="val-link-card"
+         href="https://www.macromicro.me/charts/13940/tai-wan-tai-gu-ben-yi-bi-yu-tai-gu-qu-shi"
+         target="_blank" rel="noopener noreferrer">
+        <div class="val-link-icon">🇹🇼</div>
+        <div>
+          <div class="val-link-title">台股 · 本益比（P/E）</div>
+          <div class="val-link-sub">MacroMicro · 台股整體本益比與大盤趨勢 · 日更新</div>
         </div>
         <div class="val-link-badge">
           <div class="badge-label">點擊開啟 MacroMicro ↗</div>
@@ -908,6 +976,16 @@
     </div>
   </section>
 
+  <!-- ── 財報日 tab ─────────────────────────────────────────────── -->
+  <section id="tab-earnings" class="tab-section" hidden>
+    <div class="controls">
+      <span id="earn-prev" class="chip">← 上月</span>
+      <span id="earn-month-label" style="font-weight:600;font-size:14px;padding:0 8px"></span>
+      <span id="earn-next" class="chip">下月 →</span>
+    </div>
+    <div id="earnings-cal"></div>
+  </section>
+
   <script>
     const SERIES = [
       { key: "VOO",  file: "data/VOO.json",       color: "#58a6ff", yAxis: 0, default: true  },
@@ -925,6 +1003,14 @@
 
     const chartEl = document.getElementById("chart");
     let chart = echarts.init(chartEl, null); // light by default
+    chart.on("updateAxisPointer", evt => {
+      try {
+        const ts = evt?.axesInfo?.[0]?.value;
+        if (typeof ts !== "number") return;
+        renderSignalPanel(new Date(ts).toISOString().slice(0, 10));
+      } catch (_) {}
+    });
+    chart.on("globalout", () => { if (sigMaps) renderSignalPanel(); });
     let pentaChart = null;
     let pentaActiveTicker = "VOO";
     let pentaPeriod = "3.5Y";
@@ -944,6 +1030,16 @@
     let fearThreshold = 20;
 
     const maActive = new Set();
+
+    let earningsActive  = false;
+    let loadedEarnings  = [];
+    const loadedHLC     = {};
+    const loadedVol     = {};
+    let ddZoneActive    = false;
+    let sigZoneActive   = false;
+    let sigMaps         = null;   // invalidated when new data loads
+
+    let pentaWeekly = false;
 
     let macroChart       = null;
     let macroRangePreset = "10Y";
@@ -1120,6 +1216,8 @@
         initSentimentTab();
       } else if (tabName === "breadth") {
         initBreadthTab();
+      } else if (tabName === "earnings") {
+        renderEarningsCalendar();
       }
     }
 
@@ -1215,11 +1313,27 @@
         r.date,
         r.close !== undefined ? r.close : r.value,
       ]);
+      if (j.data?.[0]?.high !== undefined) {
+        loadedHLC[s.key] = j.data.map(r => [r.date, r.high, r.low, r.close]);
+      }
+      if (j.data?.[0]?.volume !== undefined) {
+        loadedVol[s.key] = j.data.map(r => [r.date, r.volume ?? 0]);
+      }
+      sigMaps = null; // invalidate signal lookup cache
     }
 
     async function ensureLoaded(key) {
       const s = SERIES.find(x => x.key === key);
       if (s) await loadSeries(s);
+    }
+
+    async function loadEarnings() {
+      try {
+        const r = await fetch("data/earnings.json", { cache: "no-cache" });
+        if (!r.ok) return;
+        const j = await r.json();
+        loadedEarnings = j.data || [];
+      } catch { loadedEarnings = []; }
     }
 
     // ── Fear helpers ───────────────────────────────────────────────
@@ -1425,6 +1539,69 @@
         });
       }
 
+      if (sigZoneActive && loaded["QQQ"]) {
+        if (!sigMaps) buildSigMaps();
+        if (sigMaps?.scoreArr) {
+          const zones = [];
+          let zStart = null, prev = null;
+          for (const [date, score] of sigMaps.scoreArr) {
+            if (score >= 4) { if (!zStart) zStart = date; }
+            else            { if (zStart) { zones.push([zStart, prev]); zStart = null; } }
+            prev = date;
+          }
+          if (zStart) zones.push([zStart, prev]);
+          if (zones.length) {
+            series.push({
+              name: "__sigZone", type: "line", data: [], yAxisIndex: 0,
+              lineStyle: { width: 0 }, symbol: "none", silent: true,
+              markArea: { silent: true, data: zones.map(([s, e]) => [
+                { xAxis: s, itemStyle: { color: "rgba(63,185,80,0.13)" } },
+                { xAxis: e },
+              ])},
+            });
+          }
+        }
+      }
+
+      if (ddZoneActive && loaded["QQQ"]) {
+        const zones = computeDDZones(loaded["QQQ"], 60, 0.10);
+        if (zones.length) {
+          series.push({
+            name: "__ddZone", type: "line", data: [], yAxisIndex: 0,
+            lineStyle: { width: 0 }, symbol: "none", silent: true,
+            markArea: { silent: true, data: zones.map(([s, e]) => [
+              { xAxis: s, itemStyle: { color: "rgba(248,81,73,0.10)" } },
+              { xAxis: e },
+            ])},
+          });
+        }
+      }
+
+      if (earningsActive && loadedEarnings.length > 0) {
+        const { from, to } = currentWindow();
+        const toDate = to || new Date().toISOString().slice(0, 10);
+        const inRange = loadedEarnings.filter(e => (!from || e.date >= from) && e.date <= toDate);
+        const byDate = {};
+        for (const e of inRange) {
+          if (!byDate[e.date]) byDate[e.date] = [];
+          byDate[e.date].push(e.ticker);
+        }
+        const mlData = Object.entries(byDate).map(([dt, tickers]) => ({
+          xAxis: dt,
+          name: tickers.join("/"),
+          lineStyle: { color: "#58a6ff", type: "dashed", width: 1, opacity: 0.55 },
+          label: { show: true, position: "insideEndTop", fontSize: 9, color: "#58a6ff", formatter: "{b}" },
+        }));
+        if (mlData.length > 0) {
+          series.push({
+            name: "__earnings",
+            type: "line", data: [], yAxisIndex: 0,
+            lineStyle: { width: 0 }, symbol: "none", silent: true,
+            markLine: { silent: true, symbol: ["none", "none"], animation: false, data: mlData },
+          });
+        }
+      }
+
       chart.setOption({
         backgroundColor: "transparent",
         tooltip: {
@@ -1508,6 +1685,18 @@
       renderFearPanel();
     });
 
+    document.getElementById("dd-toggle").addEventListener("click", () => {
+      ddZoneActive = !ddZoneActive;
+      document.getElementById("dd-toggle").classList.toggle("active", ddZoneActive);
+      render();
+    });
+
+    document.getElementById("sig-zone-toggle").addEventListener("click", () => {
+      sigZoneActive = !sigZoneActive;
+      document.getElementById("sig-zone-toggle").classList.toggle("active", sigZoneActive);
+      render();
+    });
+
     let fThreshTimer = null;
     document.getElementById("fear-threshold").addEventListener("input", e => {
       clearTimeout(fThreshTimer);
@@ -1556,7 +1745,8 @@
       else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
       else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
       const fromDate = d.toISOString().slice(0, 10);
-      return raw.filter(r => r[0] >= fromDate);
+      const filtered = raw.filter(r => r[0] >= fromDate);
+      return pentaWeekly ? toWeekly(filtered) : filtered;
     }
 
     function getPentaFgData() {
@@ -1622,6 +1812,223 @@
         lower2.push([date, +(reg - 2 * sigma).toFixed(4)]);
       }
       return { trend, upper1, upper2, lower1, lower2 };
+    }
+
+    // ── Indicator helpers ───────────────────────────────────────────
+
+    function toWeeklyHLC(dailyHLC) {
+      const byWeek = new Map();
+      for (const [date, high, low, close] of dailyHLC) {
+        const d = new Date(date + "T00:00:00Z");
+        const diff = d.getUTCDay() === 0 ? -6 : 1 - d.getUTCDay();
+        const mon = new Date(d); mon.setUTCDate(d.getUTCDate() + diff);
+        const key = mon.toISOString().slice(0, 10);
+        const ex = byWeek.get(key);
+        if (ex) { ex[0] = date; ex[1] = Math.max(ex[1], high); ex[2] = Math.min(ex[2], low); ex[3] = close; }
+        else byWeek.set(key, [date, high, low, close]);
+      }
+      return [...byWeek.values()].sort((a, b) => a[0] < b[0] ? -1 : 1);
+    }
+
+    function computeRSI(data, period = 14) {
+      const out = [];
+      if (data.length <= period) return out;
+      let ag = 0, al = 0;
+      for (let i = 1; i <= period; i++) {
+        const d = data[i][1] - data[i-1][1];
+        if (d > 0) ag += d; else al -= d;
+      }
+      ag /= period; al /= period;
+      out.push([data[period][0], al === 0 ? 100 : +(100 - 100 / (1 + ag / al)).toFixed(2)]);
+      for (let i = period + 1; i < data.length; i++) {
+        const d = data[i][1] - data[i-1][1];
+        ag = (ag * (period - 1) + Math.max(d, 0)) / period;
+        al = (al * (period - 1) + Math.max(-d, 0)) / period;
+        out.push([data[i][0], al === 0 ? 100 : +(100 - 100 / (1 + ag / al)).toFixed(2)]);
+      }
+      return out;
+    }
+
+    function computeKD(hlcData, period = 9) {
+      const out = [];
+      let K = 50, D = 50;
+      for (let i = period - 1; i < hlcData.length; i++) {
+        let hh = -Infinity, ll = Infinity;
+        for (let j = i - period + 1; j <= i; j++) {
+          if (hlcData[j][1] > hh) hh = hlcData[j][1];
+          if (hlcData[j][2] < ll) ll = hlcData[j][2];
+        }
+        const rsv = hh === ll ? 50 : (hlcData[i][3] - ll) / (hh - ll) * 100;
+        K = K * 2/3 + rsv / 3;
+        D = D * 2/3 + K / 3;
+        out.push([hlcData[i][0], +K.toFixed(2), +D.toFixed(2)]);
+      }
+      return out;
+    }
+
+    function computeTDSetup(closeData) {
+      const out = [];
+      let uc = 0, dc = 0;
+      for (let i = 4; i < closeData.length; i++) {
+        const curr = closeData[i][1], p4 = closeData[i-4][1];
+        if      (curr > p4) { dc = 0; uc = uc >= 9 ? 1 : uc + 1; out.push({ date: closeData[i][0], count: uc, dir: 'up' }); }
+        else if (curr < p4) { uc = 0; dc = dc >= 9 ? 1 : dc + 1; out.push({ date: closeData[i][0], count: dc, dir: 'down' }); }
+        else                { uc = 0; dc = 0; }
+      }
+      return out;
+    }
+
+    function computeDDZones(dailyData, lookbackDays = 60, threshold = 0.10) {
+      if (dailyData.length < lookbackDays + 1) return [];
+      const zones = [];
+      let zoneStart = null;
+      for (let i = lookbackDays; i < dailyData.length; i++) {
+        const cur = dailyData[i][1];
+        let peak = 0;
+        for (let j = i - lookbackDays; j < i; j++) if (dailyData[j][1] > peak) peak = dailyData[j][1];
+        const dd = (cur - peak) / peak;
+        if (dd <= -threshold) {
+          if (!zoneStart) zoneStart = dailyData[i][0];
+        } else {
+          if (zoneStart) { zones.push([zoneStart, dailyData[i - 1][0]]); zoneStart = null; }
+        }
+      }
+      if (zoneStart) zones.push([zoneStart, dailyData[dailyData.length - 1][0]]);
+      return zones;
+    }
+
+    function lookupLE(arr, date) {
+      // Binary search: last entry where arr[i][0] <= date
+      let lo = 0, hi = arr.length - 1, result = null;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (arr[mid][0] <= date) { result = arr[mid]; lo = mid + 1; }
+        else hi = mid - 1;
+      }
+      return result;
+    }
+
+    function buildSigMaps() {
+      const qqq = loaded["QQQ"];
+      if (!qqq?.length) return;
+      const weekly = toWeekly(qqq);
+      const wHLC   = loadedHLC["QQQ"] ? toWeeklyHLC(loadedHLC["QQQ"]) : null;
+
+      // Weekly KD + RSI + TD merged into [date, K, D, RSI, tdCount, tdDir]
+      const kdArr  = wHLC ? computeKD(wHLC, 9) : [];
+      const rsiArr = computeRSI(weekly, 14);
+      const tdArr  = computeTDSetup(weekly);
+      const rsiMap = new Map(rsiArr.map(r => [r[0], r[1]]));
+      const tdMap  = new Map(tdArr.map(r => [r.date, r]));
+      const weeklySignals = kdArr.map(r => {
+        const td = tdMap.get(r[0]);
+        return [r[0], r[1], r[2], rsiMap.get(r[0]) ?? null, td?.count ?? 0, td?.dir ?? null];
+      });
+
+      // Daily MA200 for QQQ
+      const ma200 = computeMA(qqq, 200);
+
+      // Daily rolling drawdown helpers (lookback = n trading days)
+      const makeDDArr = (n) => {
+        const arr = [];
+        for (let i = 0; i < qqq.length; i++) {
+          if (i < n) { arr.push([qqq[i][0], null]); continue; }
+          let peak = 0;
+          for (let j = i - n; j < i; j++) if (qqq[j][1] > peak) peak = qqq[j][1];
+          arr.push([qqq[i][0], (qqq[i][1] - peak) / peak * 100]);
+        }
+        return arr;
+      };
+      const ddArr   = makeDDArr(60);  // 12 trading weeks
+
+      const fg  = loaded["F&G"]    || [];
+      const vix = loaded["VIX"]    || [];
+      const vol = loadedVol["QQQ"] || [];
+
+      // Pre-compute daily composite score (0-9)
+      const scoreArr = [];
+      for (const [date, close] of qqq) {
+        const ws     = lookupLE(weeklySignals, date);
+        const fgV    = lookupLE(fg,     date)?.[1] ?? null;
+        const vixV   = lookupLE(vix,    date)?.[1] ?? null;
+        const ma200V = lookupLE(ma200,  date)?.[1] ?? null;
+        const volV   = lookupLE(vol,    date)?.[1] ?? null;
+        const ddV    = lookupLE(ddArr,  date)?.[1] ?? null;
+        const dev    = (ma200V && close) ? (close - ma200V) / ma200V * 100 : null;
+        const score = [
+          ws?.[1] != null && ws[1] < 30,
+          ws?.[3] != null && ws[3] < 30,
+          fgV   != null && fgV  < 25,
+          vixV  != null && vixV > 20,
+          dev   != null && dev  < 0,
+          ws?.[5] === 'down' && (ws[4] ?? 0) >= 7,
+          ddV   != null && ddV  <= -10,
+          volV  != null && volV >= 80_000_000,
+        ].filter(Boolean).length;
+        scoreArr.push([date, score]);
+      }
+
+      sigMaps = { qqq, weeklySignals, ma200, ddArr, fg, vix, vol, scoreArr };
+    }
+
+    function renderSignalPanel(date) {
+      if (!sigMaps) buildSigMaps();
+      if (!sigMaps) return;
+
+      const isLive = !date;
+      const d = date || sigMaps.qqq.at(-1)?.[0];
+      if (!d) return;
+
+      const ws     = lookupLE(sigMaps.weeklySignals, d);
+      const fgRow  = lookupLE(sigMaps.fg,   d);
+      const vixRow = lookupLE(sigMaps.vix,  d);
+      const ma200R = lookupLE(sigMaps.ma200, d);
+      const volRow  = lookupLE(sigMaps.vol,   d);
+      const ddRow   = lookupLE(sigMaps.ddArr, d);
+      const qRow    = lookupLE(sigMaps.qqq,   d);
+
+      const kdK     = ws?.[1]  ?? null;
+      const rsiVal  = ws?.[3]  ?? null;
+      const tdCount = ws?.[4]  ?? 0;
+      const tdDir   = ws?.[5]  ?? null;
+      const fgVal   = fgRow?.[1]   ?? null;
+      const vixVal  = vixRow?.[1]  ?? null;
+      const ma200V  = ma200R?.[1]  ?? null;
+      const qClose  = qRow?.[1]    ?? null;
+      const ma200Dev = (ma200V && qClose) ? (qClose - ma200V) / ma200V * 100 : null;
+      const volVal  = volRow?.[1] ?? null;
+      const ddVal   = ddRow?.[1]  ?? null;
+
+      const kdHit  = kdK      != null && kdK      < 30;
+      const rsiHit = rsiVal   != null && rsiVal   < 30;
+      const fgHit  = fgVal    != null && fgVal    < 25;
+      const vixHit = vixVal   != null && vixVal   > 20;
+      const maHit  = ma200Dev != null && ma200Dev < 0;
+      const tdHit  = tdDir === 'down' && tdCount >= 7;
+      const ddHit  = ddVal    != null && ddVal    <= -10;
+      const volHit = volVal   != null && volVal   >= 80_000_000;
+
+      const set = (id, label, txt, hit) => {
+        const el = document.getElementById(id); if (!el) return;
+        el.textContent = txt != null ? `${label} ${txt}` : `${label} —`;
+        el.classList.toggle("hit", !!hit);
+      };
+      set("sig-kd",   "週K",   kdK      != null ? kdK.toFixed(1)    : null, kdHit);
+      set("sig-rsi",  "週RSI", rsiVal   != null ? rsiVal.toFixed(1)  : null, rsiHit);
+      set("sig-fg",   "F&G",   fgVal    != null ? fgVal.toFixed(0)   : null, fgHit);
+      set("sig-vix",  "VIX",   vixVal   != null ? vixVal.toFixed(1)  : null, vixHit);
+      set("sig-ma",   "MA200", ma200Dev != null ? `${ma200Dev >= 0 ? "↑" : "↓"}${Math.abs(ma200Dev).toFixed(1)}%` : null, maHit);
+      set("sig-td",   "九轉",  tdDir === 'down' && tdCount > 0 ? `${tdCount}計` : "0計", tdHit);
+      set("sig-dd",   "12W",   ddVal    != null ? `${ddVal.toFixed(1)}%`    : null, ddHit);
+      set("sig-vol",  "量",    volVal   != null ? `${(volVal / 1e6).toFixed(0)}M` : null, volHit);
+      const hits = [kdHit, rsiHit, fgHit, vixHit, maHit, tdHit, ddHit, volHit].filter(Boolean).length;
+      const countEl = document.getElementById("sig-count");
+      if (countEl) {
+        countEl.textContent = `${hits}/8`;
+        countEl.style.color = hits >= 5 ? "#f85149" : hits >= 3 ? "#e3b341" : "var(--muted)";
+      }
+      const labelEl = document.querySelector("#signal-panel > span:first-child");
+      if (labelEl) labelEl.textContent = isLive ? "QQQ 極端低點" : `QQQ @ ${d}`;
     }
 
     // ── Channel helpers ────────────────────────────────────────────
@@ -1718,69 +2125,91 @@
         rightAxesCh.push({ min: 0, max: 100, position: "right", offset: rightAxesCh.length * axisOffCh,
           axisLine: { lineStyle: { color: "#e3b341" } }, axisLabel: { fontSize: 11, color: "#e3b341" }, splitLine: { show: false } });
       }
-      const priceAxisCh = { scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } };
-      const yAxisCh = rightAxesCh.length > 0 ? [priceAxisCh, ...rightAxesCh] : priceAxisCh;
-      const gridRCh = rightAxesCh.length === 0 ? (isMobCh ? 12 : 24)
-                    : rightAxesCh.length === 1 ? (isMobCh ? 38 : 58)
-                    : (isMobCh ? 65 : 105);
+      const nRtCh    = rightAxesCh.length;
+      const rsiIdxCh = 1 + nRtCh;
+      const kdIdxCh  = 2 + nRtCh;
+      const gridRCh  = nRtCh === 0 ? (isMobCh ? 12 : 24) : nRtCh === 1 ? (isMobCh ? 38 : 58) : (isMobCh ? 65 : 105);
+
+      // ── Weekly indicator data ──────────────────────────────────────
+      const wHLCCh    = loadedHLC[pentaActiveTicker] ? toWeeklyHLC(loadedHLC[pentaActiveTicker]) : weekly.map(r => [r[0],r[1],r[1],r[1]]);
+      const rsiDataCh = computeRSI(weekly, 14).filter(r => r[0] >= fromDate);
+      const kdDataCh  = computeKD(wHLCCh, 9).filter(r => r[0] >= fromDate);
+      const tdInRgCh  = computeTDSetup(weekly).filter(p => p.date >= fromDate);
+      const pmapCh    = new Map(weekly.map(r => [r[0], r[1]]));
+
+      // ── yAxis (multi-grid) ─────────────────────────────────────────
+      const priceAxisCh = { gridIndex:0, scale:true, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:12}, splitLine:{lineStyle:{color:gridClr}} };
+      const rtAxWithGCh = rightAxesCh.map(a => ({ ...a, gridIndex: 0 }));
+      const rsiAxisCh   = { gridIndex:1, min:0, max:100, name:'RSI', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#a371f7',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#a371f7'}, splitLine:{show:false} };
+      const kdAxisCh    = { gridIndex:2, min:0, max:100, name:'KD',  nameLocation:'start', nameGap:2, nameTextStyle:{color:'#f0883e',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#f0883e'}, splitLine:{show:false} };
+      const yAxisCh     = [priceAxisCh, ...rtAxWithGCh, rsiAxisCh, kdAxisCh];
+
+      // ── TD annotation series ──────────────────────────────────────
+      const mkTDCh = (items, pos, clr, c9) => {
+        const norm = items.filter(p => p.count < 9);
+        const sig9 = items.filter(p => p.count === 9);
+        const out  = [];
+        if (norm.length) out.push({ type:'scatter', name:`__tdc_${pos}`, xAxisIndex:0, yAxisIndex:0, data:norm.map(p=>[p.date,pmapCh.get(p.date)??0,p.count]), symbolSize:0, silent:true, label:{show:true, formatter:p=>String(p.data[2]), position:pos, fontSize:9, color:clr} });
+        if (sig9.length) out.push({ type:'scatter', name:`__tdc9_${pos}`, xAxisIndex:0, yAxisIndex:0, data:sig9.map(p=>[p.date,pmapCh.get(p.date)??0]), symbol:'circle', symbolSize:11, silent:true, itemStyle:{color:c9,borderColor:'#fff',borderWidth:1.5}, label:{show:true, formatter:'9', position:pos, fontSize:10, fontWeight:'bold', color:c9, distance:4} });
+        return out;
+      };
+      const tdSeriesCh = [
+        ...mkTDCh(tdInRgCh.filter(p=>p.dir==='down'), 'top',    '#3fb950', '#56d364'),
+        ...mkTDCh(tdInRgCh.filter(p=>p.dir==='up'),   'bottom', '#f85149', '#f85149'),
+      ];
 
       pentaChart.setOption({
         backgroundColor: "transparent",
         tooltip: {
-          trigger: "axis",
-          axisPointer: { type: "cross" },
-          backgroundColor: tipBg,
-          borderColor: tipBdr,
-          textStyle: { color: tipText },
+          trigger: "axis", axisPointer: { type: "cross" },
+          backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText },
           formatter(params) {
+            if (!params?.length) return '';
             const ts = params[0]?.axisValue;
-            const dateLabel = ts ? new Date(ts).toISOString().slice(0, 10) : "";
+            const dateLabel = ts ? new Date(ts).toISOString().slice(0,10) : "";
             let out = `<b>${dateLabel}</b><br/>`;
-            const sideNames = new Set(["VIX", "F&G"]);
-            const sorted = [...params].sort((a, b) => {
-              const aIs = sideNames.has(a.seriesName);
-              const bIs = sideNames.has(b.seriesName);
-              if (aIs !== bIs) return aIs ? 1 : -1;
-              return (b.value?.[1] ?? -Infinity) - (a.value?.[1] ?? -Infinity);
-            });
-            for (const p of sorted) {
-              const v = p.value?.[1];
-              if (v == null) continue;
-              const fmt = p.seriesName === "F&G" ? v.toFixed(0)
-                        : p.seriesName === "VIX" ? v.toFixed(2)
-                        : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+            for (const p of params) {
+              if (p.seriesName.startsWith("__")) continue;
+              const v = p.value?.[1]; if (v == null) continue;
+              const fmt = p.seriesName==="F&G" ? v.toFixed(0) : p.seriesName==="VIX" ? v.toFixed(2) : v.toLocaleString(undefined,{maximumFractionDigits:2});
               out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${fmt}</b><br/>`;
             }
             return out;
           },
         },
         legend: {
-          data: ["上軌 +2.5σ", "MA20", "價格", "下軌 -2.5σ",
-                 ...(ma125Chw ? [maLabel] : []),
-                 ...(vixIdxCh >= 0 ? ["VIX"] : []), ...(fgIdxCh >= 0 ? ["F&G"] : [])],
-          textStyle: { color: tipText, fontSize: 13 },
-          top: 6,
+          data: ["上軌 +2.5σ","MA20","價格","下軌 -2.5σ",...(ma125Chw?[maLabel]:[]),...(vixIdxCh>=0?["VIX"]:[]),...(fgIdxCh>=0?["F&G"]:[])],
+          textStyle: { color: tipText, fontSize: 13 }, top: 6,
         },
-        grid: { left: isMobCh ? 45 : 72, right: gridRCh, top: 48, bottom: 56 },
-        xAxis: {
-          type: "time",
-          axisLine: { lineStyle: { color: axisClr } },
-          axisLabel: { fontSize: 12 },
-          splitLine: { show: false },
-        },
+        grid: [
+          { left:isMobCh?45:72, right:gridRCh, top:48, bottom:'38%' },
+          { left:isMobCh?45:72, right:50, top:'65%', bottom:'22%' },
+          { left:isMobCh?45:72, right:50, top:'81%', bottom:36 },
+        ],
+        xAxis: [
+          { gridIndex:0, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+          { gridIndex:1, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+          { gridIndex:2, type:"time", axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:isMobCh?10:12}, splitLine:{show:false} },
+        ],
         yAxis: yAxisCh,
         dataZoom: [
-          { type: "inside" },
-          { type: "slider", height: 18, bottom: 14 },
+          { type:"inside", xAxisIndex:[0,1,2] },
+          { type:"slider", height:18, bottom:14, xAxisIndex:[0,1,2] },
         ],
         series: [
-          { ...lineBase, name: "上軌 +2.5σ", data: upperW, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#e91e63" },                  itemStyle: { color: "#e91e63" } },
-          { ...lineBase, name: "MA20",       data: ma20w,  yAxisIndex: 0, lineStyle: { width: 1.5, color: "#9e9e9e", type: "dashed" }, itemStyle: { color: "#9e9e9e" } },
-          { ...lineBase, name: "價格",       data: priceW, yAxisIndex: 0, lineStyle: { width: 1.8, color: s.color },                   itemStyle: { color: s.color } },
-          { ...lineBase, name: "下軌 -2.5σ", data: lowerW, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#1565c0" },                  itemStyle: { color: "#1565c0" } },
-          ...(ma125Chw ? [{ ...lineBase, name: maLabel, data: ma125Chw, yAxisIndex: 0, lineStyle: { width: 2, color: "#ff9800" }, itemStyle: { color: "#ff9800" } }] : []),
-          ...(vixIdxCh >= 0 ? [{ ...lineBase, name: "VIX", data: vixDataCh, yAxisIndex: vixIdxCh, lineStyle: { width: 1.5, color: "#f0883e", type: "dashed" }, itemStyle: { color: "#f0883e" }, areaStyle: { color: "rgba(240,136,62,0.06)" } }] : []),
-          ...(fgIdxCh  >= 0 ? [{ ...lineBase, name: "F&G", data: fgDataCh,  yAxisIndex: fgIdxCh,  lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" }, areaStyle: { color: "rgba(227,179,65,0.06)" } }] : []),
+          { ...lineBase, name:"上軌 +2.5σ", data:upperW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#e91e63"}, itemStyle:{color:"#e91e63"} },
+          { ...lineBase, name:"MA20",       data:ma20w,  xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#9e9e9e",type:"dashed"}, itemStyle:{color:"#9e9e9e"} },
+          { ...lineBase, name:"價格",       data:priceW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.8,color:s.color}, itemStyle:{color:s.color} },
+          { ...lineBase, name:"下軌 -2.5σ", data:lowerW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#1565c0"}, itemStyle:{color:"#1565c0"} },
+          ...(ma125Chw ? [{ ...lineBase, name:maLabel, data:ma125Chw, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:2,color:"#ff9800"}, itemStyle:{color:"#ff9800"} }] : []),
+          ...(vixIdxCh>=0 ? [{ ...lineBase, name:"VIX", data:vixDataCh, xAxisIndex:0, yAxisIndex:vixIdxCh, lineStyle:{width:1.5,color:"#f0883e",type:"dashed"}, itemStyle:{color:"#f0883e"}, areaStyle:{color:"rgba(240,136,62,0.06)"} }] : []),
+          ...(fgIdxCh>=0  ? [{ ...lineBase, name:"F&G", data:fgDataCh,  xAxisIndex:0, yAxisIndex:fgIdxCh,  lineStyle:{width:1.5,color:"#e3b341",type:"dashed"}, itemStyle:{color:"#e3b341"}, areaStyle:{color:"rgba(227,179,65,0.06)"} }] : []),
+          ...(rsiDataCh.length ? [{ type:'line', name:'RSI', xAxisIndex:1, yAxisIndex:rsiIdxCh, data:rsiDataCh, showSymbol:false, lineStyle:{width:1.5,color:'#a371f7'}, itemStyle:{color:'#a371f7'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:70,label:{formatter:'70',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:30,label:{formatter:'30',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} }] : []),
+          ...(kdDataCh.length ? [
+            { type:'line', name:'K', xAxisIndex:2, yAxisIndex:kdIdxCh, data:kdDataCh.map(r=>[r[0],r[1]]), showSymbol:false, lineStyle:{width:1.5,color:'#f0883e'}, itemStyle:{color:'#f0883e'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:80,label:{formatter:'80',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:20,label:{formatter:'20',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} },
+            { type:'line', name:'D', xAxisIndex:2, yAxisIndex:kdIdxCh, data:kdDataCh.map(r=>[r[0],r[2]]), showSymbol:false, lineStyle:{width:1.5,color:'#79c0ff',type:'dashed'}, itemStyle:{color:'#79c0ff'} },
+          ] : []),
+          ...tdSeriesCh,
         ],
       }, { notMerge: true });
 
@@ -1870,32 +2299,48 @@
         rightAxesPt.push({ min: 0, max: 100, position: "right", offset: rightAxesPt.length * axisOffPt,
           axisLine: { lineStyle: { color: "#e3b341" } }, axisLabel: { fontSize: 11, color: "#e3b341" }, splitLine: { show: false } });
       }
-      const priceAxisPt = { scale: true, axisLine: { lineStyle: { color: axisClr } }, axisLabel: { fontSize: 12 }, splitLine: { lineStyle: { color: gridClr } } };
-      const yAxisPt = rightAxesPt.length > 0 ? [priceAxisPt, ...rightAxesPt] : priceAxisPt;
-      const gridRPt = rightAxesPt.length === 0 ? (isMobPt ? 12 : 24)
-                    : rightAxesPt.length === 1 ? (isMobPt ? 38 : 58)
-                    : (isMobPt ? 65 : 105);
+      const nRtPt    = rightAxesPt.length;
+      const rsiIdxPt = 1 + nRtPt;
+      const kdIdxPt  = 2 + nRtPt;
+      const gridRPt  = nRtPt === 0 ? (isMobPt ? 12 : 24) : nRtPt === 1 ? (isMobPt ? 38 : 58) : (isMobPt ? 65 : 105);
 
-      // Build series objects — price inserted at its zone position so tooltip/legend order matches value
-      const sU2 = { ...lineBase, name: "極度貪婪", data: result.upper2, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#e91e63" }, itemStyle: { color: "#e91e63" } };
-      const sU1 = { ...lineBase, name: "貪婪",     data: result.upper1, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#f48fb1" }, itemStyle: { color: "#f48fb1" } };
-      const sTr = { ...lineBase, name: "趨勢線",   data: result.trend,  yAxisIndex: 0, lineStyle: { width: 1.5, color: "#9e9e9e" }, itemStyle: { color: "#9e9e9e" } };
-      const sL1 = { ...lineBase, name: "恐懼",     data: result.lower1, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#64b5f6" }, itemStyle: { color: "#64b5f6" } };
-      const sL2 = { ...lineBase, name: "極度恐懼", data: result.lower2, yAxisIndex: 0, lineStyle: { width: 1.5, color: "#1565c0" }, itemStyle: { color: "#1565c0" } };
-      const sPr = { ...lineBase, name: "價格",     data,                yAxisIndex: 0, lineStyle: { width: 1.5, color: s.color },   itemStyle: { color: s.color },
-        markPoint: {
-          silent: true, animation: false,
-          data: [{
-            coord: [lastDate, lastPrice],
-            symbol: "circle", symbolSize: 10,
-            itemStyle: { color: zoneClr, borderColor: "#fff", borderWidth: 2 },
-            label: {
-              show: true, formatter: badgeLabel, position: badgePos, distance: 8,
-              color: "#fff", backgroundColor: zoneClr, borderRadius: 4,
-              padding: [3, 8], fontSize: 12, fontWeight: "bold",
-            }
-          }]
-        }
+      // ── Weekly indicator data (always weekly regardless of pentaWeekly) ─
+      const wklyPt   = toWeekly(loaded[pentaActiveTicker] || []);
+      const wHLCPt   = loadedHLC[pentaActiveTicker] ? toWeeklyHLC(loadedHLC[pentaActiveTicker]) : wklyPt.map(r => [r[0],r[1],r[1],r[1]]);
+      const rsiDataPt = computeRSI(wklyPt, 14).filter(r => r[0] >= fromDatePt);
+      const kdDataPt  = computeKD(wHLCPt, 9).filter(r => r[0] >= fromDatePt);
+      const tdInRgPt  = computeTDSetup(wklyPt).filter(p => p.date >= fromDatePt);
+      const pmapPt    = new Map(wklyPt.map(r => [r[0], r[1]]));
+
+      // ── yAxis (multi-grid) ─────────────────────────────────────────
+      const priceAxisPt = { gridIndex:0, scale:true, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:12}, splitLine:{lineStyle:{color:gridClr}} };
+      const rtAxWithGPt = rightAxesPt.map(a => ({ ...a, gridIndex: 0 }));
+      const rsiAxisPt   = { gridIndex:1, min:0, max:100, name:'RSI', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#a371f7',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#a371f7'}, splitLine:{show:false} };
+      const kdAxisPt    = { gridIndex:2, min:0, max:100, name:'KD',  nameLocation:'start', nameGap:2, nameTextStyle:{color:'#f0883e',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#f0883e'}, splitLine:{show:false} };
+      const yAxisPt     = [priceAxisPt, ...rtAxWithGPt, rsiAxisPt, kdAxisPt];
+
+      // ── TD annotation series ──────────────────────────────────────
+      const mkTDPt = (items, pos, clr, c9) => {
+        const norm = items.filter(p => p.count < 9);
+        const sig9 = items.filter(p => p.count === 9);
+        const out  = [];
+        if (norm.length) out.push({ type:'scatter', name:`__tdp_${pos}`, xAxisIndex:0, yAxisIndex:0, data:norm.map(p=>[p.date,pmapPt.get(p.date)??0,p.count]), symbolSize:0, silent:true, label:{show:true, formatter:p=>String(p.data[2]), position:pos, fontSize:9, color:clr} });
+        if (sig9.length) out.push({ type:'scatter', name:`__tdp9_${pos}`, xAxisIndex:0, yAxisIndex:0, data:sig9.map(p=>[p.date,pmapPt.get(p.date)??0]), symbol:'circle', symbolSize:11, silent:true, itemStyle:{color:c9,borderColor:'#fff',borderWidth:1.5}, label:{show:true, formatter:'9', position:pos, fontSize:10, fontWeight:'bold', color:c9, distance:4} });
+        return out;
+      };
+      const tdSeriesPt = [
+        ...mkTDPt(tdInRgPt.filter(p=>p.dir==='down'), 'top',    '#3fb950', '#56d364'),
+        ...mkTDPt(tdInRgPt.filter(p=>p.dir==='up'),   'bottom', '#f85149', '#f85149'),
+      ];
+
+      // ── Price series (sorted by zone for legend order) ────────────
+      const sU2 = { ...lineBase, name:"極度貪婪", data:result.upper2, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#e91e63"}, itemStyle:{color:"#e91e63"} };
+      const sU1 = { ...lineBase, name:"貪婪",     data:result.upper1, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#f48fb1"}, itemStyle:{color:"#f48fb1"} };
+      const sTr = { ...lineBase, name:"趨勢線",   data:result.trend,  xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#9e9e9e"}, itemStyle:{color:"#9e9e9e"} };
+      const sL1 = { ...lineBase, name:"恐懼",     data:result.lower1, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#64b5f6"}, itemStyle:{color:"#64b5f6"} };
+      const sL2 = { ...lineBase, name:"極度恐懼", data:result.lower2, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#1565c0"}, itemStyle:{color:"#1565c0"} };
+      const sPr = { ...lineBase, name:"價格",     data,               xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:s.color},   itemStyle:{color:s.color},
+        markPoint: { silent:true, animation:false, data:[{ coord:[lastDate,lastPrice], symbol:"circle", symbolSize:10, itemStyle:{color:zoneClr,borderColor:"#fff",borderWidth:2}, label:{show:true, formatter:badgeLabel, position:badgePos, distance:8, color:"#fff", backgroundColor:zoneClr, borderRadius:4, padding:[3,8], fontSize:12, fontWeight:"bold"} }] }
       };
       let bandsSorted;
       if      (lastPrice >= lastU2) bandsSorted = [sPr, sU2, sU1, sTr, sL1, sL2];
@@ -1908,34 +2353,22 @@
       pentaChart.setOption({
         backgroundColor: "transparent",
         tooltip: {
-          trigger: "axis",
-          axisPointer: { type: "cross" },
-          backgroundColor: tipBg,
-          borderColor: tipBdr,
-          textStyle: { color: tipText },
+          trigger: "axis", axisPointer: { type: "cross" },
+          backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText },
           formatter(params) {
+            if (!params?.length) return '';
             const ts = params[0]?.axisValue;
-            const dateLabel = ts ? new Date(ts).toISOString().slice(0, 10) : "";
+            const dateLabel = ts ? new Date(ts).toISOString().slice(0,10) : "";
             let out = `<b>${dateLabel}</b><br/>`;
-            const sideNames = new Set(["VIX", "F&G"]);
-            const sorted = [...params].sort((a, b) => {
-              const aIs = sideNames.has(a.seriesName);
-              const bIs = sideNames.has(b.seriesName);
-              if (aIs !== bIs) return aIs ? 1 : -1;
-              return (b.value?.[1] ?? -Infinity) - (a.value?.[1] ?? -Infinity);
-            });
             const priceV = params.find(p => p.seriesName === "價格")?.value?.[1];
-            for (const p of sorted) {
-              const v = p.value?.[1];
-              if (v == null) continue;
-              const fmt = p.seriesName === "F&G" ? v.toFixed(0)
-                        : p.seriesName === "VIX" ? v.toFixed(2)
-                        : v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+            for (const p of params) {
+              if (p.seriesName.startsWith("__")) continue;
+              const v = p.value?.[1]; if (v == null) continue;
+              const fmt = p.seriesName==="F&G" ? v.toFixed(0) : p.seriesName==="VIX" ? v.toFixed(2) : v.toLocaleString(undefined,{maximumFractionDigits:2});
               out += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${fmt}</b>`;
               if (p.seriesName === maLabelPt && priceV != null) {
                 const dev = (priceV - v) / v * 100;
-                const clr = dev >= 0 ? "#f48fb1" : "#64b5f6";
-                out += `  <span style="color:${clr};font-size:11px">${dev >= 0 ? "+" : ""}${dev.toFixed(2)}%</span>`;
+                out += `  <span style="color:${dev>=0?"#f48fb1":"#64b5f6"};font-size:11px">${dev>=0?"+":""}${dev.toFixed(2)}%</span>`;
               }
               out += "<br/>";
             }
@@ -1943,34 +2376,40 @@
           },
         },
         legend: {
-          data: [...bandsSorted.map(x => x.name),
-                 ...(ma125DataPt ? [maLabelPt] : []),
-                 ...(vixIdxPt >= 0 ? ["VIX"] : []), ...(fgIdxPt >= 0 ? ["F&G"] : [])],
-          textStyle: { color: tipText, fontSize: 13 },
-          top: 6,
+          data: [...bandsSorted.map(x=>x.name),...(ma125DataPt?[maLabelPt]:[]),...(vixIdxPt>=0?["VIX"]:[]),...(fgIdxPt>=0?["F&G"]:[])],
+          textStyle: { color: tipText, fontSize: 13 }, top: 6,
         },
-        grid: { left: isMobPt ? 45 : 72, right: gridRPt, top: 48, bottom: 56 },
-        xAxis: {
-          type: "time",
-          axisLine: { lineStyle: { color: axisClr } },
-          axisLabel: { fontSize: 12 },
-          splitLine: { show: false },
-        },
+        grid: [
+          { left:isMobPt?45:72, right:gridRPt, top:48, bottom:'38%' },
+          { left:isMobPt?45:72, right:50, top:'65%', bottom:'22%' },
+          { left:isMobPt?45:72, right:50, top:'81%', bottom:36 },
+        ],
+        xAxis: [
+          { gridIndex:0, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+          { gridIndex:1, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+          { gridIndex:2, type:"time", axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:isMobPt?10:12}, splitLine:{show:false} },
+        ],
         yAxis: yAxisPt,
         dataZoom: [
-          { type: "inside" },
-          { type: "slider", height: 18, bottom: 14 },
+          { type:"inside", xAxisIndex:[0,1,2] },
+          { type:"slider", height:18, bottom:14, xAxisIndex:[0,1,2] },
         ],
         series: [
           ...bandsSorted,
-          ...(ma125DataPt ? [{ ...lineBase, name: maLabelPt, data: ma125DataPt, yAxisIndex: 0, lineStyle: { width: 2, color: "#ff9800" }, itemStyle: { color: "#ff9800" } }] : []),
-          ...(vixIdxPt >= 0 ? [{ ...lineBase, name: "VIX", data: vixDataPt, yAxisIndex: vixIdxPt, lineStyle: { width: 1.5, color: "#f0883e", type: "dashed" }, itemStyle: { color: "#f0883e" }, areaStyle: { color: "rgba(240,136,62,0.06)" } }] : []),
-          ...(fgIdxPt  >= 0 ? [{ ...lineBase, name: "F&G", data: fgDataPt,  yAxisIndex: fgIdxPt,  lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" }, areaStyle: { color: "rgba(227,179,65,0.06)" } }] : []),
+          ...(ma125DataPt ? [{ ...lineBase, name:maLabelPt, data:ma125DataPt, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:2,color:"#ff9800"}, itemStyle:{color:"#ff9800"} }] : []),
+          ...(vixIdxPt>=0 ? [{ ...lineBase, name:"VIX", data:vixDataPt, xAxisIndex:0, yAxisIndex:vixIdxPt, lineStyle:{width:1.5,color:"#f0883e",type:"dashed"}, itemStyle:{color:"#f0883e"}, areaStyle:{color:"rgba(240,136,62,0.06)"} }] : []),
+          ...(fgIdxPt>=0  ? [{ ...lineBase, name:"F&G", data:fgDataPt,  xAxisIndex:0, yAxisIndex:fgIdxPt,  lineStyle:{width:1.5,color:"#e3b341",type:"dashed"}, itemStyle:{color:"#e3b341"}, areaStyle:{color:"rgba(227,179,65,0.06)"} }] : []),
+          ...(rsiDataPt.length ? [{ type:'line', name:'RSI', xAxisIndex:1, yAxisIndex:rsiIdxPt, data:rsiDataPt, showSymbol:false, lineStyle:{width:1.5,color:'#a371f7'}, itemStyle:{color:'#a371f7'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:70,label:{formatter:'70',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:30,label:{formatter:'30',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} }] : []),
+          ...(kdDataPt.length ? [
+            { type:'line', name:'K', xAxisIndex:2, yAxisIndex:kdIdxPt, data:kdDataPt.map(r=>[r[0],r[1]]), showSymbol:false, lineStyle:{width:1.5,color:'#f0883e'}, itemStyle:{color:'#f0883e'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:80,label:{formatter:'80',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:20,label:{formatter:'20',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} },
+            { type:'line', name:'D', xAxisIndex:2, yAxisIndex:kdIdxPt, data:kdDataPt.map(r=>[r[0],r[2]]), showSymbol:false, lineStyle:{width:1.5,color:'#79c0ff',type:'dashed'}, itemStyle:{color:'#79c0ff'} },
+          ] : []),
+          ...tdSeriesPt,
         ],
       }, { notMerge: true });
 
       statusEl.textContent =
-        `${pentaActiveTicker} 五線譜 · ${pentaPeriod} · 線性迴歸通道 · ${data.length} 筆日線 · 目前：${zoneName}${deviationStr ? ` · ${maLabelPt} 乖離：${deviationStr}` : ""}`;
+        `${pentaActiveTicker} 五線譜 · ${pentaPeriod} · 線性迴歸通道 · ${data.length} 筆${pentaWeekly ? "週" : "日"}線 · 目前：${zoneName}${deviationStr ? ` · ${maLabelPt} 乖離：${deviationStr}` : ""}`;
     }
 
     // ── Pentagram ticker picker ────────────────────────────────────
@@ -2047,6 +2486,12 @@
       renderPentagram();
     });
 
+    // ── Pentagram weekly toggle ────────────────────────────────────
+    document.getElementById("penta-weekly-toggle").addEventListener("click", () => {
+      pentaWeekly = !pentaWeekly;
+      document.getElementById("penta-weekly-toggle").classList.toggle("active", pentaWeekly);
+      renderPentagram();
+    });
 
     // ── Macro: yield curve ─────────────────────────────────────────
     function filterMacroRange(rows) {
@@ -2288,7 +2733,7 @@
       const tipBg   = tc("#161b22","#ffffff"), tipBdr = tc("#30363d","#d0d7de");
       const tipText = tc("#e6edf3","#1f2328"), axisClr = tc("#8b949e","#57606a");
 
-      const xLabels = sortedETFs.map(e => `${SECTOR_LABEL[e]}\n${e}`);
+      const xLabels = sortedETFs.map(e => mob() ? e : `${SECTOR_LABEL[e]}\n${e}`);
 
       sectorChart.setOption({
         backgroundColor: "transparent",
@@ -2714,8 +3159,10 @@
         const allFresh = Object.values(loaded).every(isDataFresh);
         status.textContent = `已載入 ${Object.keys(loaded).length} 個指標 · 最新資料 ${latestDate}${allFresh ? "" : " ⚠ 部分資料可能過期"} · 點選 chip 切換顯示`;
 
-        // Pre-load macro data in background (non-blocking)
+        // Pre-load VIX for signal panel, macro data in background
+        ensureLoaded("VIX").then(() => renderSignalPanel()).catch(() => {});
         loadMacroData().catch(() => {});
+        renderSignalPanel();
 
       } catch (err) {
         status.textContent = `載入失敗：${err.message}`;
@@ -2889,9 +3336,9 @@
             ]},
             markLine:{ silent:true, symbol:"none", data:[
               {yAxis:25,lineStyle:{color:"#ef4444",type:"dashed",width:1},
-               label:{show:true,formatter:"恐懼<25",color:"#ef4444",fontSize:10,position:"end"}},
+               label:{show:!mob(),formatter:"恐懼<25",color:"#ef4444",fontSize:10,position:"end"}},
               {yAxis:85,lineStyle:{color:"#22c55e",type:"dashed",width:1},
-               label:{show:true,formatter:"貪婪>85",color:"#22c55e",fontSize:10,position:"end"}},
+               label:{show:!mob(),formatter:"貪婪>85",color:"#22c55e",fontSize:10,position:"end"}},
             ]}
           },
           { name:"CNN F&G", type:"line", data:fgSeries, yAxisIndex:0, symbol:"none",
@@ -3045,6 +3492,77 @@
         status.textContent = `載入失敗：${err.message}`;
       }
     }
+
+    // ── Earnings calendar ──────────────────────────────────────────
+    let earnCalYear  = new Date().getFullYear();
+    let earnCalMonth = new Date().getMonth(); // 0-based
+
+    async function renderEarningsCalendar() {
+      const el = document.getElementById("earnings-cal");
+      if (!el) return;
+      if (!loadedEarnings.length) {
+        el.innerHTML = '<p style="color:var(--muted);padding:16px">載入中…</p>';
+        await loadEarnings();
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      // Build date → { earn: [], conf: [] } lookup
+      const byDate = {};
+      for (const e of loadedEarnings) {
+        if (!byDate[e.date]) byDate[e.date] = { earn: [], conf: [] };
+        const display = e.ticker.replace(".TW", "");
+        if (e.type === "conference") byDate[e.date].conf.push(display);
+        else                         byDate[e.date].earn.push(display);
+      }
+
+      const DOWS = ['日','一','二','三','四','五','六'];
+      // Show earnCalMonth - 1, earnCalMonth, earnCalMonth + 1 (3 months)
+      let html = '<div class="earn-months">';
+      for (let offset = -1; offset <= 1; offset++) {
+        let y = earnCalYear, m = earnCalMonth + offset;
+        if (m < 0)  { m += 12; y--; }
+        if (m > 11) { m -= 12; y++; }
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        const firstDow = new Date(y, m, 1).getDay();
+        const monthLabel = `${y}年${m + 1}月`;
+        html += `<div class="earn-month"><h3>${monthLabel}</h3><div class="earn-grid">`;
+        for (const d of DOWS) html += `<div class="earn-dow">${d}</div>`;
+        for (let i = 0; i < firstDow; i++) html += '<div class="earn-day empty"></div>';
+        for (let day = 1; day <= daysInMonth; day++) {
+          const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+          const cell = byDate[ds];
+          const hasEvent = cell && (cell.earn.length || cell.conf.length);
+          const isToday = ds === today;
+          let cls = 'earn-day';
+          if (isToday)  cls += ' today';
+          if (hasEvent) cls += ' has-earn';
+          html += `<div class="${cls}"><div class="earn-day-num">${day}</div>`;
+          if (hasEvent) {
+            html += '<div class="earn-tickers">';
+            for (const t of cell.earn) html += `<span class="earn-tick">${t}</span>`;
+            for (const t of cell.conf) html += `<span class="earn-tick conf">${t}</span>`;
+            html += '</div>';
+          }
+          html += '</div>';
+        }
+        html += '</div></div>';
+      }
+      html += '</div>';
+      el.innerHTML = html;
+      document.getElementById("earn-month-label").textContent =
+        `${earnCalYear}年${earnCalMonth + 1}月`;
+    }
+
+    document.getElementById("earn-prev").addEventListener("click", () => {
+      earnCalMonth--;
+      if (earnCalMonth < 0) { earnCalMonth = 11; earnCalYear--; }
+      renderEarningsCalendar();
+    });
+    document.getElementById("earn-next").addEventListener("click", () => {
+      earnCalMonth++;
+      if (earnCalMonth > 11) { earnCalMonth = 0; earnCalYear++; }
+      renderEarningsCalendar();
+    });
 
     function renderBreadthChart() {
       if (!breadthData || !breadthChart) return;
