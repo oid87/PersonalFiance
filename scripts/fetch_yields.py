@@ -55,7 +55,7 @@ def main() -> None:
             print(f"  [{series_id}] wrote {len(rows)} rows -> {out.name}")
         except Exception as exc:
             print(f"  [{series_id}] FAILED: {exc}")
-            raise
+            continue
 
 
 if __name__ == "__main__":

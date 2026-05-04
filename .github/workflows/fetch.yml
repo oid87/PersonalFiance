@@ -25,24 +25,31 @@ jobs:
         run: pip install -r scripts/requirements.txt
 
       - name: Fetch stock data
+        continue-on-error: true
         run: python scripts/fetch_stocks.py
 
       - name: Fetch Fear & Greed
+        continue-on-error: true
         run: python scripts/fetch_fear_greed.py
 
       - name: Fetch yield data
+        continue-on-error: true
         run: python scripts/fetch_yields.py
 
       - name: Fetch CAPE data
+        continue-on-error: true
         run: python scripts/fetch_cape.py
 
       - name: Fetch QQQ valuation (forward PE)
+        continue-on-error: true
         run: python scripts/fetch_qqq_valuation.py
 
       - name: Fetch S&P 500 trailing PE
+        continue-on-error: true
         run: python scripts/fetch_sp500_pe.py
 
       - name: Compute sentiment score
+        continue-on-error: true
         run: python scripts/compute_sentiment.py
 
       - name: Fetch earnings dates
