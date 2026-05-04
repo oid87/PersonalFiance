@@ -138,7 +138,7 @@ def main() -> None:
             update_ticker(ticker, stem, listing_start)
         except Exception as exc:
             print(f"  [{ticker}] FAILED: {exc}")
-            raise
+            continue
 
 
 if __name__ == "__main__":
