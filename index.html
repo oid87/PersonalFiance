@@ -638,6 +638,8 @@
       <span class="sig-chip" id="sig-dd"  data-tooltip="12週最大回撤 ≥ 10%">12W —</span>
       <span class="sig-chip" id="sig-vol"  data-tooltip="QQQ 日成交量 > 8000萬股 → 爆量">量 —</span>
       <span id="sig-count" style="font-weight:700;font-size:13px;margin-left:4px;color:var(--muted)">0/8</span>
+      <span style="margin-left:8px;opacity:.35;color:var(--muted)">|</span>
+      <span class="sig-chip" id="sig-bounce" data-tooltip="F&G &lt; 15 且 QQQ 單日漲幅 &gt; 2% → 恐慌反彈日">恐慌反彈 —</span>
     </div>
 
     <div id="chart"></div>
@@ -766,6 +768,17 @@
       </table>
     </div>
     <div class="status" id="ck-status">切換至此 tab 自動載入…</div>
+    <div id="bounce-section" style="display:none;padding:0 4px 16px">
+      <div style="font-weight:600;font-size:.875rem;color:#f97316;margin-bottom:.4rem">
+        極端恐慌反彈日
+        <span style="font-weight:400;opacity:.65;font-size:.8rem">(F&amp;G &lt; 15 + 單日漲幅 &gt; 2%)</span>
+      </div>
+      <div id="bounce-count" style="font-size:.75rem;color:var(--muted);margin-bottom:.4rem"></div>
+      <table style="width:100%;border-collapse:collapse;font-size:.8rem">
+        <thead id="bounce-head"></thead>
+        <tbody id="bounce-body"></tbody>
+      </table>
+    </div>
   </section>
 
   <!-- ── 相關係數 tab ────────────────────────────────────────────── -->
@@ -1451,6 +1464,41 @@
       }).join("");
     }
 
+    // ── Bounce signal: QQQ<MA200 & F&G<15 → 2%+ bounce within 14 days ──
+    function computeBounceSignals(qqqData, fgData, ma200Data) {
+      const fgMap    = new Map(fgData.map(r => [r[0], r[1]]));
+      const ma200Map = new Map(ma200Data.map(r => [r[0], r[1]]));
+      const MS14     = 14 * 86400000;
+
+      // Trigger days: QQQ close < MA200 AND F&G < 15
+      const triggerMs = [];
+      for (const [date, close] of qqqData) {
+        const fg = fgMap.get(date);
+        const ma = ma200Map.get(date);
+        if (fg != null && fg < 15 && ma != null && close < ma)
+          triggerMs.push(new Date(date + "T00:00:00Z").getTime());
+      }
+      if (!triggerMs.length) return { bounceSignals: [], bounceRetMap: new Map() };
+
+      // Bounce days: within 14 calendar days after any trigger AND daily gain > 2%
+      const bounceSignals = [];
+      const bounceRetMap  = new Map();
+      for (let i = 1; i < qqqData.length; i++) {
+        const [date, close] = qqqData[i];
+        const prev = qqqData[i - 1][1];
+        const ret  = (close - prev) / prev;
+        if (ret <= 0.02) continue;
+        const dMs = new Date(date + "T00:00:00Z").getTime();
+        if (triggerMs.some(t => t <= dMs && dMs <= t + MS14)) {
+          const ma   = ma200Map.get(date);
+          const vsMa = ma != null ? (close - ma) / ma * 100 : null;
+          bounceSignals.push([date, close]);
+          bounceRetMap.set(date, { ret, fg: fgMap.get(date) ?? null, vsMa });
+        }
+      }
+      return { bounceSignals, bounceRetMap };
+    }
+
     // ── Chart render ───────────────────────────────────────────────
     function render() {
       const series = [];
@@ -1598,6 +1646,34 @@
             type: "line", data: [], yAxisIndex: 0,
             lineStyle: { width: 0 }, symbol: "none", silent: true,
             markLine: { silent: true, symbol: ["none", "none"], animation: false, data: mlData },
+          });
+        }
+      }
+
+      if (loaded["QQQ"] && loaded["F&G"]) {
+        const qqqD   = loaded["QQQ"];
+        const ma200B = computeMA(qqqD, 200);
+        const { bounceSignals, bounceRetMap } = computeBounceSignals(qqqD, loaded["F&G"], ma200B);
+        const filteredBouncePoints = filterRange(bounceSignals);
+        if (filteredBouncePoints.length) {
+          series.push({
+            name: "__bounceSignal",
+            type: "scatter",
+            data: filteredBouncePoints,
+            xAxisIndex: 0,
+            yAxisIndex: 0,
+            symbol: "triangle",
+            symbolSize: 10,
+            itemStyle: { color: "#f97316", opacity: 0.85 },
+            z: 5,
+            legendHoverLink: false,
+            tooltip: {
+              trigger: "item",
+              formatter: p => {
+                const info = bounceRetMap.get(p.data[0]);
+                return `<b>${p.data[0]}</b><br/>恐慌反彈<br/>QQQ: $${(+p.data[1]).toFixed(2)}<br/>單日: +${((info?.ret ?? 0) * 100).toFixed(2)}%`;
+              },
+            },
           });
         }
       }
@@ -1968,7 +2044,10 @@
         scoreArr.push([date, score]);
       }
 
-      sigMaps = { qqq, weeklySignals, ma200, ddArr, fg, vix, vol, scoreArr };
+      const dailyRetArr = qqq.slice(1).map((r, i) => [r[0], (r[1] - qqq[i][1]) / qqq[i][1]]);
+      const { bounceSignals: bSigs } = computeBounceSignals(qqq, fg, ma200);
+      const bounceSignalSet = new Set(bSigs.map(r => r[0]));
+      sigMaps = { qqq, weeklySignals, ma200, ddArr, fg, vix, vol, scoreArr, dailyRetArr, bounceSignalSet };
     }
 
     function renderSignalPanel(date) {
@@ -1998,6 +2077,8 @@
       const ma200Dev = (ma200V && qClose) ? (qClose - ma200V) / ma200V * 100 : null;
       const volVal  = volRow?.[1] ?? null;
       const ddVal   = ddRow?.[1]  ?? null;
+      const dailyRetRow = lookupLE(sigMaps.dailyRetArr, d);
+      const dailyRetV   = dailyRetRow?.[0] === d ? dailyRetRow[1] : null;
 
       const kdHit  = kdK      != null && kdK      < 30;
       const rsiHit = rsiVal   != null && rsiVal   < 30;
@@ -2006,7 +2087,8 @@
       const maHit  = ma200Dev != null && ma200Dev < 0;
       const tdHit  = tdDir === 'down' && tdCount >= 7;
       const ddHit  = ddVal    != null && ddVal    <= -10;
-      const volHit = volVal   != null && volVal   >= 80_000_000;
+      const volHit    = volVal   != null && volVal   >= 80_000_000;
+      const bounceHit = sigMaps.bounceSignalSet?.has(d) ?? false;
 
       const set = (id, label, txt, hit) => {
         const el = document.getElementById(id); if (!el) return;
@@ -2021,6 +2103,7 @@
       set("sig-td",   "九轉",  tdDir === 'down' && tdCount > 0 ? `${tdCount}計` : "0計", tdHit);
       set("sig-dd",   "12W",   ddVal    != null ? `${ddVal.toFixed(1)}%`    : null, ddHit);
       set("sig-vol",  "量",    volVal   != null ? `${(volVal / 1e6).toFixed(0)}M` : null, volHit);
+      set("sig-bounce", "恐慌反彈", bounceHit ? `F&G:${fgVal.toFixed(0)} +${(dailyRetV * 100).toFixed(1)}%` : null, bounceHit);
       const hits = [kdHit, rsiHit, fgHit, vixHit, maHit, tdHit, ddHit, volHit].filter(Boolean).length;
       const countEl = document.getElementById("sig-count");
       if (countEl) {
@@ -2984,14 +3067,58 @@
         `顯示 ${filtered.length} 週 · 資料 ${startLabel} 起 · 訊號 = ${wn}週累積全跌 + F&G < 25`;
     }
 
+    function renderBounceSection() {
+      const section = document.getElementById("bounce-section");
+      if (!section) return;
+      const qqqD  = ckRaw["QQQ"] || [];
+      const fgArr = ckRaw["F&G"] || [];
+      if (!qqqD.length || !fgArr.length) { section.style.display = "none"; return; }
+
+      const ma200 = computeMA(qqqD, 200);
+      const { bounceSignals, bounceRetMap } = computeBounceSignals(qqqD, fgArr, ma200);
+
+      const rows = bounceSignals.map(([date, close]) => {
+        const info = bounceRetMap.get(date) ?? {};
+        return { date, close, fg: info.fg, ret: info.ret, vsMa: info.vsMa };
+      });
+
+      const display = [...rows].reverse().slice(0, 30);
+      document.getElementById("bounce-count").textContent =
+        `歷史共 ${rows.length} 次，顯示最近 ${display.length} 次`;
+
+      document.getElementById("bounce-head").innerHTML =
+        `<tr style="color:var(--muted);font-size:.75rem">
+           <th style="text-align:left;padding:3px 6px">日期</th>
+           <th style="text-align:right;padding:3px 6px">QQQ</th>
+           <th style="text-align:right;padding:3px 6px">單日漲幅</th>
+           <th style="text-align:right;padding:3px 6px">F&amp;G</th>
+           <th style="text-align:right;padding:3px 6px">vs MA200</th>
+         </tr>`;
+
+      document.getElementById("bounce-body").innerHTML = display.map(r =>
+        `<tr style="border-top:1px solid rgba(255,255,255,.06)">
+           <td style="padding:3px 6px">${r.date}</td>
+           <td style="text-align:right;padding:3px 6px">$${r.close.toFixed(2)}</td>
+           <td style="text-align:right;padding:3px 6px;color:#4ade80">+${(r.ret * 100).toFixed(2)}%</td>
+           <td style="text-align:right;padding:3px 6px;color:#f87171">${r.fg}</td>
+           <td style="text-align:right;padding:3px 6px;color:${r.vsMa != null && r.vsMa > 0 ? "#4ade80" : "#f87171"}">
+             ${r.vsMa != null ? (r.vsMa > 0 ? "↑" : "↓") + Math.abs(r.vsMa).toFixed(1) + "%" : "—"}
+           </td>
+         </tr>`
+      ).join("");
+
+      section.style.display = rows.length ? "block" : "none";
+    }
+
     async function initCKTab() {
-      if (ckInited) { renderCKTab(); return; }
+      if (ckInited) { renderCKTab(); renderBounceSection(); return; }
       const statusEl = document.getElementById("ck-status");
       statusEl.textContent = "載入中…";
       try {
         await loadCKData();
         ckInited = true;
         renderCKTab();
+        renderBounceSection();
       } catch (e) {
         statusEl.textContent = `載入失敗：${e.message}`;
       }
