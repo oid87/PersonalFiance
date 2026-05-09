@@ -2,8 +2,10 @@ name: Fetch market data
 
 on:
   schedule:
-    # 22:00 UTC Mon-Fri = 06:00 Tue-Sat Taipei (UTC+8)
+    # 22:00 UTC Mon-Fri = 06:00 Tue-Sat Taipei（美股收盤後）
     - cron: "0 22 * * 1-5"
+    # 10:00 UTC Mon-Fri = 18:00 Taipei（台股收盤後）
+    - cron: "0 10 * * 1-5"
   workflow_dispatch:
 
 permissions:
