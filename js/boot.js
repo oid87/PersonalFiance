@@ -4,6 +4,7 @@
       loaded, loadedHLC, loadedVol, customSeries,
       active, maActive, macroLoaded, sectorLoaded,
     } from './state.js';
+    import { isLight, tc, mob } from './utils/theme.js';
 
     // ECharts time-axis parses "YYYY-MM-DD" as local midnight, not UTC.
     // Always use this helper (not toISOString) when turning an ECharts timestamp back into a date string.
@@ -213,10 +214,6 @@
     setupResizeHandler();
 
     // ── Theme ──────────────────────────────────────────────────────
-    function isLight() { return document.body.classList.contains("light"); }
-    function tc(dark, light) { return isLight() ? light : dark; }
-    function mob() { return window.innerWidth < 600 || window.innerHeight < 500; }
-
     function applyTheme(light) {
       document.body.classList.toggle("light", light);
       document.getElementById("theme-btn").textContent = light ? "☾" : "☀";
