@@ -3,15 +3,14 @@
       CK_ASSETS, CK_ASSETS_3, SECTOR_ETFS, SECTOR_LABEL,
       loaded, loadedHLC, loadedVol, customSeries,
       active, maActive, macroLoaded, sectorLoaded,
+      state,
     } from './state.js';
     import { isLight, tc, mob } from './utils/theme.js';
-
-    // ECharts time-axis parses "YYYY-MM-DD" as local midnight, not UTC.
-    // Always use this helper (not toISOString) when turning an ECharts timestamp back into a date string.
-    function tsToLocalDate(ts) {
-      const d = new Date(ts);
-      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    }
+    import {
+      tsToLocalDate, presetStart, currentWindow, filterRange,
+      dateAddDays, closestOnOrAfter, minBetween, lookupLE,
+      toWeekly, toWeeklyHLC,
+    } from './utils/dates.js';
 
     const chartEl = document.getElementById("chart");
     let chart = echarts.init(chartEl, null); // light by default
@@ -141,9 +140,6 @@
       document.addEventListener('mouseup', clearOverlay);
     }
 
-    let rangePreset   = "5Y";
-    let customFrom    = "";
-    let customTo      = "";
     let fearActive    = false;
     let fearThreshold = 20;
 
@@ -316,30 +312,6 @@
       btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
 
     // ── Date utils ─────────────────────────────────────────────────
-    function presetStart(preset) {
-      const d = new Date();
-      if      (preset === "6M")   d.setMonth(d.getMonth() - 6);
-      else if (preset === "1Y6M") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
-      else if (preset === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
-      else if (preset === "5Y")   d.setFullYear(d.getFullYear() - 5);
-      else if (preset === "10Y")  d.setFullYear(d.getFullYear() - 10);
-      else if (preset === "20Y")  d.setFullYear(d.getFullYear() - 20);
-      else return null;
-      return d.toISOString().slice(0, 10);
-    }
-
-    function currentWindow() {
-      if (customFrom) return { from: customFrom, to: customTo || new Date().toISOString().slice(0,10) };
-      return { from: presetStart(rangePreset), to: null };
-    }
-
-    function filterRange(rows) {
-      const { from, to } = currentWindow();
-      let r = from ? rows.filter(r => r[0] >= from) : rows;
-      if (to) r = r.filter(row => row[0] <= to);
-      return r;
-    }
-
     function computeMA(data, period) {
       const out = [];
       for (let i = period - 1; i < data.length; i++) {
@@ -378,12 +350,6 @@
         if (prev > 0) out.push([m2data[i][0], +((m2data[i][1]/prev - 1)*100).toFixed(2)]);
       }
       return out;
-    }
-
-    function dateAddDays(dateStr, n) {
-      const d = new Date(dateStr);
-      d.setDate(d.getDate() + n);
-      return d.toISOString().slice(0, 10);
     }
 
     // ── Loading ────────────────────────────────────────────────────
@@ -480,24 +446,6 @@
     }
 
     // ── Fear helpers ───────────────────────────────────────────────
-    function closestOnOrAfter(key, dateStr) {
-      const data = loaded[key];
-      if (!data) return null;
-      for (const [d, c] of data) if (d >= dateStr) return c;
-      return null;
-    }
-
-    function minBetween(key, t0, t1) {
-      const data = loaded[key];
-      if (!data) return null;
-      let min = Infinity, minDate = null;
-      for (const [d, c] of data) {
-        if (d > t1) break;
-        if (d >= t0 && c < min) { min = c; minDate = d; }
-      }
-      return min === Infinity ? null : { price: min, date: minDate };
-    }
-
     function fearZones(threshold) {
       const fg = loaded["F&G"];
       if (!fg) return [];
@@ -961,8 +909,8 @@
     document.getElementById("range-picker").addEventListener("click", e => {
       const t = e.target.closest(".chip[data-range]");
       if (!t) return;
-      rangePreset = t.dataset.range;
-      customFrom = ""; customTo = "";
+      state.rangePreset = t.dataset.range;
+      state.customFrom = ""; state.customTo = "";
       dateFrom.value = ""; dateTo.value = "";
       for (const c of e.currentTarget.querySelectorAll(".chip"))
         c.classList.toggle("active", c === t);
@@ -970,9 +918,9 @@
     });
 
     function onDateChange() {
-      customFrom = dateFrom.value;
-      customTo   = dateTo.value;
-      if (customFrom || customTo)
+      state.customFrom = dateFrom.value;
+      state.customTo   = dateTo.value;
+      if (state.customFrom || state.customTo)
         for (const c of document.querySelectorAll("#range-picker .chip"))
           c.classList.remove("active");
       render();
@@ -1063,20 +1011,6 @@
 
     // ── Indicator helpers ───────────────────────────────────────────
 
-    function toWeeklyHLC(dailyHLC) {
-      const byWeek = new Map();
-      for (const [date, high, low, close] of dailyHLC) {
-        const d = new Date(date + "T00:00:00Z");
-        const diff = d.getUTCDay() === 0 ? -6 : 1 - d.getUTCDay();
-        const mon = new Date(d); mon.setUTCDate(d.getUTCDate() + diff);
-        const key = mon.toISOString().slice(0, 10);
-        const ex = byWeek.get(key);
-        if (ex) { ex[0] = date; ex[1] = Math.max(ex[1], high); ex[2] = Math.min(ex[2], low); ex[3] = close; }
-        else byWeek.set(key, [date, high, low, close]);
-      }
-      return [...byWeek.values()].sort((a, b) => a[0] < b[0] ? -1 : 1);
-    }
-
     function computeRSI(data, period = 14) {
       const out = [];
       if (data.length <= period) return out;
@@ -1144,16 +1078,6 @@
       return zones;
     }
 
-    function lookupLE(arr, date) {
-      // Binary search: last entry where arr[i][0] <= date
-      let lo = 0, hi = arr.length - 1, result = null;
-      while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        if (arr[mid][0] <= date) { result = arr[mid]; lo = mid + 1; }
-        else hi = mid - 1;
-      }
-      return result;
-    }
 
     function buildSigMaps() {
       const qqq = loaded["QQQ"];
@@ -1286,20 +1210,6 @@
     }
 
     // ── Channel helpers ────────────────────────────────────────────
-    function toWeekly(dailyData) {
-      const byWeek = new Map();
-      for (const [date, close] of dailyData) {
-        const d = new Date(date + "T00:00:00Z");
-        const day = d.getUTCDay();
-        const diff = day === 0 ? -6 : 1 - day;
-        const mon = new Date(d);
-        mon.setUTCDate(d.getUTCDate() + diff);
-        const key = mon.toISOString().slice(0, 10);
-        byWeek.set(key, [date, close]);
-      }
-      return [...byWeek.values()].sort((a, b) => a[0] < b[0] ? -1 : 1);
-    }
-
     // 樂活通道倍數：sentimentinsideout 對 QQQ 0.5Y 的 555/611/666 對應到
     // MA20 ± 2.5σ（我們算 611.74 ± 2.5×21.71 = [557.5, 666.0]）。
     const CHANNEL_SIGMA_MULT = 2.5;
