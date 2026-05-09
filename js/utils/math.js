@@ -140,6 +140,41 @@ export function computeDDZones(dailyData, lookbackDays = 60, threshold = 0.10) {
   return zones;
 }
 
+// Bounce signal: QQQ < MA200 & F&G < 15 → 2%+ bounce within 14 days
+export function computeBounceSignals(qqqData, fgData, ma200Data) {
+  const fgMap    = new Map(fgData.map(r => [r[0], r[1]]));
+  const ma200Map = new Map(ma200Data.map(r => [r[0], r[1]]));
+  const MS14     = 14 * 86400000;
+
+  // Trigger days: QQQ close < MA200 AND F&G < 15
+  const triggerMs = [];
+  for (const [date, close] of qqqData) {
+    const fg = fgMap.get(date);
+    const ma = ma200Map.get(date);
+    if (fg != null && fg < 15 && ma != null && close < ma)
+      triggerMs.push(new Date(date + "T00:00:00Z").getTime());
+  }
+  if (!triggerMs.length) return { bounceSignals: [], bounceRetMap: new Map() };
+
+  // Bounce days: within 14 calendar days after any trigger AND daily gain > 2%
+  const bounceSignals = [];
+  const bounceRetMap  = new Map();
+  for (let i = 1; i < qqqData.length; i++) {
+    const [date, close] = qqqData[i];
+    const prev = qqqData[i - 1][1];
+    const ret  = (close - prev) / prev;
+    if (ret <= 0.02) continue;
+    const dMs = new Date(date + "T00:00:00Z").getTime();
+    if (triggerMs.some(t => t <= dMs && dMs <= t + MS14)) {
+      const ma   = ma200Map.get(date);
+      const vsMa = ma != null ? (close - ma) / ma * 100 : null;
+      bounceSignals.push([date, close]);
+      bounceRetMap.set(date, { ret, fg: fgMap.get(date) ?? null, vsMa });
+    }
+  }
+  return { bounceSignals, bounceRetMap };
+}
+
 const CHANNEL_SIGMA_MULT = 2.5;
 
 export function computeChannelBands(weeklyAll) {
