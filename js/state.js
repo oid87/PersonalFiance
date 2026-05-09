@@ -58,4 +58,6 @@ export const state = {
   rangePreset: "5Y",
   customFrom: "",
   customTo: "",
+  sigMaps: null,
+  loadedEarnings: [],
 };

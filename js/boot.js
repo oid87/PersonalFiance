@@ -16,6 +16,7 @@
       computeRSI, computeKD, computeTDSetup, computeDDZones,
       computeLinearRegression, computeChannelBands,
     } from './utils/math.js';
+    import { isDataFresh, loadSeries, ensureLoaded, loadEarnings } from './utils/data.js';
 
     const chartEl = document.getElementById("chart");
     let chart = echarts.init(chartEl, null); // light by default
@@ -26,7 +27,7 @@
         renderSignalPanel(tsToLocalDate(ts));
       } catch (_) {}
     });
-    chart.on("globalout", () => { if (sigMaps) renderSignalPanel(); });
+    chart.on("globalout", () => { if (state.sigMaps) renderSignalPanel(); });
     let pentaChart = null;
     let pentaActiveTicker = "VOO";
     let pentaPeriod = "3.5Y";
@@ -149,10 +150,8 @@
     let fearThreshold = 20;
 
     let earningsActive  = false;
-    let loadedEarnings  = [];
     let ddZoneActive    = false;
     let sigZoneActive   = false;
-    let sigMaps         = null;   // invalidated when new data loads
 
     let pentaWeekly = false;
 
@@ -316,39 +315,6 @@
     document.querySelectorAll(".tab-btn").forEach(btn =>
       btn.addEventListener("click", () => switchTab(btn.dataset.tab)));
 
-    // ── Date utils ─────────────────────────────────────────────────
-    // ── Loading ────────────────────────────────────────────────────
-    function isDataFresh(data) {
-      if (!data || data.length === 0) return false;
-      const lastDate = data[data.length - 1][0];
-      // stale if last entry is more than 4 calendar days ago (covers weekends + Monday)
-      return (Date.now() - new Date(lastDate + "T00:00:00Z")) / 86400000 <= 4;
-    }
-
-    async function loadSeries(s) {
-      if (loaded[s.key] && isDataFresh(loaded[s.key])) return; // cache hit, still fresh
-      delete loaded[s.key]; // evict stale cache before re-fetch
-      const resp = await fetch(s.file, { cache: "no-cache" });
-      if (!resp.ok) throw new Error(`${s.key}: HTTP ${resp.status}`);
-      const j = await resp.json();
-      loaded[s.key] = (j.data || []).map(r => [
-        r.date,
-        r.close !== undefined ? r.close : r.value,
-      ]);
-      if (j.data?.[0]?.high !== undefined) {
-        loadedHLC[s.key] = j.data.map(r => [r.date, r.high, r.low, r.close]);
-      }
-      if (j.data?.[0]?.volume !== undefined) {
-        loadedVol[s.key] = j.data.map(r => [r.date, r.volume ?? 0]);
-      }
-      sigMaps = null; // invalidate signal lookup cache
-    }
-
-    async function ensureLoaded(key) {
-      const s = SERIES.find(x => x.key === key);
-      if (s) await loadSeries(s);
-    }
-
     async function loadCustomTicker(rawSymbol) {
       const key = rawSymbol.trim().toUpperCase();
       if (!key) return;
@@ -385,7 +351,7 @@
         loaded[key]    = rows.map(r => [r.date, r.close]);
         loadedHLC[key] = rows.map(r => [r.date, r.high, r.low, r.close]);
         loadedVol[key] = rows.map(r => [r.date, r.volume ?? 0]);
-        sigMaps = null;
+        state.sigMaps = null;
 
         const color = CUSTOM_COLORS[customSeries.length % CUSTOM_COLORS.length];
         customSeries.push({ key, file: null, color, yAxis: 0, custom: true });
@@ -399,15 +365,6 @@
         status.textContent = `⚠ 無法載入 ${key}：${err.message}`;
         setTimeout(() => { status.textContent = ""; }, 5000);
       }
-    }
-
-    async function loadEarnings() {
-      try {
-        const r = await fetch("data/earnings.json", { cache: "no-cache" });
-        if (!r.ok) return;
-        const j = await r.json();
-        loadedEarnings = j.data || [];
-      } catch { loadedEarnings = []; }
     }
 
     // ── Fear helpers ───────────────────────────────────────────────
@@ -631,11 +588,11 @@
       }
 
       if (sigZoneActive && loaded["QQQ"]) {
-        if (!sigMaps) buildSigMaps();
-        if (sigMaps?.scoreArr) {
+        if (!state.sigMaps) buildSigMaps();
+        if (state.sigMaps?.scoreArr) {
           const zones = [];
           let zStart = null, prev = null;
-          for (const [date, score] of sigMaps.scoreArr) {
+          for (const [date, score] of state.sigMaps.scoreArr) {
             if (score >= 4) { if (!zStart) zStart = date; }
             else            { if (zStart) { zones.push([zStart, prev]); zStart = null; } }
             prev = date;
@@ -668,10 +625,10 @@
         }
       }
 
-      if (earningsActive && loadedEarnings.length > 0) {
+      if (earningsActive && state.loadedEarnings.length > 0) {
         const { from, to } = currentWindow();
         const toDate = to || new Date().toISOString().slice(0, 10);
-        const inRange = loadedEarnings.filter(e => (!from || e.date >= from) && e.date <= toDate);
+        const inRange = state.loadedEarnings.filter(e => (!from || e.date >= from) && e.date <= toDate);
         const byDate = {};
         for (const e of inRange) {
           if (!byDate[e.date]) byDate[e.date] = [];
@@ -1004,24 +961,24 @@
       const dailyRetArr = qqq.slice(1).map((r, i) => [r[0], (r[1] - qqq[i][1]) / qqq[i][1]]);
       const { bounceSignals: bSigs } = computeBounceSignals(qqq, fg, ma200);
       const bounceSignalSet = new Set(bSigs.map(r => r[0]));
-      sigMaps = { qqq, weeklySignals, ma200, ddArr, fg, vix, vol, scoreArr, dailyRetArr, bounceSignalSet };
+      state.sigMaps = { qqq, weeklySignals, ma200, ddArr, fg, vix, vol, scoreArr, dailyRetArr, bounceSignalSet };
     }
 
     function renderSignalPanel(date) {
-      if (!sigMaps) buildSigMaps();
-      if (!sigMaps) return;
+      if (!state.sigMaps) buildSigMaps();
+      if (!state.sigMaps) return;
 
       const isLive = !date;
-      const d = date || sigMaps.qqq.at(-1)?.[0];
+      const d = date || state.sigMaps.qqq.at(-1)?.[0];
       if (!d) return;
 
-      const ws     = lookupLE(sigMaps.weeklySignals, d);
-      const fgRow  = lookupLE(sigMaps.fg,   d);
-      const vixRow = lookupLE(sigMaps.vix,  d);
-      const ma200R = lookupLE(sigMaps.ma200, d);
-      const volRow  = lookupLE(sigMaps.vol,   d);
-      const ddRow   = lookupLE(sigMaps.ddArr, d);
-      const qRow    = lookupLE(sigMaps.qqq,   d);
+      const ws     = lookupLE(state.sigMaps.weeklySignals, d);
+      const fgRow  = lookupLE(state.sigMaps.fg,   d);
+      const vixRow = lookupLE(state.sigMaps.vix,  d);
+      const ma200R = lookupLE(state.sigMaps.ma200, d);
+      const volRow  = lookupLE(state.sigMaps.vol,   d);
+      const ddRow   = lookupLE(state.sigMaps.ddArr, d);
+      const qRow    = lookupLE(state.sigMaps.qqq,   d);
 
       const kdK     = ws?.[1]  ?? null;
       const rsiVal  = ws?.[3]  ?? null;
@@ -1034,7 +991,7 @@
       const ma200Dev = (ma200V && qClose) ? (qClose - ma200V) / ma200V * 100 : null;
       const volVal  = volRow?.[1] ?? null;
       const ddVal   = ddRow?.[1]  ?? null;
-      const dailyRetRow = lookupLE(sigMaps.dailyRetArr, d);
+      const dailyRetRow = lookupLE(state.sigMaps.dailyRetArr, d);
       const dailyRetV   = dailyRetRow?.[0] === d ? dailyRetRow[1] : null;
 
       const kdHit  = kdK      != null && kdK      < 30;
@@ -1045,7 +1002,7 @@
       const tdHit  = tdDir === 'down' && tdCount >= 7;
       const ddHit  = ddVal    != null && ddVal    <= -10;
       const volHit    = volVal   != null && volVal   >= 80_000_000;
-      const bounceHit = sigMaps.bounceSignalSet?.has(d) ?? false;
+      const bounceHit = state.sigMaps.bounceSignalSet?.has(d) ?? false;
 
       const set = (id, label, txt, hit) => {
         const el = document.getElementById(id); if (!el) return;
@@ -2566,7 +2523,7 @@
     async function renderEarningsCalendar() {
       const el = document.getElementById("earnings-cal");
       if (!el) return;
-      if (!loadedEarnings.length) {
+      if (!state.loadedEarnings.length) {
         el.innerHTML = '<p style="color:var(--muted);padding:16px">載入中…</p>';
         await loadEarnings();
       }
@@ -2574,7 +2531,7 @@
       const today = new Date().toISOString().slice(0, 10);
       // Build date → { earn: [], conf: [] } lookup
       const byDate = {};
-      for (const e of loadedEarnings) {
+      for (const e of state.loadedEarnings) {
         if (!byDate[e.date]) byDate[e.date] = { earn: [], conf: [] };
         const display = e.ticker.replace(".TW", "");
         if (e.type === "conference") byDate[e.date].conf.push(display);
