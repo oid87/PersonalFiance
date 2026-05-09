@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>RWD Test</title>
+<style>
+  body { margin: 0; background: #111; font-family: monospace; color: #ccc; }
+  .wrap { display: flex; gap: 12px; padding: 12px; align-items: flex-start; }
+  .box { flex-shrink: 0; }
+  .label { font-size: 11px; margin-bottom: 4px; color: #aaa; }
+  iframe { display: block; border: 2px solid #444; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="box">
+    <div class="label">Portrait 414×896</div>
+    <iframe src="index.html" width="414" height="896" scrolling="no"></iframe>
+  </div>
+  <div class="box">
+    <div class="label">Landscape 896×414</div>
+    <iframe src="index.html" width="896" height="414" scrolling="no"></iframe>
+  </div>
+</div>
+</body>
+</html>
