@@ -19,7 +19,6 @@ let chart = echarts.init(chartEl, null); // light by default
 let fearActive    = false;
 let fearThreshold = 20;
 
-let earningsActive  = false;
 let ddZoneActive    = false;
 let sigZoneActive   = false;
 
@@ -380,31 +379,6 @@ export function render() {
           { xAxis: s, itemStyle: { color: "rgba(248,81,73,0.10)" } },
           { xAxis: e },
         ])},
-      });
-    }
-  }
-
-  if (earningsActive && state.loadedEarnings.length > 0) {
-    const { from, to } = currentWindow();
-    const toDate = to || new Date().toISOString().slice(0, 10);
-    const inRange = state.loadedEarnings.filter(e => (!from || e.date >= from) && e.date <= toDate);
-    const byDate = {};
-    for (const e of inRange) {
-      if (!byDate[e.date]) byDate[e.date] = [];
-      byDate[e.date].push(e.ticker);
-    }
-    const mlData = Object.entries(byDate).map(([dt, tickers]) => ({
-      xAxis: dt,
-      name: tickers.join("/"),
-      lineStyle: { color: "#58a6ff", type: "dashed", width: 1, opacity: 0.55 },
-      label: { show: true, position: "insideEndTop", fontSize: 9, color: "#58a6ff", formatter: "{b}" },
-    }));
-    if (mlData.length > 0) {
-      series.push({
-        name: "__earnings",
-        type: "line", data: [], yAxisIndex: 0,
-        lineStyle: { width: 0 }, symbol: "none", silent: true,
-        markLine: { silent: true, symbol: ["none", "none"], animation: false, data: mlData },
       });
     }
   }
