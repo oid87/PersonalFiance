@@ -2,7 +2,7 @@ import {
   SERIES, CUSTOM_COLORS, customSeries, active, maActive,
   loaded, loadedHLC, loadedVol, state,
 } from '../state.js';
-import { isLight, tc, mob } from '../utils/theme.js';
+import { tc, mob } from '../utils/theme.js';
 import {
   tsToLocalDate, currentWindow, filterRange,
   dateAddDays, closestOnOrAfter, minBetween, lookupLE,
