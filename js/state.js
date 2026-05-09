@@ -52,3 +52,10 @@ export const active = new Set(SERIES.filter(s => s.default).map(s => s.key));
 export const maActive = new Set();
 export const macroLoaded = {};
 export const sectorLoaded = {};
+
+// ── Reassigned scalars (cross-cutting, mutated via state.X = ...) ─
+export const state = {
+  rangePreset: "5Y",
+  customFrom: "",
+  customTo: "",
+};
