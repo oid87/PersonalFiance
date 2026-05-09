@@ -46,6 +46,15 @@ TICKERS: dict[str, tuple[str, str]] = {
     "XLC":     ("XLC",     "2018-06-18"),  # Communication Services
     # Semiconductor ETF — used in 五線譜 tab
     "SOXX":    ("SOXX",    "2001-07-10"),  # iShares PHLX Semiconductor ETF
+    # Magnificent Seven ETF + individual stocks
+    "MAGS":    ("MAGS",    "2023-04-11"),  # Roundhill Magnificent Seven ETF
+    "NVDA":    ("NVDA",    "1999-01-22"),
+    "AAPL":    ("AAPL",    "1980-12-12"),
+    "MSFT":    ("MSFT",    "1986-03-13"),
+    "GOOGL":   ("GOOGL",   "2004-08-19"),
+    "AMZN":    ("AMZN",    "1997-05-15"),
+    "META":    ("META",    "2012-05-18"),
+    "TSLA":    ("TSLA",    "2010-06-29"),
     # Sentiment / tail-risk indicators
     "^SKEW":   ("SKEW",    "1990-01-02"),  # CBOE SKEW Index (tail-risk put demand proxy)
     "^VVIX":   ("VVIX",    "2007-01-01"),  # VIX of VIX (volatility uncertainty)
