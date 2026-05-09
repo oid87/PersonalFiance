@@ -1,28 +1,9 @@
-    const SERIES = [
-      { key: "VOO",   file: "data/VOO.json",        color: "#58a6ff", yAxis: 0, default: true  },
-      { key: "QQQ",   file: "data/QQQ.json",         color: "#f778ba", yAxis: 0, default: true  },
-      { key: "SPY",   file: "data/SPY.json",          color: "#a371f7", yAxis: 0, default: false },
-      { key: "0050",  file: "data/0050.TW.json",      color: "#3fb950", yAxis: 3, default: false },
-      { key: "GLD",   file: "data/GLD.json",          color: "#d4a843", yAxis: 0, default: false },
-      { key: "BTC",   file: "data/BTC.json",          color: "#f7931a", yAxis: 4, default: false },
-      { key: "SOXX",  file: "data/SOXX.json",         color: "#22d3ee", yAxis: 0, default: false },
-      { key: "MAGS",  file: "data/MAGS.json",         color: "#ff6b6b", yAxis: 0, default: false },
-      { key: "NVDA",  file: "data/NVDA.json",         color: "#76b900", yAxis: 0, default: false },
-      { key: "AAPL",  file: "data/AAPL.json",         color: "#aaaaaa", yAxis: 0, default: false },
-      { key: "MSFT",  file: "data/MSFT.json",         color: "#00bcf2", yAxis: 0, default: false },
-      { key: "GOOGL", file: "data/GOOGL.json",        color: "#4285f4", yAxis: 0, default: false },
-      { key: "AMZN",  file: "data/AMZN.json",         color: "#ff9900", yAxis: 0, default: false },
-      { key: "META",  file: "data/META.json",         color: "#0866ff", yAxis: 0, default: false },
-      { key: "TSLA",  file: "data/TSLA.json",         color: "#cc0000", yAxis: 0, default: false },
-      { key: "VIX",   file: "data/VIX.json",          color: "#f0883e", yAxis: 1, default: false },
-      { key: "F&G",   file: "data/fear_greed.json",   color: "#e3b341", yAxis: 2, default: true  },
-    ];
-
-    const PENTA_TICKERS = ["VOO", "QQQ", "SPY", "0050", "GLD", "BTC", "SOXX", "MAGS", "NVDA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA"];
-
-    // Session-only custom tickers added by the user via the input box
-    const CUSTOM_COLORS = ["#e879f9","#34d399","#fb923c","#60a5fa","#a3e635","#f472b6","#38bdf8","#fbbf24","#c084fc","#2dd4bf"];
-    const customSeries = [];
+    import {
+      SERIES, PENTA_TICKERS, CUSTOM_COLORS,
+      CK_ASSETS, CK_ASSETS_3, SECTOR_ETFS, SECTOR_LABEL,
+      loaded, loadedHLC, loadedVol, customSeries,
+      active, maActive, macroLoaded, sectorLoaded,
+    } from './state.js';
 
     // ECharts time-axis parses "YYYY-MM-DD" as local midnight, not UTC.
     // Always use this helper (not toISOString) when turning an ECharts timestamp back into a date string.
@@ -159,21 +140,14 @@
       document.addEventListener('mouseup', clearOverlay);
     }
 
-    const loaded = {};
-    const active = new Set(SERIES.filter(s => s.default).map(s => s.key));
-
     let rangePreset   = "5Y";
     let customFrom    = "";
     let customTo      = "";
     let fearActive    = false;
     let fearThreshold = 20;
 
-    const maActive = new Set();
-
     let earningsActive  = false;
     let loadedEarnings  = [];
-    const loadedHLC     = {};
-    const loadedVol     = {};
     let ddZoneActive    = false;
     let sigZoneActive   = false;
     let sigMaps         = null;   // invalidated when new data loads
@@ -183,7 +157,6 @@
     let macroChart       = null;
     let macroRangePreset = "10Y";
     let macroShowM2      = false;
-    const macroLoaded    = {}; // { US10Y: [...], US2Y: [...], M2: [...] }
 
     let macroShowCAPE    = false;
 
@@ -198,8 +171,6 @@
 
     let sectorChart   = null;
     let sectorSortCol = "1M";
-    const sectorLoaded = {}; // { XLK: [...], XLF: [...], ... }
-    const SECTOR_ETFS  = ["XLK","XLF","XLV","XLE","XLI","XLY","XLP","XLU","XLRE","XLB","XLC"];
 
     // ── 市場廣度 state ─────────────────────────────────────────────
     let breadthChart     = null;
@@ -212,17 +183,6 @@
     let breadthRange     = "2Y";
 
     // ── 現金王 state ───────────────────────────────────────────────
-    const CK_ASSETS = [
-      { key: "GLD", color: "#d4a843", file: "data/GLD.json", isGold: true },
-      { key: "BTC", color: "#f7931a", file: "data/BTC.json" },
-      { key: "TLT", color: "#58d9f9", file: "data/TLT.json" },
-      { key: "QQQ", color: "#f778ba", file: "data/QQQ.json" },
-    ];
-    const CK_ASSETS_3 = [
-      { key: "GCF", label: "黃金", color: "#d4a843", file: "data/GCF.json", isGold: true },
-      { key: "TLT", color: "#58d9f9", file: "data/TLT.json" },
-      { key: "QQQ", color: "#f778ba", file: "data/QQQ.json" },
-    ];
     const ckRaw = {};
     let ckFilter = "all";
     let ckMode = "4w";
@@ -231,11 +191,6 @@
     let ckData4a = null;
     let ckData3a = null;
     let ckInited = false;
-
-    const SECTOR_LABEL = {
-      XLK:"科技", XLF:"金融", XLV:"醫療", XLE:"能源", XLI:"工業",
-      XLY:"非必需消費", XLP:"必需消費", XLU:"公用", XLRE:"不動產", XLB:"材料", XLC:"通訊",
-    };
 
     const dateFrom = document.getElementById("date-from");
     const dateTo   = document.getElementById("date-to");
