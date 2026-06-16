@@ -46,6 +46,22 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_qqq_valuation.py
 
+      - name: Fetch SPY valuation (forward PE)
+        continue-on-error: true
+        run: python scripts/fetch_spy_valuation.py
+
+      - name: Fetch SOXX valuation (forward PE)
+        continue-on-error: true
+        run: python scripts/fetch_soxx_valuation.py
+
+      - name: Fetch TW valuation (0050/TWII PE, TWSE weighted)
+        continue-on-error: true
+        run: python scripts/fetch_tw_valuation.py
+
+      - name: Fetch MAGS valuation (Mag7 forward/trailing PE)
+        continue-on-error: true
+        run: python scripts/fetch_mags_valuation.py
+
       - name: Fetch S&P 500 trailing PE
         continue-on-error: true
         run: python scripts/fetch_sp500_pe.py

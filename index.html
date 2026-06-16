@@ -50,6 +50,7 @@
 
       <span id="dd-toggle" class="chip" data-tooltip="標示 QQQ 12週回撤 ≥10% 的歷史修正區間（淡紅背景）">回撤區</span>
       <span id="sig-zone-toggle" class="chip" data-tooltip="訊號同時達 ≥4 個的歷史區間（綠色背景 = 潛在極端低點）">訊號≥4</span>
+      <span id="trend-fpe-toggle" class="chip" data-tooltip="QQQ Forward PE 右軸疊加（藍線，僅 QQQ 有估值資料）">FPE</span>
 
       <div class="range-wrap">
         <div id="range-picker">
@@ -118,10 +119,12 @@
       <span id="penta-fg-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
       <span id="penta-weekly-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="五線譜改用週線計算（資料點更少、噪音更低）">週線</span>
       <span id="penta-ma125-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="自訂均線（預設125日，可手動調整天數）">MA</span><input id="penta-ma-period" type="number" min="5" max="999" value="125" readonly style="width:64px;margin-left:2px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--muted);font-size:13px;text-align:center;outline:none;cursor:default;pointer-events:none" />
+      <span id="penta-fpe-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="QQQ/SPY/SOXX/0050/TWII Forward PE 子面板（季度資料線性插值）">FPE</span>
       <div id="penta-period-picker" style="margin-left:auto;display:flex;gap:6px;flex-shrink:0">
         <span class="chip" data-period="0.5Y" data-tooltip="用近0.5年數據算均值/標準差，較敏感">短期 0.5Y</span>
         <span class="chip" data-period="1.5Y" data-tooltip="用近1.5年數據算均值/標準差，均衡參考">中期 1.5Y</span>
         <span class="chip active" data-period="3.5Y" data-tooltip="用近3.5年數據算均值/標準差，過濾短期雜訊">長期 3.5Y</span>
+        <span class="chip" data-period="5Y" data-tooltip="用近5年數據算均值/標準差，超長期底部參考">超長期 5Y</span>
       </div>
     </div>
     <div id="penta-chart"></div>
@@ -240,46 +243,77 @@
 
   <!-- ── 估值 tab ──────────────────────────────────────────────────── -->
   <section id="tab-valuation" class="tab-section" hidden>
-    <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">Forward P/E 估值 · 外部圖表（MacroMicro）</span>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="val-ticker-picker" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:14px;padding:12px 0">
-      <a class="val-link-card"
-         href="https://www.macromicro.me/charts/148300/NASDAQ-100-Index-Forward-PE-Ratio"
-         target="_blank" rel="noopener noreferrer">
-        <div class="val-link-icon">📈</div>
-        <div>
-          <div class="val-link-title">NASDAQ 100 · Forward P/E</div>
-          <div class="val-link-sub">MacroMicro · 含 6M / 24M 均線 · 日更新</div>
-        </div>
-        <div class="val-link-badge">
-          <div class="badge-label">點擊開啟 MacroMicro ↗</div>
-        </div>
-      </a>
-      <a class="val-link-card"
-         href="https://www.macromicro.me/charts/148296/US-S-amp-P-500-Forward-PE-Ratio"
-         target="_blank" rel="noopener noreferrer">
-        <div class="val-link-icon">📊</div>
-        <div>
-          <div class="val-link-title">S&amp;P 500 · Forward P/E</div>
-          <div class="val-link-sub">MacroMicro · 含 63D / 252D 均線 · 日更新</div>
-        </div>
-        <div class="val-link-badge">
-          <div class="badge-label">點擊開啟 MacroMicro ↗</div>
-        </div>
-      </a>
-      <a class="val-link-card"
-         href="https://www.macromicro.me/charts/13940/tai-wan-tai-gu-ben-yi-bi-yu-tai-gu-qu-shi"
-         target="_blank" rel="noopener noreferrer">
-        <div class="val-link-icon">🇹🇼</div>
-        <div>
-          <div class="val-link-title">台股 · 本益比（P/E）</div>
-          <div class="val-link-sub">MacroMicro · 台股整體本益比與大盤趨勢 · 日更新</div>
-        </div>
-        <div class="val-link-badge">
-          <div class="badge-label">點擊開啟 MacroMicro ↗</div>
-        </div>
-      </a>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="val-range-picker" style="display:flex;gap:6px">
+        <span class="chip" data-val-range="3Y">3Y</span>
+        <span class="chip active" data-val-range="5Y">5Y</span>
+        <span class="chip" data-val-range="10Y">10Y</span>
+        <span class="chip" data-val-range="20Y">20Y</span>
+        <span class="chip" data-val-range="MAX">MAX</span>
+      </div>
+      <div class="status" id="val-status" style="font-size:12px;color:var(--muted)"></div>
+    </div>
+    <div id="val-chart" style="height:520px"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> Forward PE vs Trailing PE 怎麼看？</div>
+      <div class="info-panel-body">
+        <table class="info-table">
+          <thead><tr><th>指標</th><th>定義</th><th>特性</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#58a6ff">Forward PE</td><td>股價 ÷ <b>未來 12 個月「預估」EPS</b>（分析師共識）</td><td>前瞻、反映成長預期，但會隨預估修正而變動</td></tr>
+            <tr><td style="color:#f0883e">Trailing PE</td><td>股價 ÷ <b>過去 12 個月「已實現」EPS</b>（TTM 財報）</td><td>客觀、基於真實盈餘，但較落後</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px">
+          <b>兩者的差 = 市場預期的盈餘成長。</b>
+          成長股 Forward &lt; Trailing（預估 EPS 比過去高），<b>折讓</b>越大代表市場越預期它要賺更多；
+          反之若 <b>Forward &gt; Trailing</b>，代表市場預期盈餘將<b>衰退</b>（警訊）。
+        </p>
+        <p style="margin-top:10px;padding:8px 12px;border-left:3px solid #58a6ff;background:rgba(88,166,255,.08);border-radius:4px">
+          ⚠️ <b>Forward PE 的更新節奏</b>：分母是分析師<b>預估 EPS</b>，主要隨<b>財報季與預估修正</b>而調整（約每月底／財報後才大改），不像股價每天動。
+          因此「最新」的 Forward PE 只是<b>在目前預估值下、可能的 forward 估值狀態</b>——當預估被上修／下修時，整條線會跟著移動，並非定論。
+        </p>
+        <p style="margin-top:10px">
+          📏 <b>線條讀法</b>：<b>實線＝真實值</b>（yfinance／multpl／TWSE 實際計算）；
+          <span style="opacity:.6">虛線＝估計值</span>（早期無公開資料、以合理數值補；tooltip 會標「估計／實際」）。
+        </p>
+        <p style="margin-top:8px;color:var(--muted)">
+          資料來源（能撈多遠撈多遠）：ETF 的 forward PE 公開資料一律缺，故由成分股加權計算，<b>實際值自 2026 起每日累積、之前為估計</b>。
+          Trailing：<b>SPY 全程真實</b>（multpl S&amp;P 500，深至 1871）、<b>0050 全程真實</b>（FinMind 成分股 PER 加權，深至 2010）；QQQ／SOXX／MAGS 早期為估計、近期為 ETF 每日實值。0050 forward 歷史以『未來4季<b>實際</b>EPS』回推（後見，深至 2010、含 look-ahead，因台股無公開歷史分析師預估），近期為成分股 forwardPE 加權。
+        </p>
+        <p style="margin-top:10px"><b>各標的「用什麼算的」</b>（滑鼠移到線上，tooltip 也會逐點標來源）：</p>
+        <table class="info-table">
+          <thead><tr><th>標的</th><th>Forward（實際算法 / 估計依據）</th><th>Trailing（實際算法 / 估計依據）</th></tr></thead>
+          <tbody>
+            <tr><td>SPY/VOO</td><td>前20大持股加權 forwardPE ／ FactSet·Yardeni</td><td>multpl S&amp;P500 實際本益比（全真實）</td></tr>
+            <tr><td>QQQ</td><td>前10大持股加權(排除&gt;60x) ／ 公開分析值</td><td>QQQ ETF 實際 trailingPE ／ 歷史估計</td></tr>
+            <tr><td>SOXX</td><td>前20大持股加權 ／ FactSet·Bloomberg 半導體報告</td><td>SOXX ETF 實際 trailingPE ／ 產業估計</td></tr>
+            <tr><td>0050</td><td>歷史：未來4季<b>實際</b>EPS 回推(後見，深至 2010)；近期：成分股 forwardPE 加權</td><td>FinMind 成分股 PER 加權／TWSE（全真實，深至 2010）</td></tr>
+            <tr><td>MAGS</td><td>七巨頭等權 forwardPE(排除 TSLA 離群) ／ 等權估計</td><td>七巨頭等權 trailingPE ／ 等權估計</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">「估計」值是早期無公開資料時，依上述來源的公開數值/區間設定的參考點（虛線）；有實際資料後即以實線覆蓋。實際計算（calc）為當日各成分股 yfinance forwardPE/trailingPE 加權平均、剔除離群值後得出。</p>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 台股景氣對策信號（僅 0050 顯示）</div>
+      <div class="info-panel-body">
+        <p>國發會每月公布的景氣綜合指標，由 9 項構成項目加總計分（9–45 分），對應五種燈號：</p>
+        <table class="info-table">
+          <thead><tr><th>燈號</th><th>分數</th><th>景氣狀態</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#cc3333">紅燈</td><td>38–45</td><td>熱絡（過熱）</td></tr>
+            <tr><td style="color:#e6912c">黃紅燈</td><td>32–37</td><td>轉向（趨熱）</td></tr>
+            <tr><td style="color:#3fae5a">綠燈</td><td>23–31</td><td>穩定</td></tr>
+            <tr><td style="color:#5b9bd5">黃藍燈</td><td>17–22</td><td>轉向（趨冷）</td></tr>
+            <tr><td style="color:#2f6fb0">藍燈</td><td>9–16</td><td>低迷（衰退）</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">配合 0050 估值看：景氣紅燈＋本益比偏高＝循環高點警戒；藍燈＋本益比壓縮＝循環低點常見買點。資料月頻，回溯至 1984。</p>
+      </div>
     </div>
   </section>
 

@@ -1,0 +1,97 @@
+{
+  "updated": "2026-06-16",
+  "note": "S&P 500 估值。fpe=forward（前20大持股加權，排除 PE>50x；歷史為 FactSet/Yardeni 估計）；tpe=trailing（SPY ETF）。圖表 trailing 線另疊 multpl.com 長期歷史（SP500_PE.json）。",
+  "data": [
+    {
+      "date": "2019-12-31",
+      "fpe": 18.5,
+      "src": "seed"
+    },
+    {
+      "date": "2020-03-23",
+      "fpe": 15.0,
+      "src": "seed"
+    },
+    {
+      "date": "2020-09-01",
+      "fpe": 23.0,
+      "src": "seed"
+    },
+    {
+      "date": "2021-01-04",
+      "fpe": 22.5,
+      "src": "seed"
+    },
+    {
+      "date": "2021-11-01",
+      "fpe": 21.0,
+      "src": "seed"
+    },
+    {
+      "date": "2022-01-03",
+      "fpe": 21.5,
+      "src": "seed"
+    },
+    {
+      "date": "2022-06-16",
+      "fpe": 15.5,
+      "src": "seed"
+    },
+    {
+      "date": "2022-12-28",
+      "fpe": 16.5,
+      "src": "seed"
+    },
+    {
+      "date": "2023-06-01",
+      "fpe": 19.0,
+      "src": "seed"
+    },
+    {
+      "date": "2024-01-02",
+      "fpe": 20.0,
+      "src": "seed"
+    },
+    {
+      "date": "2024-06-03",
+      "fpe": 21.0,
+      "src": "seed"
+    },
+    {
+      "date": "2024-12-02",
+      "fpe": 22.5,
+      "src": "seed"
+    },
+    {
+      "date": "2025-02-19",
+      "fpe": 22.0,
+      "src": "seed"
+    },
+    {
+      "date": "2025-04-08",
+      "fpe": 18.5,
+      "src": "seed"
+    },
+    {
+      "date": "2025-06-16",
+      "fpe": 21.0,
+      "src": "seed"
+    },
+    {
+      "date": "2026-01-05",
+      "fpe": 21.5,
+      "src": "seed"
+    },
+    {
+      "date": "2026-06-15",
+      "fpe": 21.3,
+      "src": "seed"
+    },
+    {
+      "date": "2026-06-16",
+      "src": "calc",
+      "fpe": 22.63,
+      "tpe": 27.03
+    }
+  ]
+}

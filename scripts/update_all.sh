@@ -24,6 +24,10 @@ $PYTHON fetch_breadth.py       || true
 $PYTHON fetch_cape.py          || true
 $PYTHON fetch_sp500_pe.py      || true
 $PYTHON fetch_qqq_valuation.py || true
+$PYTHON fetch_spy_valuation.py  || true
+$PYTHON fetch_soxx_valuation.py || true
+$PYTHON fetch_tw_valuation.py   || true
+$PYTHON fetch_mags_valuation.py || true
 $PYTHON fetch_investor_conf.py || true
 $PYTHON fetch_earnings.py      || true
 $PYTHON compute_sentiment.py   || true

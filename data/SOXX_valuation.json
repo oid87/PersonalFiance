@@ -1,0 +1,114 @@
+{
+  "updated": "2026-06-16",
+  "note": "Philadelphia Semiconductor (SOXX) 估值。fpe=forward（前20大持股加權）；tpe=trailing。半導體盈餘週期性強，trailing 歷史為估計值（src=seed，較粗）；近期 trailing 為 SOXX ETF 每日實值。",
+  "data": [
+    {
+      "date": "2019-12-31",
+      "fpe": 19.0,
+      "src": "seed",
+      "tpe": 22.0
+    },
+    {
+      "date": "2020-03-23",
+      "fpe": 16.0,
+      "src": "seed",
+      "tpe": 20.0
+    },
+    {
+      "date": "2020-09-01",
+      "fpe": 26.0,
+      "src": "seed",
+      "tpe": 30.0
+    },
+    {
+      "date": "2021-01-04",
+      "fpe": 30.0,
+      "src": "seed",
+      "tpe": 33.0
+    },
+    {
+      "date": "2021-11-01",
+      "fpe": 24.0,
+      "src": "seed",
+      "tpe": 28.0
+    },
+    {
+      "date": "2022-01-03",
+      "fpe": 22.0,
+      "src": "seed",
+      "tpe": 26.0
+    },
+    {
+      "date": "2022-06-16",
+      "fpe": 14.0,
+      "src": "seed",
+      "tpe": 18.0
+    },
+    {
+      "date": "2022-12-28",
+      "fpe": 18.0,
+      "src": "seed",
+      "tpe": 24.0
+    },
+    {
+      "date": "2023-06-01",
+      "fpe": 23.0,
+      "src": "seed",
+      "tpe": 34.0
+    },
+    {
+      "date": "2024-01-02",
+      "fpe": 29.0,
+      "src": "seed",
+      "tpe": 44.0
+    },
+    {
+      "date": "2024-06-03",
+      "fpe": 32.0,
+      "src": "seed",
+      "tpe": 48.0
+    },
+    {
+      "date": "2024-12-02",
+      "fpe": 34.0,
+      "src": "seed",
+      "tpe": 50.0
+    },
+    {
+      "date": "2025-02-19",
+      "fpe": 30.0,
+      "src": "seed",
+      "tpe": 46.0
+    },
+    {
+      "date": "2025-04-08",
+      "fpe": 20.0,
+      "src": "seed",
+      "tpe": 32.0
+    },
+    {
+      "date": "2025-06-16",
+      "fpe": 26.0,
+      "src": "seed",
+      "tpe": 42.0
+    },
+    {
+      "date": "2026-01-05",
+      "fpe": 28.0,
+      "src": "seed",
+      "tpe": 46.0
+    },
+    {
+      "date": "2026-06-15",
+      "fpe": 27.0,
+      "src": "seed",
+      "tpe": 45.0
+    },
+    {
+      "date": "2026-06-16",
+      "src": "calc",
+      "fpe": 28.3,
+      "tpe": 44.93
+    }
+  ]
+}
