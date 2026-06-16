@@ -13,6 +13,14 @@ let pentaVixActive    = false;
 let penta125Active    = false;
 let pentaMaPeriod     = 125;
 let pentaWeekly       = false;
+let pentaFpeActive    = false;
+const pentaFpeCache   = {};
+const FPE_FILES       = { QQQ: "data/QQQ_valuation.json", SPY: "data/SPY_valuation.json", SOXX: "data/SOXX_valuation.json", "0050": "data/TW_valuation.json", TWII: "data/TW_valuation.json" };
+const FPE_MARKS       = { "0050": [{y:18,c:'#f0883e',l:'18x'},{y:15,c:'#ef4444',l:'15x'}], TWII: [{y:18,c:'#f0883e',l:'18x'},{y:15,c:'#ef4444',l:'15x'}] };
+function _fpeMarkLine(ticker) {
+  const defs = FPE_MARKS[ticker] || [{y:21,c:'#f0883e',l:'21x'},{y:20,c:'#ef4444',l:'20x'}];
+  return { silent:true, symbol:['none','none'], animation:false, data: defs.map(m=>({ yAxis:m.y, label:{formatter:m.l,color:m.c,position:'insideEndTop',fontSize:9}, lineStyle:{color:m.c,type:'dashed',width:1} })) };
+}
 
 let _dragAnchor    = null;
 let _docMupHandler = null;
@@ -130,6 +138,7 @@ function getPentaData() {
   if      (pentaPeriod === "0.5Y") d.setMonth(d.getMonth() - 6);
   else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
+  else if (pentaPeriod === "5Y")   d.setFullYear(d.getFullYear() - 5);
   const fromDate = d.toISOString().slice(0, 10);
   const filtered = raw.filter(r => r[0] >= fromDate);
   return pentaWeekly ? toWeekly(filtered) : filtered;
@@ -142,6 +151,7 @@ function getPentaFgData() {
   if      (pentaPeriod === "0.5Y") d.setMonth(d.getMonth() - 6);
   else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
+  else if (pentaPeriod === "5Y")   d.setFullYear(d.getFullYear() - 5);
   const fromDate = d.toISOString().slice(0, 10);
   return fg.filter(r => r[0] >= fromDate);
 }
@@ -153,8 +163,42 @@ function getPentaVixData() {
   if      (pentaPeriod === "0.5Y") d.setMonth(d.getMonth() - 6);
   else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
+  else if (pentaPeriod === "5Y")   d.setFullYear(d.getFullYear() - 5);
   const fromDate = d.toISOString().slice(0, 10);
   return vix.filter(r => r[0] >= fromDate);
+}
+
+function _interpFpe(fpeArr) {
+  if (!fpeArr || fpeArr.length < 2) return fpeArr.map(r => [r.date, r.fpe]);
+  const out = [];
+  for (let i = 0; i < fpeArr.length - 1; i++) {
+    const d1 = fpeArr[i].date, v1 = fpeArr[i].fpe;
+    const d2 = fpeArr[i + 1].date, v2 = fpeArr[i + 1].fpe;
+    const t1 = new Date(d1 + "T00:00:00Z").getTime();
+    const t2 = new Date(d2 + "T00:00:00Z").getTime();
+    const gap = Math.round((t2 - t1) / 86400000);
+    if (gap <= 1) { out.push([d1, v1]); continue; }
+    for (let j = 0; j < gap; j++) {
+      const date = new Date(t1 + j * 86400000).toISOString().slice(0, 10);
+      out.push([date, +(v1 + (v2 - v1) * j / gap).toFixed(3)]);
+    }
+  }
+  const last = fpeArr[fpeArr.length - 1];
+  out.push([last.date, last.fpe]);
+  return out;
+}
+
+function getPentaFpeData() {
+  const cached = pentaFpeCache[pentaActiveTicker];
+  if (!cached || !FPE_FILES[pentaActiveTicker]) return null;
+  const interp = _interpFpe(cached);
+  const d = new Date();
+  if      (pentaPeriod === "0.5Y") d.setMonth(d.getMonth() - 6);
+  else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
+  else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
+  else if (pentaPeriod === "5Y")   d.setFullYear(d.getFullYear() - 5);
+  const fromDate = d.toISOString().slice(0, 10);
+  return interp.filter(r => r[0] >= fromDate);
 }
 
 function computeCustomMA(dailyData, N) {
@@ -191,6 +235,7 @@ function renderChannelMode() {
   if      (pentaPeriod === "0.5Y") d.setMonth(d.getMonth() - 6);
   else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
+  else if (pentaPeriod === "5Y")   d.setFullYear(d.getFullYear() - 5);
   const fromDate = d.toISOString().slice(0, 10);
 
   const priceW   = weekly.filter(r => r[0] >= fromDate);
@@ -225,10 +270,14 @@ function renderChannelMode() {
     rightAxesCh.push({ min: 0, max: 100, position: "right", offset: rightAxesCh.length * axisOffCh,
       axisLine: { lineStyle: { color: "#e3b341" } }, axisLabel: { fontSize: 11, color: "#e3b341" }, splitLine: { show: false } });
   }
-  const nRtCh    = rightAxesCh.length;
-  const rsiIdxCh = 1 + nRtCh;
-  const kdIdxCh  = 2 + nRtCh;
-  const gridRCh  = nRtCh === 0 ? (isMobCh ? 12 : 24) : nRtCh === 1 ? (isMobCh ? 38 : 58) : (isMobCh ? 65 : 105);
+  const nRtCh     = rightAxesCh.length;
+  const fpeDataCh = pentaFpeActive ? getPentaFpeData() : null;
+  const fpeSubCh  = pentaFpeActive && !!fpeDataCh;
+  const fpeGapCh  = fpeSubCh ? 1 : 0;
+  const fpeSubYCh = fpeSubCh ? 1 + nRtCh : -1;
+  const rsiIdxCh  = 1 + nRtCh + fpeGapCh;
+  const kdIdxCh   = 2 + nRtCh + fpeGapCh;
+  const gridRCh   = nRtCh === 0 ? (isMobCh ? 12 : 24) : nRtCh === 1 ? (isMobCh ? 38 : 58) : (isMobCh ? 65 : 105);
 
   const wHLCCh    = loadedHLC[pentaActiveTicker] ? toWeeklyHLC(loadedHLC[pentaActiveTicker]) : weekly.map(r => [r[0],r[1],r[1],r[1]]);
   const rsiDataCh = computeRSI(weekly, 14).filter(r => r[0] >= fromDate);
@@ -238,9 +287,10 @@ function renderChannelMode() {
 
   const priceAxisCh = { gridIndex:0, scale:true, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:12}, splitLine:{lineStyle:{color:gridClr}} };
   const rtAxWithGCh = rightAxesCh.map(a => ({ ...a, gridIndex: 0 }));
-  const rsiAxisCh   = { gridIndex:1, min:0, max:100, name:'RSI', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#a371f7',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#a371f7'}, splitLine:{show:false} };
-  const kdAxisCh    = { gridIndex:2, min:0, max:100, name:'KD',  nameLocation:'start', nameGap:2, nameTextStyle:{color:'#f0883e',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#f0883e'}, splitLine:{show:false} };
-  const yAxisCh     = [priceAxisCh, ...rtAxWithGCh, rsiAxisCh, kdAxisCh];
+  const fpeAxisCh   = fpeSubCh ? { gridIndex:1, name:'FPE', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#58a6ff',fontSize:9}, min:v=>Math.floor(v.min-1), max:v=>Math.ceil(v.max+1), axisLabel:{fontSize:9,color:'#58a6ff',formatter:v=>`${v}x`}, axisLine:{lineStyle:{color:'#58a6ff'}}, splitLine:{show:false} } : null;
+  const rsiAxisCh   = { gridIndex:1+fpeGapCh, min:0, max:100, name:'RSI', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#a371f7',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#a371f7'}, splitLine:{show:false} };
+  const kdAxisCh    = { gridIndex:2+fpeGapCh, min:0, max:100, name:'KD',  nameLocation:'start', nameGap:2, nameTextStyle:{color:'#f0883e',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#f0883e'}, splitLine:{show:false} };
+  const yAxisCh     = [priceAxisCh, ...rtAxWithGCh, ...(fpeAxisCh ? [fpeAxisCh] : []), rsiAxisCh, kdAxisCh];
 
   const mkTDCh = (items, pos, clr, c9) => {
     const norm = items.filter(p => p.count < 9);
@@ -282,23 +332,34 @@ function renderChannelMode() {
       },
     },
     legend: {
-      data: ["上軌 +2.5σ","MA20","價格","下軌 -2.5σ",...(ma125Chw?[maLabel]:[]),...(vixIdxCh>=0?["VIX"]:[]),...(fgIdxCh>=0?["F&G"]:[])],
+      data: ["上軌 +2.5σ","MA20","價格","下軌 -2.5σ",...(ma125Chw?[maLabel]:[]),...(vixIdxCh>=0?["VIX"]:[]),...(fgIdxCh>=0?["F&G"]:[]),...(fpeSubCh?["FPE"]:[])],
       textStyle: { color: tipText, fontSize: 13 }, top: 6,
     },
-    grid: [
+    axisPointer: { link: [{ xAxisIndex: 'all' }] },
+    grid: fpeSubCh ? [
+      { left:isMobCh?45:72, right:gridRCh, top:48, bottom:'50%' },
+      { left:isMobCh?45:72, right:50, top:'53%', bottom:'38%' },
+      { left:isMobCh?45:72, right:50, top:'65%', bottom:'22%' },
+      { left:isMobCh?45:72, right:50, top:'81%', bottom:36 },
+    ] : [
       { left:isMobCh?45:72, right:gridRCh, top:48, bottom:'38%' },
       { left:isMobCh?45:72, right:50, top:'65%', bottom:'22%' },
       { left:isMobCh?45:72, right:50, top:'81%', bottom:36 },
     ],
-    xAxis: [
+    xAxis: fpeSubCh ? [
+      { gridIndex:0, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+      { gridIndex:1, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+      { gridIndex:2, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+      { gridIndex:3, type:"time", axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:isMobCh?10:12}, splitLine:{show:false} },
+    ] : [
       { gridIndex:0, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
       { gridIndex:1, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
       { gridIndex:2, type:"time", axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:isMobCh?10:12}, splitLine:{show:false} },
     ],
     yAxis: yAxisCh,
     dataZoom: [
-      { type:"inside", xAxisIndex:[0,1,2] },
-      { type:"slider", height:18, bottom:14, xAxisIndex:[0,1,2] },
+      { type:"inside", xAxisIndex: fpeSubCh ? [0,1,2,3] : [0,1,2] },
+      { type:"slider", height:18, bottom:14, xAxisIndex: fpeSubCh ? [0,1,2,3] : [0,1,2] },
     ],
     series: [
       { ...lineBase, name:"上軌 +2.5σ", data:upperW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#e91e63"}, itemStyle:{color:"#e91e63"} },
@@ -308,10 +369,11 @@ function renderChannelMode() {
       ...(ma125Chw ? [{ ...lineBase, name:maLabel, data:ma125Chw, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:2,color:"#ff9800"}, itemStyle:{color:"#ff9800"} }] : []),
       ...(vixIdxCh>=0 ? [{ ...lineBase, name:"VIX", data:vixDataCh, xAxisIndex:0, yAxisIndex:vixIdxCh, lineStyle:{width:1.5,color:"#f0883e",type:"dashed"}, itemStyle:{color:"#f0883e"}, areaStyle:{color:"rgba(240,136,62,0.06)"} }] : []),
       ...(fgIdxCh>=0  ? [{ ...lineBase, name:"F&G", data:fgDataCh,  xAxisIndex:0, yAxisIndex:fgIdxCh,  lineStyle:{width:1.5,color:"#e3b341",type:"dashed"}, itemStyle:{color:"#e3b341"}, areaStyle:{color:"rgba(227,179,65,0.06)"} }] : []),
-      ...(rsiDataCh.length ? [{ type:'line', name:'RSI', xAxisIndex:1, yAxisIndex:rsiIdxCh, data:rsiDataCh, showSymbol:false, lineStyle:{width:1.5,color:'#a371f7'}, itemStyle:{color:'#a371f7'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:70,label:{formatter:'70',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:30,label:{formatter:'30',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} }] : []),
+      ...(fpeSubCh ? [{ type:'line', name:'FPE', xAxisIndex:1, yAxisIndex:fpeSubYCh, data:fpeDataCh, showSymbol:false, lineStyle:{width:1.5,color:'#58a6ff'}, itemStyle:{color:'#58a6ff'}, markLine:_fpeMarkLine(pentaActiveTicker) }] : []),
+      ...(rsiDataCh.length ? [{ type:'line', name:'RSI', xAxisIndex:1+fpeGapCh, yAxisIndex:rsiIdxCh, data:rsiDataCh, showSymbol:false, lineStyle:{width:1.5,color:'#a371f7'}, itemStyle:{color:'#a371f7'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:70,label:{formatter:'70',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:30,label:{formatter:'30',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} }] : []),
       ...(kdDataCh.length ? [
-        { type:'line', name:'K', xAxisIndex:2, yAxisIndex:kdIdxCh, data:kdDataCh.map(r=>[r[0],r[1]]), showSymbol:false, lineStyle:{width:1.5,color:'#f0883e'}, itemStyle:{color:'#f0883e'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:80,label:{formatter:'80',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:20,label:{formatter:'20',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} },
-        { type:'line', name:'D', xAxisIndex:2, yAxisIndex:kdIdxCh, data:kdDataCh.map(r=>[r[0],r[2]]), showSymbol:false, lineStyle:{width:1.5,color:'#79c0ff',type:'dashed'}, itemStyle:{color:'#79c0ff'} },
+        { type:'line', name:'K', xAxisIndex:2+fpeGapCh, yAxisIndex:kdIdxCh, data:kdDataCh.map(r=>[r[0],r[1]]), showSymbol:false, lineStyle:{width:1.5,color:'#f0883e'}, itemStyle:{color:'#f0883e'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:80,label:{formatter:'80',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:20,label:{formatter:'20',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} },
+        { type:'line', name:'D', xAxisIndex:2+fpeGapCh, yAxisIndex:kdIdxCh, data:kdDataCh.map(r=>[r[0],r[2]]), showSymbol:false, lineStyle:{width:1.5,color:'#79c0ff',type:'dashed'}, itemStyle:{color:'#79c0ff'} },
       ] : []),
       ...tdSeriesCh,
     ],
@@ -399,10 +461,14 @@ export function renderPentagram() {
     rightAxesPt.push({ min: 0, max: 100, position: "right", offset: rightAxesPt.length * axisOffPt,
       axisLine: { lineStyle: { color: "#e3b341" } }, axisLabel: { fontSize: 11, color: "#e3b341" }, splitLine: { show: false } });
   }
-  const nRtPt    = rightAxesPt.length;
-  const rsiIdxPt = 1 + nRtPt;
-  const kdIdxPt  = 2 + nRtPt;
-  const gridRPt  = nRtPt === 0 ? (isMobPt ? 12 : 24) : nRtPt === 1 ? (isMobPt ? 38 : 58) : (isMobPt ? 65 : 105);
+  const nRtPt     = rightAxesPt.length;
+  const fpeDataPt = pentaFpeActive ? getPentaFpeData() : null;
+  const fpeSubPt  = pentaFpeActive && !!fpeDataPt;
+  const fpeGapPt  = fpeSubPt ? 1 : 0;
+  const fpeSubYPt = fpeSubPt ? 1 + nRtPt : -1;
+  const rsiIdxPt  = 1 + nRtPt + fpeGapPt;
+  const kdIdxPt   = 2 + nRtPt + fpeGapPt;
+  const gridRPt   = nRtPt === 0 ? (isMobPt ? 12 : 24) : nRtPt === 1 ? (isMobPt ? 38 : 58) : (isMobPt ? 65 : 105);
 
   const wklyPt   = toWeekly(loaded[pentaActiveTicker] || []);
   const wHLCPt   = loadedHLC[pentaActiveTicker] ? toWeeklyHLC(loadedHLC[pentaActiveTicker]) : wklyPt.map(r => [r[0],r[1],r[1],r[1]]);
@@ -413,9 +479,10 @@ export function renderPentagram() {
 
   const priceAxisPt = { gridIndex:0, scale:true, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:12}, splitLine:{lineStyle:{color:gridClr}} };
   const rtAxWithGPt = rightAxesPt.map(a => ({ ...a, gridIndex: 0 }));
-  const rsiAxisPt   = { gridIndex:1, min:0, max:100, name:'RSI', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#a371f7',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#a371f7'}, splitLine:{show:false} };
-  const kdAxisPt    = { gridIndex:2, min:0, max:100, name:'KD',  nameLocation:'start', nameGap:2, nameTextStyle:{color:'#f0883e',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#f0883e'}, splitLine:{show:false} };
-  const yAxisPt     = [priceAxisPt, ...rtAxWithGPt, rsiAxisPt, kdAxisPt];
+  const fpeAxisPt   = fpeSubPt ? { gridIndex:1, name:'FPE', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#58a6ff',fontSize:9}, min:v=>Math.floor(v.min-1), max:v=>Math.ceil(v.max+1), axisLabel:{fontSize:9,color:'#58a6ff',formatter:v=>`${v}x`}, axisLine:{lineStyle:{color:'#58a6ff'}}, splitLine:{show:false} } : null;
+  const rsiAxisPt   = { gridIndex:1+fpeGapPt, min:0, max:100, name:'RSI', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#a371f7',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#a371f7'}, splitLine:{show:false} };
+  const kdAxisPt    = { gridIndex:2+fpeGapPt, min:0, max:100, name:'KD',  nameLocation:'start', nameGap:2, nameTextStyle:{color:'#f0883e',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#f0883e'}, splitLine:{show:false} };
+  const yAxisPt     = [priceAxisPt, ...rtAxWithGPt, ...(fpeAxisPt ? [fpeAxisPt] : []), rsiAxisPt, kdAxisPt];
 
   const mkTDPt = (items, pos, clr, c9) => {
     const norm = items.filter(p => p.count < 9);
@@ -478,33 +545,45 @@ export function renderPentagram() {
       },
     },
     legend: {
-      data: [...bandsSorted.map(x=>x.name),...(ma125DataPt?[maLabelPt]:[]),...(vixIdxPt>=0?["VIX"]:[]),...(fgIdxPt>=0?["F&G"]:[])],
+      data: [...bandsSorted.map(x=>x.name),...(ma125DataPt?[maLabelPt]:[]),...(vixIdxPt>=0?["VIX"]:[]),...(fgIdxPt>=0?["F&G"]:[]),...(fpeSubPt?["FPE"]:[])],
       textStyle: { color: tipText, fontSize: 13 }, top: 6,
     },
-    grid: [
+    axisPointer: { link: [{ xAxisIndex: 'all' }] },
+    grid: fpeSubPt ? [
+      { left:isMobPt?45:72, right:gridRPt, top:48, bottom:'50%' },
+      { left:isMobPt?45:72, right:50, top:'53%', bottom:'38%' },
+      { left:isMobPt?45:72, right:50, top:'65%', bottom:'22%' },
+      { left:isMobPt?45:72, right:50, top:'81%', bottom:36 },
+    ] : [
       { left:isMobPt?45:72, right:gridRPt, top:48, bottom:'38%' },
       { left:isMobPt?45:72, right:50, top:'65%', bottom:'22%' },
       { left:isMobPt?45:72, right:50, top:'81%', bottom:36 },
     ],
-    xAxis: [
+    xAxis: fpeSubPt ? [
+      { gridIndex:0, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+      { gridIndex:1, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+      { gridIndex:2, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+      { gridIndex:3, type:"time", axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:isMobPt?10:12}, splitLine:{show:false} },
+    ] : [
       { gridIndex:0, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
       { gridIndex:1, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
       { gridIndex:2, type:"time", axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:isMobPt?10:12}, splitLine:{show:false} },
     ],
     yAxis: yAxisPt,
     dataZoom: [
-      { type:"inside", xAxisIndex:[0,1,2] },
-      { type:"slider", height:18, bottom:14, xAxisIndex:[0,1,2] },
+      { type:"inside", xAxisIndex: fpeSubPt ? [0,1,2,3] : [0,1,2] },
+      { type:"slider", height:18, bottom:14, xAxisIndex: fpeSubPt ? [0,1,2,3] : [0,1,2] },
     ],
     series: [
       ...bandsSorted,
       ...(ma125DataPt ? [{ ...lineBase, name:maLabelPt, data:ma125DataPt, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:2,color:"#ff9800"}, itemStyle:{color:"#ff9800"} }] : []),
       ...(vixIdxPt>=0 ? [{ ...lineBase, name:"VIX", data:vixDataPt, xAxisIndex:0, yAxisIndex:vixIdxPt, lineStyle:{width:1.5,color:"#f0883e",type:"dashed"}, itemStyle:{color:"#f0883e"}, areaStyle:{color:"rgba(240,136,62,0.06)"} }] : []),
       ...(fgIdxPt>=0  ? [{ ...lineBase, name:"F&G", data:fgDataPt,  xAxisIndex:0, yAxisIndex:fgIdxPt,  lineStyle:{width:1.5,color:"#e3b341",type:"dashed"}, itemStyle:{color:"#e3b341"}, areaStyle:{color:"rgba(227,179,65,0.06)"} }] : []),
-      ...(rsiDataPt.length ? [{ type:'line', name:'RSI', xAxisIndex:1, yAxisIndex:rsiIdxPt, data:rsiDataPt, showSymbol:false, lineStyle:{width:1.5,color:'#a371f7'}, itemStyle:{color:'#a371f7'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:70,label:{formatter:'70',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:30,label:{formatter:'30',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} }] : []),
+      ...(fpeSubPt ? [{ type:'line', name:'FPE', xAxisIndex:1, yAxisIndex:fpeSubYPt, data:fpeDataPt, showSymbol:false, lineStyle:{width:1.5,color:'#58a6ff'}, itemStyle:{color:'#58a6ff'}, markLine:_fpeMarkLine(pentaActiveTicker) }] : []),
+      ...(rsiDataPt.length ? [{ type:'line', name:'RSI', xAxisIndex:1+fpeGapPt, yAxisIndex:rsiIdxPt, data:rsiDataPt, showSymbol:false, lineStyle:{width:1.5,color:'#a371f7'}, itemStyle:{color:'#a371f7'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:70,label:{formatter:'70',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:30,label:{formatter:'30',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} }] : []),
       ...(kdDataPt.length ? [
-        { type:'line', name:'K', xAxisIndex:2, yAxisIndex:kdIdxPt, data:kdDataPt.map(r=>[r[0],r[1]]), showSymbol:false, lineStyle:{width:1.5,color:'#f0883e'}, itemStyle:{color:'#f0883e'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:80,label:{formatter:'80',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:20,label:{formatter:'20',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} },
-        { type:'line', name:'D', xAxisIndex:2, yAxisIndex:kdIdxPt, data:kdDataPt.map(r=>[r[0],r[2]]), showSymbol:false, lineStyle:{width:1.5,color:'#79c0ff',type:'dashed'}, itemStyle:{color:'#79c0ff'} },
+        { type:'line', name:'K', xAxisIndex:2+fpeGapPt, yAxisIndex:kdIdxPt, data:kdDataPt.map(r=>[r[0],r[1]]), showSymbol:false, lineStyle:{width:1.5,color:'#f0883e'}, itemStyle:{color:'#f0883e'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:80,label:{formatter:'80',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:20,label:{formatter:'20',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} },
+        { type:'line', name:'D', xAxisIndex:2+fpeGapPt, yAxisIndex:kdIdxPt, data:kdDataPt.map(r=>[r[0],r[2]]), showSymbol:false, lineStyle:{width:1.5,color:'#79c0ff',type:'dashed'}, itemStyle:{color:'#79c0ff'} },
       ] : []),
       ...tdSeriesPt,
     ],
@@ -533,6 +612,7 @@ export function renderPentaTickerPicker() {
         document.getElementById("penta-status").textContent = "載入中…";
         await loadSeries(s);
       }
+      if (pentaFpeActive) await _ensureFpeData(key);
       renderPentagram();
     };
     wrap.appendChild(el);
@@ -607,3 +687,19 @@ document.getElementById("penta-weekly-toggle")?.addEventListener("click", () => 
   document.getElementById("penta-weekly-toggle").classList.toggle("active", pentaWeekly);
   renderPentagram();
 });
+
+async function _ensureFpeData(ticker) {
+  if (!FPE_FILES[ticker] || pentaFpeCache[ticker]) return;
+  try {
+    const resp = await fetch(FPE_FILES[ticker], { cache: "no-cache" });
+    const j = await resp.json();
+    pentaFpeCache[ticker] = (j.data || []).sort((a, b) => a.date < b.date ? -1 : 1);
+  } catch (e) { /* data unavailable */ }
+}
+
+export async function toggleFpe() {
+  pentaFpeActive = !pentaFpeActive;
+  document.getElementById("penta-fpe-toggle")?.classList.toggle("active", pentaFpeActive);
+  if (pentaFpeActive) await _ensureFpeData(pentaActiveTicker);
+  renderPentagram();
+}

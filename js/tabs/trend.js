@@ -21,6 +21,23 @@ let fearThreshold = 20;
 
 let ddZoneActive    = false;
 let sigZoneActive   = false;
+let trendFpeActive  = false;
+let trendFpeData    = null;
+
+function _interpFpe(arr) {
+  if (!arr || arr.length < 2) return arr.map(r => [r.date, r.fpe]);
+  const out = [];
+  for (let i = 0; i < arr.length - 1; i++) {
+    const t1 = new Date(arr[i].date + "T00:00:00Z").getTime(), v1 = arr[i].fpe;
+    const t2 = new Date(arr[i+1].date + "T00:00:00Z").getTime(), v2 = arr[i+1].fpe;
+    const gap = Math.round((t2 - t1) / 86400000);
+    for (let j = 0; j < gap; j++) {
+      out.push([new Date(t1 + j * 86400000).toISOString().slice(0,10), +(v1 + (v2-v1)*(j/gap)).toFixed(3)]);
+    }
+  }
+  out.push([arr[arr.length-1].date, arr[arr.length-1].fpe]);
+  return out;
+}
 
 const dateFrom = document.getElementById("date-from");
 const dateTo   = document.getElementById("date-to");
@@ -281,6 +298,14 @@ export function render() {
       axisLine: { lineStyle: { color: "#f7931a" } }, splitLine: { show: false } },
   ];
 
+  const fpeYIdx = trendFpeActive && trendFpeData ? yAxisDef.length : -1;
+  if (fpeYIdx >= 0) {
+    yAxisDef.push({ id:"fpe", name:"FPE", position:"right", offset: isMob ? 95 : 150,
+      min: v => Math.floor(v.min - 1), max: v => Math.ceil(v.max + 1),
+      axisLabel: { formatter: v => `${v}x`, color:"#58a6ff", fontSize:11 },
+      axisLine: { lineStyle:{ color:"#58a6ff" } }, splitLine:{ show:false } });
+  }
+
   for (const s of [...SERIES, ...customSeries]) {
     if (!active.has(s.key) || !loaded[s.key]) continue;
     series.push({
@@ -381,6 +406,19 @@ export function render() {
         ])},
       });
     }
+  }
+
+  if (fpeYIdx >= 0 && trendFpeData) {
+    const fpeInterp = _interpFpe(trendFpeData);
+    series.push({
+      name: "QQQ FPE", type: "line",
+      data: filterRange(fpeInterp),
+      yAxisIndex: fpeYIdx,
+      showSymbol: false,
+      lineStyle: { color: "#58a6ff", width: 1.5 },
+      itemStyle: { color: "#58a6ff" },
+      emphasis: { focus: "series" },
+    });
   }
 
   if (loaded["QQQ"] && loaded["F&G"]) {
@@ -569,6 +607,23 @@ export function onThemeChange(light) {
 
 export function resize() {
   chart?.resize();
+}
+
+export async function toggleTrendFpe() {
+  trendFpeActive = !trendFpeActive;
+  document.getElementById("trend-fpe-toggle")?.classList.toggle("active", trendFpeActive);
+  if (trendFpeActive && !trendFpeData) {
+    try {
+      const r = await fetch("data/QQQ_valuation.json", { cache: "no-cache" });
+      const j = await r.json();
+      trendFpeData = (j.data || []).sort((a, b) => a.date < b.date ? -1 : 1);
+    } catch (e) {
+      trendFpeActive = false;
+      document.getElementById("trend-fpe-toggle")?.classList.remove("active");
+      return;
+    }
+  }
+  render();
 }
 
 // ── Wire trend-tab controls ────────────────────────────────────

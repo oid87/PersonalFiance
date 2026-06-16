@@ -60,6 +60,23 @@ TICKERS: dict[str, tuple[str, str]] = {
     "^VVIX":   ("VVIX",    "2007-01-01"),  # VIX of VIX (volatility uncertainty)
 }
 
+# Known yfinance vendor data artifacts: the price feed splices two
+# differently-adjusted sources at a date boundary, leaving the EARLIER segment
+# on an un-split-adjusted basis while the LATER segment (and all future
+# incremental fetches) is correctly split-adjusted. 0050.TW does a ~4:1 split's
+# worth of adjustment at 2014-01-02 (pre-2014 close ~58, post-2014 ~14.6) even
+# though yfinance reports no split. We ratio-splice the earlier segment DOWN
+# onto the later (current) basis so the series is continuous and stays
+# consistent with future incremental rows. Map: ticker -> [boundary dates].
+SPLICE_FIXES: dict[str, list[str]] = {
+    "0050.TW": ["2014-01-02"],
+}
+
+# A boundary close-to-close gap beyond this fraction is treated as an artificial
+# adjustment stitch, not a real market move — a broad ETF never gaps this far
+# overnight from price action alone.
+SPLICE_TRIGGER = 0.40
+
 
 def load_existing(path: Path) -> list[dict]:
     if not path.exists():
@@ -111,6 +128,39 @@ def merge(existing: list[dict], new: list[dict]) -> list[dict]:
     return sorted(by_date.values(), key=lambda r: r["date"])
 
 
+def apply_splice_fixes(ticker: str, rows: list[dict]) -> list[dict]:
+    """Ratio-splice a known un-adjusted historical segment onto the later basis.
+
+    For each registered boundary, if the close-to-close gap across it exceeds
+    SPLICE_TRIGGER, multiply every earlier row's OHLC by (first_post/last_pre)
+    so the boundary becomes a normal trading day. Volume is divided by the same
+    factor (a 1:N split multiplies share count). Idempotent: once corrected the
+    gap is ~0, the trigger is no longer met, and rows pass through unchanged —
+    so it is safe to run on every fetch, including incremental updates.
+    """
+    boundaries = SPLICE_FIXES.get(ticker)
+    if not boundaries or not rows:
+        return rows
+    for boundary in boundaries:
+        pre = [r for r in rows if r["date"] < boundary]
+        post = [r for r in rows if r["date"] >= boundary]
+        if not pre or not post:
+            continue
+        last_pre, first_post = pre[-1]["close"], post[0]["close"]
+        if last_pre <= 0 or first_post <= 0:
+            continue
+        if abs(first_post / last_pre - 1.0) < SPLICE_TRIGGER:
+            continue  # already continuous — nothing to fix
+        factor = first_post / last_pre
+        for r in pre:
+            for k in ("open", "high", "low", "close"):
+                r[k] = round(r[k] * factor, 4)
+            r["volume"] = int(round(r["volume"] / factor))
+        print(f"  [{ticker}] spliced {len(pre)} rows before {boundary} "
+              f"(x{factor:.5f}) onto post-boundary basis")
+    return rows
+
+
 def update_ticker(ticker: str, stem: str, listing_start: str) -> None:
     out = DATA_DIR / f"{stem}.json"
     existing = load_existing(out)
@@ -130,6 +180,7 @@ def update_ticker(ticker: str, stem: str, listing_start: str) -> None:
 
     new_rows = to_rows(df)
     merged = merge(existing, new_rows)
+    merged = apply_splice_fixes(ticker, merged)
 
     payload = {
         "symbol":  stem,

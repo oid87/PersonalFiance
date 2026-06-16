@@ -51,6 +51,18 @@ def calc_fpe() -> float | None:
     return round(weighted, 2)
 
 
+def calc_tpe() -> float | None:
+    """Trailing PE straight from the QQQ ETF (yfinance exposes it for QQQ)."""
+    try:
+        tpe = yf.Ticker("QQQ").info.get("trailingPE")
+        if tpe and isinstance(tpe, (int, float)):
+            print(f"  QQQ ETF trailing PE: {tpe:.2f}x")
+            return round(float(tpe), 2)
+    except Exception as e:
+        print(f"  trailing PE fetch failed: {e}")
+    return None
+
+
 def load_existing() -> list[dict]:
     if not OUT.exists():
         return []
@@ -65,20 +77,26 @@ def main() -> None:
     print(f"Fetching QQQ top-10 forward PE for {today} ...")
 
     fpe = calc_fpe()
-    if fpe is None:
-        print("  No valid forward PE data — skipping update.")
+    tpe = calc_tpe()
+    if fpe is None and tpe is None:
+        print("  No valid PE data — skipping update.")
         return
 
     existing = load_existing()
 
-    # Replace today's entry if it exists, else append
+    # Replace today's entry if it exists, else append (preserve other fields)
     by_date = {r["date"]: r for r in existing}
-    by_date[today] = {"date": today, "fpe": fpe, "src": "calc"}
+    entry = {"date": today, "src": "calc"}
+    if fpe is not None:
+        entry["fpe"] = fpe
+    if tpe is not None:
+        entry["tpe"] = tpe
+    by_date[today] = {**by_date.get(today, {}), **entry}
     merged = sorted(by_date.values(), key=lambda r: r["date"])
 
     note = (
-        "Nasdaq-100 forward PE. 2026-04-25 之前為估計值（基於公開分析資料）；"
-        "之後為加權計算值（前10大持股，排除 PE>60x 者）。"
+        "Nasdaq-100 估值。fpe=forward（前10大持股加權，排除 PE>60x）；tpe=trailing（QQQ ETF）。"
+        "2026-04-25 之前 forward 為估計值；trailing 自上線當日起每日累積。"
     )
     payload = {"updated": today, "note": note, "data": merged}
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")

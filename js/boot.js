@@ -12,6 +12,7 @@ import * as cashkingTab  from './tabs/cashking.js';
 import * as sentimentTab from './tabs/sentiment.js';
 import * as breadthTab   from './tabs/breadth.js';
 import * as earningsTab  from './tabs/earnings.js';
+import * as valuationTab from './tabs/valuation.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -23,6 +24,7 @@ registerAll([
   { id: 'sentiment', module: sentimentTab },
   { id: 'breadth',   module: breadthTab   },
   { id: 'earnings',  module: earningsTab  },
+  { id: 'valuation', module: valuationTab },
 ]);
 
 setupResizeHandler();
@@ -60,6 +62,17 @@ document.querySelectorAll(".tab-btn").forEach(btn =>
     status.textContent = `載入失敗：${err.message}`;
   }
 })();
+
+document.getElementById("penta-fpe-toggle")?.addEventListener("click", () => pentagramTab.toggleFpe());
+document.getElementById("trend-fpe-toggle")?.addEventListener("click", () => trendTab.toggleTrendFpe());
+
+document.querySelectorAll("#val-range-picker .chip").forEach(chip =>
+  chip.addEventListener("click", () => {
+    document.querySelectorAll("#val-range-picker .chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    valuationTab.setRange(chip.dataset.valRange);
+  })
+);
 
 document.querySelectorAll(".info-panel-header").forEach(h => {
   h.addEventListener("click", () => {
