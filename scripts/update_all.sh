@@ -18,6 +18,7 @@ cd "$SCRIPTS_DIR"
 log "fetch_stocks..."
 PYTHON=/opt/homebrew/Caskroom/miniconda/base/bin/python3
 $PYTHON fetch_stocks.py
+$PYTHON fetch_leverage.py      || true
 $PYTHON fetch_fear_greed.py    || true
 $PYTHON fetch_yields.py        || true
 $PYTHON fetch_breadth.py       || true
