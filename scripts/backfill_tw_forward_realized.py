@@ -24,7 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 TW = ROOT / "data" / "TW_valuation.json"
-PX = ROOT / "data" / "0050.TW.json"
+PX = ROOT / "data" / "TWII.json"   # 台股大盤（加權指數），深至 1997，比 0050(2009) 深
 
 
 def month_end_price() -> dict[str, float]:

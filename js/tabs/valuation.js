@@ -33,9 +33,9 @@ const VAL_TICKERS = [
     refs: [ { v: 20, t: "20x", c: "#f0883e" }, { v: 14, t: "14x 熊底", c: "#ef4444" } ],
   },
   {
-    key: "0050", label: "0050 台灣50", priceKey: "0050", priceLabel: "0050", color: "#3fb950",
+    key: "TWII", label: "台指 大盤", priceLabel: "台指", priceFile: "data/TWII.json", color: "#3fb950",
     fwd:   { file: "data/TW_valuation.json", field: "fpe", real: "實際未來4季EPS回推(後見)／近期成分股 forwardPE", est: "—" },
-    trail: { file: "data/TW_valuation.json", field: "tpe", real: "FinMind 成分股 PER 加權 / TWSE", est: "—" },
+    trail: { file: "data/TW_valuation.json", field: "tpe", real: "FinMind 大型股 PER 加權（大盤代理）", est: "—" },
     refs: [ { v: 18, t: "18x", c: "#f0883e" }, { v: 12, t: "12x 熊底", c: "#ef4444" } ],
   },
   {
@@ -61,6 +61,10 @@ const BIZ_ZONES = [
 ];
 function bizLightOf(score) {
   return BIZ_ZONES.find(z => score >= z.lo && score < z.hi) || BIZ_ZONES[0];
+}
+// 指數(~45000)用千分位整數、個股/ETF用兩位小數
+function fmtPrice(v) {
+  return v >= 1000 ? Math.round(v).toLocaleString("en-US") : (+v).toFixed(2);
 }
 
 let valChart  = null;
@@ -132,7 +136,7 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
   if (!valChart) return;
   const t = cfg();
   const BIZ_NAME = "景氣對策信號";
-  const showBiz = t.key === "0050" && bizRows && bizRows.length > 0;
+  const showBiz = t.key === "TWII" && bizRows && bizRows.length > 0;
   peRealFrom = realFrom || { fwd: "0000", trl: "0000" };
 
   const axisClr = tc("#8b949e", "#57606a");
@@ -157,7 +161,7 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
   const statusEl = document.getElementById("val-status");
   if (statusEl) {
     const parts = [`${t.label}`];
-    if (lp != null) parts.push(`價 ${(+lp).toFixed(2)}`);
+    if (lp != null) parts.push(`價 ${fmtPrice(+lp)}`);
     if (lf != null) parts.push(`Fwd PE ${lf.toFixed(1)}x`);
     if (lt != null) parts.push(`Trail PE ${lt.toFixed(1)}x`);
     if (lf != null && lt != null) parts.push(`折讓 ${((1 - lf / lt) * 100).toFixed(0)}%`);
@@ -271,7 +275,7 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
           if (p.seriesName === BIZ_NAME) {
             f = `${Math.round(+val)} 分（${bizLightOf(+val).name}）`;
           } else if (p.seriesName === t.priceLabel) {
-            f = `${(+val).toFixed(2)}`;
+            f = fmtPrice(+val);
           } else {
             const isFwd = p.seriesName === "Forward PE";
             const srcCfg = isFwd ? t.fwd : t.trail;
@@ -307,10 +311,16 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
 async function refresh() {
   const t = cfg();
   const statusEl = document.getElementById("val-status");
-  const showBiz = t.key === "0050";
+  const showBiz = t.key === "TWII";
   try {
-    await ensureLoaded(t.priceKey);
-    const price = (loaded[t.priceKey] || []).slice();
+    let price;
+    if (t.priceFile) {                       // index served from its own file (not in SERIES)
+      const rows = await loadFile(t.priceFile);
+      price = rows.map(r => [r.date, r.close ?? r.value]);
+    } else {
+      await ensureLoaded(t.priceKey);
+      price = (loaded[t.priceKey] || []).slice();
+    }
     const [fwdRows, trlRows, bizRows] = await Promise.all([
       t.fwd   ? loadFile(t.fwd.file)   : Promise.resolve(null),
       t.trail ? loadFile(t.trail.file) : Promise.resolve(null),
