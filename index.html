@@ -25,6 +25,7 @@
     <button class="tab-btn" data-tab="sentiment" data-tooltip="VIX · 信用利差 · SPY趨勢 · 避險資金 — 4指標複合情緒 + 回測">情緒</button>
     <button class="tab-btn" data-tab="breadth" data-tooltip="S&P 500 成份股站上 50日/200日均線比例 — 市場廣度與多空健康度">市場廣度</button>
     <button class="tab-btn" data-tab="earnings" data-tooltip="Mag7 + TSMC 財報日月曆（近三個月）">財報日</button>
+    <button class="tab-btn" data-tab="leverage" data-tooltip="槓桿ETF每日重置的複利耗損模擬 + 真實歷史事件回測（TQQQ/SOXL/UPRO/00631L/00675L）">槓桿模擬</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -473,6 +474,44 @@
       <span id="earn-next" class="chip">下月 →</span>
     </div>
     <div id="earnings-cal"></div>
+  </section>
+
+  <!-- ── 槓桿模擬 tab ──────────────────────────────────────────── -->
+  <section id="tab-leverage" class="tab-section" hidden>
+    <div class="controls">
+      <div id="lev-mode-picker" style="display:flex;gap:4px;flex-wrap:wrap">
+        <span class="chip active" data-lev-mode="backtest" data-tooltip="用真實歷史總報酬資料回測槓桿 vs 無槓桿，含 2000/2008/2020 等事件">歷史回測</span>
+        <span class="chip" data-lev-mode="single" data-tooltip="單一隨機路徑，展示波動如何吃掉槓桿報酬（波動耗損）">單次模擬</span>
+        <span class="chip" data-lev-mode="crash" data-tooltip="預設崩跌情境，看槓桿放大下跌與回本數學">暴跌事件</span>
+        <span class="chip" data-lev-mode="montecarlo" data-tooltip="跑數千條路徑，看槓桿終值的機率分布與歸零風險">蒙地卡羅</span>
+      </div>
+      <span id="lev-mode-desc" style="font-size:12px;color:var(--muted);margin-left:auto;flex-shrink:0"></span>
+    </div>
+    <div id="lev-synth-banner" class="lev-banner" style="display:none"></div>
+    <div class="lev-body">
+      <aside id="lev-panel" class="lev-panel"></aside>
+      <div class="lev-results">
+        <div id="lev-cards" class="lev-cards"></div>
+        <div id="lev-chart"></div>
+        <div id="lev-extra"></div>
+      </div>
+    </div>
+    <div class="status" id="lev-status">載入中…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 槓桿 ETF 為什麼會「耗損」？每日重置的複利陷阱</div>
+      <div class="info-panel-body">
+        <p>2x / 3x 槓桿 ETF 追蹤的是<b>「單日」報酬的倍數</b>，每天收盤後會重新平衡曝險（每日重置）。因此它<b>不等於</b>長期報酬的倍數——在來回震盪的盤勢中，複利會持續侵蝕價值，這就是<b>波動耗損（volatility decay / beta slippage）</b>。</p>
+        <table class="info-table">
+          <thead><tr><th>第1天</th><th>第2天</th><th>累積（標的）</th><th>累積（2倍）</th></tr></thead>
+          <tbody>
+            <tr><td>+10%</td><td>−10%</td><td>−1.0%</td><td><b style="color:#f78166">−4.0%</b></td></tr>
+            <tr><td>−10%</td><td>+10%</td><td>−1.0%</td><td><b style="color:#f78166">−4.0%</b></td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px">標的兩天來回只跌 1%，2倍卻跌 4%——多出來的 3% 就是耗損。波動越大、持有越久，耗損越兇；3倍又比 2倍更嚴重。此外還有<b>每日下跌的回本數學</b>：跌 50% 要漲 100% 才回本，3倍 ETF 在一次大跌後常常永遠回不去。</p>
+        <p style="margin-top:10px;color:var(--muted)">資料說明：底層用<b>含息總報酬</b>序列（auto_adjust）才是誠實的對照；槓桿 ETF 成立後用<b>真實基金淨值</b>日報酬，成立前以<b>合成模型</b>（K×標的單日報酬 − 每日成本，成本＝費用率＋(K−1)×假設融資成本）回推。台股加權（00675L 底層）為<b>價格指數</b>無股息、略低估；0050（00631L 底層）為含息且已修復 2014 分割斷點。合成段為近似，僅供理解風險量級之用，非投資建議。</p>
+      </div>
+    </div>
   </section>
 
   <script type="module" src="js/boot.js"></script>

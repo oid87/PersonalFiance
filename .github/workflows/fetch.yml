@@ -30,6 +30,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_stocks.py
 
+      - name: Fetch leverage simulator data (total-return underlyings + 3x/2x ETFs)
+        continue-on-error: true
+        run: python scripts/fetch_leverage.py
+
       - name: Fetch Fear & Greed
         continue-on-error: true
         run: python scripts/fetch_fear_greed.py

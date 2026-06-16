@@ -13,6 +13,7 @@ import * as sentimentTab from './tabs/sentiment.js';
 import * as breadthTab   from './tabs/breadth.js';
 import * as earningsTab  from './tabs/earnings.js';
 import * as valuationTab from './tabs/valuation.js';
+import * as leverageTab  from './tabs/leverage.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -25,6 +26,7 @@ registerAll([
   { id: 'breadth',   module: breadthTab   },
   { id: 'earnings',  module: earningsTab  },
   { id: 'valuation', module: valuationTab },
+  { id: 'leverage',  module: leverageTab  },
 ]);
 
 setupResizeHandler();
