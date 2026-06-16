@@ -82,6 +82,26 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_breadth.py
 
+      - name: Fetch Taiwan business cycle signal (景氣對策信號, NDC)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_business_signal.py
+
+      - name: Fetch Taiwan money supply (M1B/M2, CBC)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_money_supply.py
+
+      - name: Fetch Taiwan margin balance (TWSE 融資餘額)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_margin.py
+
+      - name: Fetch Taiwan institutional investors (TWSE 三大法人)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_investors.py
+
+      - name: Fetch Taiwan PMI (景氣 PMI)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_pmi.py
+
       - name: Commit updates
         run: |
           git config user.name  "github-actions[bot]"
