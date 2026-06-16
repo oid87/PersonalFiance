@@ -8,7 +8,7 @@ let curSortedETFs  = [];   // current column order, for click→popup mapping
 const SECTOR_PERIODS = ["1W","1M","3M","6M","YTD","1Y"];
 const SECTOR_DAYS    = { "1W": 5, "1M": 21, "3M": 63, "6M": 126, "1Y": 252 };
 
-// 各板塊 ETF 前五大持股（權重為 ETF 佔比，更新於 2026-06；偶爾手動更新即可）
+// 各板塊 ETF 前十大持股（權重為 ETF 佔比，更新於 2026-06；偶爾手動更新即可）
 const SECTOR_HOLDINGS = {
   XLK: [
     { sym:"NVDA", w:13.1, zh:"輝達",  desc:"AI 加速晶片(GPU)龍頭" },
@@ -16,6 +16,11 @@ const SECTOR_HOLDINGS = {
     { sym:"MSFT", w:8.5,  zh:"微軟",  desc:"軟體／雲端 Azure" },
     { sym:"MU",   w:6.8,  zh:"美光",  desc:"記憶體 DRAM／HBM" },
     { sym:"AVGO", w:5.4,  zh:"博通",  desc:"網通／客製 AI 晶片" },
+    { sym:"AMD",  w:5.2,  zh:"超微",  desc:"CPU／GPU(對打 Intel/NVDA)" },
+    { sym:"INTC", w:3.3,  zh:"英特爾", desc:"CPU／晶圓代工" },
+    { sym:"CSCO", w:3.0,  zh:"思科",  desc:"網路設備" },
+    { sym:"LRCX", w:2.5,  zh:"科林研發", desc:"半導體製程設備" },
+    { sym:"ORCL", w:2.4,  zh:"甲骨文", desc:"資料庫／雲端" },
   ],
   XLF: [
     { sym:"BRK-B", w:11.8, zh:"波克夏", desc:"巴菲特控股集團" },
@@ -23,6 +28,11 @@ const SECTOR_HOLDINGS = {
     { sym:"V",     w:7.5,  zh:"Visa", desc:"全球支付網路" },
     { sym:"MA",    w:5.5,  zh:"萬事達", desc:"全球支付網路" },
     { sym:"BAC",   w:4.7,  zh:"美國銀行", desc:"大型商業銀行" },
+    { sym:"GS",    w:4.2,  zh:"高盛", desc:"投資銀行" },
+    { sym:"MS",    w:3.4,  zh:"摩根士丹利", desc:"投行／財富管理" },
+    { sym:"WFC",   w:3.3,  zh:"富國銀行", desc:"商業銀行" },
+    { sym:"C",     w:3.0,  zh:"花旗", desc:"全球銀行" },
+    { sym:"AXP",   w:2.3,  zh:"美國運通", desc:"信用卡／支付" },
   ],
   XLV: [
     { sym:"LLY",  w:16.2, zh:"禮來",   desc:"減肥／糖尿病藥(GLP-1)龍頭" },
@@ -30,6 +40,11 @@ const SECTOR_HOLDINGS = {
     { sym:"ABBV", w:7.1,  zh:"艾伯維", desc:"製藥(免疫／美容)" },
     { sym:"UNH",  w:6.4,  zh:"聯合健康", desc:"最大醫療保險商" },
     { sym:"MRK",  w:5.4,  zh:"默克",   desc:"製藥(癌症藥 Keytruda)" },
+    { sym:"TMO",  w:3.4,  zh:"賽默飛", desc:"生技儀器／試劑" },
+    { sym:"AMGN", w:3.4,  zh:"安進",   desc:"生物製藥" },
+    { sym:"GILD", w:3.1,  zh:"吉利德", desc:"抗病毒藥" },
+    { sym:"ISRG", w:2.8,  zh:"直覺手術", desc:"手術機器人(達文西)" },
+    { sym:"PFE",  w:2.8,  zh:"輝瑞",   desc:"製藥" },
   ],
   XLE: [
     { sym:"XOM", w:22.1, zh:"埃克森美孚", desc:"綜合石油巨頭" },
@@ -37,6 +52,11 @@ const SECTOR_HOLDINGS = {
     { sym:"COP", w:6.8,  zh:"康菲",     desc:"油氣探勘生產" },
     { sym:"SLB", w:4.7,  zh:"斯倫貝謝", desc:"油田服務龍頭" },
     { sym:"WMB", w:4.3,  zh:"威廉斯",   desc:"天然氣管線" },
+    { sym:"VLO", w:4.3,  zh:"瓦萊羅",   desc:"煉油" },
+    { sym:"MPC", w:4.2,  zh:"馬拉松石油", desc:"煉油" },
+    { sym:"EOG", w:4.2,  zh:"EOG",      desc:"頁岩油氣探勘" },
+    { sym:"PSX", w:4.1,  zh:"菲利普斯66", desc:"煉油／化工" },
+    { sym:"BKR", w:3.6,  zh:"貝克休斯", desc:"油田服務／設備" },
   ],
   XLI: [
     { sym:"CAT", w:7.6, zh:"卡特彼勒",  desc:"重型機械設備" },
@@ -44,6 +64,11 @@ const SECTOR_HOLDINGS = {
     { sym:"GEV", w:4.8, zh:"GE Vernova", desc:"電力／電網設備" },
     { sym:"RTX", w:4.5, zh:"雷神",      desc:"國防／航太" },
     { sym:"BA",  w:3.4, zh:"波音",      desc:"民航機製造" },
+    { sym:"UNP", w:2.9, zh:"聯合太平洋", desc:"鐵路貨運" },
+    { sym:"ETN", w:2.9, zh:"伊頓",      desc:"電力管理設備" },
+    { sym:"HON", w:2.8, zh:"漢威聯合",  desc:"工業自動化／航太" },
+    { sym:"UBER",w:2.7, zh:"Uber",     desc:"叫車／外送平台" },
+    { sym:"DE",  w:2.5, zh:"強鹿",      desc:"農用機械" },
   ],
   XLY: [
     { sym:"AMZN", w:27.6, zh:"亞馬遜",   desc:"電商／雲端 AWS" },
@@ -51,6 +76,11 @@ const SECTOR_HOLDINGS = {
     { sym:"HD",   w:5.2,  zh:"家得寶",   desc:"居家修繕零售" },
     { sym:"TJX",  w:3.9,  zh:"TJX",     desc:"折扣服飾零售" },
     { sym:"MCD",  w:3.6,  zh:"麥當勞",   desc:"速食連鎖" },
+    { sym:"BKNG", w:3.0,  zh:"Booking", desc:"線上訂房旅遊" },
+    { sym:"LOW",  w:2.7,  zh:"勞氏",     desc:"居家修繕零售" },
+    { sym:"SBUX", w:2.5,  zh:"星巴克",   desc:"咖啡連鎖" },
+    { sym:"MAR",  w:1.9,  zh:"萬豪",     desc:"飯店集團" },
+    { sym:"GM",   w:1.7,  zh:"通用汽車", desc:"汽車製造" },
   ],
   XLP: [
     { sym:"WMT",  w:10.8, zh:"沃爾瑪",   desc:"零售龍頭" },
@@ -58,6 +88,11 @@ const SECTOR_HOLDINGS = {
     { sym:"PG",   w:7.1,  zh:"寶僑",     desc:"日用消費品" },
     { sym:"KO",   w:6.5,  zh:"可口可樂", desc:"飲料" },
     { sym:"PM",   w:5.9,  zh:"菲利普莫里斯", desc:"菸草(國際)" },
+    { sym:"MDLZ", w:5.0,  zh:"億滋",     desc:"零食(餅乾巧克力)" },
+    { sym:"MO",   w:4.7,  zh:"奧馳亞",   desc:"菸草(美國)" },
+    { sym:"CL",   w:4.5,  zh:"高露潔",   desc:"日用品／牙膏" },
+    { sym:"PEP",  w:4.2,  zh:"百事",     desc:"飲料／零食" },
+    { sym:"MNST", w:4.2,  zh:"怪獸飲料", desc:"能量飲料" },
   ],
   XLU: [
     { sym:"NEE", w:13.2, zh:"NextEra",  desc:"再生能源電力龍頭" },
@@ -65,6 +100,11 @@ const SECTOR_HOLDINGS = {
     { sym:"DUK", w:6.9,  zh:"杜克能源", desc:"區域電力公司" },
     { sym:"CEG", w:6.5,  zh:"Constellation", desc:"核電龍頭(AI 供電)" },
     { sym:"AEP", w:5.0,  zh:"美國電力", desc:"區域電力公司" },
+    { sym:"SRE", w:4.2,  zh:"Sempra",   desc:"電力／天然氣" },
+    { sym:"D",   w:4.2,  zh:"Dominion", desc:"區域電力公司" },
+    { sym:"VST", w:3.7,  zh:"Vistra",   desc:"電力(含核電)" },
+    { sym:"ETR", w:3.6,  zh:"Entergy",  desc:"區域電力公司" },
+    { sym:"XEL", w:3.4,  zh:"Xcel",     desc:"區域電力公司" },
   ],
   XLRE: [
     { sym:"WELL", w:9.9, zh:"Welltower", desc:"醫療／長照 REIT" },
@@ -72,6 +112,11 @@ const SECTOR_HOLDINGS = {
     { sym:"EQIX", w:7.2, zh:"Equinix",   desc:"資料中心 REIT" },
     { sym:"AMT",  w:6.0, zh:"美國電塔",  desc:"通訊基地台 REIT" },
     { sym:"SPG",  w:4.7, zh:"Simon",     desc:"購物中心 REIT" },
+    { sym:"DLR",  w:4.6, zh:"Digital Realty", desc:"資料中心 REIT" },
+    { sym:"PSA",  w:4.4, zh:"Public Storage", desc:"自助倉儲 REIT" },
+    { sym:"VTR",  w:4.2, zh:"Ventas",    desc:"醫療／長照 REIT" },
+    { sym:"CCI",  w:4.2, zh:"Crown Castle", desc:"通訊塔 REIT" },
+    { sym:"O",    w:4.1, zh:"Realty Income", desc:"月配息零售 REIT" },
   ],
   XLB: [
     { sym:"LIN", w:14.1, zh:"林德",     desc:"工業氣體龍頭" },
@@ -79,6 +124,11 @@ const SECTOR_HOLDINGS = {
     { sym:"NUE", w:6.3,  zh:"紐柯",     desc:"鋼鐵" },
     { sym:"FCX", w:5.7,  zh:"自由港",   desc:"銅礦" },
     { sym:"VMC", w:4.6,  zh:"火神材料", desc:"建材砂石" },
+    { sym:"CRH", w:4.6,  zh:"CRH",      desc:"建材／水泥" },
+    { sym:"APD", w:4.4,  zh:"空氣產品", desc:"工業氣體" },
+    { sym:"STLD",w:4.4,  zh:"鋼動力",   desc:"鋼鐵" },
+    { sym:"CTVA",w:4.3,  zh:"科迪華",   desc:"農業種子／農化" },
+    { sym:"SHW", w:4.3,  zh:"宣偉",     desc:"塗料／油漆" },
   ],
   XLC: [
     { sym:"META",  w:14.0, zh:"Meta",    desc:"社群(FB／IG)／廣告" },
@@ -86,6 +136,11 @@ const SECTOR_HOLDINGS = {
     { sym:"GOOG",  w:7.8,  zh:"谷歌 C",  desc:"同 Alphabet(無投票權)" },
     { sym:"TTWO",  w:4.9,  zh:"Take-Two", desc:"遊戲(GTA／2K)" },
     { sym:"LYV",   w:4.8,  zh:"Live Nation", desc:"演唱會／票務" },
+    { sym:"SATS",  w:4.6,  zh:"EchoStar", desc:"衛星通訊(Dish)" },
+    { sym:"DIS",   w:4.5,  zh:"迪士尼",  desc:"媒體／娛樂／串流" },
+    { sym:"WBD",   w:4.2,  zh:"華納兄弟探索", desc:"媒體／串流(HBO)" },
+    { sym:"EA",    w:4.2,  zh:"美商藝電", desc:"遊戲(戰地／模擬市民)" },
+    { sym:"OMC",   w:4.1,  zh:"宏盟",    desc:"廣告代理集團" },
   ],
 };
 
@@ -147,7 +202,7 @@ function showHoldingsPopup(etf) {
                  max-height:82vh;overflow:auto;padding:18px 18px 14px;box-shadow:0 12px 40px rgba(0,0,0,.3)">
        <div style="display:flex;align-items:center;margin-bottom:12px">
          <div style="font-weight:700;font-size:16px;color:${tx}">${SECTOR_LABEL[etf]} · ${etf}
-           <span style="font-weight:400;font-size:13px;color:${mut}">前五大持股</span></div>
+           <span style="font-weight:400;font-size:13px;color:${mut}">前十大持股</span></div>
          <button id="sector-pop-x" style="margin-left:auto;background:none;border:none;color:${mut};
            font-size:20px;cursor:pointer;line-height:1">✕</button>
        </div>
@@ -254,7 +309,7 @@ export async function renderSectorTab() {
   }, { notMerge: true });
 
   const latest = SECTOR_ETFS.map(e => sectorLoaded[e]?.at(-1)?.[0]).filter(Boolean).sort().at(-1) ?? "—";
-  statusEl.textContent = `美股11大產業 ETF · 以${sectorSortCol}排序 · 資料截至 ${latest} · 點任一格看前五大持股`;
+  statusEl.textContent = `美股11大產業 ETF · 以${sectorSortCol}排序 · 資料截至 ${latest} · 點任一格看前十大持股`;
 }
 
 export function activate() {
