@@ -282,7 +282,7 @@
         </p>
         <p style="margin-top:8px;color:var(--muted)">
           資料來源（能撈多遠撈多遠）：ETF 的 forward PE 公開資料一律缺，故由成分股加權計算，<b>實際值自 2026 起每日累積、之前為估計</b>。
-          Trailing：<b>SPY 全程真實</b>（multpl S&amp;P 500，深至 1871）、<b>0050 全程真實</b>（FinMind 成分股 PER 加權，深至 2010）；QQQ／SOXX／MAGS 早期為估計、近期為 ETF 每日實值。0050 forward 歷史以『未來4季<b>實際</b>EPS』回推（後見，深至 2010、含 look-ahead，因台股無公開歷史分析師預估），近期為成分股 forwardPE 加權。
+          Trailing：<b>SPY 全程真實</b>（multpl S&amp;P 500，深至 1871）、<b>台指 全程真實</b>（FinMind 大型股 PER 加權，深至 2005、含 2008 海嘯）；QQQ／SOXX／MAGS 早期為估計、近期為 ETF 每日實值。台指 forward 歷史以『未來4季<b>實際</b>EPS』回推（後見，深至 2005、含 look-ahead，因台股無公開歷史分析師預估），近期為成分股 forwardPE 加權。
         </p>
         <p style="margin-top:10px"><b>各標的「用什麼算的」</b>（滑鼠移到線上，tooltip 也會逐點標來源）：</p>
         <table class="info-table">
@@ -291,7 +291,7 @@
             <tr><td>SPY/VOO</td><td>前20大持股加權 forwardPE ／ FactSet·Yardeni</td><td>multpl S&amp;P500 實際本益比（全真實）</td></tr>
             <tr><td>QQQ</td><td>前10大持股加權(排除&gt;60x) ／ 公開分析值</td><td>QQQ ETF 實際 trailingPE ／ 歷史估計</td></tr>
             <tr><td>SOXX</td><td>前20大持股加權 ／ FactSet·Bloomberg 半導體報告</td><td>SOXX ETF 實際 trailingPE ／ 產業估計</td></tr>
-            <tr><td>0050</td><td>歷史：未來4季<b>實際</b>EPS 回推(後見，深至 2010)；近期：成分股 forwardPE 加權</td><td>FinMind 成分股 PER 加權／TWSE（全真實，深至 2010）</td></tr>
+            <tr><td>台指 大盤</td><td>歷史：未來4季<b>實際</b>EPS 回推(後見，深至 2005)；近期：成分股 forwardPE 加權</td><td>FinMind 大型股 PER 加權（大盤代理，全真實，深至 2005）</td></tr>
             <tr><td>MAGS</td><td>七巨頭等權 forwardPE(排除 TSLA 離群) ／ 等權估計</td><td>七巨頭等權 trailingPE ／ 等權估計</td></tr>
           </tbody>
         </table>
@@ -299,7 +299,7 @@
       </div>
     </div>
     <div class="info-panel">
-      <div class="info-panel-header"><i class="chevron">▶</i> 台股景氣對策信號（僅 0050 顯示）</div>
+      <div class="info-panel-header"><i class="chevron">▶</i> 台股景氣對策信號（僅 台指 顯示）</div>
       <div class="info-panel-body">
         <p>國發會每月公布的景氣綜合指標，由 9 項構成項目加總計分（9–45 分），對應五種燈號：</p>
         <table class="info-table">
@@ -312,7 +312,7 @@
             <tr><td style="color:#2f6fb0">藍燈</td><td>9–16</td><td>低迷（衰退）</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">配合 0050 估值看：景氣紅燈＋本益比偏高＝循環高點警戒；藍燈＋本益比壓縮＝循環低點常見買點。資料月頻，回溯至 1984。</p>
+        <p style="margin-top:8px;color:var(--muted)">配合 台指（大盤）估值看：景氣紅燈＋本益比偏高＝循環高點警戒；藍燈＋本益比壓縮＝循環低點常見買點。資料月頻，回溯至 1984。</p>
       </div>
     </div>
   </section>

@@ -228,9 +228,10 @@ def main() -> None:
     merged = sorted(by_date.values(), key=lambda r: r["date"])
 
     note = (
-        "台灣 50（0050）估值。tpe=trailing（FinMind 成分股 PER 加權回溯至 2010 + TWSE 每日實值）；"
-        "fpe=forward（前15大成分股 yfinance forwardPE 加權，排除>60x；今起每日累積，無深歷史）。"
-        "歷史底部：~12x（2015-16 / 2022）；當前 trailing ~30x、forward ~21x。"
+        "台股大盤（台指/加權指數）估值，以大型股加權代理。"
+        "tpe=trailing（FinMind 大型股 PER 加權回溯至 2005 + TWSE 每日實值）；"
+        "fpe=forward（歷史以未來4季實際EPS回推/後見深至 2005，近期為前15大成分股 yfinance forwardPE 加權）。"
+        "歷史底部：~9x（2008）、~12x（2015-16/2022）。"
     )
     payload = {"updated": today, "note": note, "data": merged}
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
