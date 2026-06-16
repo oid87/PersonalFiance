@@ -1,6 +1,6 @@
 {
   "updated": "2026-06-16",
-  "note": "台灣 50（0050）估值。tpe=trailing（FinMind 成分股 PER 加權，深至 2010 + TWSE 每日實值）；fpe=forward：歷史為『實際 forward（後見）』＝股價÷未來4季實際EPS（real-data 回推，含 look-ahead），近期為成分股 yfinance forwardPE 加權實值。台股無公開歷史分析師預估，故 forward 歷史以實際盈餘回推。",
+  "note": "台股大盤（台指/加權指數）估值，以大型股加權代理。tpe=trailing（FinMind 大型股 PER 加權回溯至 2005 + TWSE 每日實值）；fpe=forward（歷史以未來4季實際EPS回推/後見深至 2005，近期為前15大成分股 yfinance forwardPE 加權）。歷史底部：~9x（2008）、~12x（2015-16/2022）。",
   "data": [
     {
       "date": "2005-09-01",
@@ -1497,9 +1497,9 @@
     },
     {
       "date": "2026-06-16",
-      "src": "yf-trailing",
+      "src": "calc-live",
       "fpe": 21.84,
-      "tpe": 30.93
+      "tpe": 31.42
     }
   ]
 }
