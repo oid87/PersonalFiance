@@ -3,7 +3,8 @@ import { isLight, tc, mob } from '../utils/theme.js';
 
 let sectorChart    = null;
 let sectorSortCol  = "1M";
-let curSortedETFs  = [];   // current column order, for click→popup mapping
+let curSortedETFs  = [];     // current column order, for click→popup mapping
+let liveHoldings   = null;   // data/sector_holdings.json (auto-fetched 權重/名單) — 優先於硬編 fallback
 
 const SECTOR_PERIODS = ["1W","1M","3M","6M","YTD","1Y"];
 const SECTOR_DAYS    = { "1W": 5, "1M": 21, "3M": 63, "6M": 126, "1Y": 252 };
@@ -154,6 +155,13 @@ async function loadSectorData() {
     const j = await resp.json();
     sectorLoaded[etf] = (j.data || []).map(r => [r.date, r.close]);
   }));
+  // 持股名單/權重（自動抓的 JSON 優先，失敗則用硬編 fallback）
+  if (!liveHoldings) {
+    try {
+      const r = await fetch("data/sector_holdings.json", { cache: "no-cache" });
+      if (r.ok) liveHoldings = (await r.json()).data || null;
+    } catch { /* keep fallback */ }
+  }
 }
 
 function sectorReturn(data, nDays, ytd) {
@@ -170,7 +178,7 @@ function sectorReturn(data, nDays, ytd) {
 }
 
 function showHoldingsPopup(etf) {
-  const holdings = SECTOR_HOLDINGS[etf];
+  const holdings = (liveHoldings && liveHoldings[etf]) || SECTOR_HOLDINGS[etf];
   if (!holdings) return;
   sectorChart?.dispatchAction({ type: "hideTip" });
   document.getElementById("sector-pop")?.remove();
