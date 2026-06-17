@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-16",
+  "updated": "2026-06-17",
   "note": "Nasdaq-100 估值。fpe=forward（前10大持股加權，排除 PE>60x）；tpe=trailing（QQQ ETF）。2026-04-25 之前 forward 為估計值；trailing 自上線當日起每日累積。",
   "data": [
     {
@@ -297,6 +297,12 @@
       "src": "calc",
       "fpe": 23.71,
       "tpe": 33.51
+    },
+    {
+      "date": "2026-06-17",
+      "src": "calc",
+      "fpe": 23.59,
+      "tpe": 33.67
     }
   ]
 }
