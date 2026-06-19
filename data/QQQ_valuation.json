@@ -1,6 +1,6 @@
 {
   "updated": "2026-06-19",
-  "note": "Nasdaq-100 估值。fpe=forward（每日動態抓 QQQ 前10大持股權重 × 各股 NTM 加權算術平均，排除 PE>60x；NTM=(m/12)×當FY EPS+(12-m)/12×次FY EPS，追蹤 MacroMicro NASDAQ-100 Forward PE）；tpe=trailing（QQQ ETF 實際 trailingPE）。歷史段（src=seed）為估計值。 Trailing 2026-04~06 真值上線前的空檔以價格比例回推模擬(tsim=true)。",
+  "note": "Nasdaq-100 估值。fpe=forward（每日動態抓 QQQ 前10大持股權重 × 各股 NTM 加權算術平均，排除 PE>60x；NTM=(m/12)×當FY EPS+(12-m)/12×次FY EPS，追蹤 MacroMicro NASDAQ-100 Forward PE）；tpe=trailing（QQQ ETF 實際 trailingPE）。歷史段（src=seed）為估計值。",
   "data": [
     {
       "date": "2020-03-23",
@@ -393,7 +393,7 @@
     {
       "date": "2026-06-19",
       "src": "calc-live",
-      "fpe": 25.54,
+      "fpe": 25.51,
       "tpe": 34.0
     }
   ]
