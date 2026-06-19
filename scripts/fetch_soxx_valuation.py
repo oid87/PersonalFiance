@@ -6,13 +6,15 @@ Weight fetch priority:
   1. yfinance funds_data.top_holdings  (live iShares SOXX weights)
   2. HOLDINGS_FALLBACK                 (hardcoded top-20, update ~quarterly)
 
-Forward PE = weighted arithmetic mean of constituent forward PEs.
-Stocks with forwardPE missing, <= 5x, or > 70x are excluded (semis can spike during
-earnings collapses; 70x cap filters obvious outliers without losing AI-premium names).
+Forward PE = weighted arithmetic mean of constituent NTM PEs.
+NTM (Next Twelve Months) EPS = (m/12)×current_FY_EPS + ((12-m)/12)×next_FY_EPS
+where m = months remaining in current fiscal year. Matches MacroMicro methodology.
+Stocks with NTM PE missing, <= 5x, or > 70x are excluded.
 Weights are renormalized after exclusions.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import json
 import time
 from datetime import date
@@ -70,15 +72,44 @@ def fetch_live_weights() -> dict[str, float] | None:
         return None
 
 
-def _get_forward_pe(sym: str, retries: int = 3) -> float | None:
+def _ntm_pe(sym: str, retries: int = 3) -> float | None:
+    """Compute NTM (Next Twelve Months) PE from analyst earnings estimates.
+
+    NTM EPS = (m/12) × current_FY_EPS + ((12-m)/12) × next_FY_EPS
+    where m = months remaining in current fiscal year (0 = FY ending now → use +1y).
+    """
     for attempt in range(retries):
         try:
             time.sleep(0.8)
-            info = yf.Ticker(sym).info
-            fpe = info.get("forwardPE")
-            if fpe and isinstance(fpe, (int, float)):
-                return float(fpe)
-            return None
+            t = yf.Ticker(sym)
+            info = t.info
+            price = info.get("currentPrice") or info.get("regularMarketPrice")
+            lfy_raw = info.get("lastFiscalYearEnd")
+            if not price or not lfy_raw:
+                return None
+
+            ee = t.earnings_estimate
+            if ee is None or ee.empty or "0y" not in ee.index or "+1y" not in ee.index:
+                return None
+
+            eps_0y = float(ee.loc["0y", "avg"])
+            eps_1y = float(ee.loc["+1y", "avg"])
+            if eps_0y <= 0 or eps_1y <= 0:
+                return None
+
+            lfy_date = (_dt.date.fromtimestamp(lfy_raw) if isinstance(lfy_raw, int)
+                        else _dt.date.fromisoformat(str(lfy_raw)[:10]))
+            try:
+                current_fy_end = lfy_date.replace(year=lfy_date.year + 1)
+            except ValueError:
+                current_fy_end = lfy_date.replace(year=lfy_date.year + 1, day=28)
+            today_d = date.today()
+            m = max(0, min(12, (current_fy_end.year - today_d.year) * 12
+                               + (current_fy_end.month - today_d.month)))
+
+            ntm_eps = (m / 12) * eps_0y + ((12 - m) / 12) * eps_1y
+            return float(price) / ntm_eps
+
         except Exception as e:
             if attempt < retries - 1:
                 wait = 30 * (attempt + 1)
@@ -93,18 +124,18 @@ def _get_forward_pe(sym: str, retries: int = 3) -> float | None:
 def calc_fpe(holdings: dict[str, float]) -> float | None:
     valid: list[tuple[float, float]] = []
     for sym, weight in holdings.items():
-        fpe = _get_forward_pe(sym)
-        if fpe and 5 < fpe <= FPE_CAP:
-            valid.append((fpe, weight))
+        pe = _ntm_pe(sym)
+        if pe and 5 < pe <= FPE_CAP:
+            valid.append((pe, weight))
         else:
-            print(f"  [{sym}] forwardPE={fpe} — excluded")
+            print(f"  [{sym}] NTM PE={pe} — excluded")
 
     if not valid:
         return None
 
     total_w = sum(w for _, w in valid)
-    weighted = sum(fpe * w for fpe, w in valid) / total_w
-    print(f"  Weighted forward PE: {weighted:.2f}x  ({len(valid)} stocks, coverage {total_w:.1f}%)")
+    weighted = sum(pe * w for pe, w in valid) / total_w
+    print(f"  NTM forward PE: {weighted:.2f}x  ({len(valid)} stocks, coverage {total_w:.1f}%)")
     return round(weighted, 2)
 
 
@@ -159,8 +190,8 @@ def main() -> None:
 
     note = (
         "Philadelphia Semiconductor Index (SOXX) 估值。"
-        "fpe=forward（前20大持股加權，排除 PE>70x 或負值；歷史為估計）；tpe=trailing（SOXX ETF，每日累積）。"
-        "半導體 PE 週期性強，熊市底部可壓縮至 14x，AI 高峰可達 32x+。"
+        "fpe=forward（前20大持股 NTM 加權，排除 PE>70x 或負 EPS；NTM=(m/12)×當FY+(12-m)/12×次FY）；"
+        "tpe=trailing（SOXX ETF，每日累積）。半導體 PE 週期性強，熊市底部可壓縮至 14x，AI 高峰可達 32x+。"
     )
     payload = {"updated": today, "note": note, "data": merged}
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")

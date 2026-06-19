@@ -22,13 +22,13 @@ const VAL_TICKERS = [
   },
   {
     key: "QQQ", label: "QQQ", priceKey: "QQQ", priceLabel: "QQQ", color: "#f778ba",
-    fwd:   { file: "data/QQQ_valuation.json", field: "fpe", real: "前10大持股加權 forwardPE(排除>60x)", est: "Nasdaq-100 公開分析值" },
+    fwd:   { file: "data/QQQ_valuation.json", field: "fpe", real: "前20大持股 NTM 加權(排除>60x)", est: "Nasdaq-100 公開分析值" },
     trail: { file: "data/QQQ_valuation.json", field: "tpe", real: "QQQ ETF 實際 trailingPE", est: "歷史 Nasdaq-100 trailing 估計" },
     refs: [ { v: 21, t: "21x 底部帶", c: "#f0883e" }, { v: 20, t: "20x 熊底", c: "#ef4444" } ],
   },
   {
     key: "SOXX", label: "SOXX 半導體", priceKey: "SOXX", priceLabel: "SOXX", color: "#22d3ee",
-    fwd:   { file: "data/SOXX_valuation.json", field: "fpe", real: "前20大持股加權 forwardPE", est: "FactSet/Bloomberg 半導體報告" },
+    fwd:   { file: "data/SOXX_valuation.json", field: "fpe", real: "前20大持股 NTM 加權(排除>70x)", est: "半導體公開分析值" },
     trail: { file: "data/SOXX_valuation.json", field: "tpe", real: "SOXX ETF 實際 trailingPE", est: "半導體產業 trailing 估計" },
     refs: [ { v: 20, t: "20x", c: "#f0883e" }, { v: 14, t: "14x 熊底", c: "#ef4444" } ],
   },
