@@ -14,6 +14,8 @@ import * as breadthTab   from './tabs/breadth.js';
 import * as earningsTab  from './tabs/earnings.js';
 import * as valuationTab from './tabs/valuation.js';
 import * as leverageTab  from './tabs/leverage.js';
+import * as aaiiTab      from './tabs/aaii.js';
+import * as twSentTab    from './tabs/twsentiment.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -27,6 +29,8 @@ registerAll([
   { id: 'earnings',  module: earningsTab  },
   { id: 'valuation', module: valuationTab },
   { id: 'leverage',  module: leverageTab  },
+  { id: 'aaii',      module: aaiiTab      },
+  { id: 'twsent',    module: twSentTab    },
 ]);
 
 setupResizeHandler();
