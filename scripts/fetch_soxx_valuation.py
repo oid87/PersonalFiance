@@ -54,19 +54,25 @@ FPE_CAP = 70.0
 
 
 def fetch_live_weights() -> dict[str, float] | None:
-    """Try to get live SOXX holdings weights from yfinance funds_data."""
+    """Live SOXX holdings weights from yfinance funds_data.top_holdings.
+
+    The DataFrame (yfinance 1.x) is indexed by Symbol with a 'Holding Percent'
+    column (fraction). Older builds exposed 'symbol'/'holdingPercent' columns —
+    handle both. Returns {SYM: weight_pct} or None on failure.
+    """
     try:
-        soxx = yf.Ticker("SOXX")
-        top = soxx.funds_data.top_holdings
+        top = yf.Ticker("SOXX").funds_data.top_holdings
         if top is None or top.empty:
             return None
-        holdings = {}
-        for _, row in top.iterrows():
-            sym = str(row.get("symbol", "")).upper()
-            pct = row.get("holdingPercent", 0)
+        holdings: dict[str, float] = {}
+        for idx, row in top.iterrows():
+            sym = str(row.get("symbol") or idx or "").upper().strip()
+            pct = row.get("Holding Percent")
+            if pct is None:
+                pct = row.get("holdingPercent")
             if sym and pct:
                 holdings[sym] = float(pct) * 100
-        return holdings if holdings else None
+        return holdings or None
     except Exception as e:
         print(f"  [live weights] failed: {e}")
         return None

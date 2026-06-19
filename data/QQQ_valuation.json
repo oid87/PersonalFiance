@@ -1,6 +1,6 @@
 {
-  "updated": "2026-06-18",
-  "note": "Nasdaq-100 估值。fpe=forward（前10大持股加權，排除 PE>60x）；tpe=trailing（QQQ ETF）。2026-04-25 之前 forward 為估計值；trailing 自上線當日起每日累積。",
+  "updated": "2026-06-19",
+  "note": "Nasdaq-100 估值。fpe=forward（每日動態抓 QQQ 前10大持股權重 × 各股 NTM 加權算術平均，排除 PE>60x；NTM=(m/12)×當FY EPS+(12-m)/12×次FY EPS，追蹤 MacroMicro NASDAQ-100 Forward PE）；tpe=trailing（QQQ ETF 實際 trailingPE）。歷史段（src=seed）為估計值。 Trailing 2026-04~06 真值上線前的空檔以價格比例回推模擬(tsim=true)。",
   "data": [
     {
       "date": "2020-03-23",
@@ -95,202 +95,282 @@
     {
       "date": "2026-04-25",
       "fpe": 24.92,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 30.48,
+      "tsim": true
     },
     {
       "date": "2026-04-29",
       "fpe": 24.86,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 30.37,
+      "tsim": true
     },
     {
       "date": "2026-05-04",
       "fpe": 24.56,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 30.89,
+      "tsim": true
     },
     {
       "date": "2026-05-05",
       "fpe": 24.71,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 31.29,
+      "tsim": true
     },
     {
       "date": "2026-05-06",
       "fpe": 25.05,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 31.94,
+      "tsim": true
     },
     {
       "date": "2026-05-07",
       "fpe": 25.09,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 31.91,
+      "tsim": true
     },
     {
       "date": "2026-05-08",
       "fpe": 25.26,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.65,
+      "tsim": true
     },
     {
       "date": "2026-05-09",
       "fpe": 25.26,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.65,
+      "tsim": true
     },
     {
       "date": "2026-05-10",
       "fpe": 25.26,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.65,
+      "tsim": true
     },
     {
       "date": "2026-05-11",
       "fpe": 25.26,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.75,
+      "tsim": true
     },
     {
       "date": "2026-05-12",
       "fpe": 25.07,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.47,
+      "tsim": true
     },
     {
       "date": "2026-05-13",
       "fpe": 25.04,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.81,
+      "tsim": true
     },
     {
       "date": "2026-05-17",
       "fpe": 25.46,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.55,
+      "tsim": true
     },
     {
       "date": "2026-05-18",
       "fpe": 25.46,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.41,
+      "tsim": true
     },
     {
       "date": "2026-05-19",
       "fpe": 25.46,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.21,
+      "tsim": true
     },
     {
       "date": "2026-05-20",
       "fpe": 25.17,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.74,
+      "tsim": true
     },
     {
       "date": "2026-05-21",
       "fpe": 25.36,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.81,
+      "tsim": true
     },
     {
       "date": "2026-05-22",
       "fpe": 25.3,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.94,
+      "tsim": true
     },
     {
       "date": "2026-05-23",
       "fpe": 24.94,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.94,
+      "tsim": true
     },
     {
       "date": "2026-05-24",
       "fpe": 24.94,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.94,
+      "tsim": true
     },
     {
       "date": "2026-05-25",
       "fpe": 24.94,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.94,
+      "tsim": true
     },
     {
       "date": "2026-05-26",
       "fpe": 24.93,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 33.53,
+      "tsim": true
     },
     {
       "date": "2026-05-27",
       "fpe": 24.92,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 33.49,
+      "tsim": true
     },
     {
       "date": "2026-05-28",
       "fpe": 25.04,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 33.77,
+      "tsim": true
     },
     {
       "date": "2026-05-29",
       "fpe": 25.24,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 33.9,
+      "tsim": true
     },
     {
       "date": "2026-05-30",
       "fpe": 25.23,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 33.9,
+      "tsim": true
     },
     {
       "date": "2026-05-31",
       "fpe": 25.23,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 33.9,
+      "tsim": true
     },
     {
       "date": "2026-06-01",
       "fpe": 25.23,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 34.1,
+      "tsim": true
     },
     {
       "date": "2026-06-02",
       "fpe": 25.16,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 34.26,
+      "tsim": true
     },
     {
       "date": "2026-06-03",
       "fpe": 25.01,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 34.17,
+      "tsim": true
     },
     {
       "date": "2026-06-05",
       "fpe": 24.68,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.37,
+      "tsim": true
     },
     {
       "date": "2026-06-06",
       "fpe": 23.97,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.37,
+      "tsim": true
     },
     {
       "date": "2026-06-07",
       "fpe": 23.97,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.37,
+      "tsim": true
     },
     {
       "date": "2026-06-08",
       "fpe": 23.97,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.88,
+      "tsim": true
     },
     {
       "date": "2026-06-09",
       "fpe": 23.83,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.5,
+      "tsim": true
     },
     {
       "date": "2026-06-10",
       "fpe": 23.52,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 31.85,
+      "tsim": true
     },
     {
       "date": "2026-06-11",
       "fpe": 23.14,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 32.93,
+      "tsim": true
     },
     {
       "date": "2026-06-12",
       "fpe": 23.29,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 33.12,
+      "tsim": true
     },
     {
       "date": "2026-06-13",
       "fpe": 23.2,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 33.12,
+      "tsim": true
     },
     {
       "date": "2026-06-14",
       "fpe": 23.3,
-      "src": "calc"
+      "src": "calc",
+      "tpe": 33.12,
+      "tsim": true
     },
     {
       "date": "2026-06-16",
@@ -308,6 +388,12 @@
       "date": "2026-06-18",
       "src": "calc",
       "fpe": 23.51,
+      "tpe": 34.0
+    },
+    {
+      "date": "2026-06-19",
+      "src": "calc-live",
+      "fpe": 25.54,
       "tpe": 34.0
     }
   ]
