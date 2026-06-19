@@ -23,6 +23,8 @@
     <button class="tab-btn" data-tab="cashking" data-tooltip="GLD/BTC/TLT/QQQ 同跌 + F&G 低 → 持現金訊號">現金為王時刻</button>
     <button class="tab-btn" data-tab="valuation" data-tooltip="Forward P/E 估值連結 · MacroMicro（QQQ / SPY / 台股）">估值</button>
     <button class="tab-btn" data-tab="sentiment" data-tooltip="VIX · 信用利差 · SPY趨勢 · 避險資金 — 4指標複合情緒 + 回測">情緒</button>
+    <button class="tab-btn" data-tab="aaii" data-tooltip="AAII 散戶調查 · CNN恐懼貪婪 · VIX · S&P500 對照（仿 MacroMicro）">散戶情緒</button>
+    <button class="tab-btn" data-tab="twsent" data-tooltip="台股恐懼貪婪指數（P/C·散戶多空·趨勢·融資）+ 加權指數 + 原始元件">台股情緒</button>
     <button class="tab-btn" data-tab="breadth" data-tooltip="S&P 500 成份股站上 50日/200日均線比例 — 市場廣度與多空健康度">市場廣度</button>
     <button class="tab-btn" data-tab="earnings" data-tooltip="Mag7 + TSMC 財報日月曆（近三個月）">財報日</button>
     <button class="tab-btn" data-tab="leverage" data-tooltip="槓桿ETF每日重置的複利耗損模擬 + 真實歷史事件回測（TQQQ/SOXL/UPRO/00631L/00675L）">槓桿模擬</button>
@@ -402,6 +404,96 @@
           </tbody>
         </table>
         <p style="margin-top:10px;color:var(--muted)">參考概念：台灣市場的 SIO 恐慌貪婪指標（jacksu.tw）以 AII 投資者情緒調查、CBOE P/C Ratio 8日均、SMT 動能、VIX 合成類似指數，讀數邏輯相通。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 散戶情緒 tab (AAII × F&G × VIX × S&P500) ───────────────── -->
+  <section id="tab-aaii" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">AAII 散戶調查 · CNN恐懼貪婪 · VIX · S&P500 — 仿 MacroMicro 對照</span>
+      <div id="aaii-range-picker" class="range-wrap">
+        <span class="chip" data-aaii-range="1">1Y</span>
+        <span class="chip" data-aaii-range="2">2Y</span>
+        <span class="chip active" data-aaii-range="5">5Y</span>
+        <span class="chip" data-aaii-range="10">10Y</span>
+        <span class="chip" data-aaii-range="2011" title="四指標共同起點（CNN 恐懼貪婪自 2011 起）">2011→</span>
+        <span class="chip" data-aaii-range="all" title="回到 AAII 散戶調查最早 1987（早期 VIX/F&G 那兩格留白）">全部</span>
+      </div>
+    </div>
+    <div id="aaii-cards"></div>
+    <div id="aaii-chart"></div>
+    <div class="status" id="aaii-status">切換至此 tab 自動載入…</div>
+    <div class="aaii-table-wrap">
+      <div class="aaii-table-title">完整週度對照表 <span id="aaii-table-count" style="color:var(--muted);font-weight:400"></span></div>
+      <div class="sent-bt-wrap" style="max-height:360px">
+        <table class="sent-bt-table"><thead id="aaii-thead"></thead><tbody id="aaii-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="info-panel-header">
+        <i class="chevron">▶</i> 怎麼看這四個指標？
+      </div>
+      <div class="info-panel-body">
+        <p>四個指標分別從不同角度量測市場情緒，搭配 S&P500 走勢一起看更有意義：</p>
+        <table class="info-table">
+          <thead><tr><th>指標</th><th>來源</th><th>讀法</th></tr></thead>
+          <tbody>
+            <tr><td>AAII 淨看多</td><td>美國散戶協會週調查（看多%−看空%）</td><td>散戶情緒，反向指標：過度看空常為買點</td></tr>
+            <tr><td>CNN 恐懼貪婪</td><td>CNN 7 項市場數據合成 0–100</td><td>&lt;25 極度恐懼、&gt;75 極度貪婪</td></tr>
+            <tr><td>VIX</td><td>CBOE 隱含波動率（2000+；1990-99 ^VIX、1986-89 用原始 ^VXO 回溯到 1987）</td><td>越高代表市場越恐慌、避險需求升溫</td></tr>
+            <tr><td>S&P 500 指數</td><td>^GSPC 指數（非 SPY ETF，故可回溯 1987）</td><td>基準大盤，對照情緒是否背離價格</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px;color:var(--muted)">圖分四格：S&P500 走勢 / CNN恐懼貪婪+VIX / AAII 看多·中立·看空 / 看多−看空（淨看多，含 0 基準線，正＝散戶偏多）。圖例可點擊開關各條線。AAII 為週頻（每週四公布），CNN F&G / VIX / S&P500 為日頻；表格中後三者取「該週 AAII 公布日(含)以前最近一個交易日」對齊。</p>
+        <p style="margin-top:6px;color:var(--muted)">範圍：「2011→」是四指標共同起點（CNN 恐懼貪婪自 2011 才有資料）；「全部」回到 AAII 最早的 1987。此時 S&P 500（^GSPC 指數）與 AAII 都畫到 1987，VIX 也以原始 ^VXO 接回 1987（看得到黑色星期一收 150 那根尖刺）。<b>只有 CNN 恐懼貪婪無法早於 2011</b>——這指數是 CNN 2012 年才推出、僅回填到 2011，更早的資料不存在，故 1987–2011 該格留白。</p>
+        <p style="margin-top:6px;color:var(--muted)">資料來源：AAII 官方 sentiment.xls 完整歷史（1987 至今，每週四公布）+ aaii.com 近期週報補最新一週。每日隨其他資料一起更新。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 台股情緒 tab (台股恐懼貪婪 + 原始元件) ─────────────────────── -->
+  <section id="tab-twsent" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">台股恐懼貪婪指數 · P/C · 散戶多空 · 趨勢 · 融資</span>
+      <div id="twsent-range-picker" class="range-wrap">
+        <span class="chip" data-twsent-range="1">1Y</span>
+        <span class="chip" data-twsent-range="2">2Y</span>
+        <span class="chip active" data-twsent-range="5">5Y</span>
+        <span class="chip" data-twsent-range="10">10Y</span>
+        <span class="chip" data-twsent-range="all">全部</span>
+      </div>
+    </div>
+    <div id="twsent-top">
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div id="twsent-gauge"></div>
+        <div class="sent-label-row" style="width:200px"><span>恐懼</span><span id="twsent-score-label" style="font-weight:600">中性</span><span>貪婪</span></div>
+      </div>
+      <div id="twsent-cards"></div>
+    </div>
+    <div id="twsent-chart"></div>
+    <div class="status" id="twsent-status">切換至此 tab 自動載入…</div>
+    <div class="aaii-table-wrap">
+      <div class="aaii-table-title">每日對照表 <span id="twsent-table-count" style="color:var(--muted);font-weight:400"></span></div>
+      <div class="sent-bt-wrap" style="max-height:340px">
+        <table class="sent-bt-table"><thead id="twsent-thead"></thead><tbody id="twsent-tbody"></tbody></table>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 台股恐懼貪婪指數怎麼算？</div>
+      <div class="info-panel-body">
+        <p>仿 CNN 恐懼貪婪：四個元件各自取「滾動 2 年百分位」正規化成 0–100（越高越貪婪），再加權平均。全部用免費資料：</p>
+        <table class="info-table">
+          <thead><tr><th>元件</th><th>原始指標 · 來源</th><th>方向 · 權重 · 起始</th></tr></thead>
+          <tbody>
+            <tr><td>選擇權避險</td><td>台指選擇權 P/C 成交量比（8日均）· TAIFEX</td><td>反向 · 30% · 2005</td></tr>
+            <tr><td>散戶部位</td><td>台指期散戶淨多（三大法人反推）· FinMind</td><td>正向 · 25% · 2018</td></tr>
+            <tr><td>價格動能</td><td>加權距 200日均線偏離</td><td>正向 · 25% · 1997</td></tr>
+            <tr><td>槓桿</td><td>大盤融資餘額 20日變動% · FinMind</td><td>正向 · 20% · 2008</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px;color:var(--muted)">分區：&lt;25 極度恐懼 / 25–45 恐懼 / 45–55 中性 / 55–75 貪婪 / &gt;75 極度貪婪。早於某元件起始日時自動少算該元件、權重重新分配，故指數可回溯到 1998（僅趨勢+P/C+融資）。外資淨部位為「聰明錢」方向、獨立顯示不進分數。</p>
+        <p style="margin-top:6px;color:var(--muted)">已知限制：<b>台指 VIX 與大盤融資維持率無乾淨免費歷史</b>（TAIFEX/MacroMicro 付費），故未納入；P/C 成交量比在急跌時偏雜訊（call 量暴增），日後可改用未平倉比微調。散戶多空＝台指期三大法人淨未平倉反推（零和近似）。</p>
       </div>
     </div>
   </section>

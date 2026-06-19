@@ -38,6 +38,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_fear_greed.py
 
+      - name: Fetch AAII sentiment survey
+        continue-on-error: true
+        run: python scripts/fetch_aaii.py
+
       - name: Fetch yield data
         continue-on-error: true
         run: python scripts/fetch_yields.py
@@ -105,6 +109,26 @@ jobs:
       - name: Fetch Taiwan PMI (景氣 PMI)
         continue-on-error: true
         run: python scripts/fetch_taiwan_pmi.py
+
+      - name: Fetch Taiwan options Put/Call ratio (TAIFEX, 台股情緒)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_pcratio.py
+
+      - name: Fetch Taiwan futures institutional / retail positioning (FinMind, 台股情緒)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_fut_inst.py
+
+      - name: Fetch Taiwan market margin balance (FinMind, 大盤融資餘額)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_margin_total.py
+
+      - name: Compute Taiwan fear & greed composite
+        continue-on-error: true
+        run: python scripts/compute_taiwan_sentiment.py
 
       - name: Commit updates
         run: |

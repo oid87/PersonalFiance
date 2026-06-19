@@ -495,6 +495,44 @@
     .sent-bt-table tr.avg-row td {
       font-weight: 700; background: rgba(88,166,255,0.06);
     }
+    /* ── 散戶情緒 (AAII) tab ──────────────────────────────────────── */
+    #aaii-cards {
+      display: flex; gap: 10px; flex-wrap: wrap; padding: 10px 24px 0;
+    }
+    .aaii-card {
+      flex: 1 1 130px; min-width: 120px; padding: 10px 14px;
+      border: 1px solid var(--border); border-radius: 8px; background: var(--panel);
+    }
+    .aaii-card-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .aaii-card-val { font-size: 21px; font-weight: 700; line-height: 1.1; }
+    .aaii-card-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+    #aaii-chart { width: 100%; height: 820px; min-height: 680px; }
+    .aaii-table-wrap { padding: 6px 24px 14px; }
+    .aaii-table-title { font-size: 13px; font-weight: 600; margin: 8px 0 8px; color: var(--text); }
+    /* only the date column is left-aligned; keep all numeric columns right-aligned */
+    .aaii-table-wrap .sent-bt-table th:nth-child(2),
+    .aaii-table-wrap .sent-bt-table td:nth-child(2) { text-align: right; }
+    /* ── 台股情緒 tab ─────────────────────────────────────────────── */
+    #twsent-top { display: flex; align-items: center; gap: 16px; padding: 10px 24px 0; flex-wrap: wrap; }
+    #twsent-gauge { width: 200px; height: 120px; flex-shrink: 0; }
+    #twsent-cards { display: flex; gap: 10px; flex-wrap: wrap; flex: 1; min-width: 280px; }
+    #twsent-cards .aaii-card { flex: 1 1 130px; min-width: 120px; padding: 10px 14px;
+      border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
+    #twsent-chart { width: 100%; height: 820px; min-height: 680px; }
+    @media (max-width: 600px) {
+      #twsent-top { padding: 8px 12px 0; gap: 10px; }
+      #twsent-gauge { width: 160px; height: 96px; }
+      #twsent-cards { min-width: 100%; gap: 6px; }
+      #twsent-cards .aaii-card { flex: 1 1 100px; min-width: 96px; padding: 7px 10px; }
+      #twsent-chart { height: 720px; min-height: 620px; }
+    }
+    @media (max-width: 600px) {
+      #aaii-cards { padding: 8px 12px 0; gap: 6px; }
+      .aaii-card { flex: 1 1 100px; min-width: 96px; padding: 7px 10px; }
+      .aaii-card-val { font-size: 17px; }
+      #aaii-chart { height: 720px; min-height: 620px; }
+      .aaii-table-wrap { padding: 6px 12px 12px; }
+    }
     /* ── 說明面板 ─────────────────────────────────────────────────── */
     .info-panel { margin: 0 24px 20px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
     .info-panel-header {

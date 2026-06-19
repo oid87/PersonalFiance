@@ -18,8 +18,13 @@ DATA_DIR.mkdir(exist_ok=True)
 
 GLOBAL_START = "2000-01-01"
 
+# Tickers that backfill from their own listing_start, bypassing the GLOBAL_START
+# floor (used where a long history matters, e.g. the S&P 500 index in 散戶情緒 tab).
+FULL_HISTORY = {"^GSPC"}
+
 # ticker -> (filename stem, listing start date)
 TICKERS: dict[str, tuple[str, str]] = {
+    "^GSPC":   ("SP500",   "1987-01-01"),  # S&P 500 index — longer history than SPY ETF (1993); 散戶情緒 tab
     "0050.TW": ("0050.TW", "2003-06-30"),
     "VOO":     ("VOO",     "2010-09-09"),
     "QQQ":     ("QQQ",     "1999-03-10"),
@@ -170,7 +175,7 @@ def update_ticker(ticker: str, stem: str, listing_start: str) -> None:
         start = (datetime.fromisoformat(last) - timedelta(days=14)).date().isoformat()
         print(f"  [{ticker}] incremental from {start} ({len(existing)} existing rows)")
     else:
-        start = max(GLOBAL_START, listing_start)
+        start = listing_start if ticker in FULL_HISTORY else max(GLOBAL_START, listing_start)
         print(f"  [{ticker}] backfill from {start}")
 
     df = fetch_range(ticker, start)
