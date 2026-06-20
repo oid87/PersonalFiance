@@ -1,5 +1,6 @@
 #!/bin/bash
-# 每日資料更新 — git pull → 跑所有 fetch 腳本 → 有變動就 push
+# 本地資料更新（preview 用）— 同步 → 跑所有 fetch 腳本 → 刷新 data/。
+# ⚠️ 不 commit / 不 push：data/ 由 GitHub Action 單一寫入，避免本地與 Action 雙寫造成 git 分歧 / detached HEAD。
 
 SCRIPTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(dirname "$SCRIPTS_DIR")"
@@ -8,10 +9,12 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
 log "=== 開始更新 ==="
 
-# 1. 先拉最新（GitHub Actions 可能已經 push）
+# 1. 同步到 Action 的最新 data（丟掉上次本地刷新的 data/ 以便乾淨 ff；不動未提交的 code）
 cd "$ROOT_DIR"
-log "git pull..."
-git pull --rebase --autostash origin main 2>&1 || log "git pull 失敗，繼續執行"
+git checkout main >/dev/null 2>&1 || true        # 永遠在 main 上操作，不要 detached
+git checkout -- data/ 2>/dev/null || true        # 丟棄上次本地刷新的 data/（避免擋住 fast-forward）
+log "git pull --ff-only..."
+git pull --ff-only origin main 2>&1 || log "非 fast-forward（本地有未提交 code？），跳過同步、直接刷新"
 
 # 2. 跑所有 fetch 腳本
 cd "$SCRIPTS_DIR"
@@ -39,21 +42,13 @@ $PYTHON fetch_earnings.py      || true
 $PYTHON fetch_sector_holdings.py || true
 $PYTHON compute_sentiment.py   || true
 
-# 3. 先驗資料完整性（衝突標記 / 壞 JSON / 行數暴跌就擋下，不 commit）
+# 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"
-if ! $PYTHON scripts/validate_data.py; then
-  log "資料驗證失敗，跳過 commit（請人工檢查 data/）"
-  exit 1
-fi
+$PYTHON scripts/validate_data.py || log "⚠️ 本地資料驗證有問題，請檢查 data/"
 
-# 4. 有變動就 commit + push
-if ! git diff --quiet data/; then
-  log "資料有更新，commit + push..."
-  git add data/
-  git commit -m "data: local update $(date '+%Y-%m-%d %H:%M')"
-  git push origin main 2>&1 || log "push 失敗（可能 Actions 也在推，下次會自動 rebase）"
-else
-  log "資料無變動，跳過 push"
-fi
+# 4. 刻意不 commit / 不 push —— data/ 由 GitHub Action 單一負責發佈（單一寫入者）
+log "本地 data/ 已刷新供 preview。"
+log "data/ 由 GitHub Action（每日美股 / 台股收盤後）單獨 commit+push；本地不推，避免雙寫分歧。"
+log "若真要手動發佈：自行 git add data/ && git commit && git push（確認沒跟 Action 撞）。"
 
 log "=== 完成 ==="
