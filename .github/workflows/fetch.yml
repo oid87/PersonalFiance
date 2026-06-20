@@ -118,6 +118,14 @@ jobs:
         continue-on-error: true
         run: python scripts/compute_taiwan_sentiment.py
 
+      - name: Fetch Bull & Bear indicator (CFTC COT, FRED HY/SLOOS/UMCSENT/MMF)
+        continue-on-error: true
+        run: python scripts/fetch_bullbear.py
+
+      - name: Fetch liquidity data (Fed balance sheet, TGA, RRP, FINRA margin, M2, DXY)
+        continue-on-error: true
+        run: python scripts/fetch_liquidity.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 
