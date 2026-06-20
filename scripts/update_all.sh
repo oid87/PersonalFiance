@@ -36,10 +36,17 @@ $PYTHON fetch_tw_valuation.py   || true
 $PYTHON fetch_mags_valuation.py || true
 $PYTHON fetch_investor_conf.py || true
 $PYTHON fetch_earnings.py      || true
+$PYTHON fetch_sector_holdings.py || true
 $PYTHON compute_sentiment.py   || true
 
-# 3. 有變動就 commit + push
+# 3. 先驗資料完整性（衝突標記 / 壞 JSON / 行數暴跌就擋下，不 commit）
 cd "$ROOT_DIR"
+if ! $PYTHON scripts/validate_data.py; then
+  log "資料驗證失敗，跳過 commit（請人工檢查 data/）"
+  exit 1
+fi
+
+# 4. 有變動就 commit + push
 if ! git diff --quiet data/; then
   log "資料有更新，commit + push..."
   git add data/

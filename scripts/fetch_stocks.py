@@ -60,9 +60,6 @@ TICKERS: dict[str, tuple[str, str]] = {
     "AMZN":    ("AMZN",    "1997-05-15"),
     "META":    ("META",    "2012-05-18"),
     "TSLA":    ("TSLA",    "2010-06-29"),
-    # Sentiment / tail-risk indicators
-    "^SKEW":   ("SKEW",    "1990-01-02"),  # CBOE SKEW Index (tail-risk put demand proxy)
-    "^VVIX":   ("VVIX",    "2007-01-01"),  # VIX of VIX (volatility uncertainty)
 }
 
 # Known yfinance vendor data artifacts: the price feed splices two

@@ -27,6 +27,10 @@ OUT_PATH = DATA_DIR / "breadth.json"
 FRESHNESS_DAYS    = 4     # same as isDataFresh() in frontend
 FULL_BACKFILL_CAL = 2555  # ~7 calendar years → ~1820 trading days → ~1620 valid after 200-day warmup
 INCREMENTAL_CAL   = 350   # enough to compute 200-day MA for recent dates
+MIN_COVERAGE      = 480   # ~95% of S&P 500; drop RECENT days below this (yfinance often
+RECENT_WINDOW_DAYS = 14   #   hasn't filled all ~500 names yet → shrunk denominator spikes %).
+#   Gated to recent days only, so deep-history days (constituents that hadn't IPO'd yet → lower
+#   valid count) are NOT dropped.
 
 
 def get_sp500_tickers() -> list[str]:
@@ -104,9 +108,15 @@ def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
     n200 = valid200.sum(axis=1)
 
     records: list[dict] = []
+    dropped_lowcov = 0
+    recent_cutoff  = (date.today() - timedelta(days=RECENT_WINDOW_DAYS)).isoformat()
     for dt in price_df.index:
+        ds  = dt.strftime("%Y-%m-%d")
         v50 = int(n50[dt])
         if v50 == 0:
+            continue
+        if v50 < MIN_COVERAGE and ds >= recent_cutoff:
+            dropped_lowcov += 1   # laggy tail day; skip so it doesn't spike % on a shrunk denominator
             continue
         a50  = int(above50[dt])
         v200 = int(n200[dt])
@@ -120,6 +130,8 @@ def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
             "above200_pct":   round(a200 / v200 * 100, 1) if (v200 > 0 and a200 is not None) else None,
             "total":          v50,
         })
+    if dropped_lowcov:
+        print(f"  Dropped {dropped_lowcov} recent low-coverage day(s) (<{MIN_COVERAGE} names)")
     return records
 
 

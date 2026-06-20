@@ -94,21 +94,9 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_taiwan_business_signal.py
 
-      - name: Fetch Taiwan money supply (M1B/M2, CBC)
+      - name: Fetch sector ETF holdings (yfinance, 產業輪動持股彈窗)
         continue-on-error: true
-        run: python scripts/fetch_taiwan_money_supply.py
-
-      - name: Fetch Taiwan margin balance (TWSE 融資餘額)
-        continue-on-error: true
-        run: python scripts/fetch_taiwan_margin.py
-
-      - name: Fetch Taiwan institutional investors (TWSE 三大法人)
-        continue-on-error: true
-        run: python scripts/fetch_taiwan_investors.py
-
-      - name: Fetch Taiwan PMI (景氣 PMI)
-        continue-on-error: true
-        run: python scripts/fetch_taiwan_pmi.py
+        run: python scripts/fetch_sector_holdings.py
 
       - name: Fetch Taiwan options Put/Call ratio (TAIFEX, 台股情緒)
         continue-on-error: true
@@ -129,6 +117,9 @@ jobs:
       - name: Compute Taiwan fear & greed composite
         continue-on-error: true
         run: python scripts/compute_taiwan_sentiment.py
+
+      - name: Validate data integrity (abort commit if corrupt)
+        run: python scripts/validate_data.py
 
       - name: Commit updates
         run: |
