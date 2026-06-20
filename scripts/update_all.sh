@@ -41,6 +41,8 @@ $PYTHON fetch_investor_conf.py || true
 $PYTHON fetch_earnings.py      || true
 $PYTHON fetch_sector_holdings.py || true
 $PYTHON compute_sentiment.py   || true
+$PYTHON fetch_bullbear.py      || true
+$PYTHON fetch_liquidity.py     || true
 
 # 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"

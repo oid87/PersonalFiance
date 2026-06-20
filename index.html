@@ -28,6 +28,9 @@
     <button class="tab-btn" data-tab="breadth" data-tooltip="S&P 500 成份股站上 50日/200日均線比例 — 市場廣度與多空健康度">市場廣度</button>
     <button class="tab-btn" data-tab="earnings" data-tooltip="Mag7 + TSMC 財報日月曆（近三個月）">財報日</button>
     <button class="tab-btn" data-tab="leverage" data-tooltip="槓桿ETF每日重置的複利耗損模擬 + 真實歷史事件回測（TQQQ/SOXL/UPRO/00631L/00675L）">槓桿模擬</button>
+    <button class="tab-btn" data-tab="position" data-tooltip="布林通道 + 乖離率 20/50/200 日，判斷超買超賣位置">位階</button>
+    <button class="tab-btn" data-tab="liquidity" data-tooltip="Fed淨流動性 + FINRA融資餘額 + M2/DXY — 資金面環境判讀">流動性</button>
+    <button class="tab-btn" data-tab="bullbear" data-tooltip="窮人版 BofA 牛熊指標（8元件百分位合成 0-10）— 反向情緒">牛熊</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -602,6 +605,116 @@
         </table>
         <p style="margin-top:10px">標的兩天來回只跌 1%，2倍卻跌 4%——多出來的 3% 就是耗損。波動越大、持有越久，耗損越兇；3倍又比 2倍更嚴重。此外還有<b>每日下跌的回本數學</b>：跌 50% 要漲 100% 才回本，3倍 ETF 在一次大跌後常常永遠回不去。</p>
         <p style="margin-top:10px;color:var(--muted)">資料說明：底層用<b>含息總報酬</b>序列（auto_adjust）才是誠實的對照；槓桿 ETF 成立後用<b>真實基金淨值</b>日報酬，成立前以<b>合成模型</b>（K×標的單日報酬 − 每日成本，成本＝費用率＋(K−1)×假設融資成本）回推。台股加權（00675L 底層）為<b>價格指數</b>無股息、略低估；0050（00631L 底層）為含息且已修復 2014 分割斷點。合成段為近似，僅供理解風險量級之用，非投資建議。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 位階 tab ────────────────────────────────────────────────── -->
+  <section id="tab-position" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted);flex-shrink:0">標的</span>
+      <div id="pos-ticker-picker" style="display:flex;gap:4px"></div>
+      <div id="pos-period-picker" style="display:flex;gap:4px;margin-left:12px">
+        <span class="chip active" data-period="20" data-tooltip="20日布林通道 — 短期超買超賣">20日</span>
+        <span class="chip" data-period="50" data-tooltip="50日布林通道 — 中期趨勢偏離">50日</span>
+        <span class="chip" data-period="200" data-tooltip="200日布林通道 — 長期極端偏離">200日</span>
+      </div>
+      <div id="pos-range-picker" style="display:flex;gap:4px;margin-left:12px">
+        <span class="chip" data-range="1Y">1Y</span>
+        <span class="chip" data-range="3Y">3Y</span>
+        <span class="chip active" data-range="5Y">5Y</span>
+        <span class="chip" data-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="pos-bb-chart" style="width:100%;height:420px"></div>
+    <div id="pos-dev-chart" style="width:100%;height:320px"></div>
+    <div id="pos-status" class="status"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 布林通道與乖離率：位階判讀指南</div>
+      <div class="info-panel-body">
+        <p><b>布林通道（Bollinger Bands）</b>：以 N 日均線為中軌，±2 倍標準差為上下軌。價格觸及上軌傾向過熱、下軌傾向超賣。通道收斂 = 盤整蓄勢，通道擴張 = 趨勢啟動。</p>
+        <p><b>乖離率（Deviation %）</b>：(收盤 − MA) ÷ MA × 100%。正值 = 高於均線（偏貴），負值 = 低於均線（偏便宜）。配合趨勢濾網（MA200 以上為多頭環境），乖離回歸負值是潛在買點。</p>
+        <table class="info-table">
+          <thead><tr><th>區間</th><th>20日</th><th>50日</th><th>200日</th></tr></thead>
+          <tbody>
+            <tr><td>嚴重超買</td><td>&gt;+4%</td><td>&gt;+8%</td><td>&gt;+20%</td></tr>
+            <tr><td>超賣區</td><td>&lt;−4%</td><td>&lt;−8%</td><td>&lt;−15%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 流動性 tab ──────────────────────────────────────────────── -->
+  <section id="tab-liquidity" class="tab-section" hidden>
+    <div class="controls">
+      <div id="liq-range-picker" style="display:flex;gap:4px">
+        <span class="chip" data-range="1Y">1Y</span>
+        <span class="chip" data-range="3Y">3Y</span>
+        <span class="chip active" data-range="5Y">5Y</span>
+        <span class="chip" data-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="liq-chart" style="width:100%;height:480px"></div>
+    <div id="liq-margin-chart" style="width:100%;height:360px"></div>
+    <div id="liq-status" class="status"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 淨流動性指標與融資餘額：資金面環境</div>
+      <div class="info-panel-body">
+        <p><b>聯準會淨流動性（Net Liquidity）</b> = Fed 資產負債表 − 財政部一般帳戶(TGA) − 逆回購(RRP)。當淨流動性擴張時，金融市場可用資金增加，風險資產傾向上漲。</p>
+        <p><b>FINRA 融資餘額（Margin Debt）</b>：反映槓桿投機水位。歷史高點常對應市場峰值（2000, 2007, 2021），大幅萎縮則伴隨去槓桿拋售。</p>
+        <p><b>M2 貨幣供給</b>：廣義貨幣量，年增率轉負為罕見收縮訊號（2022-2023）。<b>美元指數（DXY）</b>：美元走強時新興市場和大宗商品承壓，走弱時全球流動性寬鬆。</p>
+        <table class="info-table">
+          <thead><tr><th>指標</th><th>頻率</th><th>來源</th></tr></thead>
+          <tbody>
+            <tr><td>Fed BS / TGA / RRP</td><td>週</td><td>FRED</td></tr>
+            <tr><td>Margin Debt</td><td>月</td><td>FINRA</td></tr>
+            <tr><td>M2</td><td>月</td><td>FRED</td></tr>
+            <tr><td>DXY</td><td>日</td><td>Yahoo Finance</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 牛熊指標 tab ────────────────────────────────────────────── -->
+  <section id="tab-bullbear" class="tab-section" hidden>
+    <div class="controls">
+      <div id="bb-range-picker" style="display:flex;gap:4px">
+        <span class="chip" data-range="1Y">1Y</span>
+        <span class="chip" data-range="3Y">3Y</span>
+        <span class="chip active" data-range="5Y">5Y</span>
+        <span class="chip" data-range="MAX">MAX</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+      <div id="bb-gauge" style="width:260px;height:220px;flex-shrink:0"></div>
+      <div id="bb-bars" style="flex:1;min-width:320px"></div>
+    </div>
+
+    <div id="bb-chart" style="width:100%;height:420px;margin-top:16px"></div>
+    <div id="bb-status" class="status"></div>
+
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 窮人版 BofA 牛熊指標：8 元件說明</div>
+      <div class="info-panel-body">
+        <p>仿照美國銀行（BofA）的 Bull & Bear Indicator 邏輯，以 8 個免費可得的情緒 / 資金面指標各自做歷史百分位排名（0-10），再取平均得到合成分數。</p>
+        <p style="margin-top:8px"><b>反向指標解讀：</b>&gt; 8 = 極度貪婪（賣出訊號）；&lt; 2 = 極度恐懼（買入訊號）</p>
+        <table class="info-table">
+          <thead><tr><th>元件</th><th>方向</th><th>說明</th><th>來源</th></tr></thead>
+          <tbody>
+            <tr><td>貨幣基金部位</td><td>反向</td><td>MMF 總資產高 = 資金停泊 = 恐懼</td><td>FRED MMMFFAQ027S</td></tr>
+            <tr><td>COT 槓桿基金</td><td>正向</td><td>E-mini S&P 500 槓桿基金淨部位</td><td>CFTC TFF</td></tr>
+            <tr><td>HY 信用利差</td><td>反向</td><td>利差擴大 = 風險趨避</td><td>FRED BAMLH0A0HYM2</td></tr>
+            <tr><td>SLOOS 信貸</td><td>反向</td><td>銀行收緊放貸 = 信用緊縮</td><td>FRED DRTSCILM</td></tr>
+            <tr><td>消費者信心</td><td>正向</td><td>密大消費者信心指數</td><td>FRED UMCSENT</td></tr>
+            <tr><td>市場廣度</td><td>正向</td><td>S&P 500 &gt; MA200 比例</td><td>本站 breadth</td></tr>
+            <tr><td>估值 P/E</td><td>正向</td><td>SPY trailing P/E</td><td>本站 SP500_PE</td></tr>
+            <tr><td>NAAIM 經理曝險</td><td>正向</td><td>（選配）機構經理股票曝險</td><td>naaim.org</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">NAAIM 因 Incapsula 阻擋暫無法自動抓取；已用貨幣基金部位(MMF)作為機構「現金偏好」的替代指標。每週 CFTC 與月頻 FRED 混頻對齊，取最近可用值（120 天內），至少需 3 個元件才計算合成。</p>
       </div>
     </div>
   </section>

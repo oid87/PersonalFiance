@@ -16,6 +16,9 @@ import * as valuationTab from './tabs/valuation.js';
 import * as leverageTab  from './tabs/leverage.js';
 import * as aaiiTab      from './tabs/aaii.js';
 import * as twSentTab    from './tabs/twsentiment.js';
+import * as positionTab  from './tabs/position.js';
+import * as liquidityTab from './tabs/liquidity.js';
+import * as bullbearTab  from './tabs/bullbear.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -31,6 +34,9 @@ registerAll([
   { id: 'leverage',  module: leverageTab  },
   { id: 'aaii',      module: aaiiTab      },
   { id: 'twsent',    module: twSentTab    },
+  { id: 'position',  module: positionTab  },
+  { id: 'liquidity', module: liquidityTab },
+  { id: 'bullbear',  module: bullbearTab  },
 ]);
 
 setupResizeHandler();
