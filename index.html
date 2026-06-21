@@ -33,6 +33,7 @@
     <button class="tab-btn" data-tab="bullbear" data-tooltip="窮人版 BofA 牛熊指標（8元件百分位合成 0-10）— 反向情緒">牛熊</button>
     <button class="tab-btn" data-tab="wave" data-tooltip="台股/QQQ/SPY/SOXX 波浪結構對照 + 波浪關鍵點位 + 台積電估值矩陣">波浪理論</button>
     <button class="tab-btn" data-tab="twcycle" data-tooltip="國發會景氣對策信號（景氣燈號）9–45 分五燈 · 月頻 1984+ · 循環位置環境理解">景氣燈號</button>
+    <button class="tab-btn" data-tab="vixskew" data-tooltip="VIX-SKEW 序列背離警報 · 同步上升→背離→暴跌前兆 · SPY+市寬 · 1993起">VIX-SKEW</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -882,6 +883,14 @@
     <!-- ── 靜態知識表格（可摺疊） ── -->
 
     <div class="info-panel">
+      <div class="info-panel-header open"><i class="chevron">▶</i> TAIEX Elliott Wave 走勢圖（已實現 + Wave V 預測路徑）</div>
+      <div class="info-panel-body open" style="padding:0 0 4px">
+        <div id="wave-taiex-chart" style="width:100%;height:360px"></div>
+        <p style="font-size:11px;color:var(--muted);padding:4px 12px 0">藍虛線 = Wave II/III/IV 關鍵點 · 紫虛線 = Wave V 預測路徑（IV底 36–38k → V目標 53,000 / 2027/05）· 黃線 = 實際 TAIEX 收盤</p>
+      </div>
+    </div>
+
+    <div class="info-panel">
       <div class="info-panel-header open"><i class="chevron">▶</i> 波浪關鍵點位對照（台股主浪，美股同步參考）</div>
       <div class="info-panel-body open">
         <p>以 2022 年 10 月大盤底部為 <b>Wave II 底</b>（=基準 100），往後的五波走勢用此對照。</p>
@@ -1022,6 +1031,34 @@
           </tbody>
         </table>
         <p style="color:var(--muted);font-size:12px">M1B 來源：中央銀行每月公布。成交量含上市（TWSE）+ 上櫃（TPEx）合計。</p>
+
+        <p style="margin-top:14px"><b>三時代完整標準化對照（融資 + 成交量雙重修正）：</b></p>
+        <table class="info-table">
+          <thead><tr><th>指標</th><th>民79 (1990)</th><th>民89 (2000)</th><th>民115 (2026)</th><th>115年等效值</th></tr></thead>
+          <tbody>
+            <tr><td>上市+上櫃家數</td><td>199</td><td>831</td><td>1,938</td><td>—</td></tr>
+            <tr><td>M1B 貨幣供給</td><td>2.6 兆</td><td>4.6 兆</td><td>31 兆</td><td>—</td></tr>
+            <tr><td>融資餘額（絕對值）</td><td>2,600 億</td><td style="color:#f85149;font-weight:600">5,956 億</td><td>5,931 億</td><td style="color:var(--muted)">看起來差不多 ←</td></tr>
+            <tr style="background:rgba(88,166,255,0.06)"><td><b>融資 ÷ M1B</b></td><td>10.0%</td><td style="color:#f85149;font-weight:600">12.95%</td><td style="color:#3fb950;font-weight:600">1.91%</td><td style="color:#E9A810;font-weight:600">等效 = 4.01 兆</td></tr>
+            <tr><td>融資 ÷ 上市家數</td><td>13.1 億/家</td><td>7.17 億/家</td><td>3.06 億/家</td><td>等效 = 1.39 兆</td></tr>
+            <tr style="background:rgba(233,168,16,0.06)"><td><b>成交量 ÷ M1B</b></td><td style="color:#f85149;font-weight:600">~10.0%</td><td>8.32%</td><td style="color:#E9A810;font-weight:600">7.42%</td><td style="color:#E9A810">← 快到了！</td></tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="padding:8px 10px;border-left:3px solid #E9A810;background:rgba(233,168,16,0.06);border-radius:4px;font-size:12px">
+            <b>成交量/M1B：已到歷史比率</b><br/>
+            7.4% vs 2000年 8.3% → 快到了。市場活躍程度確實接近歷史頂峰，支持「Wave III 末段」判斷。
+          </div>
+          <div style="padding:8px 10px;border-left:3px solid #3fb950;background:rgba(63,185,80,0.06);border-radius:4px;font-size:12px">
+            <b>融資/M1B：只有歷史的 15%</b><br/>
+            1.91% vs 2000年 12.95%。絕對值 5,931億 ≈ 5,956億 是假象。Wave V 噴出時融資仍有 6 倍擴張空間。
+          </div>
+        </div>
+
+        <div style="margin-top:8px;padding:8px 12px;border-left:3px solid #a371f7;background:rgba(163,113,247,0.06);border-radius:4px;font-size:12px">
+          <b>場景推演：</b> Wave V 噴出時，若融資從 5,931億 擴張到 <b>1.2–1.5 兆</b>（仍低於等效歷史頂峰），成交量突破 <b>3 兆（M1B 的 10%）</b>，指數到 53,000+⋯ 然後泡沫破裂。從 1.2 兆融資強制平倉，規模遠比 2000 年的 5,956 億大一倍以上。<b>這就是杜師說的「Wave V 噴出時成交要到 3 兆才是真正燃料耗盡」。</b>
+        </div>
       </div>
     </div>
 
@@ -1048,7 +1085,36 @@
             <tr style="background:rgba(233,168,16,0.06)"><td>等效 2000 年峰值水準</td><td>~4.01 兆</td><td>31 兆</td><td>12.95%</td><td>—</td></tr>
           </tbody>
         </table>
-        <p style="color:var(--muted);font-size:12px">目前融資餘額名目接近 2000 年峰值，但相對 M1B 僅 1.91%（約 2000 年的 15%），加上上市家數翻近 4 倍，市場實際融資使用強度遠低於歷史高峰。</p>
+        <p style="color:var(--muted);font-size:12px">目前融資餘額名目接近 2000 年峰值，但相對 M1B 僅 1.91%（約 2000 年的 15%），加上上市家數翻近 4 倍，市場實際融資使用強度遠低於歷史高峰。<b>等效 2000 年峰值水準 = 約 4 兆融資</b>，Wave V 真正噴出時才可能到達那個水位。</p>
+
+        <p style="margin-top:12px"><b>歷史關鍵時間點對照：</b></p>
+        <table class="info-table">
+          <thead><tr><th>時間點</th><th>事件</th><th>融資餘額</th><th>大盤</th><th>意義</th></tr></thead>
+          <tbody>
+            <tr style="color:var(--muted)"><td>89.4.12 (2000)</td><td>歷史最高 / 泡沫頂</td><td style="color:#f85149;font-weight:600">5,956 億</td><td>10,256</td><td>ATH 警戒</td></tr>
+            <tr><td>113.7.11 (2024)</td><td>Wave III 頂</td><td>3,345 億</td><td>24,390</td><td>正常</td></tr>
+            <tr><td>114.4.9 (2025)</td><td>Wave IV 底 / 關稅崩跌</td><td style="color:#3fb950;font-weight:600">2,238 億</td><td>17,392</td><td>底部訊號</td></tr>
+            <tr><td>115.6.4 (2026)</td><td>近期高點</td><td>5,726 億</td><td>45,071</td><td>接近 ATH</td></tr>
+            <tr style="background:rgba(233,168,16,0.08)"><td>115.6.18 (今)</td><td>現況</td><td style="color:#E9A810;font-weight:600">~5,931 億</td><td>46,465</td><td>⚠️ ATH -0.4%</td></tr>
+          </tbody>
+        </table>
+
+        <div style="margin-top:12px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,0.06);border-radius:4px;font-size:13px">
+          <b>⚠️ 目前融資在歷史高位的含意：</b><br/>
+          Wave III 期間大盤 +167%、融資 +165%（同步擴張 = 正常多頭槓桿）。但絕對值距 ATH 僅 0.4%，代表<b> Wave IV 到來時追繳賣壓將非常大，跌速可能比 Wave II 更快猛</b>——但底部也會更清晰（融資減幅 &gt; 大盤跌幅 = 斷頭完成）。
+        </div>
+
+        <p style="margin-top:14px"><b>Wave IV 底部確認清單（出現 4/5 可考慮分批布局 Wave V）：</b></p>
+        <table class="info-table">
+          <thead><tr><th>條件</th><th>觸發標準</th><th>狀態</th></tr></thead>
+          <tbody>
+            <tr><td>① 指數跌至季線支撐</td><td>TAIEX 回到 36,000–38,000</td><td style="color:var(--muted)">待觀察</td></tr>
+            <tr><td>② 融資大幅萎縮</td><td>從 ~5,900億 下跌超過 40%（→ ~3,500億）</td><td style="color:var(--muted)">待觀察</td></tr>
+            <tr><td>③ 底部法則觸發</td><td>融資跌幅 &gt; 大盤跌幅（斷頭完成）</td><td style="color:var(--muted)">待觀察</td></tr>
+            <tr><td>④ M1B 比率冷卻</td><td>成交量 / M1B 降至 5% 以下</td><td style="color:var(--muted)">待觀察</td></tr>
+            <tr><td>⑤ 技術面確認</td><td>200MA 走平或上彎（你的 MA 系統）</td><td style="color:var(--muted)">待觀察</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -1248,6 +1314,48 @@
       <p style="margin:0;color:var(--muted);font-size:12px">資料月頻、回溯至 1984，官方約每月 27 日公布前一月份（約 27 天延遲）。
         定位為循環位置的「環境理解 / 風險溫度計」，非交易訊號 —— 燈號高度持續（平均約 3–4 個月才換色），
         且本指標已含股價等前瞻成分，逐月轉折難以提前精準預測。配台股估值看：紅燈＋本益比偏高＝循環高點警戒；藍燈＋本益比壓縮＝循環低點常見買點。</p>
+    </div>
+  </section>
+
+  <!-- ── VIX-SKEW 序列背離 tab ──────────────────────────────────────────── -->
+  <section id="tab-vixskew" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">VIX · SKEW · SPY — 序列背離警報 · 1993起</span>
+      <div class="range-wrap">
+        <span class="chip" data-vs-range="3Y">3Y</span>
+        <span class="chip active" data-vs-range="5Y">5Y</span>
+        <span class="chip" data-vs-range="10Y">10Y</span>
+        <span class="chip" data-vs-range="20Y">20Y</span>
+        <span class="chip" data-vs-range="all">All</span>
+      </div>
+    </div>
+    <div id="vs-cards"></div>
+    <div id="vs-chart" style="height:700px"></div>
+    <div class="status" id="vs-status">切換至此 tab 自動載入…</div>
+    <div id="vs-signal-table"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 信號邏輯說明 — 為何 VIX-SKEW 背離是警訊？</div>
+      <div class="info-panel-body">
+        <table class="info-table" style="margin-bottom:14px">
+          <thead><tr><th>指標</th><th>衡量什麼</th><th>高/低的意義</th></tr></thead>
+          <tbody>
+            <tr><td><b>VIX</b>（恐慌指數）</td><td>S&amp;P 500 選擇權隱含波動率（未來 30 天）</td><td>高=市場恐慌；低=市場樂觀/麻木</td></tr>
+            <tr><td><b>SKEW</b>（尾部避險指數）</td><td>深度價外 Put（OTM Put）的相對貴程度</td><td>高=機構正大量買尾部對沖；正常值 100–130；>140 偏高</td></tr>
+            <tr><td><b>SPY</b>（大盤代理）</td><td>S&amp;P 500 ETF 收盤價，正規化為 % 報酬</td><td>跌破 200MA = 趨勢反轉訊號</td></tr>
+          </tbody>
+        </table>
+        <p><b>序列信號邏輯（三步走）：</b></p>
+        <ol style="margin:6px 0 10px 18px;line-height:1.9;font-size:13px">
+          <li><b>VIX + SKEW 同步上升</b>：25 個交易日內 VIX 漲 &gt;25%、SKEW 漲 &gt;5%，代表市場恐慌正在蔓延。</li>
+          <li><b>VIX 回落但 SKEW 維持</b>：VIX 從峰值跌 &gt;15%（短期恐慌消散），但 SKEW 仍在峰值 5% 以內（機構尾部對沖未撤）。這個背離是訊號核心。</li>
+          <li><b>加強條件</b>：若同時 SPY 跌破 200MA（趨勢反轉）＋市寬 &lt;50%（廣度惡化），歷史回測顯示 3M 勝率僅 40%、均報酬 −1.3%，為完整警報狀態。</li>
+        </ol>
+        <p style="color:var(--muted);font-size:12px">
+          缺陷：訊號出現時大市往往已下跌一些（滯後性），且單一序列信號（無加強條件）歷史 3M 均報酬仍為正（+3.7%），不應視為崩盤預測器。
+          建議配合大周期 MACD、RSI、市寬同步觀察，在警報亮起且市場出現短線反彈時作為減倉時機參考。
+          圖表中 <span style="color:#f85149">▼ 紅色三角</span> 為歷史序列信號觸發點；橙色柱 = SKEW 百分位高於 VIX 百分位（背離）；綠色柱 = 無背離。
+        </p>
+      </div>
     </div>
   </section>
 
