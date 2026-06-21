@@ -27,7 +27,11 @@ $PYTHON fetch_aaii.py          || true
 $PYTHON fetch_taiwan_pcratio.py || true
 $PYTHON fetch_taiwan_fut_inst.py || true
 $PYTHON fetch_taiwan_margin_total.py || true
+$PYTHON fetch_taiwan_margin_ratio.py || true
+$PYTHON fetch_taiwan_mktcap_anchor.py || true
+$PYTHON compute_taiwan_margin_mktcap.py || true
 $PYTHON compute_taiwan_sentiment.py || true
+$PYTHON fetch_taiwan_business_signal.py || true
 $PYTHON fetch_yields.py        || true
 $PYTHON fetch_breadth.py       || true
 $PYTHON fetch_cape.py          || true
