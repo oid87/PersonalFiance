@@ -3,14 +3,16 @@
 import { isLight, tc, mob } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 
-let chart = null, gauge = null;
+let chart = null, gauge = null, mcChart = null;
 let sent = null;            // taiwan_sentiment.json
-let twii = null, pc = null, fut = null, mar = null;   // raw component arrays
+let twii = null, pc = null, fut = null, mar = null, mr = null;   // raw component arrays (mr=融資維持率[[date,ratio]])
+let mcData = null;          // taiwan_margin_mktcap.json: {data:[{date,ratio,...}], k_billion_per_point, ...}
 let rangePreset = "5Y";
 
 const C = {
   twii: "#58a6ff", comp: "#f778ba", pcv: "#f0883e", pco: "#d2a8ff",
-  retail: "#3fb950", foreign: "#f85149", margin: "#e3b341",
+  retail: "#3fb950", foreign: "#f85149", margin: "#e3b341", maint: "#7ee787",
+  mcap: "#a371f7",
 };
 
 export async function init() {
@@ -30,13 +32,23 @@ export async function init() {
     pc   = p.data;
     fut  = f.data;
     mar  = m.data;
+    mr   = [];                                  // 融資維持率(重建)，TWSE 回補中可能僅近期
+    try {
+      const rr = await fetch("data/taiwan_margin_ratio.json");
+      if (rr.ok) mr = ((await rr.json()).data || []).map(r => [r.date, r.ratio]);
+    } catch { /* optional — 缺檔不影響其他元件 */ }
+
+    try {
+      const mc = await fetch("data/taiwan_margin_mktcap.json");
+      if (mc.ok) mcData = await mc.json();
+    } catch { /* optional — 缺檔則隱藏該 section */ }
 
     document.querySelectorAll("[data-twsent-range]").forEach(el =>
       el.addEventListener("click", () => {
         rangePreset = el.dataset.twsentRange;
         document.querySelectorAll("[data-twsent-range]").forEach(e =>
           e.classList.toggle("active", e.dataset.twsentRange === rangePreset));
-        renderChart(); renderTable();
+        renderChart(); renderTable(); renderMktcap();
       }));
 
     renderAll();
@@ -72,6 +84,79 @@ function renderAll() {
   }
   renderChart();
   renderTable();
+  renderMktcap();
+}
+
+function renderMktcap() {
+  const cardEl = document.getElementById("twsent-mktcap-card");
+  const chartEl = document.getElementById("twsent-mktcap-chart");
+  if (!cardEl || !chartEl) return;
+  if (!mcData || !mcData.data || !mcData.data.length) {
+    cardEl.innerHTML = `<div style="color:var(--muted);font-size:12px">無資料（taiwan_margin_mktcap.json 未產生）</div>`;
+    return;
+  }
+  const allRows = mcData.data;
+  const from = fromDate();
+  const rows = from ? allRows.filter(r => r.date >= from) : allRows;
+  if (!rows.length) {
+    cardEl.innerHTML = `<div style="color:var(--muted);font-size:12px">所選範圍內無資料</div>`;
+    return;
+  }
+  const latest = allRows.at(-1);   // card 永遠秀最新一筆 (不被範圍篩掉)
+  const prev = allRows.length > 20 ? allRows.at(-21) : null;
+  const chg = prev ? latest.ratio - prev.ratio : null;
+  const chgStr = chg == null ? "" :
+    `<span style="color:${chg >= 0 ? "#f85149" : "#3fb950"};font-size:12px;margin-left:8px">
+      ${chg >= 0 ? "▲ +" : "▼ "}${chg.toFixed(2)} 近月</span>`;
+  cardEl.innerHTML =
+    `<span style="color:var(--muted);font-size:12px">最新</span>
+     <span style="font-size:22px;font-weight:700;color:${C.mcap};margin-left:8px">
+       ${latest.ratio.toFixed(2)} ‰</span>
+     <span style="color:var(--muted);font-size:12px;margin-left:8px">${latest.date}</span>
+     ${chgStr}
+     <span style="color:var(--muted);font-size:12px;margin-left:14px">
+       融資 ${latest.margin_billion.toLocaleString("en-US", { maximumFractionDigits: 0 })} 億 ÷ 上市市值估 ${latest.mktcap_billion_est.toLocaleString("en-US", { maximumFractionDigits: 0 })} 億</span>`;
+
+  if (!mcChart) {
+    mcChart = echarts.init(chartEl, isLight() ? null : "dark");
+    window.addEventListener("resize", () => mcChart && mcChart.resize());
+  }
+  const series = rows.map(r => [r.date, r.ratio]);
+  const tipBg = tc("#161b22", "#ffffff"), tipBdr = tc("#30363d", "#d0d7de");
+  const tipTx = tc("#e6edf3", "#1f2328"), axCl = tc("#8b949e", "#57606a");
+  const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
+  mcChart.setOption({
+    backgroundColor: "transparent", animation: false,
+    grid: { left: mob() ? 44 : 56, right: mob() ? 14 : 28, top: 18, bottom: 30 },
+    tooltip: {
+      trigger: "axis", backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipTx, fontSize: 12 },
+      formatter: params => {
+        if (!params.length) return "";
+        const p = params[0]; const v = p.value?.[1];
+        return `<b>${tsToLocalDate(p.axisValue)}</b><br/>
+          <span style="color:${p.color}">● ${p.seriesName}: <b>${v.toFixed(2)} ‰</b></span>`;
+      },
+    },
+    xAxis: { type: "time", axisLabel: { color: axCl, fontSize: 11 },
+      axisLine: { lineStyle: { color: gridCl } }, splitLine: { show: false } },
+    yAxis: { type: "value", scale: true, name: "‰", nameTextStyle: { color: axCl, fontSize: 10 },
+      axisLabel: { color: axCl, fontSize: 10 }, splitLine: { lineStyle: { color: gridCl } } },
+    series: [{
+      name: "融資/市值", type: "line", data: series, symbol: "none",
+      lineStyle: { color: C.mcap, width: 1.8 },
+      areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [{ offset: 0, color: "rgba(163,113,247,0.22)" }, { offset: 1, color: "rgba(163,113,247,0.02)" }] } },
+      markLine: { silent: true, symbol: "none", data: [
+        { yAxis: 5.0, lineStyle: { color: "#f85149", type: "dashed", width: 1.4 },
+          label: { formatter: "2021高點 5.0", color: "#f85149", fontSize: 11, position: "insideEndTop" } },
+      ] },
+      markPoint: { symbol: "circle", symbolSize: 9, data: (rows.includes(latest) ? [{
+        coord: [latest.date, latest.ratio],
+        itemStyle: { color: C.mcap, borderColor: tc("#0d1117", "#ffffff"), borderWidth: 2 },
+        label: { formatter: `${latest.ratio.toFixed(2)} ‰`, position: "top", color: C.mcap, fontSize: 11, fontWeight: 600 },
+      }] : []) },
+    }],
+  }, true);
 }
 
 function renderCards() {
@@ -83,11 +168,17 @@ function renderCards() {
     `<div class="aaii-card"><div class="aaii-card-label">${label}</div>
      <div class="aaii-card-val" style="color:${color || "var(--text)"}">${val}</div>
      <div class="aaii-card-sub">${sub}</div></div>`;
+  const mrLat = mr && mr.length ? mr.at(-1) : null;
+  const mrPrev = mr && mr.length > 20 ? mr.at(-21)[1] : null;     // ~1個月(20交易日)前
+  const mrChg = mrLat && mrPrev != null ? mrLat[1] - mrPrev : null;
   document.getElementById("twsent-cards").innerHTML =
     card("加權指數", tw[1].toLocaleString("en-US", { maximumFractionDigits: 0 }), tw[0], C.twii) +
     card("選擇權 P/C 成交量比", p.vol_pc.toFixed(1), `${p.date}`, C.pcv) +
     card("散戶淨多 (口)", (f.retail_net >= 0 ? "+" : "") + f.retail_net.toLocaleString("en-US"), `外資 ${f.foreign_net.toLocaleString("en-US")}`, f.retail_net >= 0 ? C.retail : C.foreign) +
-    card("大盤融資餘額 (億)", m.margin_money.toLocaleString("en-US", { maximumFractionDigits: 0 }), m.date, C.margin);
+    card("大盤融資餘額 (億)", m.margin_money.toLocaleString("en-US", { maximumFractionDigits: 0 }), m.date, C.margin) +
+    (mrLat ? card("融資維持率 (重建)", mrLat[1].toFixed(0) + "%",
+        (mrChg != null ? (mrChg >= 0 ? "▲ +" : "▼ ") + mrChg.toFixed(0) + " 近月" : mrLat[0]) + " · 擔保品÷融資",
+        mrChg == null ? C.maint : (mrChg >= 0 ? C.maint : C.foreign)) : "");
 }
 
 function renderGauge(score) {
@@ -117,6 +208,7 @@ function renderChart() {
   const ret = fil(fut).map(r => [r.date, r.retail_net]);
   const fgn = fil(fut).map(r => [r.date, r.foreign_net]);
   const mgn = fil(mar).map(r => [r.date, r.margin_money]);
+  const mrt = mr ? fil(mr) : [];
 
   const xmin = from || sent.data[0].date;
   const xmax = [twii.at(-1)[0], sent.data.at(-1).date].sort().at(-1);
@@ -131,7 +223,7 @@ function renderChart() {
     backgroundColor: "transparent", animation: false,
     axisPointer: { link: [{ xAxisIndex: "all" }], label: { backgroundColor: axCl } },
     legend: { top: 6, left: "center", textStyle: { color: axCl, fontSize: 11 }, itemWidth: mob() ? 14 : 25, itemGap: mob() ? 8 : 16,
-      data: ["加權指數", "恐懼貪婪", "P/C 成交量比", "P/C 未平倉比", "散戶淨多", "外資淨", "融資餘額"], selected: { "P/C 未平倉比": false } },
+      data: ["加權指數", "恐懼貪婪", "P/C 成交量比", "P/C 未平倉比", "散戶淨多", "外資淨", "融資餘額", "融資維持率"], selected: { "P/C 未平倉比": false } },
     tooltip: { trigger: "axis", backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipTx, fontSize: 12 },
       formatter: params => {
         if (!params.length) return "";
@@ -142,6 +234,7 @@ function renderChart() {
           if (p.seriesName === "加權指數") s = v.toLocaleString("en-US", { maximumFractionDigits: 0 });
           else if (p.seriesName === "恐懼貪婪") s = `${v.toFixed(0)} ${fgLabel(v)}`;
           else if (p.seriesName === "融資餘額") s = v.toLocaleString("en-US", { maximumFractionDigits: 0 }) + " 億";
+          else if (p.seriesName === "融資維持率") s = v.toFixed(1) + "%";
           else if (p.seriesName.startsWith("P/C")) s = v.toFixed(1);
           else s = (v >= 0 ? "+" : "") + v.toLocaleString("en-US") + " 口";
           html += `<span style="color:${p.color}">● ${p.seriesName}: <b>${s}</b></span><br/>`;
@@ -161,6 +254,7 @@ function renderChart() {
       { type: "value", gridIndex: 1, scale: true, name: "P/C", nameTextStyle: { color: C.pcv, fontSize: 10 }, axisLabel: { color: axCl, fontSize: 10 }, splitLine: { lineStyle: { color: gridCl } } },
       { type: "value", gridIndex: 2, scale: true, name: "口", nameTextStyle: { color: axCl, fontSize: 10 }, axisLabel: { color: axCl, fontSize: 10 }, splitLine: { lineStyle: { color: gridCl } } },
       { type: "value", gridIndex: 3, scale: true, name: "億", nameTextStyle: { color: C.margin, fontSize: 10 }, axisLabel: { color: axCl, fontSize: 10 }, splitLine: { lineStyle: { color: gridCl } } },
+      { type: "value", gridIndex: 3, scale: true, position: "right", name: "維持率%", nameTextStyle: { color: C.maint, fontSize: 10 }, axisLabel: { color: C.maint, fontSize: 10 }, splitLine: { show: false } },
     ],
     series: [
       { name: "加權指數", type: "line", xAxisIndex: 0, yAxisIndex: 0, data: twS, symbol: "none", lineStyle: { color: C.twii, width: 1.5 },
@@ -177,6 +271,7 @@ function renderChart() {
         markLine: { silent: true, symbol: "none", data: [{ yAxis: 0, lineStyle: { color: axCl, type: "dotted", width: 1 } }] } },
       { name: "外資淨", type: "line", xAxisIndex: 2, yAxisIndex: 3, data: fgn, symbol: "none", lineStyle: { color: C.foreign, width: 1 } },
       { name: "融資餘額", type: "line", xAxisIndex: 3, yAxisIndex: 4, data: mgn, symbol: "none", lineStyle: { color: C.margin, width: 1.4 } },
+      { name: "融資維持率", type: "line", xAxisIndex: 3, yAxisIndex: 5, data: mrt, symbol: "none", lineStyle: { color: C.maint, width: 1.4 } },
     ],
     dataZoom: [
       { type: "inside", xAxisIndex: [0, 1, 2, 3] },
@@ -191,9 +286,10 @@ function renderTable() {
   const pcMap = Object.fromEntries(pc.map(r => [r.date, r]));
   const futMap = Object.fromEntries(fut.map(r => [r.date, r]));
   const marMap = Object.fromEntries(mar.map(r => [r.date, r]));
+  const mrMap = Object.fromEntries(mr || []);
   const twMap = Object.fromEntries(twii);
   document.getElementById("twsent-thead").innerHTML =
-    `<tr><th>日期</th><th>恐懼貪婪</th><th>P/C量比</th><th>散戶淨多</th><th>外資淨</th><th>融資(億)</th><th>加權</th></tr>`;
+    `<tr><th>日期</th><th>恐懼貪婪</th><th>P/C量比</th><th>散戶淨多</th><th>外資淨</th><th>融資(億)</th><th>維持率</th><th>加權</th></tr>`;
   const muted = "<span style='color:var(--muted)'>—</span>";
   document.getElementById("twsent-tbody").innerHTML = rows.map(r => {
     const p = pcMap[r.date], f = futMap[r.date], m = marMap[r.date], tw = twMap[r.date];
@@ -204,6 +300,7 @@ function renderTable() {
       <td class="${f && f.retail_net >= 0 ? "pos" : "neg"}">${f ? (f.retail_net >= 0 ? "+" : "") + f.retail_net.toLocaleString("en-US") : muted}</td>
       <td>${f ? f.foreign_net.toLocaleString("en-US") : muted}</td>
       <td>${m ? m.margin_money.toLocaleString("en-US", { maximumFractionDigits: 0 }) : muted}</td>
+      <td style="color:${C.maint}">${mrMap[r.date] != null ? mrMap[r.date].toFixed(0) + "%" : muted}</td>
       <td>${tw ? tw.toLocaleString("en-US", { maximumFractionDigits: 0 }) : muted}</td>
     </tr>`;
   }).join("");
@@ -213,6 +310,7 @@ function renderTable() {
 export function onThemeChange(light) {
   if (chart) { chart.dispose(); chart = echarts.init(document.getElementById("twsent-chart"), light ? null : "dark"); renderChart(); }
   if (gauge) { gauge.dispose(); gauge = echarts.init(document.getElementById("twsent-gauge"), light ? null : "dark"); renderGauge(sent.latest.composite); }
+  if (mcChart) { mcChart.dispose(); mcChart = null; renderMktcap(); }
 }
 
-export function resize() { chart?.resize(); gauge?.resize(); }
+export function resize() { chart?.resize(); gauge?.resize(); mcChart?.resize(); }

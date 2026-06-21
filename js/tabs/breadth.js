@@ -8,6 +8,7 @@ let breadthFgMap     = {};   // { date: value }
 let breadthVixActive = false;
 let breadthFgActive  = false;
 let breadthRange     = "2Y";
+let hbTriggers       = [];   // ["YYYY-MM-DD", ...] Hindenburg-style trigger dates
 
 function breadthSignal(pct, is200) {
   if (pct == null) return { label: "—", color: "var(--muted)" };
@@ -23,6 +24,50 @@ function breadthSignal(pct, is200) {
   if (pct >= 35) return { label: "多空拉鋸", color: "#e3b341" };
   if (pct >= 20) return { label: "空方壓力", color: "#f0883e" };
   return               { label: "弱勢超賣", color: "#f85149" };
+}
+
+// Simplified Hindenburg-style trigger on S&P 500 constituents.
+// 真正版本用全 NYSE listed ~3000 檔 + McClellan Oscillator;這裡用 SPY 成分股當代理,所以叫 "Hindenburg-style"。
+// 條件:① 新高 > 2.2% × total ② 新低 > 2.2% × total ③ 不能一邊壓倒另一邊(max ≤ 2× min) ④ SPY 高於 50 交易日前(趨勢濾網)
+const HB_THRESHOLD       = 0.022;  // 2.2% of S&P500 ≈ 11 檔
+const HB_TREND_LOOKBACK  = 50;     // 交易日
+const HB_CLUSTER_WINDOW  = 30;     // 交易日內看叢集
+
+function isHindenburgDay(row, rowPrev50, spyMap) {
+  if (row.new_hi_count == null || row.new_lo_count == null) return false;
+  const total = row.hl_total || row.total;
+  if (!total) return false;
+  const hi = row.new_hi_count, lo = row.new_lo_count;
+  if (hi / total <= HB_THRESHOLD)        return false;
+  if (lo / total <= HB_THRESHOLD)        return false;
+  if (Math.max(hi, lo) > 2 * Math.min(hi, lo)) return false;
+  if (!rowPrev50) return false;
+  const spyNow  = spyMap[row.date];
+  const spyPrev = spyMap[rowPrev50.date];
+  if (spyNow == null || spyPrev == null) return false;
+  if (spyNow <= spyPrev) return false;
+  return true;
+}
+
+function computeHindenburgTriggers(rows, spyMap) {
+  const out = [];
+  for (let i = HB_TREND_LOOKBACK; i < rows.length; i++) {
+    if (isHindenburgDay(rows[i], rows[i - HB_TREND_LOOKBACK], spyMap))
+      out.push(rows[i].date);
+  }
+  return out;
+}
+
+function hindenburgStatus(triggers, latestDate, rows) {
+  if (!triggers.length) return { label: "正常",      color: "var(--muted)", count: 0 };
+  // Count triggers in trailing HB_CLUSTER_WINDOW trading days from latestDate
+  const latestIdx  = rows.findIndex(r => r.date === latestDate);
+  const cutoffIdx  = Math.max(0, latestIdx - HB_CLUSTER_WINDOW);
+  const cutoffDate = rows[cutoffIdx].date;
+  const recent     = triggers.filter(d => d >= cutoffDate);
+  if (recent.length >= 2) return { label: `叢集 ${recent.length} 次`, color: "#f85149", count: recent.length };
+  if (recent.length === 1) return { label: "單次觸發", color: "#f0883e", count: 1 };
+  return { label: "30日內無觸發", color: "var(--muted)", count: 0 };
 }
 
 export async function init() {
@@ -88,6 +133,24 @@ export async function init() {
     setCard("50",  latest.above50_pct,  latest.above50_count,  latest.total, false);
     setCard("200", latest.above200_pct, latest.above200_count, latest.total, true);
 
+    // Compute Hindenburg-style triggers (needs SPY for trend filter)
+    hbTriggers = computeHindenburgTriggers(rows, breadthSpy);
+    const hlEl   = document.getElementById("bc-hl-count");
+    const hlPctEl= document.getElementById("bc-hl-pct");
+    const hlSigEl= document.getElementById("bc-hl-signal");
+    if (hlEl && latest.new_hi_count != null && latest.new_lo_count != null) {
+      const tot = latest.hl_total || latest.total;
+      hlEl.textContent    = `${latest.new_hi_count} / ${latest.new_lo_count}`;
+      hlPctEl.textContent = `${(latest.new_hi_count/tot*100).toFixed(1)}% / ${(latest.new_lo_count/tot*100).toFixed(1)}% · n=${tot}`;
+      const st = hindenburgStatus(hbTriggers, latest.date, rows);
+      hlSigEl.textContent = st.label;
+      hlSigEl.style.color = st.color;
+    } else if (hlEl) {
+      hlEl.textContent    = "— / —";
+      hlPctEl.textContent = "（資料更新中，CI 跑完後生效）";
+      hlSigEl.textContent = "—";
+    }
+
     if (!breadthChart) {
       breadthChart = echarts.init(
         document.getElementById("breadth-chart"), isLight() ? null : "dark");
@@ -123,6 +186,12 @@ export function renderBreadthChart() {
   const spyVals  = rows.map(r => breadthSpy[r.date]   != null ? +breadthSpy[r.date].toFixed(2)   : null);
   const vixVals  = rows.map(r => breadthVixMap[r.date] != null ? +breadthVixMap[r.date].toFixed(2) : null);
   const fgVals   = rows.map(r => breadthFgMap[r.date]  != null ? +breadthFgMap[r.date].toFixed(1)  : null);
+
+  // Hindenburg trigger markers: scatter on SPY line, filtered to visible range
+  const dateSet = new Set(dates);
+  const hbPoints = hbTriggers
+    .filter(d => dateSet.has(d) && breadthSpy[d] != null)
+    .map(d => [d, +breadthSpy[d].toFixed(2)]);
 
   // ── build dynamic yAxis list ──────────────────────────────────
   const yAxes = [
@@ -168,9 +237,17 @@ export function renderBreadthChart() {
           else                               val = `${p.value.toFixed(1)}%`;
           html += `<div>${p.marker}${p.seriesName}: <b>${val}</b></div>`;
         }
-        if (row) html +=
-          `<div style="margin-top:4px;font-size:11px;color:${axisClr}">` +
-          `50MA: ${row.above50_count}/${row.total} · 200MA: ${row.above200_count ?? "—"}/${row.total}</div>`;
+        if (row) {
+          html +=
+            `<div style="margin-top:4px;font-size:11px;color:${axisClr}">` +
+            `50MA: ${row.above50_count}/${row.total} · 200MA: ${row.above200_count ?? "—"}/${row.total}</div>`;
+          if (row.new_hi_count != null) {
+            const isHb = hbTriggers.includes(row.date);
+            html +=
+              `<div style="font-size:11px;color:${axisClr}">` +
+              `新高/新低: ${row.new_hi_count}/${row.new_lo_count}${isHb ? ` <span style="color:#f85149">⚠ 興登堡觸發</span>` : ""}</div>`;
+          }
+        }
         return html;
       },
     },
@@ -235,6 +312,14 @@ export function renderBreadthChart() {
         yAxisIndex: overlayIdx, z: 2,
         lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" },
         areaStyle: { color: "rgba(227,179,65,0.05)" },
+      }] : []),
+      ...(hbPoints.length ? [{
+        name: "興登堡觸發",
+        type: "scatter", data: hbPoints,
+        yAxisIndex: 1, z: 6,
+        symbol: "pin", symbolSize: 18,
+        itemStyle: { color: "#f85149", borderColor: "#fff", borderWidth: 1 },
+        tooltip: { show: true },
       }] : []),
     ],
   }, { notMerge: true });

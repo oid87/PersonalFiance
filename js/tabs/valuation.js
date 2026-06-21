@@ -82,6 +82,21 @@ async function loadFile(path) {
   return fileCache[path];
 }
 
+// 24-month rolling average (O(n) sliding window on dense daily data)
+function rollingAvg(data, monthsBack) {
+  const result = [];
+  let j = 0, sum = 0;
+  for (let i = 0; i < data.length; i++) {
+    sum += data[i][1];
+    const cutoff = new Date(data[i][0] + "T00:00:00Z");
+    cutoff.setMonth(cutoff.getMonth() - monthsBack);
+    const cutStr = cutoff.toISOString().slice(0, 10);
+    while (j <= i && data[j][0] < cutStr) { sum -= data[j][1]; j++; }
+    result.push([data[i][0], +((sum / (i - j + 1)).toFixed(3))]);
+  }
+  return result;
+}
+
 // pull a sparse [{date, <field>}] -> dense daily [[date, val]] via linear interp
 function buildSeries(rows, field) {
   const pts = (rows || [])
@@ -145,6 +160,10 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
   const tipBdr  = tc("#30363d", "#d0d7de");
   const textClr = tc("#c9d1d9", "#24292f");
 
+  // 24-month rolling averages (computed on full data so window is correct at any zoom)
+  const fwdAvgFull = fwdFull.length ? rollingAvg(fwdFull, 24) : [];
+  const trlAvgFull = trlFull.length ? rollingAvg(trlFull, 24) : [];
+
   // overall data span (for MAX) and display window
   const spanArrs = [price, fwdFull, trlFull].filter(a => a && a.length);
   const minDate = spanArrs.map(a => a[0][0]).sort()[0];
@@ -153,6 +172,7 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
 
   const clip = a => (a || []).filter(r => r[0] >= from);
   const priceD = clip(price), fwdD = clip(fwdFull), trlD = clip(trlFull);
+  const fwdAvgD = clip(fwdAvgFull), trlAvgD = clip(trlAvgFull);
   const bizD = showBiz ? bizRows.filter(r => r.date >= from).map(r => [r.date, r.score]) : [];
 
   // status label
@@ -226,6 +246,16 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
   ];
   if (fwdD.length) series.push(...pePair("Forward PE", fwdD, FWD_COLOR, 3, peRealFrom.fwd));
   if (trlD.length) series.push(...pePair("Trailing PE", trlD, TRL_COLOR, 2, peRealFrom.trl));
+  if (fwdAvgD.length) series.push({
+    name: "Forward PE 24M均", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: fwdAvgD, z: 2,
+    lineStyle: { color: FWD_COLOR, width: 1.2, type: "dashed", opacity: 0.6 },
+    itemStyle: { color: FWD_COLOR, opacity: 0.6 }, symbol: "none",
+  });
+  if (trlAvgD.length) series.push({
+    name: "Trailing PE 24M均", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: trlAvgD, z: 2,
+    lineStyle: { color: TRL_COLOR, width: 1.2, type: "dashed", opacity: 0.6 },
+    itemStyle: { color: TRL_COLOR, opacity: 0.6 }, symbol: "none",
+  });
   series.push({   // PE reference levels
     name: "_ref", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: [], symbol: "none",
     markLine: {
@@ -254,6 +284,8 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
     t.priceLabel,
     ...(fwdD.length ? ["Forward PE"] : []),
     ...(trlD.length ? ["Trailing PE"] : []),
+    ...(fwdAvgD.length ? ["Forward PE 24M均"] : []),
+    ...(trlAvgD.length ? ["Trailing PE 24M均"] : []),
     ...(showBiz ? [BIZ_NAME] : []),
   ];
 
@@ -276,6 +308,8 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
             f = `${Math.round(+val)} 分（${bizLightOf(+val).name}）`;
           } else if (p.seriesName === t.priceLabel) {
             f = fmtPrice(+val);
+          } else if (p.seriesName.endsWith("24M均")) {
+            f = `${(+val).toFixed(2)}x <span style='color:#8b949e'>24M均</span>`;
           } else {
             const isFwd = p.seriesName === "Forward PE";
             const srcCfg = isFwd ? t.fwd : t.trail;

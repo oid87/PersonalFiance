@@ -1,0 +1,157 @@
+{
+  "source": "TWSE 集中市場月訊 (115年1月版起, 0005000107.pdf+) + 證期局 上市公司年度市值表",
+  "note": "mktcap_billion 為當期『上市公司總市值』(單位：億新台幣). 月度錨點來自 TWSE 月訊 (fetch_taiwan_mktcap_anchor.py 每月自動拉新月份), 年度錨點來自 SFB 證期局 (其原表標『億元』但實為 10億元, 已 ×10 校正並對齊 PDF 月度值). 採近似月底; 年度錨用 12-31.",
+  "last_pdf_id": 111,
+  "anchors": [
+    {
+      "date": "2010-12-31",
+      "mktcap_billion": 238114,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2011-12-31",
+      "mktcap_billion": 192162,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2012-12-31",
+      "mktcap_billion": 213522,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2013-12-31",
+      "mktcap_billion": 245196,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2014-12-31",
+      "mktcap_billion": 268915,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2015-12-31",
+      "mktcap_billion": 245036,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2016-12-31",
+      "mktcap_billion": 272479,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2017-12-31",
+      "mktcap_billion": 318319,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2018-12-31",
+      "mktcap_billion": 293185,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2019-12-31",
+      "mktcap_billion": 364135,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2020-12-31",
+      "mktcap_billion": 449038,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2021-12-31",
+      "mktcap_billion": 562820,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2022-12-31",
+      "mktcap_billion": 442660,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2023-12-31",
+      "mktcap_billion": 568421,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2024-12-31",
+      "mktcap_billion": 738987,
+      "src": "SFB ×10"
+    },
+    {
+      "date": "2025-02-28",
+      "mktcap_billion": 740500,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2025-03-31",
+      "mktcap_billion": 665600,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2025-04-30",
+      "mktcap_billion": 650900,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2025-05-30",
+      "mktcap_billion": 687100,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2025-06-30",
+      "mktcap_billion": 717000,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2025-07-31",
+      "mktcap_billion": 758700,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2025-08-29",
+      "mktcap_billion": 781000,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2025-09-30",
+      "mktcap_billion": 834800,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2025-10-31",
+      "mktcap_billion": 912300,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2025-11-28",
+      "mktcap_billion": 899500,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2025-12-31",
+      "mktcap_billion": 943600,
+      "src": "TWSE 月訊 Jan-26 PDF (Dec-25)"
+    },
+    {
+      "date": "2026-01-23",
+      "mktcap_billion": 1045200,
+      "src": "TWSE 月訊 Jan-26 PDF"
+    },
+    {
+      "date": "2026-03-31",
+      "mktcap_billion": 1035400,
+      "src": "WebSearch TWSE Mar-26 月訊"
+    },
+    {
+      "date": "2026-04-30",
+      "mktcap_billion": 1269500.0,
+      "src": "TWSE 月訊 0005000110.pdf"
+    },
+    {
+      "date": "2026-05-31",
+      "mktcap_billion": 1459100.0,
+      "src": "TWSE 月訊 0005000111.pdf"
+    }
+  ]
+}

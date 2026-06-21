@@ -175,6 +175,11 @@
     </div>
     <div id="macro-chart"></div>
     <div class="status" id="macro-status">載入中…</div>
+    <div style="margin-top:16px;font-weight:600;font-size:.8rem;color:var(--muted);padding:0 2px 4px">
+      台灣景氣對策信號
+      <span id="biz-status" style="font-size:.8rem;font-weight:400;margin-left:8px"></span>
+    </div>
+    <div id="biz-chart" style="height:130px"></div>
   </section>
 
   <!-- ── 產業輪動 tab ────────────────────────────────────────────── -->
@@ -187,7 +192,7 @@
         <span class="chip" data-sector-col="1Y" data-tooltip="依最近1年報酬率，由高至低排列各產業">1Y排序</span>
       </div>
     </div>
-    <div id="sector-chart"></div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div id="sector-chart"></div></div>
     <div class="status" id="sector-status">切換至此 tab 自動載入產業數據…</div>
   </section>
 
@@ -304,6 +309,27 @@
           </tbody>
         </table>
         <p style="margin-top:8px;color:var(--muted)">「估計」值是早期無公開資料時，依上述來源的公開數值/區間設定的參考點（虛線）；有實際資料後即以實線覆蓋。實際計算（calc）為當日各成分股 yfinance forwardPE/trailingPE 加權平均、剔除離群值後得出。</p>
+      </div>
+    </div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> Buffett 估值框架 — 市值/GDP（Buffett Indicator）</div>
+      <div class="info-panel-body">
+        <p>巴菲特稱這是「單一最能衡量市場整體估值位置的指標」。計算為<b>全市場總市值 ÷ 年度 GDP</b>，反映企業部門相對經濟規模的估值倍數。</p>
+        <table class="info-table">
+          <thead><tr><th>Buffett Indicator 水準</th><th>市場解讀</th><th>參考歷史情境</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#3fae5a">&lt; 75%</td><td>顯著低估，長期買入機會</td><td>2009 金融海嘯後底部</td></tr>
+            <tr><td style="color:#3fae5a">75–90%</td><td>合理偏低</td><td>歷史均值附近</td></tr>
+            <tr><td style="color:#e6912c">90–115%</td><td>合理偏高</td><td>多數正常牛市中段</td></tr>
+            <tr><td style="color:#c62a47">115–135%</td><td>高估警戒</td><td>2007 次貸前、2021 Fed 升息前</td></tr>
+            <tr><td style="color:#c62a47">&gt; 135%</td><td>顯著高估，報酬率可能低迷</td><td>2000 科技泡沫、2022 升息前 ~200%</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px"><b>核心邏輯：</b>企業獲利長期不可能遠超 GDP 成長，當市值/GDP 持續偏離，必有均值回歸。巴菲特以此指標作為是否大規模配置股票的「整體市場定價環境」參考，而非精確進出場訊號。</p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #E9A810;background:rgba(233,168,16,.08);border-radius:4px">
+          ⚠️ <b>指標限制：</b>Fed 量化寬鬆使資產價格系統性偏高（「新常態」），2010 後的「正常」水準可能整體上移；此外全球化使大型企業海外獲利佔比提升，分母（美國 GDP）低估了企業真實盈利基礎。<b>宜與 PE/CAPE 等多指標交叉確認，而非單獨判斷。</b>
+        </p>
+        <p style="margin-top:8px;color:var(--muted)">資料來源：Wilshire 5000 全市場指數市值 / 美國年度 GDP（FRED）。台股可用「TWSE 總市值 / 台灣 GDP」類比，台股長期均值約 180–220%（小型出口導向經濟、外資佔比高）。</p>
       </div>
     </div>
     <div class="info-panel">
