@@ -30,8 +30,15 @@ export async function init() {
       rawData[t.key] = (jsons[i].data || []).filter(r => r.close > 0);
     });
     setupControls();
+    setupInteractors();
     render(isLight());
     updateCards();
+    const lastTWII = rawData['TWII']?.at(-1);
+    if (lastTWII) {
+      const cur = document.getElementById('wave-calc-cur');
+      if (cur) cur.value = Math.round(lastTWII.close);
+    }
+    updateWaveCalc();
     ready = true;
     if (status) status.textContent =
       `更新至 ${jsons[0].updated || ''} ｜ 標準化基準：各指數 2022/10 低點 = 100`;
@@ -187,4 +194,95 @@ function updateCards() {
     el.querySelector('.wc-date').textContent = last.date;
     el.querySelector('.wc-norm').textContent = `(${norm.toFixed(1)})`;
   }
+}
+
+// ── 互動元件 ──────────────────────────────────────────────────────────
+function setupInteractors() {
+  const priceInput = document.getElementById('tsmc-price-input');
+  if (priceInput) {
+    highlightTsmcCells(+priceInput.value);
+    priceInput.addEventListener('input', () => highlightTsmcCells(+priceInput.value));
+  }
+  ['wave-calc-w2', 'wave-calc-w3', 'wave-calc-w4', 'wave-calc-cur'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', updateWaveCalc);
+  });
+  ['wave-m1b-vol', 'wave-m1b-m1b'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', updateM1bGauge);
+  });
+  updateM1bGauge();
+}
+
+function highlightTsmcCells(price) {
+  document.querySelectorAll('.tpe-cell').forEach(cell => {
+    const val = +cell.dataset.val;
+    const diff = (val - price) / price;
+    cell.style.background = '';
+    cell.style.color = '';
+    cell.style.fontWeight = cell.dataset.origWeight || '';
+    cell.style.outline = '';
+    if (diff < -0.01) {
+      cell.style.background = 'rgba(63,185,80,0.14)';
+      cell.style.color = '#3fb950';
+    } else if (Math.abs(diff) <= 0.06) {
+      cell.style.background = 'rgba(233,168,16,0.28)';
+      cell.style.fontWeight = '700';
+      cell.style.outline = '2px solid rgba(233,168,16,0.65)';
+    } else if (diff <= 0.15) {
+      cell.style.background = 'rgba(240,136,62,0.12)';
+      cell.style.color = '#f0883e';
+    }
+  });
+}
+
+function updateWaveCalc() {
+  const w2  = +document.getElementById('wave-calc-w2')?.value  || 0;
+  const w3  = +document.getElementById('wave-calc-w3')?.value  || 0;
+  const w4  = +document.getElementById('wave-calc-w4')?.value  || 0;
+  const cur = +document.getElementById('wave-calc-cur')?.value || 0;
+  const tbody = document.getElementById('wave-calc-tbody');
+  if (!tbody || !w2 || !w3 || !w4) return;
+  const w1len = w3 - w2;
+  const lenEl = document.getElementById('wave-calc-w1len');
+  if (lenEl) lenEl.textContent = `Wave I 幅度（W3 − W2）：${w1len.toLocaleString()} 點`;
+  const FIBS = [
+    [1.618, '1.618×'], [2.0, '2.000×'], [2.618, '2.618×'],
+    [3.0, '3.000×'],   [3.618, '3.618×'], [4.236, '4.236×'],
+  ];
+  tbody.innerHTML = FIBS.map(([r, lbl]) => {
+    const tgt    = Math.round(w4 + w1len * r);
+    const d      = cur ? ((tgt - cur) / cur * 100) : null;
+    const passed = cur > 0 && tgt < cur * 0.99;
+    const near   = cur > 0 && !passed && d !== null && d <= 8;
+    const bg     = passed ? 'rgba(63,185,80,0.07)' : near ? 'rgba(233,168,16,0.10)' : '';
+    const status = passed ? '<span style="color:#3fb950">✓ 已超越</span>'
+                 : near   ? '<span style="color:#E9A810">◉ 接近</span>'
+                 :          '<span style="color:var(--muted)">○ 前方</span>';
+    const dStr   = d !== null
+      ? `<span style="color:${passed ? '#3fb950' : '#f0883e'}">${passed || d < 0 ? '' : '+'}${d.toFixed(1)}%</span>`
+      : '—';
+    return `<tr style="background:${bg}">
+      <td style="font-family:monospace;font-size:12px">${lbl}</td>
+      <td><b>${tgt.toLocaleString()}</b></td>
+      <td>${dStr}</td>
+      <td>${status}</td>
+    </tr>`;
+  }).join('');
+}
+
+function updateM1bGauge() {
+  const vol = +document.getElementById('wave-m1b-vol')?.value || 0;
+  const m1b = +document.getElementById('wave-m1b-m1b')?.value || 1;
+  // vol 億, m1b 兆 → ratio% = vol億 / (m1b兆 × 100)
+  const ratio    = vol / (m1b * 100);
+  const pctPeak  = ratio / 10 * 100;
+  const ratioEl  = document.getElementById('wave-m1b-ratio');
+  const fillEl   = document.getElementById('wave-m1b-gauge-fill');
+  const pctEl    = document.getElementById('wave-m1b-peak-pct');
+  if (ratioEl)  ratioEl.textContent  = `${ratio.toFixed(2)}%`;
+  if (fillEl) {
+    const w = Math.min(pctPeak, 100);
+    fillEl.style.width      = `${w}%`;
+    fillEl.style.background = w < 25 ? '#3fb950' : w < 55 ? '#E9A810' : w < 80 ? '#f0883e' : '#f85149';
+  }
+  if (pctEl) pctEl.textContent = `佔 1990 年峰值（10%）的 ${pctPeak.toFixed(1)}%`;
 }

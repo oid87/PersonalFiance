@@ -869,7 +869,13 @@
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 台積電 Forward PE 矩陣（TAIEX 53,000 目標鏈條）</div>
       <div class="info-panel-body">
-        <p>TAIEX 53,000 需要台積電站上 <b>~3,000 元</b>（台積佔加權約 30%）。對照各年度 EPS 預測 × PE 倍數：</p>
+        <p>TAIEX 53,000 需要台積電站上 <b>~3,000 元</b>（台積佔加權約 30%）。輸入現股價，矩陣自動高亮所在區間。</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <label style="font-size:12px;color:var(--muted)">台積電現股價</label>
+          <input id="tsmc-price-input" type="number" value="2410" min="500" max="8000" step="10"
+            style="width:85px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
+          <span style="font-size:11px;color:var(--muted)">元 ｜ <span style="color:#3fb950">■ 已過</span>&nbsp; <span style="color:#E9A810">■ 現區(±6%)</span>&nbsp; <span style="color:#f0883e">■ 近15%</span></span>
+        </div>
         <table class="info-table">
           <thead>
             <tr>
@@ -882,39 +888,42 @@
           <tbody>
             <tr>
               <td>TTM 73.6元（2026/Q1年化）</td>
-              <td>1,104</td><td style="text-align:center">1,472</td>
-              <td style="text-align:center">1,840</td><td style="text-align:center">2,208</td>
+              <td class="tpe-cell" data-val="1104">1,104</td>
+              <td class="tpe-cell" data-val="1472" style="text-align:center">1,472</td>
+              <td class="tpe-cell" data-val="1840" style="text-align:center">1,840</td>
+              <td class="tpe-cell" data-val="2208" style="text-align:center">2,208</td>
             </tr>
             <tr>
               <td>2026F 100元</td>
-              <td>1,500</td><td style="text-align:center">2,000</td>
-              <td style="text-align:center">2,500</td>
-              <td style="text-align:center;background:rgba(233,168,16,0.08);font-weight:600">3,000</td>
+              <td class="tpe-cell" data-val="1500">1,500</td>
+              <td class="tpe-cell" data-val="2000" style="text-align:center">2,000</td>
+              <td class="tpe-cell" data-val="2500" style="text-align:center">2,500</td>
+              <td class="tpe-cell" data-val="3000" style="text-align:center">3,000</td>
             </tr>
-            <tr style="background:rgba(233,168,16,0.08)">
+            <tr style="background:rgba(233,168,16,0.04)">
               <td><b>2027F 120元</b></td>
-              <td>1,800</td>
-              <td style="text-align:center;background:rgba(233,168,16,0.2);font-weight:600">2,400 ← 現況</td>
-              <td style="text-align:center;font-weight:600">3,000</td>
-              <td style="text-align:center">3,600</td>
+              <td class="tpe-cell" data-val="1800">1,800</td>
+              <td class="tpe-cell" data-val="2400" style="text-align:center">2,400 ← 現況</td>
+              <td class="tpe-cell" data-val="3000" style="text-align:center;font-weight:600" data-orig-weight="600">3,000</td>
+              <td class="tpe-cell" data-val="3600" style="text-align:center">3,600</td>
             </tr>
             <tr>
               <td>2028F 150元</td>
-              <td>2,250</td>
-              <td style="text-align:center;font-weight:600">3,000</td>
-              <td style="text-align:center">3,750</td>
-              <td style="text-align:center">4,500</td>
+              <td class="tpe-cell" data-val="2250">2,250</td>
+              <td class="tpe-cell" data-val="3000" style="text-align:center;font-weight:600" data-orig-weight="600">3,000</td>
+              <td class="tpe-cell" data-val="3750" style="text-align:center">3,750</td>
+              <td class="tpe-cell" data-val="4500" style="text-align:center">4,500</td>
             </tr>
             <tr>
               <td>2029F 200元</td>
-              <td>3,000</td>
-              <td style="text-align:center">4,000</td>
-              <td style="text-align:center">5,000</td>
-              <td style="text-align:center">6,000</td>
+              <td class="tpe-cell" data-val="3000">3,000</td>
+              <td class="tpe-cell" data-val="4000" style="text-align:center">4,000</td>
+              <td class="tpe-cell" data-val="5000" style="text-align:center">5,000</td>
+              <td class="tpe-cell" data-val="6000" style="text-align:center">6,000</td>
             </tr>
           </tbody>
         </table>
-        <p>現股價（~2,410元）已等於 <b>2027F × 20x</b>（中性），市場提前定價 2027 年 EPS。Wave V 目標 3,000 = 2027F × 25x（波段情緒溢價）或 2028F × 20x（EPS 兌現）。</p>
+        <p>現股價（~2,410元）≈ <b>2027F × 20x</b>（中性），市場已提前定價 2027 年 EPS。Wave V 目標 3,000 = 2027F × 25x 或 2028F × 20x。</p>
         <p style="color:var(--muted);font-size:12px">單位：新台幣元。EPS 為法人共識預估，實際結果視 AI HPC 訂單與 N3/N2 良率而異。</p>
       </div>
     </div>
@@ -922,7 +931,27 @@
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> M1B / 日成交量比率 — 市場熱度溫度計</div>
       <div class="info-panel-body">
-        <p>將當日<b>成交金額 ÷ M1B（活期貨幣供給量）</b>，消除歷年貨幣增加的規模差異，得到真正的「市場熱度」。</p>
+        <p>將當日<b>成交金額 ÷ M1B（活期貨幣供給量）</b>，消除歷年貨幣增加的規模差異，得到真正的「市場熱度」。輸入最新數字即時計算。</p>
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin-bottom:10px;padding:10px 14px;background:var(--panel);border-radius:6px">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">日成交金額（億元）</div>
+            <input id="wave-m1b-vol" type="number" value="5000" step="100" min="0"
+              style="width:90px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">M1B（兆元）</div>
+            <input id="wave-m1b-m1b" type="number" value="31" step="0.5" min="1"
+              style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">成交 / M1B</div>
+            <span id="wave-m1b-ratio" style="font-size:22px;font-weight:700;color:#E9A810">—</span>
+          </div>
+        </div>
+        <div style="height:10px;background:var(--border);border-radius:5px;overflow:hidden;margin-bottom:4px">
+          <div id="wave-m1b-gauge-fill" style="height:100%;width:0%;transition:width 0.4s,background 0.4s;border-radius:5px"></div>
+        </div>
+        <div id="wave-m1b-peak-pct" style="font-size:11px;color:var(--muted);margin-bottom:12px"></div>
         <table class="info-table">
           <thead>
             <tr><th>年代</th><th>日均成交額</th><th>M1B</th><th>比率</th><th>背景</th></tr>
@@ -962,6 +991,41 @@
           </tbody>
         </table>
         <p style="color:var(--muted);font-size:12px">目前融資餘額名目接近 2000 年峰值，但相對 M1B 僅 1.91%（約 2000 年的 15%），加上上市家數翻近 4 倍，市場實際融資使用強度遠低於歷史高峰。</p>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 波浪 V 目標計算器（Fibonacci 延伸）</div>
+      <div class="info-panel-body">
+        <p>輸入各波浪轉折點位，自動計算 Wave V 的 Fibonacci 延伸目標。預設填入台股 TAIEX，可換填 QQQ/SPY/SOXX 對應點位。</p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px 18px;margin-bottom:10px">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Wave II 底（基準）</div>
+            <input id="wave-calc-w2" type="number" value="12788" step="1"
+              style="width:82px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Wave III 頂</div>
+            <input id="wave-calc-w3" type="number" value="23917" step="1"
+              style="width:82px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Wave IV 底</div>
+            <input id="wave-calc-w4" type="number" value="19395" step="1"
+              style="width:82px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">現價（自動填入）</div>
+            <input id="wave-calc-cur" type="number" value="46465" step="1"
+              style="width:88px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
+          </div>
+        </div>
+        <div id="wave-calc-w1len" style="font-size:12px;color:var(--muted);margin-bottom:8px"></div>
+        <table class="info-table">
+          <thead><tr><th>Fib 倍率</th><th>Wave V 目標</th><th>距現價</th><th>狀態</th></tr></thead>
+          <tbody id="wave-calc-tbody"></tbody>
+        </table>
+        <p style="color:var(--muted);font-size:12px">公式：Wave V = Wave IV 底 + (W3 頂 − W2 底) × Fib 倍率。超過 1.618× 屬延伸浪；台股目前在 2.618× 附近（約 48,500），下一目標 3.0× ≈ 52,700。</p>
       </div>
     </div>
   </section>
