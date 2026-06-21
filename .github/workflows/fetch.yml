@@ -114,6 +114,18 @@ jobs:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python scripts/fetch_taiwan_margin_total.py
 
+      - name: Reconstruct Taiwan margin maintenance ratio (TWSE 大盤融資維持率, 重建)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_margin_ratio.py
+
+      - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_mktcap_anchor.py
+
+      - name: Compute Taiwan margin/market-cap ratio (融資 ÷ 上市市值, 槓桿密度)
+        continue-on-error: true
+        run: python scripts/compute_taiwan_margin_mktcap.py
+
       - name: Compute Taiwan fear & greed composite
         continue-on-error: true
         run: python scripts/compute_taiwan_sentiment.py

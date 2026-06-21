@@ -4,9 +4,18 @@ import { tsToLocalDate } from '../utils/dates.js';
 import { computeM2YoY } from '../utils/math.js';
 
 let macroChart       = null;
+let bizChart         = null;
 let macroRangePreset = "10Y";
 let macroShowM2      = false;
 let macroShowCAPE    = false;
+
+const BIZ_ZONES = [
+  { lo: 38, hi: 46, c: "#c62a47", name: "紅燈" },
+  { lo: 32, hi: 38, c: "#e6912c", name: "黃紅燈" },
+  { lo: 23, hi: 32, c: "#3fae5a", name: "綠燈" },
+  { lo: 17, hi: 23, c: "#5b9bd5", name: "黃藍燈" },
+  { lo:  0, hi: 17, c: "#2f6fb0", name: "藍燈" },
+];
 
 function filterMacroRange(rows) {
   if (macroRangePreset === "MAX") return rows;
@@ -25,6 +34,15 @@ export async function loadMacroData() {
     if (!resp.ok) throw new Error(`${stem}: HTTP ${resp.status}`);
     const j = await resp.json();
     macroLoaded[stem] = (j.data || []).map(r => [r.date, r.value]);
+  }
+  if (!macroLoaded["BIZ"]) {
+    try {
+      const r = await fetch("data/taiwan_business_signal.json", { cache: "no-cache" });
+      if (r.ok) {
+        const j = await r.json();
+        macroLoaded["BIZ"] = (j.data || []).map(d => [d.date, d.score, d.light]);
+      }
+    } catch (_) { /* optional, skip if unavailable */ }
   }
 }
 
@@ -162,12 +180,80 @@ export function renderMacroTab() {
     `美債殖利率曲線 · ${macroRangePreset} · 目前利差 ${spreadStr} · 倒掛事件 ${invZones.length} 次 · 最新 ${latestDate}`;
 }
 
+function renderBizChart() {
+  const el = document.getElementById("biz-chart");
+  if (!el || !macroLoaded["BIZ"]) return;
+  if (!bizChart) bizChart = echarts.init(el, isLight() ? null : "dark");
+
+  const d = new Date();
+  if (macroRangePreset !== "MAX") {
+    const y = { "5Y": -5, "10Y": -10, "20Y": -20 }[macroRangePreset] ?? -10;
+    d.setFullYear(d.getFullYear() + y);
+  }
+  const from = macroRangePreset === "MAX" ? "1900-01-01" : d.toISOString().slice(0, 10);
+  const bizData = macroLoaded["BIZ"].filter(r => r[0] >= from).map(r => [r[0], r[1]]);
+
+  const last  = macroLoaded["BIZ"].at(-1);
+  const zone  = BIZ_ZONES.find(z => last[1] >= z.lo) ?? BIZ_ZONES.at(-1);
+  const bizEl = document.getElementById("biz-status");
+  if (bizEl) bizEl.innerHTML =
+    `<span style="color:${zone.c};font-weight:600">${zone.name}</span> ${last[1]} 分 ` +
+    `· ${last[0].slice(0, 7)} · 資料來源：NDC data.gov.tw`;
+
+  const axisClr = tc("#8b949e", "#57606a");
+  const gridClr = tc("#21262d", "#e1e4e8");
+  const tipBg   = tc("#161b22", "#ffffff");
+  const tipBdr  = tc("#30363d", "#d0d7de");
+  const tipText = tc("#e6edf3", "#1f2328");
+
+  bizChart.setOption({
+    backgroundColor: "transparent",
+    tooltip: {
+      trigger: "axis", backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText },
+      formatter(params) {
+        const v = params[0]?.value?.[1];
+        if (v == null) return "";
+        const z = BIZ_ZONES.find(z => v >= z.lo) ?? BIZ_ZONES.at(-1);
+        return `<b>${params[0].axisValue?.slice(0, 7)}</b><br/>` +
+          `<span style="color:${z.c}">●</span> ${z.name} <b>${v}</b> 分`;
+      },
+    },
+    grid: { top: 10, left: mob() ? 30 : 42, right: mob() ? 10 : 80, bottom: 34 },
+    xAxis: {
+      type: "time", splitLine: { show: false },
+      axisLine: { lineStyle: { color: axisClr } },
+      axisLabel: { fontSize: 10, color: axisClr },
+    },
+    yAxis: {
+      type: "value", min: 0, max: 46, interval: 9,
+      splitLine: { lineStyle: { color: gridClr } },
+      axisLabel: { fontSize: 10, color: axisClr },
+    },
+    visualMap: {
+      show: false, type: "piecewise", dimension: 1, seriesIndex: 0,
+      pieces: BIZ_ZONES.map(z => ({ min: z.lo, max: z.hi, color: z.c })),
+    },
+    series: [{
+      type: "line", data: bizData, showSymbol: false, lineStyle: { width: 2 },
+      markLine: {
+        silent: true, symbol: "none",
+        data: BIZ_ZONES.slice(0, -1).map(z => ({
+          yAxis: z.lo,
+          lineStyle: { color: tc("rgba(0,0,0,0.12)", "rgba(255,255,255,0.08)"), type: "dashed", width: 1 },
+          label: { show: !mob(), formatter: z.name, position: "insideEndTop", fontSize: 9, color: z.c },
+        })),
+      },
+    }],
+    dataZoom: [{ type: "inside", xAxisIndex: 0 }],
+  }, { notMerge: true });
+}
+
 export function activate() {
   const el = document.getElementById("macro-chart");
-  if (!macroChart) {
-    macroChart = echarts.init(el, isLight() ? null : "dark");
-  }
-  setTimeout(() => { macroChart.resize(); renderMacroTab(); }, 50);
+  if (!macroChart) macroChart = echarts.init(el, isLight() ? null : "dark");
+  const bEl = document.getElementById("biz-chart");
+  if (!bizChart && bEl) bizChart = echarts.init(bEl, isLight() ? null : "dark");
+  setTimeout(() => { macroChart.resize(); bizChart?.resize(); renderMacroTab(); renderBizChart(); }, 50);
 }
 
 export function onThemeChange(light) {
@@ -175,10 +261,17 @@ export function onThemeChange(light) {
   macroChart.dispose();
   macroChart = echarts.init(document.getElementById("macro-chart"), light ? null : "dark");
   renderMacroTab();
+  if (bizChart) {
+    bizChart.dispose();
+    const bEl = document.getElementById("biz-chart");
+    bizChart = bEl ? echarts.init(bEl, light ? null : "dark") : null;
+    renderBizChart();
+  }
 }
 
 export function resize() {
   macroChart?.resize();
+  bizChart?.resize();
 }
 
 document.getElementById("m2-toggle")?.addEventListener("click", () => {
@@ -200,4 +293,5 @@ document.getElementById("macro-range-picker")?.addEventListener("click", e => {
   for (const c of e.currentTarget.querySelectorAll(".chip"))
     c.classList.toggle("active", c === t);
   renderMacroTab();
+  renderBizChart();
 });

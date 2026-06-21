@@ -322,6 +322,7 @@ export async function renderSectorTab() {
 
 export function activate() {
   const el = document.getElementById("sector-chart");
+  el.style.minWidth = mob() ? "600px" : "";
   if (!sectorChart) {
     sectorChart = echarts.init(el, isLight() ? null : "dark");
     bindChartClick();

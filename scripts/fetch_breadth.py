@@ -94,7 +94,7 @@ def fetch_prices(tickers: list[str], start: str) -> pd.DataFrame:
 
 
 def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
-    """Vectorized rolling MA breadth computation."""
+    """Vectorized rolling MA breadth + 52w new-highs/lows (Hindenburg-style) computation."""
     ma50  = price_df.rolling(50,  min_periods=50).mean()
     ma200 = price_df.rolling(200, min_periods=200).mean()
 
@@ -106,6 +106,16 @@ def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
 
     n50  = valid50.sum(axis=1)
     n200 = valid200.sum(axis=1)
+
+    # 52-week new highs/lows: today strictly exceeds prior 252 days' max/min.
+    # Used for Hindenburg-style breadth divergence (computed simplified on S&P500, not full NYSE).
+    win52   = 252
+    prev_hi = price_df.rolling(win52, min_periods=win52).max().shift(1)
+    prev_lo = price_df.rolling(win52, min_periods=win52).min().shift(1)
+    valid_hl = price_df.notna() & prev_hi.notna() & prev_lo.notna()
+    new_hi  = (price_df > prev_hi).where(valid_hl, False).sum(axis=1)
+    new_lo  = (price_df < prev_lo).where(valid_hl, False).sum(axis=1)
+    n_hl    = valid_hl.sum(axis=1)
 
     records: list[dict] = []
     dropped_lowcov = 0
@@ -121,6 +131,9 @@ def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
         a50  = int(above50[dt])
         v200 = int(n200[dt])
         a200 = int(above200[dt]) if v200 > 0 else None
+        vhl  = int(n_hl[dt])
+        nh   = int(new_hi[dt]) if vhl > 0 else None
+        nl   = int(new_lo[dt]) if vhl > 0 else None
 
         records.append({
             "date":           dt.strftime("%Y-%m-%d"),
@@ -128,6 +141,9 @@ def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
             "above50_pct":    round(a50 / v50 * 100, 1),
             "above200_count": a200,
             "above200_pct":   round(a200 / v200 * 100, 1) if (v200 > 0 and a200 is not None) else None,
+            "new_hi_count":   nh,
+            "new_lo_count":   nl,
+            "hl_total":       vhl if vhl > 0 else None,
             "total":          v50,
         })
     if dropped_lowcov:
@@ -145,6 +161,11 @@ def merge(existing: list[dict], new_records: list[dict]) -> list[dict]:
 def main() -> None:
     existing = load_existing()
     today    = date.today()
+
+    # ── Schema migration: missing new_hi_count → force full backfill ──
+    if existing and "new_hi_count" not in existing[0]:
+        print("Existing data missing new_hi_count field — full backfill to recompute schema")
+        existing = []
 
     # ── Freshness check FIRST — skip Wikipedia + yfinance if not needed ──
     if existing:
