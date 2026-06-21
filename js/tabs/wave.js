@@ -2,7 +2,7 @@
 // 資料：直接 fetch data/TWII.json + QQQ/SPY/SOXX.json（無需新 fetch 腳本）
 // 標準化基準：各指數 2022/10 月內最低收盤 = 100（Wave II 底部）
 
-import { isLight, tc } from '../utils/theme.js';
+import { isLight, tc, mob } from '../utils/theme.js';
 
 const TICKERS = [
   { file: 'data/TWII.json', key: 'TWII', label: '台股 TAIEX', color: '#E9A810', width: 2,   ltype: 'solid'  },
@@ -15,6 +15,7 @@ const WAVE_III_DATE = '2024-07-14';
 const WAVE_IV_DATE  = '2025-04-20';
 
 let chart = null;
+let taixChart = null;
 let rawData = {};   // key → [{date, close}]
 let wRange = '4Y';
 let ready = false;
@@ -32,6 +33,7 @@ export async function init() {
     setupControls();
     setupInteractors();
     render(isLight());
+    renderTaixChart(isLight());
     updateCards();
     const lastTWII = rawData['TWII']?.at(-1);
     if (lastTWII) {
@@ -47,8 +49,123 @@ export async function init() {
   }
 }
 
-export function onThemeChange(light) { if (ready) render(light); }
-export function resize() { chart?.resize(); }
+export function onThemeChange(light) {
+  if (!ready) return;
+  render(light);
+  renderTaixChart(light);
+}
+export function resize() { chart?.resize(); taixChart?.resize(); }
+
+// ── TAIEX 實際走勢 + Wave V 預測路徑圖 ───────────────────────────────
+function renderTaixChart(light) {
+  const el = document.getElementById('wave-taiex-chart');
+  if (!el || !rawData['TWII']?.length) return;
+  if (taixChart) { taixChart.dispose(); taixChart = null; }
+  taixChart = echarts.init(el, light ? null : 'dark');
+
+  const priceData = rawData['TWII']
+    .filter(d => d.date >= '2022-01-01')
+    .map(d => [d.date, Math.round(d.close)]);
+
+  const lastPt = priceData.at(-1);
+  const projData = [
+    [lastPt[0], lastPt[1]],
+    ['2026-09-01', 44000],
+    ['2026-10-15', 37000],
+    ['2026-12-15', 36500],
+    ['2027-03-01', 46000],
+    ['2027-05-15', 53000],
+  ];
+
+  const axisClr = tc('#768390', '#636e7b');
+  const gridClr = tc('rgba(0,0,0,0.05)', 'rgba(255,255,255,0.06)');
+  const tipBg   = tc('#161b22', '#ffffff');
+  const tipBdr  = tc('#30363d', '#d0d7de');
+  const tipText = tc('#e6edf3', '#1f2328');
+
+  taixChart.setOption({
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText, fontSize: 12 },
+      formatter(params) {
+        let s = `<b>${params[0]?.axisValue?.slice(0, 10)}</b><br/>`;
+        for (const p of params) {
+          const v = p.value?.[1];
+          if (v != null)
+            s += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${Math.round(v).toLocaleString()}</b><br/>`;
+        }
+        return s;
+      },
+    },
+    legend: {
+      data: ['TAIEX', 'Wave V 預測路徑'],
+      textStyle: { color: tipText, fontSize: 11 }, top: 4, right: 16,
+    },
+    grid: { top: 34, right: mob() ? 14 : 28, bottom: 52, left: mob() ? 48 : 64 },
+    xAxis: {
+      type: 'time', min: '2022-01-01', max: '2027-09-01',
+      axisLabel: { fontSize: 10, color: axisClr },
+      axisLine: { lineStyle: { color: axisClr } },
+      splitLine: { show: false },
+    },
+    yAxis: {
+      type: 'value', min: 10000, max: 57000,
+      axisLabel: { formatter: v => (v / 1000).toFixed(0) + 'k', fontSize: 10, color: axisClr },
+      splitLine: { lineStyle: { color: gridClr } },
+    },
+    series: [
+      {
+        name: 'TAIEX',
+        type: 'line', data: priceData, symbol: 'none', smooth: 0.1,
+        lineStyle: { color: '#E9A810', width: 2 },
+        itemStyle: { color: '#E9A810' },
+        markLine: {
+          silent: true, symbol: ['none', 'none'],
+          data: [
+            { xAxis: '2022-10-23',
+              lineStyle: { color: '#58a6ff', type: 'dashed', width: 1 },
+              label: { show: !mob(), formatter: '② 底 12,788', position: 'insideStartTop', fontSize: 9, color: '#58a6ff' } },
+            { xAxis: '2024-07-14',
+              lineStyle: { color: '#f85149', type: 'dashed', width: 1 },
+              label: { show: !mob(), formatter: '③ 頂 23,917', position: 'insideStartTop', fontSize: 9, color: '#f85149' } },
+            { xAxis: '2025-04-20',
+              lineStyle: { color: '#58a6ff', type: 'dashed', width: 1 },
+              label: { show: !mob(), formatter: '④ 底 19,395', position: 'insideStartTop', fontSize: 9, color: '#58a6ff' } },
+          ],
+        },
+        markArea: {
+          silent: true,
+          data: [
+            [{ xAxis: '2022-10-23', itemStyle: { color: 'rgba(88,166,255,0.07)' } },  { xAxis: '2024-07-14' }],
+            [{ xAxis: '2024-07-14', itemStyle: { color: 'rgba(248,81,73,0.06)'  } },  { xAxis: '2025-04-20' }],
+            [{ xAxis: '2025-04-20', itemStyle: { color: 'rgba(233,168,16,0.08)' } },  { xAxis: lastPt[0]   }],
+          ],
+          label: { show: !mob(), fontSize: 9 },
+        },
+      },
+      {
+        name: 'Wave V 預測路徑',
+        type: 'line', data: projData, smooth: false, symbol: 'circle', symbolSize: 5,
+        lineStyle: { color: '#a371f7', width: 1.5, type: [6, 3] },
+        itemStyle: { color: '#a371f7' },
+        label: {
+          show: true, fontSize: 9, color: '#a371f7',
+          formatter: p => {
+            const map = { '2026-10-15': '④ 底?\n36–38k', '2027-05-15': '⑤ 目標\n53,000' };
+            return map[p.data[0]] || '';
+          },
+        },
+      },
+    ],
+    dataZoom: [
+      { type: 'inside', xAxisIndex: 0 },
+      { type: 'slider', height: 18, bottom: 6, fillerColor: 'rgba(128,128,128,0.1)',
+        borderColor: 'transparent', handleStyle: { color: '#888' },
+        textStyle: { fontSize: 10, color: axisClr } },
+    ],
+  });
+}
 
 // ── 控制 ──────────────────────────────────────────────────────────────
 function setupControls() {
