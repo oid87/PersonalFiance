@@ -32,6 +32,7 @@
     <button class="tab-btn" data-tab="liquidity" data-tooltip="Fed淨流動性 + FINRA融資餘額 + M2/DXY — 資金面環境判讀">流動性</button>
     <button class="tab-btn" data-tab="bullbear" data-tooltip="窮人版 BofA 牛熊指標（8元件百分位合成 0-10）— 反向情緒">牛熊</button>
     <button class="tab-btn" data-tab="wave" data-tooltip="台股/QQQ/SPY/SOXX 波浪結構對照 + 波浪關鍵點位 + 台積電估值矩陣">波浪理論</button>
+    <button class="tab-btn" data-tab="twcycle" data-tooltip="國發會景氣對策信號（景氣燈號）9–45 分五燈 · 月頻 1984+ · 循環位置環境理解">景氣燈號</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -646,36 +647,67 @@
 
   <!-- ── 位階 tab ────────────────────────────────────────────────── -->
   <section id="tab-position" class="tab-section" hidden>
-    <div class="controls">
-      <span style="font-size:13px;color:var(--muted);flex-shrink:0">標的</span>
-      <div id="pos-ticker-picker" style="display:flex;gap:4px"></div>
-      <div id="pos-period-picker" style="display:flex;gap:4px;margin-left:12px">
-        <span class="chip active" data-period="20" data-tooltip="20日布林通道 — 短期超買超賣">20日</span>
-        <span class="chip" data-period="50" data-tooltip="50日布林通道 — 中期趨勢偏離">50日</span>
-        <span class="chip" data-period="200" data-tooltip="200日布林通道 — 長期極端偏離">200日</span>
-      </div>
-      <div id="pos-range-picker" style="display:flex;gap:4px;margin-left:12px">
-        <span class="chip" data-range="1Y">1Y</span>
-        <span class="chip" data-range="3Y">3Y</span>
-        <span class="chip active" data-range="5Y">5Y</span>
-        <span class="chip" data-range="MAX">MAX</span>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="pos-ticker-picker" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div style="margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:5px;align-items:center">
+          <span style="font-size:12px;color:var(--muted)">布林/乖離均線天數</span>
+          <div id="pos-period-picker" style="display:flex;gap:4px">
+            <span class="chip" data-pos-period="20"  data-tooltip="月線 20日（短線）">20</span>
+            <span class="chip active" data-pos-period="50"  data-tooltip="季線 50日（美股季線，下緣＝多頭買點）">50</span>
+            <span class="chip" data-pos-period="200" data-tooltip="年線 200日（美股年線，上緣＝短線過熱）">200</span>
+          </div>
+        </div>
+        <div id="pos-range-picker" style="display:flex;gap:4px">
+          <span class="chip" data-pos-range="1Y">1Y</span>
+          <span class="chip active" data-pos-range="3Y">3Y</span>
+          <span class="chip" data-pos-range="5Y">5Y</span>
+          <span class="chip" data-pos-range="MAX">MAX</span>
+        </div>
       </div>
     </div>
-    <div id="pos-bb-chart" style="width:100%;height:420px"></div>
-    <div id="pos-dev-chart" style="width:100%;height:320px"></div>
-    <div id="pos-status" class="status"></div>
+    <div id="pos-top">
+      <div class="breadth-card">
+        <div class="bc-label">位階（<span id="pos-zone-period">50</span>日布林 %B）</div>
+        <div class="bc-main"><span class="bc-pct" id="pos-zone-pct">—</span><span class="bc-unit">%B</span></div>
+        <div class="bc-count" id="pos-zone-sub">—</div>
+        <div class="bc-signal" id="pos-zone-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">乖離率（<span id="pos-bias-period">50</span>日）</div>
+        <div class="bc-main"><span class="bc-pct" id="pos-bias-pct">—</span><span class="bc-unit">%</span></div>
+        <div class="bc-count" id="pos-bias-sub">—</div>
+        <div class="bc-signal" id="pos-bias-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">趨勢濾網（200日年線）</div>
+        <div class="bc-main"><span class="bc-pct" id="pos-regime-pct" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="pos-regime-sub">—</div>
+        <div class="bc-signal" id="pos-regime-signal">—</div>
+      </div>
+    </div>
+    <div id="pos-chart" style="height:560px"></div>
+    <div class="status" id="pos-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
     <div class="info-panel">
-      <div class="info-panel-header"><i class="chevron">▶</i> 布林通道與乖離率：位階判讀指南</div>
+      <div class="info-panel-header"><i class="chevron">▶</i> 布林通道 + 乖離率 怎麼看？</div>
       <div class="info-panel-body">
-        <p><b>布林通道（Bollinger Bands）</b>：以 N 日均線為中軌，±2 倍標準差為上下軌。價格觸及上軌傾向過熱、下軌傾向超賣。通道收斂 = 盤整蓄勢，通道擴張 = 趨勢啟動。</p>
-        <p><b>乖離率（Deviation %）</b>：(收盤 − MA) ÷ MA × 100%。正值 = 高於均線（偏貴），負值 = 低於均線（偏便宜）。配合趨勢濾網（MA200 以上為多頭環境），乖離回歸負值是潛在買點。</p>
+        <p>這是把布林通道（Bollinger Bands）的中軌換成 <b>20/50/200 日均線</b>，當成「位階尺」用 —— 美股 style（20=月線、50=季線、200=年線）。上圖是價格＋三條均線＋選定均線的 <b>±2σ 通道</b>；下圖是<b>乖離率</b>（價格距均線的 %），附該均線乖離自身歷史的 ±1σ/±2σ 參考帶。（「均線天數」＝你選哪條均線當基準：20/50/200 日，<b>不是</b>市場週期）</p>
         <table class="info-table">
-          <thead><tr><th>區間</th><th>20日</th><th>50日</th><th>200日</th></tr></thead>
+          <thead><tr><th>訊號</th><th>意義</th></tr></thead>
           <tbody>
-            <tr><td>嚴重超買</td><td>&gt;+4%</td><td>&gt;+8%</td><td>&gt;+20%</td></tr>
-            <tr><td>超賣區</td><td>&lt;−4%</td><td>&lt;−8%</td><td>&lt;−15%</td></tr>
+            <tr><td style="color:#3fb950">季線(50)布林下緣</td><td><b>多頭背景下</b>回測下緣＝趨勢內的低位階買點（均值回歸）</td></tr>
+            <tr><td style="color:#f85149">年線(200)布林上緣</td><td>突破上緣＝離年均值 2σ 以上，短線過熱、別追、考慮減碼</td></tr>
+            <tr><td style="color:#f0883e">乖離率百分位</td><td>目前乖離 vs 自己歷史分布；&gt;90 百分位＝過熱、&lt;10＝超賣（各標的門檻不同，故用百分位而非固定 %）</td></tr>
+            <tr><td style="color:#d2a8ff">QQQ 年線 +20%</td><td>只在<b>選 QQQ ＋ 200 年線</b>時多一條<b>固定 +20% 過熱線</b>（紫）—— QQQ 年線乖離 +20% 是常用短線過熱門檻（指數專用 rule of thumb，故不套用到 SOXX 等其他標的）</td></tr>
           </tbody>
         </table>
+        <p style="margin-top:10px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+          ⚠️ <b>務必先看「趨勢濾網」（年線）</b>：布林下緣＝買點<b>只在多頭（站上年線且年線上彎）成立</b>。空頭崩盤時價格會「沿著下緣走」（band-riding），碰下緣不是買點，是還在跌 —— 這也是原始方法強調「多頭背景下」的原因。
+        </p>
+        <p style="margin-top:8px;color:var(--muted)">
+          📌 <b>半導體（SOXX）特性</b>：高 beta，布林帶與乖離振幅遠大於 SPY，碰下緣更頻繁、幅度更大；門檻用「自身歷史百分位」才公平，別套 SPY 的數字。乖離率與布林 %B 量測的是同一件事（離均線多遠），互為佐證。
+        </p>
+        <p style="margin-top:8px;color:var(--muted)">資料：直接讀 data/&lt;TICKER&gt;.json 收盤價，前端 rolling mean/std 即時計算（無另開 fetch 腳本）。±σ 參考帶用「全歷史」乖離分布，故視窗縮放時門檻不變。</p>
       </div>
     </div>
   </section>
@@ -1158,6 +1190,38 @@
         </ul>
         <p style="color:var(--muted);font-size:12px">⚠ 以上預測基於目前波浪計數為 Primary Wave V 的假設。若計數錯誤，修正情境完全不同。用戶設有 125/200MA 離場系統可做下檔保護。</p>
       </div>
+    </div>
+  </section>
+
+  <section id="tab-twcycle" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">國發會景氣對策信號 · 9 項構成項加總 9–45 分 → 五燈 · 月頻</span>
+      <div class="range-wrap">
+        <span class="chip" data-twcycle-range="5">5Y</span>
+        <span class="chip active" data-twcycle-range="10">10Y</span>
+        <span class="chip" data-twcycle-range="20">20Y</span>
+        <span class="chip" data-twcycle-range="all">全部</span>
+      </div>
+    </div>
+    <div id="twcycle-header"></div>
+    <div id="twcycle-chart" style="height:420px"></div>
+    <div class="status" id="twcycle-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <p style="margin:0 0 8px">國發會每月公布的景氣綜合判斷指標，由貨幣總計數 M1B、股價指數、工業生產、海關出口、非農就業等
+        <b>9 項構成項目</b>各依年變動率對照檢查值打 1–5 分，加總成 9–45 分，對應五種燈號：</p>
+      <table class="info-table" style="margin-bottom:8px">
+        <thead><tr><th>燈號</th><th>分數</th><th>景氣狀態</th></tr></thead>
+        <tbody>
+          <tr><td><span style="color:#e24b4a">● 紅燈</span></td><td>38–45</td><td>熱絡（可能過熱）</td></tr>
+          <tr><td><span style="color:#f0883e">● 黃紅燈</span></td><td>32–37</td><td>轉向（偏熱）</td></tr>
+          <tr><td><span style="color:#3fb950">● 綠燈</span></td><td>23–31</td><td>穩定</td></tr>
+          <tr><td><span style="color:#17a2b8">● 黃藍燈</span></td><td>17–22</td><td>轉向（偏弱）</td></tr>
+          <tr><td><span style="color:#2f6fed">● 藍燈</span></td><td>9–16</td><td>低迷</td></tr>
+        </tbody>
+      </table>
+      <p style="margin:0;color:var(--muted);font-size:12px">資料月頻、回溯至 1984，官方約每月 27 日公布前一月份（約 27 天延遲）。
+        定位為循環位置的「環境理解 / 風險溫度計」，非交易訊號 —— 燈號高度持續（平均約 3–4 個月才換色），
+        且本指標已含股價等前瞻成分，逐月轉折難以提前精準預測。配台股估值看：紅燈＋本益比偏高＝循環高點警戒；藍燈＋本益比壓縮＝循環低點常見買點。</p>
     </div>
   </section>
 
