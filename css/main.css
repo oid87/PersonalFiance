@@ -550,8 +550,8 @@
     .info-table td { padding: 5px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
     .info-table tr:last-child td { border-bottom: none; }
 
-    /* ── 市場廣度 tab ────────────────────────────────────────────── */
-    #breadth-top {
+    /* ── 市場廣度 / 位階 tab ─────────────────────────────────────── */
+    #breadth-top, #pos-top {
       display: flex; gap: 24px; padding: 16px 24px;
       border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center;
     }
