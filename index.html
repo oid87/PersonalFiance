@@ -31,6 +31,7 @@
     <button class="tab-btn" data-tab="position" data-tooltip="布林通道 + 乖離率 20/50/200 日，判斷超買超賣位置">位階</button>
     <button class="tab-btn" data-tab="liquidity" data-tooltip="Fed淨流動性 + FINRA融資餘額 + M2/DXY — 資金面環境判讀">流動性</button>
     <button class="tab-btn" data-tab="bullbear" data-tooltip="窮人版 BofA 牛熊指標（8元件百分位合成 0-10）— 反向情緒">牛熊</button>
+    <button class="tab-btn" data-tab="wave" data-tooltip="台股/QQQ/SPY/SOXX 波浪結構對照 + 波浪關鍵點位 + 台積電估值矩陣">波浪理論</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -475,6 +476,19 @@
       <div id="twsent-cards"></div>
     </div>
     <div id="twsent-chart"></div>
+
+    <!-- 融資 ÷ 上市市值 (千分比) — 台股槓桿密度，多年回測 -->
+    <div class="twsent-mktcap-section" style="margin-top:22px">
+      <div class="aaii-table-title" style="margin-bottom:8px">融資餘額 ÷ 上市市值 (千分比 ‰) — 台股槓桿密度（回測級）</div>
+      <div id="twsent-mktcap-card" style="margin-bottom:8px"></div>
+      <div id="twsent-mktcap-chart" style="height:300px"></div>
+      <div class="status" style="color:var(--muted);font-size:11px;margin-top:4px">
+        上市市值 = TAIEX × K(t)，K(t) 由 TWSE 集中市場月訊 + 證期局年度市值表的月度錨點線性插值。
+        2010 之前用最早 K 常數外推（較不準）。5.0 警戒線取 2021 高點 (2021-04-28 實算 5.05)，可作為視覺參考；
+        範圍隨上方時間選擇 chips 連動。
+      </div>
+    </div>
+
     <div class="status" id="twsent-status">切換至此 tab 自動載入…</div>
     <div class="aaii-table-wrap">
       <div class="aaii-table-title">每日對照表 <span id="twsent-table-count" style="color:var(--muted);font-weight:400"></span></div>
@@ -496,7 +510,7 @@
           </tbody>
         </table>
         <p style="margin-top:10px;color:var(--muted)">分區：&lt;25 極度恐懼 / 25–45 恐懼 / 45–55 中性 / 55–75 貪婪 / &gt;75 極度貪婪。早於某元件起始日時自動少算該元件、權重重新分配，故指數可回溯到 1998（僅趨勢+P/C+融資）。外資淨部位為「聰明錢」方向、獨立顯示不進分數。</p>
-        <p style="margin-top:6px;color:var(--muted)">已知限制：<b>台指 VIX 與大盤融資維持率無乾淨免費歷史</b>（TAIFEX/MacroMicro 付費），故未納入；P/C 成交量比在急跌時偏雜訊（call 量暴增），日後可改用未平倉比微調。散戶多空＝台指期三大法人淨未平倉反推（零和近似）。</p>
+        <p style="margin-top:6px;color:var(--muted)">已知限制：<b>台指 VIX 無乾淨免費歷史</b>（TAIFEX/MacroMicro 付費），未納入。<b>融資維持率為自行重建</b>：Σ(逐檔融資張×收盤×1000)÷融資餘額（TWSE 免費逐檔，上市 only，逐檔張數加總已對 FinMind 總量驗證相等），與券商「整戶維持率」(含融券/現金/T+2) 定義略異、水位偏高，但趨勢一致 —— 僅供槓桿風險溫度計參考、<b>不進複合分數</b>。P/C 成交量比在急跌時偏雜訊（call 量暴增），日後可改用未平倉比微調。散戶多空＝台指期三大法人淨未平倉反推（零和近似）。</p>
       </div>
     </div>
   </section>
@@ -521,6 +535,14 @@
         </div>
         <div class="bc-count" id="bc-200-count">— / —</div>
         <div class="bc-signal" id="bc-200-signal">—</div>
+      </div>
+      <div class="breadth-card" data-tooltip="52週新高/新低家數 · 興登堡徵兆原料(S&P 500簡化版)">
+        <div class="bc-label">52週新高 / 新低</div>
+        <div class="bc-main">
+          <span class="bc-pct" id="bc-hl-count">— / —</span>
+        </div>
+        <div class="bc-count" id="bc-hl-pct">—</div>
+        <div class="bc-signal" id="bc-hl-signal">—</div>
       </div>
       <div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap">
         <span id="breadth-vix-toggle" class="chip" data-tooltip="疊加 VIX 恐慌指數（右軸）">VIX</span>
@@ -557,6 +579,19 @@
           </tbody>
         </table>
         <p style="margin-top:10px;color:var(--muted)">觀察重點：當指數走高但廣度下滑（背離），通常是警示訊號；廣度由低點大幅回升，往往是新一波行情啟動的先行指標。</p>
+        <h4 style="margin:14px 0 6px">52 週新高 / 新低 + 興登堡徵兆（S&amp;P 500 簡化版）</h4>
+        <p>健康市場應該「全面創新高」或「全面創新低」二選一。<b>當大盤仍在上漲、卻同時出現大量新高 + 大量新低</b>，代表內部嚴重分歧，歷史上常先於崩盤。</p>
+        <p style="color:var(--muted);font-size:12px">⚠ 注意：原版用 NYSE 全市場 ~3000 檔 + McClellan Oscillator。本站用 S&amp;P 500 成份股自算（NYSE 新高/新低成分序列免費撈不到，Stooq/yfinance/MarketWatch 全擋），叫「Hindenburg-style」較誠實，歷史對齊不可直接比 NYSE 原版。</p>
+        <table class="info-table">
+          <thead><tr><th>觸發條件（同日全部成立）</th></tr></thead>
+          <tbody>
+            <tr><td>① 新高家數 &gt; 2.2% × 成份股總數（≈ 11 檔）</td></tr>
+            <tr><td>② 新低家數 &gt; 2.2% × 成份股總數（≈ 11 檔）</td></tr>
+            <tr><td>③ 兩邊不能一邊壓倒另一邊（max ≤ 2 × min）</td></tr>
+            <tr><td>④ SPY 高於 50 個交易日前（仍處上升趨勢）</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);font-size:12px;margin-top:8px">用法：<b>單次觸發</b>不可怕（歷史誤報率高）；<b>30 個交易日內叢集出現 ≥ 2 次</b>才有意義。是「降槓桿、檢查停損」的環境提示，不是反手做空訊號。SPY 線上紅色 pin 即觸發日。</p>
       </div>
     </div>
   </section>
@@ -715,6 +750,218 @@
           </tbody>
         </table>
         <p style="margin-top:8px;color:var(--muted)">NAAIM 因 Incapsula 阻擋暫無法自動抓取；已用貨幣基金部位(MMF)作為機構「現金偏好」的替代指標。每週 CFTC 與月頻 FRED 混頻對齊，取最近可用值（120 天內），至少需 3 個元件才計算合成。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 波浪理論 tab ────────────────────────────────────────────── -->
+  <section id="tab-wave" class="tab-section" hidden>
+    <div class="controls">
+      <!-- 圖例 -->
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+          <span style="width:14px;height:2px;background:#E9A810;display:inline-block;border-radius:1px"></span>台股
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+          <span style="width:14px;height:2px;background:#3fb950;display:inline-block;border-radius:1px;border-bottom:2px dashed #3fb950;height:0"></span>QQQ
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+          <span style="width:14px;height:0;border-bottom:2px dashed #58a6ff;display:inline-block"></span>SPY
+        </span>
+        <span style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)">
+          <span style="width:14px;height:2px;background:#a371f7;display:inline-block;border-radius:1px"></span>SOXX
+        </span>
+      </div>
+      <!-- 時間範圍 -->
+      <div id="wave-range-picker" style="display:flex;gap:4px;margin-left:auto">
+        <span class="chip" data-range="2Y">2Y</span>
+        <span class="chip active" data-range="4Y">4Y</span>
+        <span class="chip" data-range="MAX">MAX</span>
+      </div>
+    </div>
+
+    <!-- 線圖 -->
+    <div id="wave-chart" style="width:100%;height:420px"></div>
+
+    <!-- 摘要卡片 -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 24px 0">
+      <div id="wave-card-twii" style="background:var(--panel);border-radius:8px;padding:10px 12px;border-left:3px solid #E9A810">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:2px">台股 TAIEX</div>
+        <div class="wc-pct" style="font-size:20px;font-weight:600;color:#E9A810">—</div>
+        <div class="wc-abs" style="font-size:13px;color:var(--text)">—</div>
+        <div style="display:flex;gap:6px;font-size:10px;color:var(--muted);margin-top:2px">
+          <span class="wc-norm"></span><span class="wc-date"></span>
+        </div>
+      </div>
+      <div id="wave-card-qqq" style="background:var(--panel);border-radius:8px;padding:10px 12px;border-left:3px solid #3fb950">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:2px">QQQ</div>
+        <div class="wc-pct" style="font-size:20px;font-weight:600;color:#3fb950">—</div>
+        <div class="wc-abs" style="font-size:13px;color:var(--text)">—</div>
+        <div style="display:flex;gap:6px;font-size:10px;color:var(--muted);margin-top:2px">
+          <span class="wc-norm"></span><span class="wc-date"></span>
+        </div>
+      </div>
+      <div id="wave-card-spy" style="background:var(--panel);border-radius:8px;padding:10px 12px;border-left:3px solid #58a6ff">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:2px">SPY</div>
+        <div class="wc-pct" style="font-size:20px;font-weight:600;color:#58a6ff">—</div>
+        <div class="wc-abs" style="font-size:13px;color:var(--text)">—</div>
+        <div style="display:flex;gap:6px;font-size:10px;color:var(--muted);margin-top:2px">
+          <span class="wc-norm"></span><span class="wc-date"></span>
+        </div>
+      </div>
+      <div id="wave-card-soxx" style="background:var(--panel);border-radius:8px;padding:10px 12px;border-left:3px solid #a371f7">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:2px">SOXX 半導體</div>
+        <div class="wc-pct" style="font-size:20px;font-weight:600;color:#a371f7">—</div>
+        <div class="wc-abs" style="font-size:13px;color:var(--text)">—</div>
+        <div style="display:flex;gap:6px;font-size:10px;color:var(--muted);margin-top:2px">
+          <span class="wc-norm"></span><span class="wc-date"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="wave-status" class="status"></div>
+
+    <!-- ── 靜態知識表格（可摺疊） ── -->
+
+    <div class="info-panel">
+      <div class="info-panel-header open"><i class="chevron">▶</i> 波浪關鍵點位對照（台股主浪，美股同步參考）</div>
+      <div class="info-panel-body open">
+        <p>以 2022 年 10 月大盤底部為 <b>Wave II 底</b>（=基準 100），往後的五波走勢用此對照。</p>
+        <table class="info-table">
+          <thead>
+            <tr><th>關鍵點</th><th>日期</th><th>台股 TAIEX</th><th>QQQ</th><th>SPY</th><th>SOXX</th><th>說明</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><b>Wave II 底</b></td><td>2022/10</td>
+              <td>~12,788</td><td>~$255</td><td>~$340</td><td>~$97</td>
+              <td>升息循環底部，基準 = 100</td>
+            </tr>
+            <tr>
+              <td><b>Wave III 頂</b></td><td>2024/07</td>
+              <td>~23,917（+87%）</td><td>~$491（+92%）</td><td>~$547（+61%）</td><td>~$257（+165%）</td>
+              <td>AI 第一波主升浪頂，四市同步</td>
+            </tr>
+            <tr>
+              <td><b>Wave IV 底</b></td><td>2025/04</td>
+              <td>~19,395（-19%）</td><td>~$421（-14%）</td><td>~$499（-9%）</td><td>~$157（-39%）</td>
+              <td>Trump 關稅衝擊，融資大減幅確認底部</td>
+            </tr>
+            <tr style="background:rgba(233,168,16,0.06)">
+              <td><b>Wave V（目前）</b></td><td>2026/06</td>
+              <td style="color:#E9A810">~46,465（+139%）</td>
+              <td style="color:#3fb950">~$741（+76%）</td>
+              <td style="color:#58a6ff">~$748（+50%）</td>
+              <td style="color:#a371f7">~$640（+308%）</td>
+              <td>Wave V 進行中，SOXX 最強</td>
+            </tr>
+            <tr style="border-top:2px dashed var(--border)">
+              <td><b>Wave V 目標</b></td><td>~2027/05</td>
+              <td>47,000 – 54,000</td><td>~$860</td><td>~$860</td><td>已超越目標</td>
+              <td>Fib × Wave I；SOXX 呈延伸浪</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);font-size:12px">⚠ Wave III 不得最短；Wave IV 不得進入 Wave I 區間；時間點參考 55月 Fibonacci 週期（2022/10 + 55M ≈ 2027/05）。</p>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 台積電 Forward PE 矩陣（TAIEX 53,000 目標鏈條）</div>
+      <div class="info-panel-body">
+        <p>TAIEX 53,000 需要台積電站上 <b>~3,000 元</b>（台積佔加權約 30%）。對照各年度 EPS 預測 × PE 倍數：</p>
+        <table class="info-table">
+          <thead>
+            <tr>
+              <th>EPS 情境</th><th>悲觀 15x</th>
+              <th style="text-align:center">中性 20x</th>
+              <th style="text-align:center;color:#f0883e">樂觀 25x</th>
+              <th style="text-align:center;color:#f85149">極樂觀 30x</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>TTM 73.6元（2026/Q1年化）</td>
+              <td>1,104</td><td style="text-align:center">1,472</td>
+              <td style="text-align:center">1,840</td><td style="text-align:center">2,208</td>
+            </tr>
+            <tr>
+              <td>2026F 100元</td>
+              <td>1,500</td><td style="text-align:center">2,000</td>
+              <td style="text-align:center">2,500</td>
+              <td style="text-align:center;background:rgba(233,168,16,0.08);font-weight:600">3,000</td>
+            </tr>
+            <tr style="background:rgba(233,168,16,0.08)">
+              <td><b>2027F 120元</b></td>
+              <td>1,800</td>
+              <td style="text-align:center;background:rgba(233,168,16,0.2);font-weight:600">2,400 ← 現況</td>
+              <td style="text-align:center;font-weight:600">3,000</td>
+              <td style="text-align:center">3,600</td>
+            </tr>
+            <tr>
+              <td>2028F 150元</td>
+              <td>2,250</td>
+              <td style="text-align:center;font-weight:600">3,000</td>
+              <td style="text-align:center">3,750</td>
+              <td style="text-align:center">4,500</td>
+            </tr>
+            <tr>
+              <td>2029F 200元</td>
+              <td>3,000</td>
+              <td style="text-align:center">4,000</td>
+              <td style="text-align:center">5,000</td>
+              <td style="text-align:center">6,000</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>現股價（~2,410元）已等於 <b>2027F × 20x</b>（中性），市場提前定價 2027 年 EPS。Wave V 目標 3,000 = 2027F × 25x（波段情緒溢價）或 2028F × 20x（EPS 兌現）。</p>
+        <p style="color:var(--muted);font-size:12px">單位：新台幣元。EPS 為法人共識預估，實際結果視 AI HPC 訂單與 N3/N2 良率而異。</p>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> M1B / 日成交量比率 — 市場熱度溫度計</div>
+      <div class="info-panel-body">
+        <p>將當日<b>成交金額 ÷ M1B（活期貨幣供給量）</b>，消除歷年貨幣增加的規模差異，得到真正的「市場熱度」。</p>
+        <table class="info-table">
+          <thead>
+            <tr><th>年代</th><th>日均成交額</th><th>M1B</th><th>比率</th><th>背景</th></tr>
+          </thead>
+          <tbody>
+            <tr style="color:var(--muted)"><td>1990 (民79)</td><td>~2,600億</td><td>2.6兆</td><td style="font-weight:600;color:#f85149">10%（歷史峰值）</td><td>台股 12,682 點泡沫頂</td></tr>
+            <tr style="color:var(--muted)"><td>2000 (民89)</td><td>~3,827億</td><td>4.6兆</td><td style="font-weight:600;color:#f0883e">8.4%</td><td>科技泡沫，名目量最高</td></tr>
+            <tr><td>2026/06（目前）</td><td>~5,000億</td><td>~31兆</td><td style="font-weight:600;color:#3fb950">~1.6%</td><td>離泡沫峰值仍遠</td></tr>
+            <tr style="background:rgba(233,168,16,0.06)"><td>推算極端頂部</td><td>~3.1兆/日</td><td>31兆</td><td style="font-weight:600;color:#E9A810">10%（理論上限）</td><td>需成交量翻 6 倍才到歷史極端</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);font-size:12px">M1B 來源：中央銀行每月公布。成交量含上市（TWSE）+ 上櫃（TPEx）合計。</p>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 融資餘額指標 — 底部偵測與規模修正</div>
+      <div class="info-panel-body">
+        <p><b>底部訊號法則：</b>大盤跌幅 &lt; 融資減幅 → 融資斷頭完成 → 短期底部確認。</p>
+        <table class="info-table">
+          <thead>
+            <tr><th>事件</th><th>大盤跌幅</th><th>融資減幅</th><th>結果</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>2025/04 Trump 關稅衝擊（Wave IV）</td><td>-28.7%</td><td style="color:#f85149;font-weight:600">-33.1%</td><td style="color:#3fb950">✓ 融資減幅 > 大盤 → 底部確認 → Wave V 啟動</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px"><b>相對規模（M1B 修正）：</b></p>
+        <table class="info-table">
+          <thead>
+            <tr><th>時代</th><th>融資餘額（絕對）</th><th>M1B</th><th>融資 / M1B</th><th>上市家數</th></tr>
+          </thead>
+          <tbody>
+            <tr style="color:var(--muted)"><td>2000 年 4 月（歷史峰值）</td><td>5,956 億</td><td>4.6 兆</td><td style="font-weight:600;color:#f85149">12.95%</td><td>~499 家</td></tr>
+            <tr><td>2026 年 6 月（目前）</td><td>~5,931 億</td><td>~31 兆</td><td style="font-weight:600;color:#3fb950">1.91%</td><td>~1,938 家</td></tr>
+            <tr style="background:rgba(233,168,16,0.06)"><td>等效 2000 年峰值水準</td><td>~4.01 兆</td><td>31 兆</td><td>12.95%</td><td>—</td></tr>
+          </tbody>
+        </table>
+        <p style="color:var(--muted);font-size:12px">目前融資餘額名目接近 2000 年峰值，但相對 M1B 僅 1.91%（約 2000 年的 15%），加上上市家數翻近 4 倍，市場實際融資使用強度遠低於歷史高峰。</p>
       </div>
     </div>
   </section>
