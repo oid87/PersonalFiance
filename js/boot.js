@@ -19,6 +19,7 @@ import * as twSentTab    from './tabs/twsentiment.js';
 import * as positionTab  from './tabs/position.js';
 import * as liquidityTab from './tabs/liquidity.js';
 import * as bullbearTab  from './tabs/bullbear.js';
+import * as waveTab      from './tabs/wave.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -37,6 +38,7 @@ registerAll([
   { id: 'position',  module: positionTab  },
   { id: 'liquidity', module: liquidityTab },
   { id: 'bullbear',  module: bullbearTab  },
+  { id: 'wave',      module: waveTab      },
 ]);
 
 setupResizeHandler();
