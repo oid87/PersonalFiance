@@ -1545,8 +1545,8 @@
     },
     {
       "date": "2026-06-26",
-      "src": "calc-live",
-      "tpe": 30.5,
+      "src": "yf-trailing",
+      "tpe": 30.11,
       "fpe": 20.6
     }
   ]
