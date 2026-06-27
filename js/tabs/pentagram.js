@@ -10,6 +10,7 @@ let pentaPeriod       = "3.5Y";
 let pentaMode         = "pentagram";
 let pentaFgActive     = false;
 let pentaVixActive    = false;
+let pentaVxnActive    = false;
 let penta125Active    = false;
 let pentaMaPeriod     = 125;
 let pentaWeekly       = false;

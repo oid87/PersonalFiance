@@ -30,6 +30,7 @@ TICKERS: dict[str, tuple[str, str]] = {
     "QQQ":     ("QQQ",     "1999-03-10"),
     "SPY":     ("SPY",     "1993-01-29"),
     "^VIX":    ("VIX",     "1990-01-02"),
+    "^VXN":    ("VXN",     "2001-01-02"),  # CBOE NASDAQ-100 Volatility Index — QQQ 對應
     "GLD":     ("GLD",     "2004-11-18"),
     "GC=F":    ("GCF",     "2000-01-01"),  # Gold Futures (continuous) — 3資產模式用，比GLD早
     "BTC-USD": ("BTC",     "2014-09-17"),

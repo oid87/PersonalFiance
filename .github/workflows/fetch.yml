@@ -138,6 +138,26 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_liquidity.py
 
+      - name: Fetch VIX-SKEW sequential divergence signal (yfinance SKEW+SPY, stitched VIX)
+        continue-on-error: true
+        run: python scripts/fetch_vix_skew.py
+
+      - name: Fetch OFR Financial Stress Index (financialresearch.gov, daily, total + 5 categories)
+        continue-on-error: true
+        run: python scripts/fetch_fsi.py
+
+      - name: Fetch USD/TWD spot (Yahoo TWD=X, for Taiwan stress FX leg)
+        continue-on-error: true
+        run: python scripts/fetch_usdtwd.py
+
+      - name: Compute Taiwan financial-stress composite (FX/equity vol + margin ratio + foreign futures)
+        continue-on-error: true
+        run: python scripts/compute_taiwan_stress.py
+
+      - name: Fetch UMich Consumer Sentiment + NBER recessions + SPY monthly (FRED, free)
+        continue-on-error: true
+        run: python scripts/fetch_umich.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 
