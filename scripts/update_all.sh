@@ -47,6 +47,11 @@ $PYTHON fetch_sector_holdings.py || true
 $PYTHON compute_sentiment.py   || true
 $PYTHON fetch_bullbear.py      || true
 $PYTHON fetch_liquidity.py     || true
+$PYTHON fetch_vix_skew.py      || true
+$PYTHON fetch_fsi.py           || true
+$PYTHON fetch_usdtwd.py        || true
+$PYTHON compute_taiwan_stress.py || true
+$PYTHON fetch_umich.py         || true
 
 # 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"

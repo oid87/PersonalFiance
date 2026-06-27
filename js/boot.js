@@ -21,6 +21,10 @@ import * as liquidityTab from './tabs/liquidity.js';
 import * as bullbearTab  from './tabs/bullbear.js';
 import * as waveTab      from './tabs/wave.js';
 import * as twCycleTab   from './tabs/twcycle.js';
+import * as vixSkewTab   from './tabs/vixskew.js';
+import * as fsiTab        from './tabs/fsi.js';
+import * as twStressTab   from './tabs/twstress.js';
+import * as umichTab      from './tabs/umich.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -41,6 +45,10 @@ registerAll([
   { id: 'bullbear',  module: bullbearTab  },
   { id: 'wave',      module: waveTab      },
   { id: 'twcycle',   module: twCycleTab   },
+  { id: 'vixskew',   module: vixSkewTab   },
+  { id: 'fsi',       module: fsiTab       },
+  { id: 'twstress',  module: twStressTab  },
+  { id: 'umich',     module: umichTab     },
 ]);
 
 setupResizeHandler();

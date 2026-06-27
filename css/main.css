@@ -126,6 +126,16 @@
       border-color: #d46414;
       color: #d46414;
     }
+    .chip.vxn-on {
+      background: rgba(192,132,252,0.15);
+      border-color: #c084fc;
+      color: #c084fc;
+    }
+    body.light .chip.vxn-on {
+      background: rgba(150,80,220,0.08);
+      border-color: #9650dc;
+      color: #9650dc;
+    }
     .chip.ma125-on {
       background: rgba(255,152,0,0.15);
       border-color: #ff9800;
@@ -551,7 +561,7 @@
     .info-table tr:last-child td { border-bottom: none; }
 
     /* ── 市場廣度 / 位階 tab ─────────────────────────────────────── */
-    #breadth-top, #pos-top {
+    #breadth-top, #pos-top, #fsi-top, #ts-top {
       display: flex; gap: 24px; padding: 16px 24px;
       border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center;
     }

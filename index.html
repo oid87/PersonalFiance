@@ -34,6 +34,9 @@
     <button class="tab-btn" data-tab="wave" data-tooltip="台股/QQQ/SPY/SOXX 波浪結構對照 + 波浪關鍵點位 + 台積電估值矩陣">波浪理論</button>
     <button class="tab-btn" data-tab="twcycle" data-tooltip="國發會景氣對策信號（景氣燈號）9–45 分五燈 · 月頻 1984+ · 循環位置環境理解">景氣燈號</button>
     <button class="tab-btn" data-tab="vixskew" data-tooltip="VIX-SKEW 序列背離警報 · 同步上升→背離→暴跌前兆 · SPY+市寬 · 1993起">VIX-SKEW</button>
+    <button class="tab-btn" data-tab="fsi" data-tooltip="美國 OFR 金融壓力指數（信用/股票估值/安全資產/資金/波動性 五細項）+ 20/50/200日均線 · 2000起">金融壓力</button>
+    <button class="tab-btn" data-tab="twstress" data-tooltip="台股金融壓力（自建台版FSI）：匯率波動+股市波動+融資維持率+外資期貨 四維合成 0-100 · 越高壓力越大">台股壓力</button>
+    <button class="tab-btn" data-tab="umich" data-tooltip="密西根大學消費者信心（UMCSENT）+ SPY 雙軸 + NBER 衰退陰影 · 月頻 1978起">消費者信心</button>
   </nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
@@ -124,7 +127,8 @@
         <span class="chip active" data-mode="pentagram" data-tooltip="以均值為中心，顯示±1σ/±2σ通道位置">五線譜</span>
         <span class="chip" data-mode="channel" data-tooltip="以滾動高低點為上下緣的價格通道">通道</span>
       </div>
-      <span id="penta-vix-toggle" class="chip" style="margin-left:8px;flex-shrink:0" data-tooltip="疊加 VIX 恐慌指數（右軸，疫情高點 ~89）">VIX</span>
+      <span id="penta-vix-toggle" class="chip" style="margin-left:8px;flex-shrink:0" data-tooltip="疊加 VIX 恐慌指數（右軸，S&amp;P500 隱含波動率）">VIX</span>
+      <span id="penta-vxn-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="疊加 VXN NASDAQ-100 恐慌指數（右軸，對應 QQQ）">VXN</span>
       <span id="penta-fg-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
       <span id="penta-weekly-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="五線譜改用週線計算（資料點更少、噪音更低）">週線</span>
       <span id="penta-ma125-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="自訂均線（預設125日，可手動調整天數）">MA</span><input id="penta-ma-period" type="number" min="5" max="999" value="125" readonly style="width:64px;margin-left:2px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--muted);font-size:13px;text-align:center;outline:none;cursor:default;pointer-events:none" />
@@ -1355,6 +1359,170 @@
           建議配合大周期 MACD、RSI、市寬同步觀察，在警報亮起且市場出現短線反彈時作為減倉時機參考。
           圖表中 <span style="color:#f85149">▼ 紅色三角</span> 為歷史序列信號觸發點；橙色柱 = SKEW 百分位高於 VIX 百分位（背離）；綠色柱 = 無背離。
         </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 金融壓力指數 tab ────────────────────────────────────────── -->
+  <section id="tab-fsi" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span id="fsi-sp-toggle" class="chip active" data-tooltip="疊上 S&P 500（對數右軸）">疊 S&amp;P 500</span>
+      <div id="fsi-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-fsi-range="1Y">1Y</span>
+        <span class="chip" data-fsi-range="3Y">3Y</span>
+        <span class="chip" data-fsi-range="5Y">5Y</span>
+        <span class="chip active" data-fsi-range="10Y">10Y</span>
+        <span class="chip" data-fsi-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="fsi-top">
+      <div class="breadth-card">
+        <div class="bc-label">FSI 總分（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="fsi-level-val">—</span></div>
+        <div class="bc-count" id="fsi-level-sub">—</div>
+        <div class="bc-signal" id="fsi-level-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">壓力趨勢（vs 季均 MA50）</div>
+        <div class="bc-main"><span class="bc-pct" id="fsi-trend-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="fsi-trend-sub">—</div>
+        <div class="bc-signal" id="fsi-trend-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">最大壓力來源（細項）</div>
+        <div class="bc-main"><span class="bc-pct" id="fsi-driver-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="fsi-driver-sub">—</div>
+        <div class="bc-signal" id="fsi-driver-signal">—</div>
+      </div>
+    </div>
+    <div id="fsi-chart" style="height:580px"></div>
+    <div class="status" id="fsi-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 金融壓力指數（OFR FSI）怎麼看？</div>
+      <div class="info-panel-body">
+        <p>這是美國金融研究辦公室（OFR, Office of Financial Research）編製的 <b>金融壓力指數</b>，就是 MacroMicro「美國/全球-金融壓力指數[FSI]」那條線的原始來源。<b>0＝各變量在歷史均值</b>；<b>大於 0＝金融市場風險升高</b>，小於 0＝狀況穩定、風險資產相對安全。每日資料、回溯 2000 年。</p>
+        <p>上圖是 <b>FSI 總分＋20/50/200 日均線</b>（均線判斷壓力是在累積還是消退），可疊 S&amp;P 500（對數右軸）對照壓力與股市的反向關係。下圖把總分拆成 <b>五大細項貢獻</b> 的堆疊面積 —— 五項相加恰好等於總分，所以一眼看出「現在壓力主要來自哪裡」。</p>
+        <table class="info-table">
+          <thead><tr><th>細項</th><th>衡量什麼</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#f85149">信用 Credit</td><td>信用利差、違約風險（公司債 vs 公債）</td></tr>
+            <tr><td style="color:#d2a8ff">股票估值 Equity</td><td>股市評價與本益比面向的壓力</td></tr>
+            <tr><td style="color:#58a6ff">安全資產 Safe assets</td><td>避險資產需求（公債等）</td></tr>
+            <tr><td style="color:#e3b341">資金/流動性 Funding</td><td>銀行間／貨幣市場資金緊俏程度</td></tr>
+            <tr><td style="color:#2dd4bf">波動性 Volatility</td><td>市場波動度（VIX 類）</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">資料：financialresearch.gov OFR FSI（每日、免費、無 key）。定位「環境理解 / 風險溫度計」，非交易訊號 —— 壓力飆升（如 2008、2020 那兩根尖峰）通常與股市重挫同時發生，是事中而非領先指標。台灣對應請見「台股壓力」tab（自建）。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 台股金融壓力 tab ──────────────────────────────────────────── -->
+  <section id="tab-twstress" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span id="ts-twii-toggle" class="chip active" data-tooltip="疊上加權指數（對數右軸）">疊加權指數</span>
+      <div id="ts-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-ts-range="1Y">1Y</span>
+        <span class="chip" data-ts-range="3Y">3Y</span>
+        <span class="chip" data-ts-range="5Y">5Y</span>
+        <span class="chip active" data-ts-range="10Y">10Y</span>
+        <span class="chip" data-ts-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="ts-top">
+      <div class="breadth-card">
+        <div class="bc-label">綜合壓力（0-100，最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="ts-level-val">—</span></div>
+        <div class="bc-count" id="ts-level-sub">—</div>
+        <div class="bc-signal" id="ts-level-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">壓力趨勢（vs 季均 MA50）</div>
+        <div class="bc-main"><span class="bc-pct" id="ts-trend-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="ts-trend-sub">—</div>
+        <div class="bc-signal" id="ts-trend-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">最大壓力來源（四維）</div>
+        <div class="bc-main"><span class="bc-pct" id="ts-driver-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="ts-driver-sub">—</div>
+        <div class="bc-signal" id="ts-driver-signal">—</div>
+      </div>
+    </div>
+    <div id="ts-chart" style="height:580px"></div>
+    <div class="status" id="ts-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 台股金融壓力（自建台版 FSI）怎麼看？</div>
+      <div class="info-panel-body">
+        <p>台灣央行沒有公開免費的金融壓力指數時序，所以這是<b>自建</b>的台版 FSI，跟「金融壓力」tab（美國 OFR FSI）對稱。把四個免費可得的壓力面向各取 2 年滾動百分位後加權平均，合成 <b>0-100 綜合壓力</b>分數 —— <b>越高＝系統性壓力越大</b>（注意：這跟「台股情緒」tab 的恐懼貪婪<b>方向相反</b>，那邊是反向情緒、極度恐懼是買點；這邊高分是真的危險）。</p>
+        <table class="info-table">
+          <thead><tr><th>面向</th><th>權重</th><th>衡量什麼</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#e3b341">匯率波動</td><td>25%</td><td>USD/TWD 20日已實現波動（匯率失序＝壓力）</td></tr>
+            <tr><td style="color:#2dd4bf">股市波動</td><td>30%</td><td>加權 20日已實現波動（台指 VIX 的免費替身）</td></tr>
+            <tr><td style="color:#f85149">融資斷頭</td><td>20%</td><td>大盤融資維持率（反向：維持率低＝接近斷頭）</td></tr>
+            <tr><td style="color:#a371f7">外資避險</td><td>25%</td><td>外資台指期淨未平倉（反向：轉空/減多＝risk-off）</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+          ⚠️ <b>誠實揭露</b>：這版<b>缺兩個維度</b> —— 真正的<b>信用利差</b>（公司債 vs 公債）與<b>銀行間資金壓力</b>，台灣免費端沒有乾淨日序，所以本指數只涵蓋「波動／槓桿／部位」這一角。另外<b>融資維持率只有 2022-12 起</b>，該 leg 的百分位歷史較短、解讀保守看。
+        </p>
+        <p style="margin-top:8px;color:var(--muted)">驗證：2024-08 日圓套利平倉（台股史上最大單日跌點）綜合壓力衝到 ~94、2020-03 COVID ~85，極端事件方向正確。資料：USD/TWD（Yahoo TWD=X）+ 加權（TWII）+ 融資維持率（TWSE 重建）+ 外資期貨（FinMind），皆免費。定位環境理解、非交易訊號。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 消費者信心 tab (UMich UMCSENT + SPY + NBER recessions) ───── -->
+  <section id="tab-umich" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span id="umich-spy-toggle" class="chip active" data-tooltip="疊上 SPY（對數右軸）">疊 SPY</span>
+      <div id="umich-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-umich-range="5Y">5Y</span>
+        <span class="chip" data-umich-range="10Y">10Y</span>
+        <span class="chip" data-umich-range="20Y">20Y</span>
+        <span class="chip" data-umich-range="30Y">30Y</span>
+        <span class="chip active" data-umich-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="umich-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">CSI 當前水位（最新月）</div>
+        <div class="bc-main"><span class="bc-pct" id="umich-level-val">—</span></div>
+        <div class="bc-count" id="umich-level-sub">—</div>
+        <div class="bc-signal" id="umich-level-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">年度趨勢（vs 12個月前）</div>
+        <div class="bc-main"><span class="bc-pct" id="umich-trend-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="umich-trend-sub">—</div>
+        <div class="bc-signal" id="umich-trend-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">均線位置（MA12 / MA24）</div>
+        <div class="bc-main"><span class="bc-pct" id="umich-ma-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="umich-ma-sub">—</div>
+        <div class="bc-signal" id="umich-ma-signal">—</div>
+      </div>
+    </div>
+    <div id="umich-chart" style="height:520px"></div>
+    <div class="status" id="umich-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 密西根大學消費者信心怎麼看？</div>
+      <div class="info-panel-body">
+        <p>這是密西根大學（University of Michigan）每月調查約 500 戶美國家庭的 <b>消費者信心指數（CSI / UMCSENT）</b>，就是 FRED 上 <code>UMCSENT</code> 那條線，也是你在 MacroMicro 看到的「美國-密西根大學消費者信心」同一來源。<b>基期：1966:Q1=100</b>；分數越高代表家庭對經濟越樂觀，越低代表悲觀。月頻，回溯 1978 年。</p>
+        <p><b>紅色陰影區＝NBER 官方衰退期</b>（美國國家經濟研究局認定）。歷史上幾乎每次消費信心大幅下滑都伴隨或略領先衰退，但也有「假警報」（2022 年創歷史低點但沒正式進入衰退）。</p>
+        <table class="info-table">
+          <thead><tr><th>CSI 水位</th><th>歷史對應</th><th>解讀</th></tr></thead>
+          <tbody>
+            <tr><td>&lt; 55</td><td>2022 / 2008 底部附近</td><td>極度悲觀，歷史上常接近底部或仍在下行</td></tr>
+            <tr><td>55–70</td><td>2008 金融危機期間</td><td>明顯偏弱，衰退風險高</td></tr>
+            <tr><td>70–85</td><td>景氣放緩過渡區</td><td>中性偏弱，觀察趨勢方向</td></tr>
+            <tr><td>85–100</td><td>溫和擴張期</td><td>溫和樂觀，基本穩健</td></tr>
+            <tr><td>&gt; 100</td><td>2000/2018 景氣高峰</td><td>高度樂觀，注意均值回歸</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)"><b>2026-05 讀數 44.8</b>，為有紀錄以來歷史新低（打破 2022-06 低點 50.0），2022–2026 這波下滑延續超過 4 年，為史上持續時間最長的消費信心低迷期。是否真的預示 2027 衰退，需搭配信用市場、就業、領先指標交叉確認。</p>
+        <p style="margin-top:6px;color:var(--muted)">資料：FRED UMCSENT（每月，免費，無 key）+ FRED USREC（NBER 衰退判定）+ yfinance SPY 月頻調整後收盤。定位「環境理解 / 宏觀溫度計」，非短期交易訊號。</p>
       </div>
     </div>
   </section>
