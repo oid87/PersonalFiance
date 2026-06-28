@@ -300,7 +300,7 @@ function renderCards() {
 
 function renderChart() {
   if (!mainChart || !composite?.length) return;
-  const from = rangePreset === "all" ? null : (() => {
+  const from = rangePreset === "MAX" ? null : (() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - parseInt(rangePreset));
     return d.toISOString().slice(0, 10);

@@ -173,7 +173,7 @@ export function renderBreadthChart() {
 
   let rows = breadthData.data;
   if (breadthRange !== "MAX") {
-    const years   = breadthRange === "1Y" ? 1 : breadthRange === "2Y" ? 2 : 3;
+    const years   = parseInt(breadthRange) || 2;
     const cutoff  = new Date();
     cutoff.setFullYear(cutoff.getFullYear() - years);
     const cutoffStr = cutoff.toISOString().slice(0, 10);

@@ -166,6 +166,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_flows.py
 
+      - name: Fetch US breakeven inflation expectations (FRED T5YIE/T10YIE/T5YIFR, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_inflation_exp.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 

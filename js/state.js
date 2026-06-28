@@ -8,6 +8,7 @@ export const SERIES = Object.freeze([
   { key: "BTC",   file: "data/BTC.json",          color: "#f7931a", yAxis: 4, default: false },
   { key: "SOXX",  file: "data/SOXX.json",         color: "#22d3ee", yAxis: 0, default: false },
   { key: "MAGS",  file: "data/MAGS.json",         color: "#ff6b6b", yAxis: 0, default: false },
+  { key: "TWII",  file: "data/TWII.json",         color: "#3fb950", yAxis: 3, default: false },
   { key: "VIX",   file: "data/VIX.json",          color: "#f0883e", yAxis: 1, default: false },
   { key: "F&G",   file: "data/fear_greed.json",   color: "#e3b341", yAxis: 2, default: true  },
 ]);

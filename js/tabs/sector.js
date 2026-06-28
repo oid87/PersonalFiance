@@ -9,6 +9,7 @@ let heatmapChart   = null;
 let liveHoldings   = null;
 let twData         = null;
 let curSortedKeys  = [];
+let showSparklines = null;
 
 const PERIODS = ["1W","1M","3M","6M","YTD","1Y"];
 const DAYS    = { "1W":5, "1M":21, "3M":63, "6M":126, "1Y":252 };
@@ -477,6 +478,91 @@ function renderHeatmap(returns) {
   });
 }
 
+// ── Sparklines ─────────────────────────────────────────────────────────
+function adjustChartHeight() {
+  const hmEl = document.getElementById("sector-chart");
+  if (!hmEl) return;
+  hmEl.style.height = showSparklines && curSortedKeys.length
+    ? `calc(100vh - 314px - var(--cat-bar-h))`
+    : "";
+  heatmapChart?.resize();
+}
+
+function renderSparklines() {
+  const wrap = document.getElementById("sector-sparkline-wrap");
+  if (!wrap) return;
+  adjustChartHeight();
+  if (!showSparklines || !curSortedKeys.length) {
+    wrap.style.display = "none";
+    return;
+  }
+
+  const ks = curSortedKeys;
+  const isMob = mob();
+  const leftPad = isMob ? 40 : 56;
+  wrap.style.cssText = `display:flex;padding:4px 16px 0 ${leftPad}px;gap:1px;border-top:1px solid ${tc("#30363d","#d0d7de")}`;
+  if (isMob) wrap.style.minWidth = "600px";
+  wrap.innerHTML = "";
+
+  const frag = document.createDocumentFragment();
+  for (const k of ks) {
+    if (series(k).length < 2) continue;
+    const cell = document.createElement("div");
+    cell.style.cssText = "flex:1;min-width:0;height:50px;cursor:pointer;border-radius:4px";
+    cell.title = `${label(k)} 近3M走勢`;
+    cell.addEventListener("click", () => showLineChart(k));
+    cell.addEventListener("mouseenter", () => { cell.style.background = tc("rgba(255,255,255,.06)","rgba(0,0,0,.05)"); });
+    cell.addEventListener("mouseleave", () => { cell.style.background = ""; });
+    const cvs = document.createElement("canvas");
+    cvs.style.cssText = "width:100%;height:100%;display:block";
+    cell.appendChild(cvs);
+    frag.appendChild(cell);
+  }
+  wrap.appendChild(frag);
+
+  requestAnimationFrame(() => {
+    const ksValid = ks.filter(k => series(k).length >= 2);
+    for (let i = 0; i < ksValid.length && i < wrap.children.length; i++) {
+      const cvs = wrap.children[i]?.querySelector("canvas");
+      if (!cvs) continue;
+      const data = series(ksValid[i]).slice(-63);
+      const ret = calcReturn(series(ksValid[i]), "3M");
+      const color = ret == null ? tc("#8b949e","#57606a") : ret >= 0 ? "#3fb950" : "#f78166";
+      drawSparkline(cvs, data, color);
+    }
+  });
+}
+
+function drawSparkline(cvs, data, color) {
+  const w = cvs.offsetWidth, h = cvs.offsetHeight;
+  if (!w || !h || !data.length) return;
+  const dpr = window.devicePixelRatio || 1;
+  cvs.width = w * dpr;
+  cvs.height = h * dpr;
+  const ctx = cvs.getContext("2d");
+  ctx.scale(dpr, dpr);
+
+  const vals = data.map(d => d[1]);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = max - min || 1;
+  const pad = 3;
+
+  ctx.beginPath();
+  for (let i = 0; i < vals.length; i++) {
+    const x = vals.length > 1 ? (i / (vals.length - 1)) * w : w / 2;
+    const y = pad + (1 - (vals[i] - min) / range) * (h - 2 * pad);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.lineTo(w, h);
+  ctx.lineTo(0, h);
+  ctx.closePath();
+  ctx.fillStyle = color + "1a";
+  ctx.fill();
+}
+
 // ── Main render ─────────────────────────────────────────────────────────
 export async function renderSectorTab() {
   const statusEl = document.getElementById("sector-status");
@@ -505,6 +591,7 @@ export async function renderSectorTab() {
 
   renderTreemap(returns);
   renderHeatmap(returns);
+  renderSparklines();
 
   const latestDates = ks.map(k => series(k)?.at(-1)?.[0]).filter(Boolean).sort();
   const latest = latestDates.at(-1) ?? "—";
@@ -524,6 +611,9 @@ function initCharts() {
 }
 
 export function activate() {
+  if (showSparklines === null) showSparklines = !mob();
+  const tog = document.getElementById("sector-sparkline-toggle");
+  if (tog) tog.classList.toggle("active", showSparklines);
   initCharts();
   setTimeout(() => { treemapChart?.resize(); heatmapChart?.resize(); renderSectorTab(); }, 50);
 }
@@ -536,8 +626,10 @@ export function onThemeChange(light) {
 }
 
 export function resize() {
+  document.getElementById("sector-chart")?.style.removeProperty("height");
   treemapChart?.resize();
   heatmapChart?.resize();
+  renderSparklines();
 }
 
 // ── Event listeners ─────────────────────────────────────────────────────
@@ -548,6 +640,12 @@ document.getElementById("sector-sort-picker")?.addEventListener("click", e => {
   for (const c of e.currentTarget.querySelectorAll(".chip"))
     c.classList.toggle("active", c === t);
   renderSectorTab();
+});
+
+document.getElementById("sector-sparkline-toggle")?.addEventListener("click", e => {
+  showSparklines = !showSparklines;
+  e.currentTarget.classList.toggle("active", showSparklines);
+  renderSparklines();
 });
 
 document.getElementById("sector-market-picker")?.addEventListener("click", e => {

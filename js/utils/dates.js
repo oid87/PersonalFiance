@@ -11,6 +11,7 @@ export function tsToLocalDate(ts) {
 export function presetStart(preset) {
   const d = new Date();
   if      (preset === "6M")   d.setMonth(d.getMonth() - 6);
+  else if (preset === "1Y")   d.setFullYear(d.getFullYear() - 1);
   else if (preset === "1Y6M") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
   else if (preset === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
   else if (preset === "5Y")   d.setFullYear(d.getFullYear() - 5);

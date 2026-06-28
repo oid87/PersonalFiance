@@ -47,7 +47,7 @@
     #theme-btn:hover { color: var(--text); border-color: var(--text); }
 
     /* ── Category bar height token ───────────────────────────────── */
-    :root { --cat-bar-h: 56px; }
+    :root { --cat-bar-h: 40px; }
 
     /* ── Sub-nav (scrollable pill bar below header) ──────────────── */
     .sub-nav {
@@ -93,21 +93,20 @@
     .cat-btn {
       flex: 1;
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
-      gap: 2px;
+      gap: 0;
       background: none;
       border: none;
       color: var(--muted);
       cursor: pointer;
       font-family: inherit;
+      font-size: 13px;
       transition: color .15s, background .15s;
     }
     .cat-btn:hover { color: var(--text); }
     .cat-btn.active { color: var(--accent); border-top: 2px solid var(--accent); }
-    .cat-icon { font-size: 18px; line-height: 1; }
-    .cat-label { font-size: 11px; }
     .tab-section[hidden] { display: none !important; }
 
     /* ── Shared controls ──────────────────────────────────────────── */
@@ -662,12 +661,11 @@
 
     /* ── Landscape mobile (e.g. iPhone 11/16e 852×393) ─────────────── */
     @media (max-height: 500px) {
-      :root { --cat-bar-h: 44px; }
+      :root { --cat-bar-h: 36px; }
       header { padding: 6px 12px; }
       .sub-nav { height: 36px; padding: 0 8px; }
       .sub-btn { font-size: 11px; padding: 3px 10px; }
-      .cat-icon { font-size: 15px; }
-      .cat-label { font-size: 10px; }
+      .cat-btn { font-size: 11px; }
 
       .controls {
         padding: 6px 12px;

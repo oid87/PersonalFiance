@@ -15,6 +15,7 @@ const POS_TICKERS = [
   { key: "SPY",  label: "SPY / VOO",   color: "#a371f7" },
   { key: "QQQ",  label: "QQQ",          color: "#f778ba" },
   { key: "SOXX", label: "SOXX 半導體",  color: "#22d3ee" },
+  { key: "TWII", label: "台灣加權",     color: "#3fb950" },
 ];
 const PERIODS   = [20, 50, 200];
 const MA_COLOR  = { 20: "#58a6ff", 50: "#e3b341", 200: "#f85149" };

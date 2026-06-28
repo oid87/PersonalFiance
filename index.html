@@ -44,6 +44,7 @@
       <div class="range-wrap">
         <div id="range-picker">
           <span class="chip" data-range="6M" data-tooltip="顯示近半年走勢">0.5Y</span>
+          <span class="chip" data-range="1Y" data-tooltip="顯示近1年走勢">1Y</span>
           <span class="chip" data-range="1Y6M" data-tooltip="顯示近1.5年走勢">1.5Y</span>
           <span class="chip" data-range="3.5Y" data-tooltip="顯示近3.5年走勢">3.5Y</span>
           <span class="chip active" data-range="5Y" data-tooltip="顯示近5年走勢">5Y</span>
@@ -149,6 +150,8 @@
       <span id="m2-toggle" class="chip" data-tooltip="M2貨幣供給年增率（右軸）：流動性寬鬆/緊縮指標">M2年增率</span>
       <span id="cape-toggle" class="chip" data-tooltip="Shiller CAPE / P/E10（右軸）：長期市場估值指標">CAPE</span>
       <div id="macro-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-macro-range="1Y" data-tooltip="顯示近1年總經數據">1Y</span>
+        <span class="chip" data-macro-range="3Y" data-tooltip="顯示近3年總經數據">3Y</span>
         <span class="chip" data-macro-range="5Y" data-tooltip="顯示近5年總經數據">5Y</span>
         <span class="chip active" data-macro-range="10Y" data-tooltip="顯示近10年總經數據">10Y</span>
         <span class="chip" data-macro-range="20Y" data-tooltip="顯示近20年總經數據">20Y</span>
@@ -171,6 +174,7 @@
         <span class="chip active" data-sector-mkt="us">🇺🇸 美股</span>
         <span class="chip" data-sector-mkt="tw">🇹🇼 台股</span>
       </div>
+      <span class="chip active" id="sector-sparkline-toggle" data-tooltip="切換迷你走勢圖">走勢</span>
       <div id="sector-sort-picker" style="display:flex;gap:4px;margin-left:auto">
         <span class="chip active" data-sector-col="1M" data-tooltip="依最近1個月報酬率排列">1M</span>
         <span class="chip" data-sector-col="3M" data-tooltip="依最近3個月報酬率排列">3M</span>
@@ -178,7 +182,7 @@
       </div>
     </div>
     <div id="sector-treemap" style="width:100%;height:260px"></div>
-    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div id="sector-chart"></div></div>
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div id="sector-chart"></div><div id="sector-sparkline-wrap"></div></div>
     <div class="status" id="sector-status">切換至此 tab 自動載入產業數據…</div>
   </section>
 
@@ -247,6 +251,7 @@
     </div>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
       <div id="val-range-picker" style="display:flex;gap:6px">
+        <span class="chip" data-val-range="1Y">1Y</span>
         <span class="chip" data-val-range="3Y">3Y</span>
         <span class="chip active" data-val-range="5Y">5Y</span>
         <span class="chip" data-val-range="10Y">10Y</span>
@@ -342,6 +347,7 @@
     <div class="controls">
       <span style="font-size:13px;color:var(--muted)">4指標複合情緒 · VIX · 信用利差 · SPY趨勢 · 避險資金</span>
       <div id="sent-range-picker" class="range-wrap" style="margin-left:auto">
+        <span class="chip" data-sent-range="1Y">1Y</span>
         <span class="chip" data-sent-range="3Y">3Y</span>
         <span class="chip active" data-sent-range="5Y">5Y</span>
         <span class="chip" data-sent-range="10Y">10Y</span>
@@ -760,15 +766,20 @@
   <section id="tab-bullbear" class="tab-section" hidden>
     <div class="controls">
       <div id="bb-range-picker" style="display:flex;gap:4px">
-        <span class="chip" data-range="1Y">1Y</span>
-        <span class="chip" data-range="3Y">3Y</span>
-        <span class="chip active" data-range="5Y">5Y</span>
-        <span class="chip" data-range="MAX">MAX</span>
+        <span class="chip" data-bb-range="1Y">1Y</span>
+        <span class="chip" data-bb-range="3Y">3Y</span>
+        <span class="chip active" data-bb-range="5Y">5Y</span>
+        <span class="chip" data-bb-range="MAX">MAX</span>
       </div>
     </div>
 
     <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
-      <div id="bb-gauge" style="width:260px;height:220px;flex-shrink:0"></div>
+      <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+        <div id="bb-gauge" style="width:260px;height:220px"></div>
+        <div id="bb-label" style="font-size:1.3em;font-weight:700;margin-top:-12px"></div>
+        <div id="bb-updated" style="font-size:0.85em;color:var(--muted);margin-top:4px"></div>
+        <div id="bb-signal" style="font-size:1em;font-weight:600;margin-top:6px;display:none"></div>
+      </div>
       <div id="bb-bars" style="flex:1;min-width:320px"></div>
     </div>
 
@@ -1566,11 +1577,74 @@
     </div>
   </section>
 
+  <!-- ── 通膨預期 tab ──────────────────────────────────────────────── -->
+  <section id="tab-inflation" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span id="inf-spy-toggle" class="chip" data-tooltip="疊上 SPY（對數右軸）">疊 SPY</span>
+      <span id="inf-ma-toggle" class="chip" data-tooltip="顯示 5Y Breakeven 的 MA20 / MA50">均線</span>
+      <div id="inf-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-inf-range="1Y">1Y</span>
+        <span class="chip active" data-inf-range="3Y">3Y</span>
+        <span class="chip" data-inf-range="5Y">5Y</span>
+        <span class="chip" data-inf-range="10Y">10Y</span>
+        <span class="chip" data-inf-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="inf-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">5Y Breakeven（最新日）</div>
+        <div class="bc-main"><span class="bc-pct" id="inf-5y-val">—</span></div>
+        <div class="bc-count" id="inf-5y-sub">—</div>
+        <div class="bc-signal" id="inf-5y-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">月變化（20個交易日）</div>
+        <div class="bc-main"><span class="bc-pct" id="inf-chg-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="inf-chg-sub">—</div>
+        <div class="bc-signal" id="inf-chg-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">期限利差（10Y − 5Y）</div>
+        <div class="bc-main"><span class="bc-pct" id="inf-spread-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="inf-spread-sub">—</div>
+        <div class="bc-signal" id="inf-spread-signal">—</div>
+      </div>
+    </div>
+    <div id="inf-chart" style="height:520px"></div>
+    <div class="status" id="inf-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 通膨預期（Breakeven）怎麼看？</div>
+      <div class="info-panel-body">
+        <p>這是用 <b>TIPS（通膨連結債券）</b>和名義國債的利差算出的市場通膨預期（breakeven inflation rate），代表市場對未來通膨的「定價」。<b>5Y breakeven 2.0% = 市場認為未來 5 年年均通膨約 2%</b>。這跟 Bloomberg 那張 Tavi Costa 的圖一模一樣的數據源。</p>
+        <table class="info-table">
+          <thead><tr><th>系列</th><th>含義</th><th>用途</th></tr></thead>
+          <tbody>
+            <tr><td>5Y Breakeven (T5YIE)</td><td>未來 5 年年均通膨預期</td><td>最敏感、最常看的一條，Fed 密切關注</td></tr>
+            <tr><td>10Y Breakeven (T10YIE)</td><td>未來 10 年年均通膨預期</td><td>中長期錨定，比 5Y 穩定</td></tr>
+            <tr><td>5Y-5Y Forward (T5YIFR)</td><td>5 年後起算的 5 年通膨預期</td><td>純長期預期，排除短期噪音，Fed 最愛</td></tr>
+          </tbody>
+        </table>
+        <table class="info-table" style="margin-top:12px">
+          <thead><tr><th>5Y Breakeven 水位</th><th>解讀</th></tr></thead>
+          <tbody>
+            <tr><td>&gt; 3.0%</td><td>通膨預期過熱，升息壓力大</td></tr>
+            <tr><td>2.5–3.0%</td><td>偏高，Fed 警戒區</td></tr>
+            <tr><td>2.0–2.5%</td><td>正常區間，通膨錨定良好</td></tr>
+            <tr><td>1.5–2.0%</td><td>偏低，通縮隱憂浮現</td></tr>
+            <tr><td>&lt; 1.5%</td><td>通縮預期，衰退/金融危機訊號</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)"><b>期限利差（10Y − 5Y）</b>：正值 = 市場認為通膨持久（長期 > 短期）；負值 = 暫時性通膨或短期衝擊（如關稅）。5Y 急跌而 5Y-5Y Forward 穩定 = 結構性產能過剩壓住長期通膨。</p>
+        <p style="margin-top:6px;color:var(--muted)">資料：FRED T5YIE / T10YIE / T5YIFR（每日，2003+，免費，無 key）。虛線為 Fed 2% 通膨目標。定位「貨幣政策預期 / 利率方向參考」。</p>
+      </div>
+    </div>
+  </section>
+
   <nav class="cat-bar">
-    <button class="cat-btn" data-cat="sentiment"><span class="cat-icon">😨</span><span class="cat-label">情緒</span></button>
-    <button class="cat-btn" data-cat="liquidity"><span class="cat-icon">💧</span><span class="cat-label">流動性</span></button>
-    <button class="cat-btn active" data-cat="position"><span class="cat-icon">📊</span><span class="cat-label">位置</span></button>
-    <button class="cat-btn" data-cat="analysis"><span class="cat-icon">🛠</span><span class="cat-label">分析</span></button>
+    <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
+    <button class="cat-btn" data-cat="liquidity">💧　流動性</button>
+    <button class="cat-btn active" data-cat="position">📊　位置</button>
+    <button class="cat-btn" data-cat="analysis">🛠　分析</button>
   </nav>
 
   <script type="module" src="js/boot.js"></script>
