@@ -123,7 +123,8 @@ function buildSeries(rows, field) {
 function rangeStartDate(key, minDate) {
   if (key === "MAX") return minDate || "1900-01-01";
   const d = new Date();
-  ({ "3Y": () => d.setFullYear(d.getFullYear() - 3),
+  ({ "1Y": () => d.setFullYear(d.getFullYear() - 1),
+     "3Y": () => d.setFullYear(d.getFullYear() - 3),
      "5Y": () => d.setFullYear(d.getFullYear() - 5),
     "10Y": () => d.setFullYear(d.getFullYear() - 10),
     "20Y": () => d.setFullYear(d.getFullYear() - 20) })[key]?.();

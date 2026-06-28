@@ -20,7 +20,9 @@ const BIZ_ZONES = [
 function filterMacroRange(rows) {
   if (macroRangePreset === "MAX") return rows;
   const d = new Date();
-  if      (macroRangePreset === "5Y")  d.setFullYear(d.getFullYear() - 5);
+  if      (macroRangePreset === "1Y")  d.setFullYear(d.getFullYear() - 1);
+  else if (macroRangePreset === "3Y")  d.setFullYear(d.getFullYear() - 3);
+  else if (macroRangePreset === "5Y")  d.setFullYear(d.getFullYear() - 5);
   else if (macroRangePreset === "10Y") d.setFullYear(d.getFullYear() - 10);
   else if (macroRangePreset === "20Y") d.setFullYear(d.getFullYear() - 20);
   const from = d.toISOString().slice(0, 10);
@@ -187,7 +189,7 @@ function renderBizChart() {
 
   const d = new Date();
   if (macroRangePreset !== "MAX") {
-    const y = { "5Y": -5, "10Y": -10, "20Y": -20 }[macroRangePreset] ?? -10;
+    const y = { "1Y": -1, "3Y": -3, "5Y": -5, "10Y": -10, "20Y": -20 }[macroRangePreset] ?? -10;
     d.setFullYear(d.getFullYear() + y);
   }
   const from = macroRangePreset === "MAX" ? "1900-01-01" : d.toISOString().slice(0, 10);

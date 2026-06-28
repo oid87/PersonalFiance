@@ -26,6 +26,7 @@ import * as fsiTab        from './tabs/fsi.js';
 import * as twStressTab   from './tabs/twstress.js';
 import * as umichTab      from './tabs/umich.js';
 import * as flowsTab      from './tabs/flows.js';
+import * as inflationTab  from './tabs/inflation.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -51,6 +52,7 @@ registerAll([
   { id: 'twstress',  module: twStressTab  },
   { id: 'umich',     module: umichTab     },
   { id: 'flows',    module: flowsTab     },
+  { id: 'inflation', module: inflationTab },
 ]);
 
 setupResizeHandler();
@@ -73,6 +75,7 @@ const CATEGORIES = [
       { id: 'fsi',       label: '金融壓力' },
       { id: 'twstress',  label: '台股壓力' },
       { id: 'vixskew',   label: 'VIX-SKEW' },
+      { id: 'inflation', label: '通膨預期' },
     ]
   },
   {
