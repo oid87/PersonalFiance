@@ -94,6 +94,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_taiwan_business_signal.py
 
+      - name: Fetch Taiwan sector indices (TWSE, 台股產業輪動)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_sector_index.py
+
       - name: Fetch sector ETF holdings (yfinance, 產業輪動持股彈窗)
         continue-on-error: true
         run: python scripts/fetch_sector_holdings.py
@@ -157,6 +161,10 @@ jobs:
       - name: Fetch UMich Consumer Sentiment + NBER recessions + SPY monthly (FRED, free)
         continue-on-error: true
         run: python scripts/fetch_umich.py
+
+      - name: Fetch weekly signed dollar volume (SOXX+SMH, QQQ, 0050.TW — yfinance, free)
+        continue-on-error: true
+        run: python scripts/fetch_flows.py
 
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py

@@ -24,6 +24,7 @@ GitHub Actions `.github/workflows/fetch.yml` 每天自動跑、跑完 `git add d
 | `taiwan_fut_inst.json`（台指期三大法人/散戶多空，FinMind 2018+） | `fetch_taiwan_fut_inst.py` †| ✅ |
 | `taiwan_margin_total.json`（大盤融資餘額，FinMind 2008+） | `fetch_taiwan_margin_total.py` †| ✅ |
 | `taiwan_sentiment.json`（台股恐懼貪婪複合指數） | `compute_taiwan_sentiment.py`（讀上面4檔算） | ✅ |
+| `taiwan_sector_index.json`（台股 19 產業指數收盤，TWSE 2023+） | `fetch_taiwan_sector_index.py` | ✅ |
 | **`VIX_early.json`** | （無腳本，**靜態**） | ❌ 1986–1999 歷史，永不變，**必須保留在 repo，別刪** |
 
 † FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workflow step 已設 env），本地讀 repo 根 `.finmind_token` 或 `../Financial_work/.finmind_token`。沒設則匿名（低額度，單次每日呼叫通常仍可）。

@@ -32,6 +32,7 @@ $PYTHON fetch_taiwan_mktcap_anchor.py || true
 $PYTHON compute_taiwan_margin_mktcap.py || true
 $PYTHON compute_taiwan_sentiment.py || true
 $PYTHON fetch_taiwan_business_signal.py || true
+$PYTHON fetch_taiwan_sector_index.py   || true
 $PYTHON fetch_yields.py        || true
 $PYTHON fetch_breadth.py       || true
 $PYTHON fetch_cape.py          || true
@@ -52,6 +53,7 @@ $PYTHON fetch_fsi.py           || true
 $PYTHON fetch_usdtwd.py        || true
 $PYTHON compute_taiwan_stress.py || true
 $PYTHON fetch_umich.py         || true
+$PYTHON fetch_flows.py         || true
 
 # 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"

@@ -12,7 +12,7 @@ export function switchTo(id) {
   document.querySelectorAll(".tab-section").forEach(s => { s.hidden = true; });
   const section = document.getElementById("tab-" + id);
   if (section) section.hidden = false;
-  document.querySelectorAll(".tab-btn").forEach(b =>
+  document.querySelectorAll(".sub-btn").forEach(b =>
     b.classList.toggle("active", b.dataset.tab === id));
   const entry = tabs.find(t => t.id === id);
   if (!entry) return;
