@@ -1,4 +1,4 @@
-import { SERIES, loaded } from '../state.js';
+import { SERIES, CORR_EXTRA, loaded } from '../state.js';
 import { isLight, tc, mob } from '../utils/theme.js';
 import { loadSeries } from '../utils/data.js';
 import { toArithReturns, pearsonCorr } from '../utils/math.js';
@@ -12,7 +12,7 @@ export async function renderCorrTab() {
   statusEl.textContent = "載入資料中…";
 
   try {
-    await Promise.all(SERIES.map(loadSeries));
+    await Promise.all([...SERIES, ...CORR_EXTRA].map(loadSeries));
   } catch (e) {
     statusEl.textContent = `載入失敗：${e.message}`; return;
   }
@@ -26,7 +26,9 @@ export async function renderCorrTab() {
 
   // F&G is a 0–100 sentiment oscillator, not a price series — arithmetic
   // returns on a bounded index don't carry the same meaning as on prices.
-  const keys = SERIES.map(s => s.key).filter(k => loaded[k] && k !== "F&G");
+  // CORR_EXTRA (TLT/DXY/US10Y) are appended after main SERIES for context.
+  const allSeries = [...SERIES, ...CORR_EXTRA];
+  const keys = allSeries.map(s => s.key).filter(k => loaded[k] && k !== "F&G");
 
   // Arithmetic returns per ticker, filtered to period
   const retMaps = {};

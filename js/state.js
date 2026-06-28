@@ -29,6 +29,12 @@ export const CK_ASSETS_3 = Object.freeze([
   { key: "QQQ", color: "#f778ba", file: "data/QQQ.json" },
 ]);
 
+export const CORR_EXTRA = Object.freeze([
+  { key: "TLT",   file: "data/TLT.json"   },
+  { key: "DXY",   file: "data/DXY.json"   },
+  { key: "US10Y", file: "data/US10Y.json" },
+]);
+
 export const SECTOR_ETFS = Object.freeze(["XLK","XLF","XLV","XLE","XLI","XLY","XLP","XLU","XLRE","XLB","XLC"]);
 
 export const SECTOR_LABEL = Object.freeze({

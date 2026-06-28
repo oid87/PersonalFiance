@@ -25,6 +25,7 @@ import * as vixSkewTab   from './tabs/vixskew.js';
 import * as fsiTab        from './tabs/fsi.js';
 import * as twStressTab   from './tabs/twstress.js';
 import * as umichTab      from './tabs/umich.js';
+import * as flowsTab      from './tabs/flows.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -49,9 +50,66 @@ registerAll([
   { id: 'fsi',       module: fsiTab       },
   { id: 'twstress',  module: twStressTab  },
   { id: 'umich',     module: umichTab     },
+  { id: 'flows',    module: flowsTab     },
 ]);
 
 setupResizeHandler();
+
+const CATEGORIES = [
+  {
+    id: 'sentiment', tabs: [
+      { id: 'sentiment', label: '複合情緒' },
+      { id: 'aaii',      label: '散戶情緒' },
+      { id: 'twsent',    label: '台股情緒' },
+      { id: 'bullbear',  label: '牛熊' },
+      { id: 'umich',     label: '消費者信心' },
+      { id: 'flows',    label: '資金脈衝' },
+    ]
+  },
+  {
+    id: 'liquidity', tabs: [
+      { id: 'liquidity', label: '流動性' },
+      { id: 'breadth',   label: '市場廣度' },
+      { id: 'fsi',       label: '金融壓力' },
+      { id: 'twstress',  label: '台股壓力' },
+      { id: 'vixskew',   label: 'VIX-SKEW' },
+    ]
+  },
+  {
+    id: 'position', tabs: [
+      { id: 'trend',     label: '趨勢' },
+      { id: 'pentagram', label: '五線譜' },
+      { id: 'macro',     label: '宏觀' },
+      { id: 'valuation', label: '估值' },
+      { id: 'position',  label: '位階' },
+      { id: 'twcycle',   label: '景氣燈號' },
+    ]
+  },
+  {
+    id: 'analysis', tabs: [
+      { id: 'corr',     label: '相關係數' },
+      { id: 'sector',   label: '產業輪動' },
+      { id: 'cashking', label: '現金為王' },
+      { id: 'earnings', label: '財報日' },
+      { id: 'wave',     label: '波浪理論' },
+      { id: 'leverage', label: '槓桿模擬' },
+    ]
+  },
+];
+
+function renderSubNav(cat, activeTabId) {
+  const subNav = document.getElementById('sub-nav');
+  subNav.innerHTML = cat.tabs.map(t =>
+    `<button class="sub-btn${t.id === activeTabId ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`
+  ).join('');
+  subNav.querySelectorAll('.sub-btn').forEach(btn =>
+    btn.addEventListener('click', () => {
+      subNav.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      switchTo(btn.dataset.tab);
+    })
+  );
+}
 
 function applyTheme(light) {
   document.body.classList.toggle("light", light);
@@ -62,8 +120,20 @@ function applyTheme(light) {
 
 document.getElementById("theme-btn").addEventListener("click", () => applyTheme(!isLight()));
 
-document.querySelectorAll(".tab-btn").forEach(btn =>
-  btn.addEventListener("click", () => switchTo(btn.dataset.tab)));
+// Default: 位置 category, 趨勢 tab
+let _activeCat = CATEGORIES.find(c => c.id === 'position');
+renderSubNav(_activeCat, 'trend');
+
+document.querySelectorAll(".cat-btn").forEach(btn =>
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    _activeCat = CATEGORIES.find(c => c.id === btn.dataset.cat);
+    const firstTab = _activeCat.tabs[0].id;
+    renderSubNav(_activeCat, firstTab);
+    switchTo(firstTab);
+  })
+);
 
 (async () => {
   const status = document.getElementById("status");

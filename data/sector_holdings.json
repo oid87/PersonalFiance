@@ -1,5 +1,5 @@
 {
-  "updated": "2026-06-26",
+  "updated": "2026-06-28",
   "data": {
     "XLK": [
       {
@@ -653,10 +653,10 @@
         "desc": "演唱會／票務"
       },
       {
-        "sym": "SATS",
+        "sym": "ECHO",
         "w": 4.6,
-        "zh": "EchoStar",
-        "desc": "衛星通訊(Dish)"
+        "zh": "EchoStar Corp Clas",
+        "desc": ""
       },
       {
         "sym": "DIS",

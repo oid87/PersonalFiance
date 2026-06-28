@@ -14,30 +14,7 @@
     <button id="theme-btn" title="切換明暗主題">☾</button>
   </header>
 
-  <nav class="tab-bar">
-    <button class="tab-btn active" data-tab="trend" data-tooltip="S&P 500 / QQQ 走勢 · 移動均線 · 恐懼貪婪區間">趨勢</button>
-    <button class="tab-btn" data-tab="pentagram" data-tooltip="各資產相對均值偏離程度（±σ通道）">五線譜</button>
-    <button class="tab-btn" data-tab="macro" data-tooltip="美債殖利率曲線 · M2貨幣供給 · Shiller CAPE">宏觀</button>
-    <button class="tab-btn" data-tab="corr" data-tooltip="各資產日報酬率 Pearson 相關係數熱力圖">相關係數</button>
-    <button class="tab-btn" data-tab="sector" data-tooltip="美股11大產業 ETF 各期間報酬排名">產業輪動</button>
-    <button class="tab-btn" data-tab="cashking" data-tooltip="GLD/BTC/TLT/QQQ 同跌 + F&G 低 → 持現金訊號">現金為王時刻</button>
-    <button class="tab-btn" data-tab="valuation" data-tooltip="Forward P/E 估值連結 · MacroMicro（QQQ / SPY / 台股）">估值</button>
-    <button class="tab-btn" data-tab="sentiment" data-tooltip="VIX · 信用利差 · SPY趨勢 · 避險資金 — 4指標複合情緒 + 回測">情緒</button>
-    <button class="tab-btn" data-tab="aaii" data-tooltip="AAII 散戶調查 · CNN恐懼貪婪 · VIX · S&P500 對照（仿 MacroMicro）">散戶情緒</button>
-    <button class="tab-btn" data-tab="twsent" data-tooltip="台股恐懼貪婪指數（P/C·散戶多空·趨勢·融資）+ 加權指數 + 原始元件">台股情緒</button>
-    <button class="tab-btn" data-tab="breadth" data-tooltip="S&P 500 成份股站上 50日/200日均線比例 — 市場廣度與多空健康度">市場廣度</button>
-    <button class="tab-btn" data-tab="earnings" data-tooltip="Mag7 + TSMC 財報日月曆（近三個月）">財報日</button>
-    <button class="tab-btn" data-tab="leverage" data-tooltip="槓桿ETF每日重置的複利耗損模擬 + 真實歷史事件回測（TQQQ/SOXL/UPRO/00631L/00675L）">槓桿模擬</button>
-    <button class="tab-btn" data-tab="position" data-tooltip="布林通道 + 乖離率 20/50/200 日，判斷超買超賣位置">位階</button>
-    <button class="tab-btn" data-tab="liquidity" data-tooltip="Fed淨流動性 + FINRA融資餘額 + M2/DXY — 資金面環境判讀">流動性</button>
-    <button class="tab-btn" data-tab="bullbear" data-tooltip="窮人版 BofA 牛熊指標（8元件百分位合成 0-10）— 反向情緒">牛熊</button>
-    <button class="tab-btn" data-tab="wave" data-tooltip="台股/QQQ/SPY/SOXX 波浪結構對照 + 波浪關鍵點位 + 台積電估值矩陣">波浪理論</button>
-    <button class="tab-btn" data-tab="twcycle" data-tooltip="國發會景氣對策信號（景氣燈號）9–45 分五燈 · 月頻 1984+ · 循環位置環境理解">景氣燈號</button>
-    <button class="tab-btn" data-tab="vixskew" data-tooltip="VIX-SKEW 序列背離警報 · 同步上升→背離→暴跌前兆 · SPY+市寬 · 1993起">VIX-SKEW</button>
-    <button class="tab-btn" data-tab="fsi" data-tooltip="美國 OFR 金融壓力指數（信用/股票估值/安全資產/資金/波動性 五細項）+ 20/50/200日均線 · 2000起">金融壓力</button>
-    <button class="tab-btn" data-tab="twstress" data-tooltip="台股金融壓力（自建台版FSI）：匯率波動+股市波動+融資維持率+外資期貨 四維合成 0-100 · 越高壓力越大">台股壓力</button>
-    <button class="tab-btn" data-tab="umich" data-tooltip="密西根大學消費者信心（UMCSENT）+ SPY 雙軸 + NBER 衰退陰影 · 月頻 1978起">消費者信心</button>
-  </nav>
+  <nav id="sub-nav" class="sub-nav"></nav>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
   <section id="tab-trend" class="tab-section">
@@ -190,13 +167,17 @@
   <!-- ── 產業輪動 tab ────────────────────────────────────────────── -->
   <section id="tab-sector" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">美股11大產業 ETF · 各期間報酬率</span>
+      <div id="sector-market-picker" style="display:flex;gap:4px">
+        <span class="chip active" data-sector-mkt="us">🇺🇸 美股</span>
+        <span class="chip" data-sector-mkt="tw">🇹🇼 台股</span>
+      </div>
       <div id="sector-sort-picker" style="display:flex;gap:4px;margin-left:auto">
-        <span class="chip active" data-sector-col="1M" data-tooltip="依最近1個月報酬率，由高至低排列各產業">1M排序</span>
-        <span class="chip" data-sector-col="3M" data-tooltip="依最近3個月報酬率，由高至低排列各產業">3M排序</span>
-        <span class="chip" data-sector-col="1Y" data-tooltip="依最近1年報酬率，由高至低排列各產業">1Y排序</span>
+        <span class="chip active" data-sector-col="1M" data-tooltip="依最近1個月報酬率排列">1M</span>
+        <span class="chip" data-sector-col="3M" data-tooltip="依最近3個月報酬率排列">3M</span>
+        <span class="chip" data-sector-col="1Y" data-tooltip="依最近1年報酬率排列">1Y</span>
       </div>
     </div>
+    <div id="sector-treemap" style="width:100%;height:260px"></div>
     <div style="overflow-x:auto;-webkit-overflow-scrolling:touch"><div id="sector-chart"></div></div>
     <div class="status" id="sector-status">切換至此 tab 自動載入產業數據…</div>
   </section>
@@ -1526,6 +1507,71 @@
       </div>
     </div>
   </section>
+
+  <section id="tab-flows" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="flows-ticker-picker" style="display:flex;gap:4px">
+        <span class="chip active" data-flows-ticker="semi">半導體 (SOXX+SMH)</span>
+        <span class="chip" data-flows-ticker="qqq">QQQ</span>
+        <span class="chip" data-flows-ticker="tw50">0050.TW</span>
+      </div>
+      <span id="flows-fg-toggle" class="chip" data-tooltip="疊 CNN Fear & Greed（右軸 0-100）">F&G</span>
+      <span id="flows-vix-toggle" class="chip" data-tooltip="疊 VIX（右軸）">VIX</span>
+      <div id="flows-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-flows-range="3Y">3Y</span>
+        <span class="chip" data-flows-range="5Y">5Y</span>
+        <span class="chip" data-flows-range="10Y">10Y</span>
+        <span class="chip active" data-flows-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="flows-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">本週簽名成交量</div>
+        <div class="bc-main"><span class="bc-pct" id="flows-cur-val">—</span></div>
+        <div class="bc-count" id="flows-cur-sub">—</div>
+        <div class="bc-signal" id="flows-cur-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">絕對值百分位（擁擠度）</div>
+        <div class="bc-main"><span class="bc-pct" id="flows-rank-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="flows-rank-sub">—</div>
+        <div class="bc-signal" id="flows-rank-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">歷史最大正向週</div>
+        <div class="bc-main"><span class="bc-pct" id="flows-max-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="flows-max-sub">—</div>
+        <div class="bc-signal" id="flows-max-signal">—</div>
+      </div>
+    </div>
+    <div id="flows-chart" style="height:520px"></div>
+    <div class="status" id="flows-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 資金脈衝（簽名成交量）怎麼看？</div>
+      <div class="info-panel-body">
+        <p>這張圖仿高盛的「Semiconductor ETFs: Weekly Flows」風格，但用的是 <b>簽名成交量（signed dollar volume）</b>作為資金流向的免費替代指標：每日成交量 × 收盤價，按週彙總後乘以週報酬方向（正＝+1，負＝-1）。</p>
+        <p><b>不是真正的 fund flow。</b>真實 ETF 資金流需要 creation/redemption 資料（Bloomberg 等級付費數據）。簽名成交量是一個方向性 proxy：大量資金在上漲週湧入 → 正向脈衝，反之 → 負向脈衝。</p>
+        <table class="info-table">
+          <thead><tr><th>訊號</th><th>解讀</th></tr></thead>
+          <tbody>
+            <tr><td>歷史級正向脈衝</td><td>群體 FOMO 湧入，短期買盤可能耗竭 — 階段性頂部警訊</td></tr>
+            <tr><td>歷史級負向脈衝</td><td>恐慌拋售，短期賣壓可能過度 — 反彈契機但不保證底部</td></tr>
+            <tr><td>V 型反轉（極負→極正）</td><td>情緒踩踏，從極悲觀到極樂觀 — 典型過熱特徵</td></tr>
+            <tr><td>波幅擴大趨勢</td><td>ETF 規模成長 + 市場參與度上升 → 2025+ 波幅自然放大</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">標的：半導體 = SOXX + SMH 合併成交量；QQQ = Nasdaq-100 ETF；0050.TW = 元大台灣50 ETF（NT$ 計價）。週頻，2012 年至今。定位「群體擁擠度 / 情緒脈衝」，搭配其他情緒指標交叉確認。</p>
+        <p style="margin-top:6px;color:var(--muted)">資料：yfinance（免費，無 key）。圖靈感來源：Goldman Sachs Semiconductor ETFs Weekly Flows。</p>
+      </div>
+    </div>
+  </section>
+
+  <nav class="cat-bar">
+    <button class="cat-btn" data-cat="sentiment"><span class="cat-icon">😨</span><span class="cat-label">情緒</span></button>
+    <button class="cat-btn" data-cat="liquidity"><span class="cat-icon">💧</span><span class="cat-label">流動性</span></button>
+    <button class="cat-btn active" data-cat="position"><span class="cat-icon">📊</span><span class="cat-label">位置</span></button>
+    <button class="cat-btn" data-cat="analysis"><span class="cat-icon">🛠</span><span class="cat-label">分析</span></button>
+  </nav>
 
   <script type="module" src="js/boot.js"></script>
 </body>
