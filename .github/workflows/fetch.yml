@@ -170,6 +170,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_inflation_exp.py
 
+      - name: Fetch US credit spreads (FRED BAMLH0A0HYM2/BAMLC0A0CM) + delinquency rates
+        continue-on-error: true
+        run: python scripts/fetch_credit.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 

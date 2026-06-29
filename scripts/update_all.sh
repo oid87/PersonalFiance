@@ -54,6 +54,7 @@ $PYTHON fetch_usdtwd.py        || true
 $PYTHON compute_taiwan_stress.py || true
 $PYTHON fetch_umich.py         || true
 $PYTHON fetch_flows.py         || true
+$PYTHON fetch_credit.py        || true
 
 # 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"
