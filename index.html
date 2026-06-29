@@ -1640,6 +1640,71 @@
     </div>
   </section>
 
+  <!-- ── 信用 tab ──────────────────────────────────────────────────── -->
+  <section id="tab-credit" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span id="crd-sp-toggle" class="chip active" data-tooltip="疊上 SP500（對數右軸）">疊 SP500</span>
+      <div id="crd-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-crd-range="1Y">1Y</span>
+        <span class="chip" data-crd-range="3Y">3Y</span>
+        <span class="chip" data-crd-range="5Y">5Y</span>
+        <span class="chip active" data-crd-range="10Y">10Y</span>
+        <span class="chip" data-crd-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="crd-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">HY 信用利差（最新日）</div>
+        <div class="bc-main"><span class="bc-pct" id="crd-hy-val">—</span></div>
+        <div class="bc-count" id="crd-hy-sub">—</div>
+        <div class="bc-signal" id="crd-hy-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">10Y − 2Y 殖利率曲線</div>
+        <div class="bc-main"><span class="bc-pct" id="crd-yc-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="crd-yc-sub">—</div>
+        <div class="bc-signal" id="crd-yc-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">信用卡逾期率（最新季）</div>
+        <div class="bc-main"><span class="bc-pct" id="crd-del-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="crd-del-sub">—</div>
+        <div class="bc-signal" id="crd-del-signal">—</div>
+      </div>
+    </div>
+    <div id="crd-chart" style="height:480px"></div>
+    <div style="padding:6px 16px 4px;color:var(--muted);font-size:12px;border-top:1px solid var(--border)">逾期率（季頻，1991+）</div>
+    <div id="crd-delinq-chart" style="height:230px"></div>
+    <div class="status" id="crd-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 信用市場三指標怎麼看？</div>
+      <div class="info-panel-body">
+        <p><b>10Y − 2Y 殖利率利差</b>：負數 = 殖利率曲線倒掛，歷史上是衰退最可靠的領先指標（平均領先 12–18 個月）。再次轉正（Disinversion）不代表危機解除，而是「倒掛累積損害開始釋放」的訊號。</p>
+        <table class="info-table">
+          <thead><tr><th>10Y−2Y</th><th>解讀</th></tr></thead>
+          <tbody>
+            <tr><td>&gt; 1.0%</td><td>陡峭 · 寬鬆 · 通常多頭早期</td></tr>
+            <tr><td>0–1.0%</td><td>趨平 · 市場謹慎</td></tr>
+            <tr><td>−0.5–0%</td><td>輕微倒掛 · 衰退預警</td></tr>
+            <tr><td>&lt; −0.5%</td><td>深度倒掛 · 歷史強訊號</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px"><b>HY / IG 信用利差（OAS）</b>：債市對違約風險的「定價」，比股票更難操縱。高收益（HY）利差快速走闊 = 機構開始定價衰退或信用危機；投資等級（IG）利差走闊 = 恐慌蔓延至大企業。</p>
+        <table class="info-table">
+          <thead><tr><th>HY OAS</th><th>解讀</th></tr></thead>
+          <tbody>
+            <tr><td>&lt; 4%</td><td>低壓力 · 市場正常</td></tr>
+            <tr><td>4–6%</td><td>偏高 · 市場警覺</td></tr>
+            <tr><td>6–8%</td><td>高壓力 · 衰退預警</td></tr>
+            <tr><td>&gt; 8%</td><td>危機級（2008 峰 19%，2020 峰 11%）</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:10px"><b>逾期率</b>：季頻滯後指標，但消費者信用健康的直接量化。信用卡逾期率 &gt; 3% = 消費者壓力明顯；2009 年峰值 ~6.7%。</p>
+        <p style="margin-top:6px;color:var(--muted)">資料：FRED BAMLH0A0HYM2 / BAMLC0A0CM（HY/IG OAS，日頻，FRED 公開 API 提供近 3 年）/ DRCCLACBS / DRSFRMACBS（逾期率，季頻，1991+）/ US10Y−US2Y（殖利率曲線，日頻，2000+）。衰退陰影 = NBER 官方認定。定位「信用市場環境理解」非交易訊號。</p>
+      </div>
+    </div>
+  </section>
+
   <nav class="cat-bar">
     <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
     <button class="cat-btn" data-cat="liquidity">💧　流動性</button>
