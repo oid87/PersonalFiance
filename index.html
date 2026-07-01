@@ -1671,10 +1671,18 @@
         <div class="bc-count" id="crd-del-sub">—</div>
         <div class="bc-signal" id="crd-del-signal">—</div>
       </div>
+      <div class="breadth-card">
+        <div class="bc-label">BDC P/NAV（私募信貸壓力代理）</div>
+        <div class="bc-main"><span class="bc-pct" id="crd-bdc-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="crd-bdc-sub">—</div>
+        <div class="bc-signal" id="crd-bdc-signal">—</div>
+      </div>
     </div>
     <div id="crd-chart" style="height:480px"></div>
     <div style="padding:6px 16px 4px;color:var(--muted);font-size:12px;border-top:1px solid var(--border)">逾期率（季頻，1991+）</div>
     <div id="crd-delinq-chart" style="height:230px"></div>
+    <div style="padding:6px 16px 4px;color:var(--muted);font-size:12px;border-top:1px solid var(--border)">BDC P/NAV — 私募信貸壓力代理（ARCC · OBDC · BXSL · FSK · MAIN）</div>
+    <div id="crd-bdc-chart" style="height:230px"></div>
     <div class="status" id="crd-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 信用市場三指標怎麼看？</div>
@@ -1700,7 +1708,34 @@
           </tbody>
         </table>
         <p style="margin-top:10px"><b>逾期率</b>：季頻滯後指標，但消費者信用健康的直接量化。信用卡逾期率 &gt; 3% = 消費者壓力明顯；2009 年峰值 ~6.7%。</p>
-        <p style="margin-top:6px;color:var(--muted)">資料：FRED BAMLH0A0HYM2 / BAMLC0A0CM（HY/IG OAS，日頻，FRED 公開 API 提供近 3 年）/ DRCCLACBS / DRSFRMACBS（逾期率，季頻，1991+）/ US10Y−US2Y（殖利率曲線，日頻，2000+）。衰退陰影 = NBER 官方認定。定位「信用市場環境理解」非交易訊號。</p>
+        <p style="margin-top:10px"><b>BDC P/NAV（私募信貸壓力代理）</b>：BDC（Business Development Company，商業發展公司）是美國上市基金，專門放貸給無法進傳統銀行或公開債市的中小企業，本質上就是可見光版的 Private Credit。當 BDC 以折價交易（股價 &lt; 每股淨資產 NAV），代表市場不相信其季度估值，或預期未來撇帳。折價愈大 = 市場對私募信貸資產品質的疑慮愈深。由於非上市私募信貸基金（如 BCRED、HPS CLF）缺乏每日定價，上市 BDC 是最接近「即時私信壓力溫度計」的可用指標。MAIN 長期以溢價交易（股息成長模範生），故壓力讀值採 <b>avg4（ARCC + OBDC + BXSL + FSK 等權重）</b>。</p>
+        <table class="info-table">
+          <thead><tr><th>avg4 P/NAV</th><th>解讀</th></tr></thead>
+          <tbody>
+            <tr><td>&gt; 0.95x</td><td>接近面值 · 市場認可私信估值</td></tr>
+            <tr><td>0.85–0.95x</td><td>輕微折價 · 市場存疑</td></tr>
+            <tr><td>0.75–0.85x</td><td>明顯折價 · 私募信貸壓力訊號</td></tr>
+            <tr><td>&lt; 0.75x</td><td>深度折價 · 流動性危機等級（COVID 2020 最低 ~0.55x）</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:6px;color:var(--muted)">資料：FRED BAMLH0A0HYM2 / BAMLC0A0CM（HY/IG OAS，日頻，FRED 公開 API 提供近 3 年）/ DRCCLACBS / DRSFRMACBS（逾期率，季頻，1991+）/ US10Y−US2Y（殖利率曲線，日頻，2000+）/ yfinance ARCC OBDC BXSL FSK MAIN（BDC P/NAV，日頻，NAV 每季更新自 10-Q）。衰退陰影 = NBER 官方認定。定位「信用市場環境理解」非交易訊號。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 外資板塊流向 tab ──────────────────────────────────────────── -->
+  <section id="tab-twsectorflow" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span class="chip active" id="sf-sort-1w" data-tooltip="依近1週外資淨買超排列">近1週</span>
+      <span class="chip"        id="sf-sort-1m" data-tooltip="依近1月外資淨買超排列">近1月</span>
+    </div>
+    <div id="sf-grid" class="sf-grid"></div>
+    <div class="status" id="sf-status" style="padding:4px 16px">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 外資板塊流向怎麼看？</div>
+      <div class="info-panel-body">
+        <p>每日抓取 TWSE T86（三大法人個股買賣超），依 FinMind 產業別對照表加總到 18 個板塊。<b>藍線 = 板塊指數（正規化 100）</b>，<b>橙線 = 外資滾動累積淨買超（萬張）</b>。正斜率 = 外資持續增持，負斜率 = 持續出走。</p>
+        <p style="margin-top:6px;color:var(--muted)">單位：萬張（1張 = 1000股）。資料：TWSE T86（日頻）× FinMind TaiwanStockInfo（產業別）× TWSE MI_5MINS_INDEX（板塊指數）。適合觀察「哪個板塊外資在加碼 / 減碼」，搭配位階 tab 看具體超買超賣位置。</p>
       </div>
     </div>
   </section>
