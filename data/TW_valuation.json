@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-01",
+  "updated": "2026-07-02",
   "note": "台股大盤（台指/加權指數）估值，以大型股加權代理。tpe=trailing（FinMind 大型股 PER 加權回溯至 2005 + TWSE 每日實值）；fpe=forward（歷史以未來4季實際EPS回推/後見深至 2005，近期為前15大成分股 yfinance forwardPE 加權）。歷史底部：~9x（2008）、~12x（2015-16/2022）。",
   "data": [
     {
@@ -1578,6 +1578,12 @@
       "src": "yf-trailing",
       "tpe": 31.93,
       "fpe": 21.88
+    },
+    {
+      "date": "2026-07-02",
+      "src": "calc-live",
+      "tpe": 32.03,
+      "fpe": 21.59
     }
   ]
 }
