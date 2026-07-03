@@ -1740,6 +1740,37 @@
     </div>
   </section>
 
+  <!-- ── 週K反轉 tab ─────────────────────────────────────────────── -->
+  <section id="tab-wkrev" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="wkrev-ticker-picker" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div id="wkrev-chart" style="width:100%;height:520px"></div>
+    <div class="status" id="wkrev-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div id="wkrev-table" style="padding:8px 24px"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 四訊號定義與警語</div>
+      <div class="info-panel-body">
+        <table class="info-table">
+          <thead><tr><th>訊號</th><th>定義</th></tr></thead>
+          <tbody>
+            <tr><td>BIR（Bullish Inside Reversal）</td><td>前週收黑，當週高低點都收斂在前週高低範圍內（inside week），且當週收紅——空方力竭後的反轉週</td></tr>
+            <tr><td>TD9 買進 setup</td><td>連續 9 週收盤都低於 4 週前收盤（Tom DeMark TD Setup 週頻版），第 9 根標記，代表跌勢已延伸到統計上偏極端的長度</td></tr>
+            <tr><td>週KD 超賣</td><td>Stochastic(9,3,3)：RSV 用 9 週高低收盤計算，%K/%D 皆用 3 週簡單移動平均平滑；K 與 D 同時 &lt;30 視為超賣狀態</td></tr>
+            <tr><td>週RSI 超賣</td><td>RSI(14)，Wilder 平滑；&lt;30 視為超賣狀態</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">
+          <b>BIR 出處說明</b>：原始研究以 ES 期貨（S&amp;P 500 e-mini）盤中高低點定義 inside week，本 tab 改用現貨指數（^GSPC）日線 OHLC 重採樣週K，兩者盤中高低來源不同，本 tab 統計出的事件次數不必、也不應該對齊原始研究的次數。
+        </p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+          ⚠️ 樣本數小（事件型訊號次數少，統計顯著性有限）；週K本身無條件收漲基率約 57–60%（見下表「全樣本無條件基率」列），訊號要明顯優於這個基準才有意義；本 tab 定位「環境理解」輔助判讀，<b>不是</b>交易觸發訊號。
+        </p>
+        <p style="margin-top:8px;color:var(--muted)">資料：直接讀 data/SP500.json（^GSPC）／data/QQQ.json 日 OHLCV，前端重採樣週K並即時計算，無另開 fetch 腳本。防前視：訊號當週收盤成立，前瞻報酬從次週收盤起算；資料末端未走完的一週（partial）排除於所有統計。</p>
+      </div>
+    </div>
+  </section>
+
   <nav class="cat-bar">
     <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
     <button class="cat-btn" data-cat="liquidity">💧　流動性</button>

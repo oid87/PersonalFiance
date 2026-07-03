@@ -28,6 +28,7 @@ import * as umichTab      from './tabs/umich.js';
 import * as flowsTab      from './tabs/flows.js';
 import * as inflationTab  from './tabs/inflation.js';
 import * as creditTab     from './tabs/credit.js';
+import * as wkrevTab      from './tabs/wkrev.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -55,6 +56,7 @@ registerAll([
   { id: 'flows',    module: flowsTab     },
   { id: 'inflation', module: inflationTab },
   { id: 'credit',    module: creditTab    },
+  { id: 'wkrev',     module: wkrevTab     },
 ]);
 
 setupResizeHandler();
@@ -99,6 +101,7 @@ const CATEGORIES = [
       { id: 'earnings', label: '財報日' },
       { id: 'wave',     label: '波浪理論' },
       { id: 'leverage', label: '槓桿模擬' },
+      { id: 'wkrev',    label: '週K反轉' },
     ]
   },
 ];
