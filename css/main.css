@@ -687,4 +687,43 @@
       #breadth-top { padding: 8px 12px; gap: 8px; }
       #breadth-chart { height: calc(100dvh - 210px - var(--cat-bar-h)); min-height: 100px; }
       #ck-table-wrap { max-height: calc(100dvh - 180px - var(--cat-bar-h)); }
+      .sf-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+
+    /* ── 外資板塊流向 tab ──────────────────────────────────────────── */
+    .sf-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 12px 16px;
+    }
+    .sf-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px 8px;
+      min-width: 0;
+    }
+    .sf-card-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sf-card-stats {
+      display: flex;
+      gap: 10px;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+    .sf-chart-el {
+      height: 90px;
+      width: 100%;
+    }
+    @media (max-width: 900px) {
+      .sf-grid { grid-template-columns: repeat(2, 1fr); }
     }

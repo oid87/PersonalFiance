@@ -27,8 +27,9 @@ import * as twStressTab   from './tabs/twstress.js';
 import * as umichTab      from './tabs/umich.js';
 import * as flowsTab      from './tabs/flows.js';
 import * as inflationTab  from './tabs/inflation.js';
-import * as creditTab     from './tabs/credit.js';
-import * as wkrevTab      from './tabs/wkrev.js';
+import * as creditTab        from './tabs/credit.js';
+import * as twSectorFlowTab  from './tabs/twsectorflow.js';
+import * as wkrevTab         from './tabs/wkrev.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -55,8 +56,9 @@ registerAll([
   { id: 'umich',     module: umichTab     },
   { id: 'flows',    module: flowsTab     },
   { id: 'inflation', module: inflationTab },
-  { id: 'credit',    module: creditTab    },
-  { id: 'wkrev',     module: wkrevTab     },
+  { id: 'credit',        module: creditTab        },
+  { id: 'twsectorflow',  module: twSectorFlowTab  },
+  { id: 'wkrev',         module: wkrevTab         },
 ]);
 
 setupResizeHandler();
@@ -96,8 +98,9 @@ const CATEGORIES = [
   {
     id: 'analysis', tabs: [
       { id: 'corr',     label: '相關係數' },
-      { id: 'sector',   label: '產業輪動' },
-      { id: 'cashking', label: '現金為王' },
+      { id: 'sector',        label: '產業輪動' },
+      { id: 'twsectorflow',  label: '外資板塊流向' },
+      { id: 'cashking',      label: '現金為王' },
       { id: 'earnings', label: '財報日' },
       { id: 'wave',     label: '波浪理論' },
       { id: 'leverage', label: '槓桿模擬' },
