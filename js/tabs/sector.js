@@ -520,7 +520,7 @@ function renderSparklines() {
   }
   wrap.appendChild(frag);
 
-  requestAnimationFrame(() => {
+  setTimeout(() => {
     const ksValid = ks.filter(k => series(k).length >= 2);
     for (let i = 0; i < ksValid.length && i < wrap.children.length; i++) {
       const cvs = wrap.children[i]?.querySelector("canvas");
