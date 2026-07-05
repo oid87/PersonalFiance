@@ -26,7 +26,9 @@ OUT_PATH = DATA_DIR / "breadth.json"
 
 FRESHNESS_DAYS    = 4     # same as isDataFresh() in frontend
 FULL_BACKFILL_CAL = 2555  # ~7 calendar years → ~1820 trading days → ~1620 valid after 200-day warmup
-INCREMENTAL_CAL   = 350   # enough to compute 200-day MA for recent dates
+INCREMENTAL_CAL   = 450   # must cover win52=252 trading days (~365 cal. days) + 30-day recompute
+                          # buffer below, or prev_hi/prev_lo never satisfy min_periods=252 and
+                          # new_hi/new_lo silently null out on every incremental run (2026-05-23 regression)
 MIN_COVERAGE      = 480   # ~95% of S&P 500; drop RECENT days below this (yfinance often
 RECENT_WINDOW_DAYS = 14   #   hasn't filled all ~500 names yet → shrunk denominator spikes %).
 #   Gated to recent days only, so deep-history days (constituents that hadn't IPO'd yet → lower
