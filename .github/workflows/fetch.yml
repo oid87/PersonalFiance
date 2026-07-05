@@ -122,6 +122,12 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_taiwan_margin_ratio.py
 
+      - name: Fetch Taiwan foreign investor net buy/sell (FinMind, 外資買賣超)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_investors.py
+
       - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
         continue-on-error: true
         run: python scripts/fetch_taiwan_mktcap_anchor.py
@@ -141,6 +147,10 @@ jobs:
       - name: Fetch liquidity data (Fed balance sheet, TGA, RRP, FINRA margin, M2, DXY)
         continue-on-error: true
         run: python scripts/fetch_liquidity.py
+
+      - name: Fetch Taiwan M1B/M2 money supply (CBC EBOOKXLS, monthly YoY spread)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_money_supply.py
 
       - name: Fetch VIX-SKEW sequential divergence signal (yfinance SKEW+SPY, stitched VIX)
         continue-on-error: true

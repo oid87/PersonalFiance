@@ -70,6 +70,12 @@ async function loadAll() {
   bdcData    = bdc?.data ?? [];
 }
 
+function dateLabel(firstParam) {
+  const ts = firstParam?.axisValueLabel ?? firstParam?.axisValue;
+  if (ts == null) return "";
+  return typeof ts === "string" ? ts.slice(0, 10) : new Date(ts).toISOString().slice(0, 10);
+}
+
 function rangeStart(key) {
   if (key === "MAX") return "1900-01-01";
   const d = new Date();
@@ -154,8 +160,8 @@ export function render() {
   const spView  = spreadData.filter(r => r.date >= cutoff);
 
   const spMap = new Map(sp500Data);
-  const spOnYC = showSP ? ycView.map(r => spMap.get(r.date) ?? null) : [];
-  const spOnSp = showSP ? spView.map(r => spMap.get(r.date) ?? null) : [];
+  const spOnYC = showSP ? ycView.map(r => [r.date, spMap.get(r.date) ?? null]) : [];
+  const spOnSp = showSP ? spView.map(r => [r.date, spMap.get(r.date) ?? null]) : [];
 
   const recForYC = (recessions ?? [])
     .filter(r => r.end >= cutoff)
@@ -170,10 +176,10 @@ export function render() {
     { left: L, right: R, top: "57%", height: mob() ? "31%" : "34%" },
   ];
   const xAxis = [
-    { gridIndex: 0, type: "category", data: ycView.map(r => r.date), boundaryGap: false,
+    { gridIndex: 0, type: "time",
       axisLabel: { show: false }, axisLine: { lineStyle: { color: axisClr } },
       axisTick: { show: false }, splitLine: { show: false } },
-    { gridIndex: 1, type: "category", data: spView.map(r => r.date), boundaryGap: false,
+    { gridIndex: 1, type: "time",
       axisLabel: { color: axisClr, fontSize: 11 }, axisLine: { lineStyle: { color: axisClr } },
       axisTick: { show: false }, splitLine: { show: false } },
   ];
@@ -205,7 +211,7 @@ export function render() {
 
   const series = [
     { name: "10Y−2Y利差", type: "line", xAxisIndex: 0, yAxisIndex: 0,
-      data: ycView.map(r => r.spread), symbol: "none", smooth: false,
+      data: ycView.map(r => [r.date, r.spread]), symbol: "none", smooth: false,
       itemStyle: { color: YC_COLOR }, lineStyle: { color: YC_COLOR, width: 1.6 },
       areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1,
         colorStops: [{ offset: 0, color: "rgba(227,179,65,0.18)" }, { offset: 1, color: "rgba(227,179,65,0)" }] } },
@@ -216,10 +222,10 @@ export function render() {
       markArea: { silent: true, data: recForYC, label: { show: false } },
     },
     { name: "HY OAS", type: "line", xAxisIndex: 1, yAxisIndex: 1,
-      data: spView.map(r => r.hy), symbol: "none", smooth: false,
+      data: spView.map(r => [r.date, r.hy]), symbol: "none", smooth: false,
       itemStyle: { color: HY_COLOR }, lineStyle: { color: HY_COLOR, width: 1.8 } },
     { name: "IG OAS", type: "line", xAxisIndex: 1, yAxisIndex: 1,
-      data: spView.map(r => r.ig), symbol: "none", smooth: false,
+      data: spView.map(r => [r.date, r.ig]), symbol: "none", smooth: false,
       itemStyle: { color: IG_COLOR }, lineStyle: { color: IG_COLOR, width: 1.4 } },
   ];
 
@@ -244,14 +250,15 @@ export function render() {
       backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: textClr, fontSize: 12 },
       formatter(params) {
         if (!params.length) return "";
-        const d = params[0]?.axisValue ?? "";
+        const d = dateLabel(params[0]);
         let html = `<div style="font-weight:600;margin-bottom:4px">${d}</div>`;
         for (const p of params) {
-          if (p.value == null) continue;
+          const v = Array.isArray(p.value) ? p.value[1] : p.value;
+          if (v == null) continue;
           if (p.seriesName.startsWith("S&P")) {
-            html += `<div>${p.marker}S&P 500: <b>${(+p.value).toFixed(0)}</b></div>`;
+            html += `<div>${p.marker}S&P 500: <b>${(+v).toFixed(0)}</b></div>`;
           } else {
-            html += `<div>${p.marker}${p.seriesName}: <b>${(+p.value).toFixed(2)}%</b></div>`;
+            html += `<div>${p.marker}${p.seriesName}: <b>${(+v).toFixed(2)}%</b></div>`;
           }
         }
         return html;
@@ -286,22 +293,23 @@ function renderDelinq(textClr, axisClr, gridClr, tipBg, tipBdr, cutoff) {
   delinqChart.setOption({
     backgroundColor: "transparent", animation: false,
     tooltip: {
-      trigger: "axis",
+      trigger: "axis", axisPointer: { type: "cross" },
       backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: textClr, fontSize: 12 },
       formatter(params) {
         if (!params.length) return "";
-        const d = params[0]?.axisValue ?? "";
+        const d = dateLabel(params[0]);
         let html = `<div style="font-weight:600;margin-bottom:4px">${d}</div>`;
         for (const p of params) {
-          if (p.value == null) continue;
-          html += `<div>${p.marker}${p.seriesName}: <b>${(+p.value).toFixed(2)}%</b></div>`;
+          const v = Array.isArray(p.value) ? p.value[1] : p.value;
+          if (v == null) continue;
+          html += `<div>${p.marker}${p.seriesName}: <b>${(+v).toFixed(2)}%</b></div>`;
         }
         return html;
       },
     },
     grid: { left: mob() ? 40 : 52, right: mob() ? 16 : 28, top: "17%", bottom: "14%" },
     xAxis: {
-      type: "category", data: view.map(r => r.date), boundaryGap: false,
+      type: "time",
       axisLabel: { color: axisClr, fontSize: 11 }, axisLine: { lineStyle: { color: axisClr } },
       axisTick: { show: false }, splitLine: { show: false },
     },
@@ -316,12 +324,12 @@ function renderDelinq(textClr, axisClr, gridClr, tipBg, tipBdr, cutoff) {
       textStyle: { color: textClr, fontSize: 11 }, inactiveColor: axisClr,
     },
     series: [
-      { name: "信用卡逾期率", type: "line", data: view.map(r => r.credit_card),
+      { name: "信用卡逾期率", type: "line", data: view.map(r => [r.date, r.credit_card]),
         symbol: "circle", symbolSize: 5, smooth: false,
         itemStyle: { color: CC_COLOR }, lineStyle: { color: CC_COLOR, width: 2 },
         markArea: { silent: true, data: recAreas, label: { show: false } },
       },
-      { name: "不動產逾期率", type: "line", data: view.map(r => r.real_estate),
+      { name: "不動產逾期率", type: "line", data: view.map(r => [r.date, r.real_estate]),
         symbol: "circle", symbolSize: 5, smooth: false,
         itemStyle: { color: RE_COLOR }, lineStyle: { color: RE_COLOR, width: 2 },
       },
@@ -338,7 +346,7 @@ function renderBDC(textClr, axisClr, gridClr, tipBg, tipBdr, cutoff) {
   const series = BDC_TICKERS.map(t => ({
     name: t,
     type: "line",
-    data: view.map(r => r[t] ?? null),
+    data: view.map(r => [r.date, r[t] ?? null]),
     symbol: "none", smooth: false, connectNulls: true,
     itemStyle: { color: BDC_COLORS[t] },
     lineStyle: { color: BDC_COLORS[t], width: t === "MAIN" ? 1.2 : 1.5 },
@@ -347,7 +355,7 @@ function renderBDC(textClr, axisClr, gridClr, tipBg, tipBdr, cutoff) {
   series.push({
     name: "avg4（非MAIN）",
     type: "line",
-    data: view.map(r => r.avg4 ?? null),
+    data: view.map(r => [r.date, r.avg4 ?? null]),
     symbol: "none", smooth: false, connectNulls: true,
     itemStyle: { color: BDC_COLORS.avg4 },
     lineStyle: { color: BDC_COLORS.avg4, width: 2.2 },
@@ -361,22 +369,23 @@ function renderBDC(textClr, axisClr, gridClr, tipBg, tipBdr, cutoff) {
   bdcChart.setOption({
     backgroundColor: "transparent", animation: false,
     tooltip: {
-      trigger: "axis",
+      trigger: "axis", axisPointer: { type: "cross" },
       backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: textClr, fontSize: 12 },
       formatter(params) {
         if (!params.length) return "";
-        const d = params[0]?.axisValue ?? "";
+        const d = dateLabel(params[0]);
         let html = `<div style="font-weight:600;margin-bottom:4px">${d}</div>`;
         for (const p of params) {
-          if (p.value == null) continue;
-          html += `<div>${p.marker}${p.seriesName}: <b>${(+p.value).toFixed(3)}x</b></div>`;
+          const v = Array.isArray(p.value) ? p.value[1] : p.value;
+          if (v == null) continue;
+          html += `<div>${p.marker}${p.seriesName}: <b>${(+v).toFixed(3)}x</b></div>`;
         }
         return html;
       },
     },
     grid: { left: mob() ? 40 : 52, right: mob() ? 16 : 28, top: "17%", bottom: "14%" },
     xAxis: {
-      type: "category", data: view.map(r => r.date), boundaryGap: false,
+      type: "time",
       axisLabel: { color: axisClr, fontSize: 11 },
       axisLine: { lineStyle: { color: axisClr } },
       axisTick: { show: false }, splitLine: { show: false },
@@ -394,6 +403,55 @@ function renderBDC(textClr, axisClr, gridClr, tipBg, tipBdr, cutoff) {
     dataZoom: [{ type: "inside", filterMode: "none" }],
     series,
   }, { notMerge: true });
+}
+
+const CHART_GROUP = "credit-tab";
+
+function connectCharts() {
+  if (creditChart) creditChart.group = CHART_GROUP;
+  if (delinqChart) delinqChart.group = CHART_GROUP;
+  if (bdcChart) bdcChart.group = CHART_GROUP;
+  echarts.connect(CHART_GROUP);
+}
+
+// echarts' built-in axisPointer `link` only value-matches axes within ONE chart instance;
+// across separate instances (creditChart/delinqChart/bdcChart) it silently no-ops even when
+// connected via echarts.connect, so the crosshair is relayed manually: convert the hovered
+// x-axis value to a pixel position in each OTHER chart's own coordinate system and re-fire
+// showTip there. (dispatchAction({type:"showTip", dataIndex}) was tried first but triggers a
+// "Maximum call stack size exceeded" inside echarts' tooltip-marker builder on these series —
+// the x/y-position form goes through the same code path as a real mouse hover and avoids it.)
+function targetY(chart) {
+  return chart.getHeight() * (chart === creditChart ? 0.3 : 0.5);
+}
+
+function wireCrossSync() {
+  const charts = [creditChart, delinqChart, bdcChart].filter(Boolean);
+  if (charts.length < 2) return;
+  for (const src of charts) {
+    src.on("updateAxisPointer", event => {
+      const xInfo = (event.axesInfo || []).find(a => a.axisDim === "x");
+      if (xInfo?.value == null) return;
+      for (const dst of charts) {
+        if (dst === src) continue;
+        const w = dst.getWidth();
+        let px = dst.convertToPixel({ xAxisIndex: 0 }, xInfo.value);
+        // Series with a shorter/lower-frequency history (e.g. quarterly delinquency data,
+        // or BDC data trailing off before "today") can map slightly past this chart's own
+        // canvas edge; showTip silently no-ops on an out-of-canvas x, leaving a stale
+        // crosshair from the previous hover. Clamp near-edge overshoot, hide anything further.
+        if (px == null || Number.isNaN(px) || px < -50 || px > w + 50) {
+          dst.dispatchAction({ type: "hideTip" });
+          continue;
+        }
+        px = Math.max(0, Math.min(px, w - 1));
+        dst.dispatchAction({ type: "showTip", x: px, y: targetY(dst) });
+      }
+    });
+    src.getZr().on("globalout", () => {
+      for (const dst of charts) if (dst !== src) dst.dispatchAction({ type: "hideTip" });
+    });
+  }
 }
 
 function buildControls() {
@@ -427,6 +485,8 @@ export async function activate() {
   if (!creditChart) creditChart = echarts.init(h1, isLight() ? null : "dark");
   if (!delinqChart) delinqChart = echarts.init(h2, isLight() ? null : "dark");
   if (h3 && !bdcChart) bdcChart = echarts.init(h3, isLight() ? null : "dark");
+  connectCharts();
+  wireCrossSync();
   buildControls();
   try {
     await loadAll();
@@ -451,6 +511,8 @@ export function onThemeChange(light) {
     bdcChart.dispose();
     bdcChart = echarts.init(document.getElementById("crd-bdc-chart"), light ? null : "dark");
   }
+  connectCharts();
+  wireCrossSync();
   if (spreadData) render();
 }
 
