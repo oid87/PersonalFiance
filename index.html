@@ -703,8 +703,26 @@
         <div class="bc-count" id="pos-regime-sub">—</div>
         <div class="bc-signal" id="pos-regime-signal">—</div>
       </div>
+      <div class="breadth-card">
+        <div class="bc-label">動能（多期報酬率）</div>
+        <div class="bc-main"><span class="bc-pct" id="pos-mom-pct">—</span><span class="bc-unit">12M</span></div>
+        <div class="bc-count" id="pos-mom-sub">—</div>
+        <div class="bc-signal" id="pos-mom-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">波動度（ATR14）</div>
+        <div class="bc-main"><span class="bc-pct" id="pos-atr-pct">—</span><span class="bc-unit">%</span></div>
+        <div class="bc-count" id="pos-atr-sub">—</div>
+        <div class="bc-signal" id="pos-atr-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">52週高低（前高前低）</div>
+        <div class="bc-main"><span class="bc-pct" id="pos-hl-pct">—</span><span class="bc-unit">%</span></div>
+        <div class="bc-count" id="pos-hl-sub">—</div>
+        <div class="bc-signal" id="pos-hl-signal">—</div>
+      </div>
     </div>
-    <div id="pos-chart" style="height:560px"></div>
+    <div id="pos-chart" style="height:680px"></div>
     <div class="status" id="pos-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 布林通道 + 乖離率 怎麼看？</div>
@@ -717,6 +735,10 @@
             <tr><td style="color:#f85149">年線(200)布林上緣</td><td>突破上緣＝離年均值 2σ 以上，短線過熱、別追、考慮減碼</td></tr>
             <tr><td style="color:#f0883e">乖離率百分位</td><td>目前乖離 vs 自己歷史分布；&gt;90 百分位＝過熱、&lt;10＝超賣（各標的門檻不同，故用百分位而非固定 %）</td></tr>
             <tr><td style="color:#d2a8ff">QQQ 年線 +20%</td><td>只在<b>選 QQQ ＋ 200 年線</b>時多一條<b>固定 +20% 過熱線</b>（紫）—— QQQ 年線乖離 +20% 是常用短線過熱門檻（指數專用 rule of thumb，故不套用到 SOXX 等其他標的）</td></tr>
+            <tr><td>動能卡</td><td>1M/3M/6M/12M 報酬率（time-series momentum）；全期同向代表趨勢一致，混雜代表盤整。<b>不是</b>超買超賣指標，強勢股可以長期動能為正</td></tr>
+            <tr><td>ATR14 波動度</td><td>14 日真實波幅平均，不判斷方向，只量「這檔平常一天/幾天正常晃多少」；用來校正停損位置（1.5～3×ATR），避免停損設在正常波動範圍內被掃</td></tr>
+            <tr><td>52週高低卡 / 圖上紅綠虛線</td><td>滾動 252 交易日的前高、前低——市場參與者常共同盯著的支撐壓力位；貼近高點視為壓力區、貼近低點視為支撐區</td></tr>
+            <tr><td>下方量能副圖</td><td>成交量長條，紅跌綠漲；配合價格結構看比單獨看量更可靠（台灣加權指數量值不具意義，切至台灣加權時隱藏）</td></tr>
           </tbody>
         </table>
         <p style="margin-top:10px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
@@ -732,30 +754,60 @@
 
   <!-- ── 流動性 tab ──────────────────────────────────────────────── -->
   <section id="tab-liquidity" class="tab-section" hidden>
-    <div class="controls">
-      <div id="liq-range-picker" style="display:flex;gap:4px">
-        <span class="chip" data-range="1Y">1Y</span>
-        <span class="chip" data-range="3Y">3Y</span>
-        <span class="chip active" data-range="5Y">5Y</span>
-        <span class="chip" data-range="MAX">MAX</span>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span id="liq-twoii-toggle" class="chip active" data-tooltip="疊上櫃買指數（^TWOII）">櫃買指數</span>
+      <span id="liq-margin-toggle" class="chip active" data-tooltip="疊上融資餘額（億）">融資餘額</span>
+      <span id="liq-foreign-toggle" class="chip active" data-tooltip="疊上外資累計買超（億，區間內歸零起算）">外資累計</span>
+      <span id="liq-divergence-toggle" class="chip" data-tooltip="標示指數創高但 M1B-M2 利差未跟上的背離區間">背離標示</span>
+      <div id="liq-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-liq-range="1Y">1Y</span>
+        <span class="chip active" data-liq-range="2Y">2Y</span>
+        <span class="chip" data-liq-range="5Y">5Y</span>
+        <span class="chip" data-liq-range="10Y">10Y</span>
+        <span class="chip" data-liq-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="liq-chart" style="width:100%;height:480px"></div>
-    <div id="liq-margin-chart" style="width:100%;height:360px"></div>
-    <div id="liq-status" class="status"></div>
+    <div id="liq-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">M1B 年增率</div>
+        <div class="bc-main"><span class="bc-pct" id="lc-m1b">—</span></div>
+        <div class="bc-count" id="lc-m1b-date">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">M2 年增率</div>
+        <div class="bc-main"><span class="bc-pct" id="lc-m2">—</span></div>
+        <div class="bc-count" id="lc-m2-date">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">M1B − M2 利差</div>
+        <div class="bc-main"><span class="bc-pct" id="lc-spread">—</span></div>
+        <div class="bc-signal" id="lc-spread-note">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">融資餘額（億）</div>
+        <div class="bc-main"><span class="bc-pct" id="lc-margin">—</span></div>
+        <div class="bc-count" id="lc-margin-date">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">外資近 30 日累計（億）</div>
+        <div class="bc-main"><span class="bc-pct" id="lc-foreign">—</span></div>
+        <div class="bc-count" id="lc-foreign-date">—</div>
+      </div>
+    </div>
+    <div id="liquidity-chart" style="width:100%;height:480px"></div>
+    <div id="liquidity-status" class="status"></div>
     <div class="info-panel">
-      <div class="info-panel-header"><i class="chevron">▶</i> 淨流動性指標與融資餘額：資金面環境</div>
+      <div class="info-panel-header"><i class="chevron">▶</i> 台股資金面：M1B-M2 利差與融資/外資</div>
       <div class="info-panel-body">
-        <p><b>聯準會淨流動性（Net Liquidity）</b> = Fed 資產負債表 − 財政部一般帳戶(TGA) − 逆回購(RRP)。當淨流動性擴張時，金融市場可用資金增加，風險資產傾向上漲。</p>
-        <p><b>FINRA 融資餘額（Margin Debt）</b>：反映槓桿投機水位。歷史高點常對應市場峰值（2000, 2007, 2021），大幅萎縮則伴隨去槓桿拋售。</p>
-        <p><b>M2 貨幣供給</b>：廣義貨幣量，年增率轉負為罕見收縮訊號（2022-2023）。<b>美元指數（DXY）</b>：美元走強時新興市場和大宗商品承壓，走弱時全球流動性寬鬆。</p>
+        <p><b>M1B − M2 年增率利差</b>：MacroMicro 常用的資金動能指標，轉正（黃金交叉）代表資金活絡、偏好流動性高的資產（股市），轉負代表資金轉趨保守。</p>
+        <p><b>融資餘額</b>：反映散戶槓桿投機水位，餘額大幅萎縮常伴隨去槓桿拋售。<b>外資累計買超</b>：三大法人中對台股影響最大的族群，累計轉向常領先大盤轉折。</p>
+        <p><b>背離標示</b>：當加權指數創高但 M1B-M2 利差未同步走高，可能代表上漲缺乏資金動能支撐。</p>
         <table class="info-table">
           <thead><tr><th>指標</th><th>頻率</th><th>來源</th></tr></thead>
           <tbody>
-            <tr><td>Fed BS / TGA / RRP</td><td>週</td><td>FRED</td></tr>
-            <tr><td>Margin Debt</td><td>月</td><td>FINRA</td></tr>
-            <tr><td>M2</td><td>月</td><td>FRED</td></tr>
-            <tr><td>DXY</td><td>日</td><td>Yahoo Finance</td></tr>
+            <tr><td>M1B / M2</td><td>月</td><td>中央銀行 CBC</td></tr>
+            <tr><td>加權指數 / 櫃買指數</td><td>日</td><td>Yahoo Finance</td></tr>
+            <tr><td>融資餘額 / 外資買超</td><td>日</td><td>FinMind</td></tr>
           </tbody>
         </table>
       </div>

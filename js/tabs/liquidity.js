@@ -36,13 +36,13 @@ async function loadAll() {
     fetchJson("data/TWII.json"),
     fetchJson("data/TWOII.json", true),
     fetchJson("data/taiwan_money_supply.json"),
-    fetchJson("data/taiwan_margin.json", true),
+    fetchJson("data/taiwan_margin_total.json", true),
     fetchJson("data/taiwan_investors.json", true),
   ]);
   twii  = (tw?.data  ?? []).map(r => [r.date, r.close]);
   twoii = (tot?.data ?? []).map(r => [r.date, r.close]);
   money = mon ?? { monthly: [], annual: [] };
-  margin    = (mar?.data ?? []).map(r => [r.date, r.margin_yi, r.short_units ?? null]);
+  margin    = (mar?.data ?? []).map(r => [r.date, r.margin_money, r.short_lots ?? null]);
   investors = (inv?.data ?? []).map(r => [r.date, r.foreign, r.foreign_cum]);
 }
 

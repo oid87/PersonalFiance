@@ -7,9 +7,13 @@
 // 設計參考某總經 Youtuber：季線(50)布林下緣＝多頭低位階買點、年線(200)布林上緣＝短線過熱、
 // 年線乖離＝過熱輔助；務必用「年線之上＝多頭」當狀態濾網（空頭沿著下緣走，碰下緣非買點）。
 
-import { loaded } from '../state.js';
+import { loaded, loadedHLC, loadedVol } from '../state.js';
 import { isLight, tc, mob } from '../utils/theme.js';
 import { ensureLoaded } from '../utils/data.js';
+
+const MOM_PERIODS = [{ key: "1M", n: 21 }, { key: "3M", n: 63 }, { key: "6M", n: 126 }, { key: "12M", n: 252 }];
+const ATR_PERIOD = 14;
+const HL_WINDOW  = 252; // 52週（交易日）
 
 const POS_TICKERS = [
   { key: "SPY",  label: "SPY / VOO",   color: "#a371f7" },
@@ -28,7 +32,7 @@ let posRange  = "3Y";
 const rowCache = {};   // ticker -> computed rows
 
 // ── compute: rolling mean/std → ma{p}, sd{p}, bias{p} for each period ──
-function computeRows(closes /* [[date, close], …] ascending */) {
+function computeRows(closes /* [[date, close], …] ascending */, hlc, vol) {
   const n = closes.length;
   const rows = closes.map(c => ({ date: c[0], close: c[1] }));
   for (const p of PERIODS) {
@@ -46,6 +50,51 @@ function computeRows(closes /* [[date, close], …] ascending */) {
         r[`bias${p}`] = (v - mean) / mean * 100;
       }
     }
+  }
+
+  // 動能：N 日前收盤 → 報酬率
+  for (const { key, n: w } of MOM_PERIODS) {
+    for (let i = 0; i < n; i++) {
+      if (i < w) continue;
+      const prev = closes[i - w][1];
+      rows[i][`mom${key}`] = (closes[i][1] - prev) / prev * 100;
+    }
+  }
+
+  if (hlc && hlc.length === n) {
+    for (let i = 0; i < n; i++) { rows[i].high = hlc[i][1]; rows[i].low = hlc[i][2]; }
+
+    // ATR14（Wilder's）：TR = max(高-低, |高-昨收|, |低-昨收|)
+    let atr = null;
+    for (let i = 0; i < n; i++) {
+      if (i === 0) continue;
+      const { high, low } = rows[i];
+      const prevClose = rows[i - 1].close;
+      const tr = Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
+      if (i < ATR_PERIOD) continue;
+      if (i === ATR_PERIOD) {
+        let sumTr = 0;
+        for (let j = 1; j <= ATR_PERIOD; j++) {
+          const h = rows[j].high, l = rows[j].low, pc = rows[j - 1].close;
+          sumTr += Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc));
+        }
+        atr = sumTr / ATR_PERIOD;
+      } else {
+        atr = (atr * (ATR_PERIOD - 1) + tr) / ATR_PERIOD;
+      }
+      rows[i].atr14 = atr;
+    }
+
+    // 52週（滾動 HL_WINDOW 交易日）高低 → 前高前低支撐壓力
+    for (let i = 0; i < n; i++) {
+      const lo = Math.max(0, i - HL_WINDOW + 1);
+      let hh = -Infinity, ll = Infinity;
+      for (let j = lo; j <= i; j++) { if (rows[j].high > hh) hh = rows[j].high; if (rows[j].low < ll) ll = rows[j].low; }
+      rows[i].hh252 = hh; rows[i].ll252 = ll;
+    }
+  }
+  if (vol && vol.length === n) {
+    for (let i = 0; i < n; i++) rows[i].volume = vol[i][1];
   }
   return rows;
 }
@@ -143,6 +192,55 @@ function updateCards(rows, dist) {
   const vsMa = ((last.close - last[`ma200`]) / last[`ma200`] * 100);
   setText("pos-regime-sub", `現價 ${last.close.toFixed(2)}｜距年線 ${vsMa >= 0 ? "+" : ""}${vsMa.toFixed(1)}%`, "var(--muted)");
   setText("pos-regime-signal", rSig, rClr);
+
+  // 動能：1M/3M/6M/12M 報酬率（time-series momentum，非超買超賣型指標）
+  const m12 = last.mom12M;
+  setText("pos-mom-pct", m12 == null ? "—" : (m12 >= 0 ? "+" : "") + m12.toFixed(1),
+          m12 == null ? "var(--muted)" : (m12 >= 0 ? "#3fb950" : "#f85149"));
+  const momStr = MOM_PERIODS.map(({ key }) => {
+    const v = last[`mom${key}`];
+    return `${key} ${v == null ? "—" : (v >= 0 ? "+" : "") + v.toFixed(1) + "%"}`;
+  }).join("　");
+  setText("pos-mom-sub", momStr, "var(--muted)");
+  const posCount = MOM_PERIODS.filter(({ key }) => (last[`mom${key}`] ?? 0) > 0).length;
+  let mSig, mClr;
+  if (last.mom1M == null) { mSig = "—"; mClr = "var(--muted)"; }
+  else if (posCount === MOM_PERIODS.length)      { mSig = "全期正報酬 · 動能強勢"; mClr = "#3fb950"; }
+  else if (posCount === 0)                        { mSig = "全期負報酬 · 動能弱勢"; mClr = "#f85149"; }
+  else                                             { mSig = "多空混雜 · 動能不一致"; mClr = "#e3b341"; }
+  setText("pos-mom-signal", mSig, mClr);
+
+  // 波動度：ATR14 佔股價 %（不判斷方向，只給停損/部位大小的風險量尺）
+  const atr = last.atr14;
+  let aSig, aClr;
+  if (atr == null) { aSig = "—"; aClr = "var(--muted)"; }
+  else {
+    setText("pos-atr-pct", (atr / last.close * 100).toFixed(2), tc("#e6edf3", "#1f2328"));
+    const stop15 = last.close - 1.5 * atr, stop3 = last.close - 3 * atr;
+    setText("pos-atr-sub", `ATR ${atr.toFixed(2)}｜停損參考：1.5×ATR ${stop15.toFixed(1)} ／ 3×ATR ${stop3.toFixed(1)}`, "var(--muted)");
+    const atrPctOfPrice = atr / last.close * 100;
+    if      (atrPctOfPrice >= 4) { aSig = "波動偏大 · 部位宜縮小"; aClr = "#f85149"; }
+    else if (atrPctOfPrice >= 2) { aSig = "波動中等"; aClr = "#e3b341"; }
+    else                         { aSig = "波動偏低"; aClr = "#3fb950"; }
+  }
+  if (atr != null) setText("pos-atr-signal", aSig, aClr);
+  else { setText("pos-atr-pct", "—"); setText("pos-atr-sub", "—"); setText("pos-atr-signal", "—", "var(--muted)"); }
+
+  // 支撐壓力：52 週（滾動 252 交易日）高低
+  const hh = last.hh252, ll = last.ll252;
+  if (hh == null || ll == null) {
+    setText("pos-hl-pct", "—"); setText("pos-hl-sub", "—"); setText("pos-hl-signal", "—", "var(--muted)");
+  } else {
+    const toHigh = (hh - last.close) / last.close * 100;
+    const toLow  = (last.close - ll) / last.close * 100;
+    setText("pos-hl-pct", (-toHigh).toFixed(1), tc("#e6edf3", "#1f2328"));
+    setText("pos-hl-sub", `壓力(高) ${hh.toFixed(1)} 距 ${toHigh.toFixed(1)}%｜支撐(低) ${ll.toFixed(1)} 距 ${toLow.toFixed(1)}%`, "var(--muted)");
+    let hSig, hClr;
+    if      (toHigh <= 1) { hSig = "貼近52週高點 · 壓力區"; hClr = "#f85149"; }
+    else if (toLow  <= 1) { hSig = "貼近52週低點 · 支撐區"; hClr = "#3fb950"; }
+    else                  { hSig = "區間內"; hClr = "var(--muted)"; }
+    setText("pos-hl-signal", hSig, hClr);
+  }
 }
 
 // ── render chart ───────────────────────────────────────────────────
@@ -169,22 +267,27 @@ function render(rows) {
   const lo2 = view.map(r => r[`ma${p}`] != null ? +(r[`ma${p}`] - 2 * r[`sd${p}`]).toFixed(2) : null);
   const band = view.map(r => r[`ma${p}`] != null ? +(4 * r[`sd${p}`]).toFixed(2) : null);   // upper2-lower2
   const up2 = view.map(r => r[`ma${p}`] != null ? +(r[`ma${p}`] + 2 * r[`sd${p}`]).toFixed(2) : null);
+  const hasVol = t.key !== "TWII"; // 台灣加權指數量值不具意義
+  const volData = hasVol ? view.map((r, i) => {
+    const up = i === 0 ? true : r.close >= view[i - 1].close;
+    return { value: r.volume ?? null, itemStyle: { color: up ? "#3fb95080" : "#f8514980" } };
+  }) : [];
 
   const status = document.getElementById("pos-status");
   if (status) status.textContent =
     `${t.label} · ${MA_NAME[p]} 布林通道 + 乖離率 · ${dates.length} 個交易日（${posRange}）· 全前端計算`;
 
-  // grid: top price+bands, bottom bias
+  // grid: 上 價格+52週高低, 中 成交量, 下 乖離；底部留 ~16% 給圖例
   const L = mob() ? 46 : 56, R = mob() ? 46 : 56;
-  // 上 grid 價格、下 grid 乖離；底部留 ~16% 給圖例，避免蓋到下圖 X 軸日期
   const grid = [
-    { left: L, right: R, top: "3%",  height: mob() ? "42%" : "45%" },
+    { left: L, right: R, top: "3%",  height: mob() ? "34%" : "36%" },
+    { left: L, right: R, top: mob() ? "40%" : "42%", height: mob() ? "10%" : "11%" },
     { left: L, right: R, top: "58%", height: mob() ? "22%" : "25%" },
   ];
   const xAxis = grid.map((_, i) => ({
-    gridIndex: i, type: "category", data: dates, boundaryGap: false,
+    gridIndex: i, type: "category", data: dates, boundaryGap: i === 1,
     axisLine:  { lineStyle: { color: axisClr } }, axisTick: { show: false },
-    axisLabel: { show: i === 1, color: axisClr, fontSize: 11 },
+    axisLabel: { show: i === 2, color: axisClr, fontSize: 11 },
     splitLine: { show: false },
   }));
   const selColor = MA_COLOR[p];
@@ -192,7 +295,9 @@ function render(rows) {
     { gridIndex: 0, scale: true, position: "left",
       axisLabel: { color: axisClr, fontSize: 11 }, axisLine: { show: false }, axisTick: { show: false },
       splitLine: { lineStyle: { color: gridClr } } },
-    { gridIndex: 1, name: "乖離%", nameTextStyle: { color: axisClr, fontSize: 10 }, scale: true,
+    { gridIndex: 1, name: "量", nameTextStyle: { color: axisClr, fontSize: 10 }, scale: true,
+      axisLabel: { show: false }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } },
+    { gridIndex: 2, name: "乖離%", nameTextStyle: { color: axisClr, fontSize: 10 }, scale: true,
       axisLabel: { color: axisClr, fontSize: 10, formatter: v => v + "%" },
       axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: gridClr } } },
   ];
@@ -228,11 +333,23 @@ function render(rows) {
     lineStyle: { color: MA_COLOR[q], width: q === p ? 2 : 1, opacity: q === p ? 1 : 0.5 },
   }));
   const biasSeries = PERIODS.map(q => ({
-    name: `乖離${q}`, type: "line", xAxisIndex: 1, yAxisIndex: 1, data: biasData[q],
+    name: `乖離${q}`, type: "line", xAxisIndex: 2, yAxisIndex: 2, data: biasData[q],
     symbol: "none", smooth: false, z: q === p ? 4 : 2,
     lineStyle: { color: MA_COLOR[q], width: q === p ? 2 : 1, opacity: q === p ? 1 : 0.35 },
     ...(q === p ? { markLine: { silent: true, symbol: "none", data: biasMarks } } : {}),
   }));
+
+  // 52 週高低（前高前低支撐壓力）：取視窗內最新一筆的 rolling hh252/ll252 當水平線
+  const hlMarks = [];
+  const lastView = view[view.length - 1];
+  if (lastView?.hh252 != null) {
+    hlMarks.push(
+      { yAxis: +lastView.hh252.toFixed(2), lineStyle: { color: "#f85149", type: "dotted", width: 1.5 },
+        label: { formatter: "52週高", color: "#f85149", fontSize: 10, position: "insideEndTop" } },
+      { yAxis: +lastView.ll252.toFixed(2), lineStyle: { color: "#3fb950", type: "dotted", width: 1.5 },
+        label: { formatter: "52週低", color: "#3fb950", fontSize: 10, position: "insideEndBottom" } },
+    );
+  }
 
   const series = [
     // Bollinger ±2σ band fill (stacked: base = lower2, fill = height)
@@ -248,7 +365,10 @@ function render(rows) {
       lineStyle: { color: selColor, width: 1, type: "dashed", opacity: 0.55 }, z: 2 },
     ...maSeries,
     { name: t.label, type: "line", xAxisIndex: 0, yAxisIndex: 0, data: px,
-      symbol: "none", smooth: false, z: 5, lineStyle: { color: t.color, width: 1.8 } },
+      symbol: "none", smooth: false, z: 5, lineStyle: { color: t.color, width: 1.8 },
+      markLine: { silent: true, symbol: "none", data: hlMarks } },
+    { name: "成交量", type: "bar", xAxisIndex: 1, yAxisIndex: 1, data: volData,
+      large: true, silent: true, z: 1 },
     ...biasSeries,
   ];
 
@@ -263,8 +383,11 @@ function render(rows) {
         for (const pm of params) {
           if (pm.seriesName.startsWith("_") || pm.value == null) continue;
           const isBias = pm.seriesName.startsWith("乖離");
-          const val = isBias ? `${pm.value >= 0 ? "+" : ""}${(+pm.value).toFixed(2)}%`
-                             : (+pm.value).toFixed(2);
+          const raw = pm.seriesName === "成交量" ? pm.value?.value : pm.value;
+          if (raw == null) continue;
+          const val = isBias ? `${raw >= 0 ? "+" : ""}${(+raw).toFixed(2)}%`
+                     : pm.seriesName === "成交量" ? (+raw).toLocaleString()
+                     : (+raw).toFixed(2);
           html += `<div>${pm.marker}${pm.seriesName}: <b>${val}</b></div>`;
         }
         return html;
@@ -272,7 +395,7 @@ function render(rows) {
     },
     axisPointer: { link: [{ xAxisIndex: "all" }] },
     grid, xAxis, yAxis,
-    dataZoom: [{ type: "inside", xAxisIndex: [0, 1], filterMode: "none" }],
+    dataZoom: [{ type: "inside", xAxisIndex: [0, 1, 2], filterMode: "none" }],
     legend: {
       data: [t.label, ...PERIODS.map(q => MA_NAME[q])],
       top: "bottom", textStyle: { color: textClr, fontSize: 11 }, inactiveColor: axisClr,
@@ -315,7 +438,10 @@ async function refresh() {
   try {
     await ensureLoaded(posTicker);
     let rows = rowCache[posTicker];
-    if (!rows) { rows = computeRows(loaded[posTicker]); rowCache[posTicker] = rows; }
+    if (!rows) {
+      rows = computeRows(loaded[posTicker], loadedHLC[posTicker], loadedVol[posTicker]);
+      rowCache[posTicker] = rows;
+    }
     render(rows);
   } catch (e) {
     if (status) status.textContent = `載入失敗：${e.message}`;

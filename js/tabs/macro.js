@@ -250,11 +250,54 @@ function renderBizChart() {
   }, { notMerge: true });
 }
 
+const MACRO_CHART_GROUP = "macro-tab";
+
+function connectMacroCharts() {
+  if (macroChart) macroChart.group = MACRO_CHART_GROUP;
+  if (bizChart) bizChart.group = MACRO_CHART_GROUP;
+  echarts.connect(MACRO_CHART_GROUP);
+}
+
+// echarts' axisPointer `link` only value-matches axes within ONE chart instance; macroChart
+// and bizChart are separate instances (and different frequency: daily vs monthly), so the
+// crosshair is relayed manually — see js/tabs/credit.js for the fuller writeup of why
+// dispatchAction({type:"showTip", x, y}) (position-based) is used instead of a dataIndex.
+function targetMacroY(chart) {
+  return chart.getHeight() * 0.5;
+}
+
+function wireMacroCrossSync() {
+  const charts = [macroChart, bizChart].filter(Boolean);
+  if (charts.length < 2) return;
+  for (const src of charts) {
+    src.on("updateAxisPointer", event => {
+      const xInfo = (event.axesInfo || []).find(a => a.axisDim === "x");
+      if (xInfo?.value == null) return;
+      for (const dst of charts) {
+        if (dst === src) continue;
+        const w = dst.getWidth();
+        let px = dst.convertToPixel({ xAxisIndex: 0 }, xInfo.value);
+        if (px == null || Number.isNaN(px) || px < -50 || px > w + 50) {
+          dst.dispatchAction({ type: "hideTip" });
+          continue;
+        }
+        px = Math.max(0, Math.min(px, w - 1));
+        dst.dispatchAction({ type: "showTip", x: px, y: targetMacroY(dst) });
+      }
+    });
+    src.getZr().on("globalout", () => {
+      for (const dst of charts) if (dst !== src) dst.dispatchAction({ type: "hideTip" });
+    });
+  }
+}
+
 export function activate() {
   const el = document.getElementById("macro-chart");
   if (!macroChart) macroChart = echarts.init(el, isLight() ? null : "dark");
   const bEl = document.getElementById("biz-chart");
   if (!bizChart && bEl) bizChart = echarts.init(bEl, isLight() ? null : "dark");
+  connectMacroCharts();
+  wireMacroCrossSync();
   setTimeout(() => { macroChart.resize(); bizChart?.resize(); renderMacroTab(); renderBizChart(); }, 50);
 }
 
@@ -269,6 +312,8 @@ export function onThemeChange(light) {
     bizChart = bEl ? echarts.init(bEl, light ? null : "dark") : null;
     renderBizChart();
   }
+  connectMacroCharts();
+  wireMacroCrossSync();
 }
 
 export function resize() {

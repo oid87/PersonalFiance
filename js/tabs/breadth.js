@@ -276,19 +276,26 @@ export function renderBreadthChart() {
         markLine: {
           silent: true, symbol: "none",
           data: [
-            { yAxis: 20, lineStyle: { type: "dashed", color: "rgba(248,81,73,0.5)",  width: 1 },
-              label: { formatter: "20%", color: "#f85149", fontSize: 10, position: "insideEndTop" } },
+            // 15/25 = 深底/淺底(2022 深修正 vs 2025/4 後淺修正即反彈)；75/85 對稱鏡射，標示廣度過熱區間
+            { yAxis: 15, lineStyle: { type: "dashed", color: "rgba(248,81,73,0.5)",  width: 1 },
+              label: { formatter: "15% 深底", color: "#f85149", fontSize: 10, position: "insideEndTop" } },
+            { yAxis: 25, lineStyle: { type: "dashed", color: "rgba(240,136,62,0.5)", width: 1 },
+              label: { formatter: "25% 淺底", color: "#f0883e", fontSize: 10, position: "insideEndTop" } },
             { yAxis: 50, lineStyle: { type: "dashed", color: "rgba(139,148,158,0.4)", width: 1 },
               label: { formatter: "50%", color: axisClr,   fontSize: 10, position: "insideEndTop" } },
-            { yAxis: 80, lineStyle: { type: "dashed", color: "rgba(63,185,80,0.5)",  width: 1 },
-              label: { formatter: "80%", color: "#3fb950",  fontSize: 10, position: "insideEndTop" } },
+            { yAxis: 75, lineStyle: { type: "dashed", color: "rgba(240,136,62,0.5)", width: 1 },
+              label: { formatter: "75% 過熱", color: "#f0883e", fontSize: 10, position: "insideEndTop" } },
+            { yAxis: 85, lineStyle: { type: "dashed", color: "rgba(63,185,80,0.5)",  width: 1 },
+              label: { formatter: "85% 極熱", color: "#3fb950",  fontSize: 10, position: "insideEndTop" } },
           ],
         },
         markArea: {
           silent: true,
           data: [
-            [{ yAxis: 0,  itemStyle: { color: "rgba(248,81,73,0.06)" } }, { yAxis: 20  }],
-            [{ yAxis: 80, itemStyle: { color: "rgba(63,185,80,0.06)"  } }, { yAxis: 100 }],
+            [{ yAxis: 0,  itemStyle: { color: "rgba(248,81,73,0.06)" } }, { yAxis: 15  }],
+            [{ yAxis: 15, itemStyle: { color: "rgba(240,136,62,0.04)" } }, { yAxis: 25  }],
+            [{ yAxis: 75, itemStyle: { color: "rgba(240,136,62,0.04)" } }, { yAxis: 85  }],
+            [{ yAxis: 85, itemStyle: { color: "rgba(63,185,80,0.06)"  } }, { yAxis: 100 }],
           ],
         },
       },

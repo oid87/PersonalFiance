@@ -198,6 +198,9 @@ function renderChart() {
   const opt = {
     backgroundColor: "transparent",
     animation: false,
+    // Must be declared at option root, not just inside tooltip.axisPointer — otherwise
+    // the 3 grids' crosshairs don't actually link despite xAxisIndex:"all" below.
+    axisPointer: { link: [{ xAxisIndex: "all" }] },
     grid: [
       { top: "2%",  left: lp, right: rp, height: "33%" },  // SPY
       { top: "41%", left: lp, right: rp, height: "28%" },  // VIX+SKEW
