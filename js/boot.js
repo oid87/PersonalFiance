@@ -30,6 +30,7 @@ import * as inflationTab  from './tabs/inflation.js';
 import * as creditTab        from './tabs/credit.js';
 import * as twSectorFlowTab  from './tabs/twsectorflow.js';
 import * as wkrevTab         from './tabs/wkrev.js';
+import * as marginheatTab    from './tabs/marginheat.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -59,6 +60,7 @@ registerAll([
   { id: 'credit',        module: creditTab        },
   { id: 'twsectorflow',  module: twSectorFlowTab  },
   { id: 'wkrev',         module: wkrevTab         },
+  { id: 'marginheat',    module: marginheatTab    },
 ]);
 
 setupResizeHandler();
@@ -77,6 +79,7 @@ const CATEGORIES = [
   {
     id: 'liquidity', tabs: [
       { id: 'liquidity', label: '流動性' },
+      { id: 'marginheat', label: '融資熱度' },
       { id: 'breadth',   label: '市場廣度' },
       { id: 'fsi',       label: '金融壓力' },
       { id: 'twstress',  label: '台股壓力' },

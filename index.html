@@ -1516,6 +1516,47 @@
     </div>
   </section>
 
+  <!-- ── 融資熱度 tab (FINRA Margin Debt YoY% vs S&P500) ───── -->
+  <section id="tab-marginheat" class="tab-section" hidden>
+    <div id="marginheat-status" style="padding:8px 16px;color:var(--muted);font-size:12px"></div>
+    <div id="marginheat-chart" style="width:100%;height:420px"></div>
+    <div style="padding:12px 16px">
+      <table class="info-table" id="marginheat-table">
+        <thead><tr><th>事件</th><th>日期</th><th>Margin YoY</th><th>當時 S&P500</th><th>後續走勢</th><th>說明</th></tr></thead>
+        <tbody>
+          <tr><td>網路泡沫峰</td><td>2000-03</td><td>+80.5%</td><td>1,499</td><td>2002-09 見底 815（-45.6%，30個月）</td><td>融資YoY單月飆破80%，史上最極端槓桿擴張；峰值後市場撐了近半年才真正反轉</td></tr>
+          <tr><td>泡沫去槓桿谷底</td><td>2001-03</td><td>-41.7%</td><td>~1,160</td><td>真正底部要等到 2002-09（815）</td><td>融資YoY觸底≠市場觸底，去槓桿速度快、但股價修正仍在半路</td></tr>
+          <tr><td>GFC 前峰</td><td>2007-07</td><td>+62.6%</td><td>1,455</td><td>2009-02 見底 735（-49.5%，19個月）</td><td>次貸危機爆發前最後瘋狂，融資峰值早於雷曼倒閉約14個月</td></tr>
+          <tr><td>GFC 谷底</td><td>2009-02</td><td>-47.1%</td><td>735</td><td>2011-02 漲至 1,327（+80.6%，24個月）</td><td>史上最深去槓桿，罕見地與市場真實低點幾乎重合</td></tr>
+          <tr><td>後疫情峰</td><td>2021-03</td><td>+71.6%</td><td>3,973</td><td>2022-09 見底 3,586（-9.7%，18個月）；市場真頂晚到 2022-01（~4,796）</td><td>融資YoY領先市場頂部約10個月；這輪去槓桿相對溫和，寬鬆環境緩衝</td></tr>
+          <tr><td>2022年谷底</td><td>2022-12</td><td>-33.3%</td><td>3,840</td><td>2024-11 漲至 6,032（+57.1%，23個月）</td><td>去槓桿幅度遠不如2000/2007，這輪修正相對溫和</td></tr>
+          <tr><td>現況</td><td>2026-05</td><td>+53.7%</td><td>7,580</td><td>—</td><td>已進紅色警戒帶（30-40%+）；三次歷史案例進此區間後18-30個月市場都曾重大回檔，但2021這次證明「進紅區」≠立即見頂、跌幅也可以遠比前兩次溫和</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="info-panel" style="margin:0 16px 20px">
+      <div class="info-panel-header"><i class="chevron">▶</i> 怎麼讀這張圖？用法說明與歷史脈絡</div>
+      <div class="info-panel-body">
+        <p><b>這張圖在量什麼：</b>融資餘額（margin debt）是美股投資人向券商借錢買股票的總額，代表「私人槓桿」的擴張速度。看的是<b>年增率（YoY）</b>而非絕對水位——因為市值本身長期成長，融資餘額的名目高點每次都會創新高，唯有 YoY 才能看出「擴張/收縮的速度」是否處於歷史極端。</p>
+        <table class="info-table" style="margin-bottom:14px">
+          <thead><tr><th>區間</th><th>意義</th><th>歷史經驗</th></tr></thead>
+          <tbody>
+            <tr><td><span style="color:#f85149">紅色帶 YoY +30%~+40%</span></td><td>槓桿擴張過熱</td><td>過去三次進入此區間（2000/2007/2021）後，S&amp;P500 都在 18-30 個月內出現兩位數修正，但幅度落差很大（-9.7%~-49.5%）</td></tr>
+            <tr><td><span style="color:#3fb950">綠色帶 YoY -20%~-40%</span></td><td>去槓桿末端 / 投降</td><td>強制平倉、恐慌性去槓桿接近尾聲；2009 這次幾乎與市場真實低點重合，但 2001 那次市場其實還沒真正落底</td></tr>
+          </tbody>
+        </table>
+        <p><b>用法上的兩個關鍵陷阱：</b></p>
+        <ol style="margin:6px 0 10px 18px;line-height:1.9;font-size:13px">
+          <li><b>融資YoY觸頂/觸底 ≠ 市場真正見頂/見底</b>——兩者常有數月到近一年的時間落差（2021 融資峰值領先市場真頂約 10 個月；2001 融資YoY已觸底但市場還要再跌 18 個月才見真底）。</li>
+          <li><b>去槓桿幅度不對稱</b>——2000、2007 兩次去槓桿完成時市場跌幅都在 -45%~-50%，但 2021 這輪只跌了 -9.7% 就止穩，寬鬆的資金環境可以大幅緩衝去槓桿的殺傷力，不能套用同一套跌幅預期。</li>
+        </ol>
+        <p style="color:var(--muted);font-size:12px">
+          定位：<b>環境理解工具，不是精準擇時或交易觸發訊號</b>。融資熱度只能提示「風險胃納正處於歷史極端」，不能預測何時反轉、跌多深。實際進出場建議搭配 125/200MA 等技術指標做下檔保護，而非單看這張圖進出場。
+        </p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 消費者信心 tab (UMich UMCSENT + SPY + NBER recessions) ───── -->
   <section id="tab-umich" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">

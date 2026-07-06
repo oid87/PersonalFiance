@@ -123,6 +123,12 @@ def fetch_margin_debt() -> list[dict]:
     return sorted(rows, key=lambda x: x["date"])
 
 
+def load_seed_margin() -> list[dict]:
+    """Static pre-2010 FINRA margin history — the live xlsx no longer serves it."""
+    p = DATA_DIR / "finra_margin_early.json"
+    return json.loads(p.read_text())["data"]
+
+
 def load_existing() -> dict:
     if not OUT.exists():
         return {}
@@ -165,9 +171,13 @@ def main() -> None:
     # ── 2. FINRA margin debt (monthly, millions) ─────────────────────────────
     margin: list[dict] = existing.get("margin", [])
     try:
-        margin = fetch_margin_debt()
+        live = fetch_margin_debt()
+        seed = load_seed_margin()
+        merged = {r["date"]: r for r in seed}
+        merged.update({r["date"]: r for r in live})  # live 覆蓋 seed（若日期重疊）
+        margin = sorted(merged.values(), key=lambda x: x["date"])
         md = margin[-1]
-        print(f"  [margin]   {len(margin)} months · latest {md['date']} debit = {md['debit']:,} M "
+        print(f"  [margin]   {len(margin)} months (含 {len(seed)} 筆回補) · latest {md['date']} debit = {md['debit']:,} M "
               f"(${md['debit'] / 1e6:.3f} T)")
     except Exception as exc:
         if not margin:
