@@ -31,6 +31,7 @@ import * as creditTab        from './tabs/credit.js';
 import * as twSectorFlowTab  from './tabs/twsectorflow.js';
 import * as wkrevTab         from './tabs/wkrev.js';
 import * as marginheatTab    from './tabs/marginheat.js';
+import * as baniniTab        from './tabs/banini.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -61,6 +62,7 @@ registerAll([
   { id: 'twsectorflow',  module: twSectorFlowTab  },
   { id: 'wkrev',         module: wkrevTab         },
   { id: 'marginheat',    module: marginheatTab    },
+  { id: 'banini',        module: baniniTab        },
 ]);
 
 setupResizeHandler();
@@ -74,6 +76,7 @@ const CATEGORIES = [
       { id: 'bullbear',  label: '牛熊' },
       { id: 'umich',     label: '消費者信心' },
       { id: 'flows',    label: '資金脈衝' },
+      { id: 'banini',   label: '反指標(8zz)' },
     ]
   },
   {

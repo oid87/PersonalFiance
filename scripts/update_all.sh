@@ -59,6 +59,7 @@ $PYTHON fetch_flows.py         || true
 $PYTHON fetch_credit.py        || true
 $PYTHON fetch_bdc.py           || true
 $PYTHON fetch_tw_sector_flow.py || true
+$PYTHON fetch_banini.py        || true
 
 # 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"

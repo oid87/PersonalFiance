@@ -192,6 +192,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_tw_sector_flow.py
 
+      - name: Fetch banini-tracker reverse indicator dataset (cablate, AGPL-3.0)
+        continue-on-error: true
+        run: python scripts/fetch_banini.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 

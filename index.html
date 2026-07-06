@@ -1365,6 +1365,41 @@
     </div>
   </section>
 
+  <!-- ── 反指標(8zz) tab ──────────────────────────────────────────── -->
+  <section id="tab-banini" class="tab-section" hidden>
+    <div class="controls">
+      <span style="font-size:13px;color:var(--muted)">banini-tracker 公開資料集 · 345 筆預測 · 2024-04~2026-04</span>
+    </div>
+    <div id="banini-header"></div>
+    <div style="height:360px"><div id="banini-chart-timeline" style="width:100%;height:100%"></div></div>
+    <div style="height:360px"><div id="banini-chart-breakdown" style="width:100%;height:100%"></div></div>
+    <div style="overflow:auto;max-height:480px">
+      <table id="banini-table" class="info-table"></table>
+    </div>
+    <div class="status" id="banini-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 資料來源與授權說明</div>
+      <div class="info-panel-body">
+        <p style="margin:0 0 8px">
+          <b>banini-tracker</b> 是第三方開源專案，追蹤 FB 網紅「股海冥燈 巴逆逆(8zz)」的投資相關貼文，
+          做「反指標」分析（她看多時反而偏空、她看空時反而偏多的假設）並公開去識別化的預測快照資料集。
+        </p>
+        <p style="margin:0 0 8px">
+          原始 repo：<a href="https://github.com/cablate/banini-tracker" target="_blank" rel="noopener">https://github.com/cablate/banini-tracker</a>（AGPL-3.0 授權）。
+          本 tab 使用其公開資料集 <code>data/banini-public.db</code>，依 AGPL-3.0 授權須標明原作者並附上原 repo 連結，如上。
+        </p>
+        <p style="margin:0 0 8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+          ⚠️ 表格與圖表中的 <b>self_result／成功率是本頁自算，非原作者公式</b>：取每筆預測第5個交易日收盤價相對基準價的漲跌幅，
+          方向正確且幅度 &gt;1% 記為成功；原作者並未公開其官方成功率計算方法，兩者數字不可直接對照。
+          「資料不足」代表資料集截止時追蹤天數尚不足5天（資料集本身已凍結，不會再補）；「無資料」代表完全無對應價格快照。
+        </p>
+        <p style="margin:0;color:var(--muted);font-size:12px">
+          原作者聲明：「本專案僅供娛樂參考，不構成任何投資建議。」
+        </p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── VIX-SKEW 序列背離 tab ──────────────────────────────────────────── -->
   <section id="tab-vixskew" class="tab-section" hidden>
     <div class="controls">
