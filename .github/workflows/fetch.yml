@@ -90,6 +90,18 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_breadth.py
 
+      - name: Compute Nasdaq-100 market breadth
+        continue-on-error: true
+        run: python scripts/fetch_breadth_ndx.py
+
+      - name: Compute S&P 500 Top-50 (XLG) market breadth
+        continue-on-error: true
+        run: python scripts/fetch_breadth_xlg.py
+
+      - name: Compute 臺灣50 (0050) market breadth
+        continue-on-error: true
+        run: python scripts/fetch_breadth_tw50.py
+
       - name: Fetch Taiwan business cycle signal (景氣對策信號, NDC)
         continue-on-error: true
         run: python scripts/fetch_taiwan_business_signal.py

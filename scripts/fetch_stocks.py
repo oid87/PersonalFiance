@@ -28,6 +28,7 @@ TICKERS: dict[str, tuple[str, str]] = {
     "0050.TW": ("0050.TW", "2003-06-30"),
     "VOO":     ("VOO",     "2010-09-09"),
     "QQQ":     ("QQQ",     "1999-03-10"),
+    "XLG":     ("XLG",     "2005-05-04"),  # Invesco S&P 500 Top 50 ETF — breadth tab overlay
     "SPY":     ("SPY",     "1993-01-29"),
     "^VIX":    ("VIX",     "1990-01-02"),
     "^VXN":    ("VXN",     "2001-01-02"),  # CBOE NASDAQ-100 Volatility Index — QQQ 對應

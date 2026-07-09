@@ -563,7 +563,22 @@
         <div class="bc-count" id="bc-hl-pct">—</div>
         <div class="bc-signal" id="bc-hl-signal">—</div>
       </div>
+      <div class="breadth-card" data-tooltip="成分股中距自身52週高點回落20%以上的比例，個股層級技術性熊市，不是大盤指數本身跌幅">
+        <div class="bc-label">技術性熊市（距高點回落≥20%）</div>
+        <div class="bc-main">
+          <span class="bc-pct" id="bc-bear-pct">—</span>
+          <span class="bc-unit">%</span>
+        </div>
+        <div class="bc-count" id="bc-bear-count">— / —</div>
+        <div class="bc-signal" id="bc-bear-signal">—</div>
+      </div>
       <div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap">
+        <div id="breadth-universe-picker" style="display:flex;gap:4px">
+          <span class="chip active" data-breadth-universe="SP500" data-tooltip="對應 VOO">S&amp;P 500</span>
+          <span class="chip" data-breadth-universe="NDX" data-tooltip="對應 QQQ">Nasdaq-100</span>
+          <span class="chip" data-breadth-universe="XLG" data-tooltip="對應 XLG · S&amp;P 500 市值前 50 大">超大型50</span>
+          <span class="chip" data-breadth-universe="TW50" data-tooltip="對應 0050 · 臺灣50指數(台灣前 50 大),台版超大型股廣度">台灣50</span>
+        </div>
         <span id="breadth-vix-toggle" class="chip" data-tooltip="疊加 VIX 恐慌指數（右軸）">VIX</span>
         <span id="breadth-fg-toggle"  class="chip" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
         <div id="breadth-range-picker" style="display:flex;gap:4px">
@@ -611,6 +626,9 @@
           </tbody>
         </table>
         <p style="color:var(--muted);font-size:12px;margin-top:8px">用法：<b>單次觸發</b>不可怕（歷史誤報率高）；<b>30 個交易日內叢集出現 ≥ 2 次</b>才有意義。是「降槓桿、檢查停損」的環境提示，不是反手做空訊號。SPY 線上紅色 pin 即觸發日。</p>
+        <h4 style="margin:14px 0 6px">技術性熊市比例</h4>
+        <p>這是<b>個股層級</b>的定義：成分股中，目前價格距離自身 52 週滾動高點回落 20% 以上的比例，<b>不是指數本身的跌幅</b>。即使大盤只回檔一成，底層仍可能有近半數成分股個別重跌超過兩成——常見於漲勢由少數權值股撐起的格局。</p>
+        <p style="color:var(--muted);font-size:12px">⚠ 繼承既有廣度資料的先天限制：今日成分股名單套用全歷史（倖存者/前視偏誤），可接受作環境理解，不可拿來做嚴謹回測。</p>
       </div>
     </div>
   </section>

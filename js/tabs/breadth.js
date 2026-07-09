@@ -10,6 +10,15 @@ let breadthFgActive  = false;
 let breadthRange     = "2Y";
 let hbTriggers       = [];   // ["YYYY-MM-DD", ...] Hindenburg-style trigger dates
 
+const UNIVERSE_CONFIG = {
+  SP500: { dataFile: "data/breadth.json",     overlayFile: "data/SPY.json", overlayName: "SPY", label: "S&P 500" },
+  NDX:   { dataFile: "data/breadth_ndx.json", overlayFile: "data/QQQ.json", overlayName: "QQQ", label: "Nasdaq-100" },
+  XLG:   { dataFile: "data/breadth_xlg.json", overlayFile: "data/XLG.json", overlayName: "XLG", label: "S&P 500 Top 50" },
+  TW50:  { dataFile: "data/breadth_tw50.json", overlayFile: "data/0050.TW.json", overlayName: "0050", label: "台灣50" },
+};
+let breadthUniverse = "SP500";
+let breadthCache    = {};
+
 function breadthSignal(pct, is200) {
   if (pct == null) return { label: "—", color: "var(--muted)" };
   if (is200) {
@@ -24,6 +33,14 @@ function breadthSignal(pct, is200) {
   if (pct >= 35) return { label: "多空拉鋸", color: "#e3b341" };
   if (pct >= 20) return { label: "空方壓力", color: "#f0883e" };
   return               { label: "弱勢超賣", color: "#f85149" };
+}
+
+function breadthBearSignal(pct) {
+  if (pct == null) return { label: "—", color: "var(--muted)" };
+  if (pct < 15) return { label: "健康",         color: "#3fb950" };
+  if (pct < 30) return { label: "局部修正",     color: "#e3b341" };
+  if (pct < 50) return { label: "廣泛修正",     color: "#f0883e" };
+  return              { label: "系統性熊市徵兆", color: "#f85149" };
 }
 
 // Simplified Hindenburg-style trigger on S&P 500 constituents.
@@ -70,20 +87,88 @@ function hindenburgStatus(triggers, latestDate, rows) {
   return { label: "30日內無觸發", color: "var(--muted)", count: 0 };
 }
 
+async function loadUniverse(universe) {
+  if (!breadthCache[universe]) {
+    const cfg = UNIVERSE_CONFIG[universe];
+    const [bResp, overlayResp] = await Promise.all([
+      fetch(cfg.dataFile,    { cache: "no-cache" }),
+      fetch(cfg.overlayFile, { cache: "no-cache" }),
+    ]);
+    if (!bResp.ok) throw new Error(`HTTP ${bResp.status}`);
+    const data = await bResp.json();
+    const overlayJson = await overlayResp.json();
+    const overlay = {};
+    for (const r of overlayJson.data) overlay[r.date] = r.close;
+    breadthCache[universe] = { data, overlay };
+  }
+  breadthUniverse = universe;
+  breadthData = breadthCache[universe].data;
+  breadthSpy  = breadthCache[universe].overlay;
+}
+
+function setBearCard(pct, count, total) {
+  document.getElementById("bc-bear-pct").textContent =
+    pct != null ? pct.toFixed(1) : "—";
+  document.getElementById("bc-bear-count").textContent =
+    count != null ? `${count} / ${total}` : "— / —";
+  const sig = breadthBearSignal(pct);
+  const el  = document.getElementById("bc-bear-signal");
+  el.textContent = sig.label;
+  el.style.color = sig.color;
+}
+
+function refreshBreadthView() {
+  const status = document.getElementById("breadth-status");
+  const rows   = breadthData.data;
+  const latest = rows[rows.length - 1];
+
+  function setCard(suffix, pct, count, total, is200) {
+    document.getElementById(`bc-${suffix}-pct`).textContent =
+      pct != null ? pct.toFixed(1) : "—";
+    document.getElementById(`bc-${suffix}-count`).textContent =
+      count != null ? `${count} / ${total}` : "— / —";
+    const sig = breadthSignal(pct, is200);
+    const el  = document.getElementById(`bc-${suffix}-signal`);
+    el.textContent  = sig.label;
+    el.style.color  = sig.color;
+  }
+  setCard("50",  latest.above50_pct,  latest.above50_count,  latest.total, false);
+  setCard("200", latest.above200_pct, latest.above200_count, latest.total, true);
+  setBearCard(latest.bear_pct, latest.bear_count, latest.bear_total);
+
+  // Compute Hindenburg-style triggers (needs SPY for trend filter)
+  hbTriggers = computeHindenburgTriggers(rows, breadthSpy);
+  const hlEl   = document.getElementById("bc-hl-count");
+  const hlPctEl= document.getElementById("bc-hl-pct");
+  const hlSigEl= document.getElementById("bc-hl-signal");
+  if (hlEl && latest.new_hi_count != null && latest.new_lo_count != null) {
+    const tot = latest.hl_total || latest.total;
+    hlEl.textContent    = `${latest.new_hi_count} / ${latest.new_lo_count}`;
+    hlPctEl.textContent = `${(latest.new_hi_count/tot*100).toFixed(1)}% / ${(latest.new_lo_count/tot*100).toFixed(1)}% · n=${tot}`;
+    const st = hindenburgStatus(hbTriggers, latest.date, rows);
+    hlSigEl.textContent = st.label;
+    hlSigEl.style.color = st.color;
+  } else if (hlEl) {
+    hlEl.textContent    = "— / —";
+    hlPctEl.textContent = "（資料更新中，CI 跑完後生效）";
+    hlSigEl.textContent = "—";
+  }
+
+  if (!breadthChart) {
+    breadthChart = echarts.init(
+      document.getElementById("breadth-chart"), isLight() ? null : "dark");
+  }
+  renderBreadthChart();
+  status.textContent =
+    `${UNIVERSE_CONFIG[breadthUniverse].label} 市場廣度 · ${rows.length} 個交易日 · 更新至 ${breadthData.updated}`;
+}
+
 export async function init() {
   const status = document.getElementById("breadth-status");
   if (breadthData) { renderBreadthChart(); return; }
   status.textContent = "載入中…";
   try {
-    const [bResp, spyResp] = await Promise.all([
-      fetch("data/breadth.json", { cache: "no-cache" }),
-      fetch("data/SPY.json",     { cache: "no-cache" }),
-    ]);
-    if (!bResp.ok) throw new Error(`HTTP ${bResp.status}`);
-    breadthData = await bResp.json();
-    const spyJson = await spyResp.json();
-    breadthSpy = {};
-    for (const r of spyJson.data) breadthSpy[r.date] = r.close;
+    await loadUniverse("SP500");
 
     document.querySelectorAll("[data-breadth-range]").forEach(el => {
       el.addEventListener("click", () => {
@@ -91,6 +176,22 @@ export async function init() {
         document.querySelectorAll("[data-breadth-range]").forEach(e =>
           e.classList.toggle("active", e.dataset.breadthRange === breadthRange));
         renderBreadthChart();
+      });
+    });
+
+    document.querySelectorAll("[data-breadth-universe]").forEach(el => {
+      el.addEventListener("click", async () => {
+        const u = el.dataset.breadthUniverse;
+        if (u === breadthUniverse) return;
+        document.querySelectorAll("[data-breadth-universe]").forEach(e =>
+          e.classList.toggle("active", e.dataset.breadthUniverse === u));
+        status.textContent = "載入中…";
+        try {
+          await loadUniverse(u);
+          refreshBreadthView();
+        } catch (err) {
+          status.textContent = `載入失敗：${err.message}`;
+        }
       });
     });
 
@@ -117,47 +218,7 @@ export async function init() {
       loadAndToggle("F&G", breadthFgMap, "data/fear_greed.json", "breadth-fg-toggle");
     });
 
-    const rows   = breadthData.data;
-    const latest = rows[rows.length - 1];
-
-    function setCard(suffix, pct, count, total, is200) {
-      document.getElementById(`bc-${suffix}-pct`).textContent =
-        pct != null ? pct.toFixed(1) : "—";
-      document.getElementById(`bc-${suffix}-count`).textContent =
-        count != null ? `${count} / ${total}` : "— / —";
-      const sig = breadthSignal(pct, is200);
-      const el  = document.getElementById(`bc-${suffix}-signal`);
-      el.textContent  = sig.label;
-      el.style.color  = sig.color;
-    }
-    setCard("50",  latest.above50_pct,  latest.above50_count,  latest.total, false);
-    setCard("200", latest.above200_pct, latest.above200_count, latest.total, true);
-
-    // Compute Hindenburg-style triggers (needs SPY for trend filter)
-    hbTriggers = computeHindenburgTriggers(rows, breadthSpy);
-    const hlEl   = document.getElementById("bc-hl-count");
-    const hlPctEl= document.getElementById("bc-hl-pct");
-    const hlSigEl= document.getElementById("bc-hl-signal");
-    if (hlEl && latest.new_hi_count != null && latest.new_lo_count != null) {
-      const tot = latest.hl_total || latest.total;
-      hlEl.textContent    = `${latest.new_hi_count} / ${latest.new_lo_count}`;
-      hlPctEl.textContent = `${(latest.new_hi_count/tot*100).toFixed(1)}% / ${(latest.new_lo_count/tot*100).toFixed(1)}% · n=${tot}`;
-      const st = hindenburgStatus(hbTriggers, latest.date, rows);
-      hlSigEl.textContent = st.label;
-      hlSigEl.style.color = st.color;
-    } else if (hlEl) {
-      hlEl.textContent    = "— / —";
-      hlPctEl.textContent = "（資料更新中，CI 跑完後生效）";
-      hlSigEl.textContent = "—";
-    }
-
-    if (!breadthChart) {
-      breadthChart = echarts.init(
-        document.getElementById("breadth-chart"), isLight() ? null : "dark");
-    }
-    renderBreadthChart();
-    status.textContent =
-      `S&P 500 市場廣度 · ${rows.length} 個交易日 · 更新至 ${breadthData.updated}`;
+    refreshBreadthView();
   } catch (err) {
     status.textContent = `載入失敗：${err.message}`;
   }
@@ -231,7 +292,7 @@ export function renderBreadthChart() {
         for (const p of params) {
           if (p.value == null) continue;
           let val;
-          if (p.seriesName === "SPY")        val = `$${p.value.toFixed(2)}`;
+          if (p.seriesName === UNIVERSE_CONFIG[breadthUniverse].overlayName) val = `$${p.value.toFixed(2)}`;
           else if (p.seriesName === "VIX")   val = p.value.toFixed(1);
           else if (p.seriesName === "F&G")   val = p.value.toFixed(0);
           else                               val = `${p.value.toFixed(1)}%`;
@@ -262,7 +323,7 @@ export function renderBreadthChart() {
     yAxis: yAxes,
     series: [
       {
-        name: "SPY",
+        name: UNIVERSE_CONFIG[breadthUniverse].overlayName,
         type: "line", data: spyVals, smooth: 0.3, symbol: "none",
         yAxisIndex: 1, z: 1,
         lineStyle: { width: 1.5, color: "#a371f7", opacity: 0.7 },

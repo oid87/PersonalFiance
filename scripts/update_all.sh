@@ -36,6 +36,9 @@ $PYTHON fetch_taiwan_business_signal.py || true
 $PYTHON fetch_taiwan_sector_index.py   || true
 $PYTHON fetch_yields.py        || true
 $PYTHON fetch_breadth.py       || true
+$PYTHON fetch_breadth_ndx.py   || true
+$PYTHON fetch_breadth_xlg.py   || true
+$PYTHON fetch_breadth_tw50.py  || true
 $PYTHON fetch_cape.py          || true
 $PYTHON fetch_sp500_pe.py      || true
 $PYTHON fetch_qqq_valuation.py || true
