@@ -2,11 +2,16 @@
 // 三面板：① SPY 指數化走勢 ② VIX（左Y）+ SKEW（右Y）雙軸 ③ 背離分數柱狀圖
 // 信號：序列式（同步上升→VIX回落/SKEW維持），標記在圖上並列出回測結果
 // 歷史覆蓋：1993年起（SKEW 起始點）
+// 另加兩面板：④ VIX 期限結構（VIX/VIX3M ts_ratio，backwardation=恐慌，2006起）
+//            ⑤ 美股 Total Put/Call Ratio（OCC+CBOE 拼接，2006起）
 
 import { isLight, tc, mob } from '../utils/theme.js';
 
-let chart  = null;
-let vsData = null;
+let chart   = null;
+let tsChart = null;
+let pcChart = null;
+let vsData  = null;
+let pcData  = null;
 let vsRange = "5Y";
 
 // ── public ───────────────────────────────────────────────────────────────────
@@ -26,6 +31,8 @@ export async function init() {
         document.querySelectorAll("[data-vs-range]")
           .forEach(e => e.classList.toggle("active", e.dataset.vsRange === vsRange));
         renderChart();
+        renderTSChart();
+        renderPCChart();
       }));
 
     renderAll();
@@ -35,16 +42,39 @@ export async function init() {
     status.textContent = `載入失敗：${err.message}`;
     console.error("[vixskew]", err);
   }
+
+  const tsStatus = document.getElementById("vts-status");
+  const pcStatus = document.getElementById("pc-status");
+  try {
+    const r = await fetch("data/putcall.json", { cache: "no-cache" });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    pcData = await r.json();
+    renderPCChart();
+    if (pcStatus)
+      pcStatus.textContent =
+        `美股 Put/Call · ${pcData.total.length} 個交易日 · 更新至 ${pcData.updated}`;
+  } catch (err) {
+    if (pcStatus) pcStatus.textContent = `載入失敗：${err.message}`;
+    console.error("[vixskew:putcall]", err);
+  }
+
+  if (vsData) {
+    renderTSChart();
+    const tsRows = (vsData.term_structure || []);
+    if (tsStatus)
+      tsStatus.textContent = tsRows.length
+        ? `VIX 期限結構 · ${tsRows.length} 個交易日 · 更新至 ${vsData.updated}`
+        : "無期限結構資料";
+  }
 }
 
 export function onThemeChange() {
-  if (!chart) return;
-  chart.dispose();
-  chart = null;
-  if (vsData) renderChart();
+  if (chart)   { chart.dispose();   chart   = null; if (vsData) renderChart(); }
+  if (tsChart) { tsChart.dispose(); tsChart = null; if (vsData) renderTSChart(); }
+  if (pcChart) { pcChart.dispose(); pcChart = null; if (pcData) renderPCChart(); }
 }
 
-export function resize() { chart?.resize(); }
+export function resize() { chart?.resize(); tsChart?.resize(); pcChart?.resize(); }
 
 // ── render helpers ────────────────────────────────────────────────────────────
 
@@ -52,6 +82,8 @@ function renderAll() {
   renderCards();
   renderChart();
   renderTable();
+  renderTSChart();
+  renderPCChart();
 }
 
 function rangeStart(key) {
@@ -328,6 +360,201 @@ function renderChart() {
     );
   }
   chart.setOption(opt, { notMerge: true });
+}
+
+// ── VIX 期限結構（VIX / VIX3M ts_ratio）────────────────────────────────────────
+
+function renderTSChart() {
+  const el = document.getElementById("vts-chart");
+  if (!el || !vsData) return;
+  const rows = (vsData.term_structure || []).filter(r => r.date >= rangeStart(vsRange));
+  if (rows.length < 10) { el.innerHTML = ""; return; }
+
+  const dates   = rows.map(r => r.date);
+  const vixData = rows.map(r => r.vix   != null ? +r.vix.toFixed(2)   : null);
+  const v3mData = rows.map(r => r.vix3m != null ? +r.vix3m.toFixed(2) : null);
+  const tsData  = rows.map(r => r.ts_ratio != null ? +r.ts_ratio.toFixed(3) : null);
+
+  // Contiguous backwardation (ts_ratio > 1) date ranges → markArea shading
+  const backAreas = [];
+  let segStart = null;
+  for (let i = 0; i < rows.length; i++) {
+    const on = rows[i].ts_ratio != null && rows[i].ts_ratio > 1;
+    if (on && segStart === null) segStart = dates[i];
+    if (!on && segStart !== null) {
+      backAreas.push([{ xAxis: segStart }, { xAxis: dates[i - 1] }]);
+      segStart = null;
+    }
+  }
+  if (segStart !== null) backAreas.push([{ xAxis: segStart }, { xAxis: dates[dates.length - 1] }]);
+
+  const axisClr = tc("#8b949e", "#57606a");
+  const gridClr = tc("rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)");
+  const tipBg   = tc("#161b22", "#ffffff");
+  const tipBdr  = tc("#30363d", "#d0d7de");
+  const tipText = tc("#e6edf3", "#1f2328");
+  const isMob   = mob();
+
+  const opt = {
+    backgroundColor: "transparent",
+    animation: false,
+    grid: { top: "12%", left: "7%", right: "9%", bottom: isMob ? "20%" : "14%" },
+    xAxis: {
+      type: "category", data: dates, boundaryGap: false,
+      axisLine: { lineStyle: { color: gridClr } }, axisTick: { show: false },
+      axisLabel: { color: axisClr, fontSize: 10, rotate: isMob ? 30 : 0 },
+      splitLine: { lineStyle: { color: gridClr, type: "dashed" } },
+    },
+    yAxis: [
+      { name: "VIX 水準", nameTextStyle: { color: axisClr, fontSize: 10 },
+        axisLabel: { color: axisClr, fontSize: 10 },
+        splitLine: { lineStyle: { color: gridClr, type: "dashed" } },
+        axisLine: { show: false }, axisTick: { show: false } },
+      { position: "right", axisLabel: { color: "#f0883e", fontSize: 10 },
+        splitLine: { show: false }, axisLine: { show: false }, axisTick: { show: false } },
+    ],
+    series: [
+      { name: "VIX",   type: "line", yAxisIndex: 0, data: vixData, symbol: "none",
+        lineStyle: { color: "#58a6ff", width: 1.2 } },
+      { name: "VIX3M", type: "line", yAxisIndex: 0, data: v3mData, symbol: "none",
+        lineStyle: { color: "#8b949e", width: 1.2 } },
+      { name: "ts_ratio", type: "line", yAxisIndex: 1, data: tsData, symbol: "none",
+        lineStyle: { color: "#f0883e", width: 1.5 },
+        markLine: { silent: true, symbol: "none",
+          lineStyle: { color: "#f85149", type: "dashed", width: 1 },
+          label: { formatter: "1.0（backwardation 門檻）", color: "#f85149", fontSize: 9, position: "insideEndTop" },
+          data: [{ yAxis: 1.0 }] },
+        markArea: { silent: true,
+          itemStyle: { color: "rgba(248,81,73,0.10)" },
+          data: backAreas } },
+    ],
+    tooltip: {
+      trigger: "axis",
+      backgroundColor: tipBg, borderColor: tipBdr,
+      textStyle: { color: tipText, fontSize: 12 },
+      formatter(params) {
+        const d = params[0]?.axisValue || "";
+        const map = {};
+        for (const p of params) map[p.seriesName] = p.value;
+        let s = `<b>${d}</b>`;
+        if (map["VIX"]      != null) s += `<br><span style="color:#58a6ff">VIX：${map["VIX"]}</span>`;
+        if (map["VIX3M"]    != null) s += `<br><span style="color:#8b949e">VIX3M：${map["VIX3M"]}</span>`;
+        if (map["ts_ratio"] != null) {
+          const back = map["ts_ratio"] > 1;
+          s += `<br><span style="color:${back ? "#f85149" : "#3fb950"}">ts_ratio：${map["ts_ratio"]}${back ? "（backwardation⚠️）" : ""}</span>`;
+        }
+        return s;
+      },
+    },
+    legend: {
+      right: 0, top: 2, itemWidth: 16, itemHeight: 2,
+      textStyle: { color: axisClr, fontSize: 11 },
+    },
+  };
+
+  if (!tsChart) tsChart = echarts.init(el, isLight() ? null : "dark");
+  tsChart.setOption(opt, { notMerge: true });
+}
+
+// ── 美股 Total Put/Call Ratio ────────────────────────────────────────────────
+
+function rollingMean(arr, win) {
+  const out = new Array(arr.length).fill(null);
+  let sum = 0, cnt = 0;
+  const q = [];
+  for (let i = 0; i < arr.length; i++) {
+    const v = arr[i];
+    q.push(v);
+    if (v != null) { sum += v; cnt++; }
+    if (q.length > win) {
+      const old = q.shift();
+      if (old != null) { sum -= old; cnt--; }
+    }
+    out[i] = cnt >= Math.min(win, 5) ? +(sum / cnt).toFixed(3) : null;
+  }
+  return out;
+}
+
+function percentile(sorted, p) {
+  if (!sorted.length) return null;
+  const idx = Math.min(sorted.length - 1, Math.max(0, Math.floor(p * (sorted.length - 1))));
+  return sorted[idx];
+}
+
+function renderPCChart() {
+  const el = document.getElementById("pc-chart");
+  if (!el || !pcData || !pcData.total || !pcData.total.length) return;
+
+  const allRows = pcData.total;
+  const allPcSorted = allRows.map(r => r.pc).filter(v => v != null).slice().sort((a, b) => a - b);
+  const p10 = percentile(allPcSorted, 0.10);
+  const p90 = percentile(allPcSorted, 0.90);
+
+  const rows = allRows.filter(r => r.date >= rangeStart(vsRange));
+  if (rows.length < 10) { el.innerHTML = ""; return; }
+
+  const dates  = rows.map(r => r.date);
+  const pcVals = rows.map(r => r.pc != null ? +r.pc.toFixed(3) : null);
+  const ma20   = rollingMean(pcVals, 20);
+
+  const axisClr = tc("#8b949e", "#57606a");
+  const gridClr = tc("rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)");
+  const tipBg   = tc("#161b22", "#ffffff");
+  const tipBdr  = tc("#30363d", "#d0d7de");
+  const tipText = tc("#e6edf3", "#1f2328");
+  const isMob   = mob();
+
+  const opt = {
+    backgroundColor: "transparent",
+    animation: false,
+    grid: { top: "12%", left: "7%", right: "5%", bottom: isMob ? "20%" : "14%" },
+    xAxis: {
+      type: "category", data: dates, boundaryGap: false,
+      axisLine: { lineStyle: { color: gridClr } }, axisTick: { show: false },
+      axisLabel: { color: axisClr, fontSize: 10, rotate: isMob ? 30 : 0 },
+      splitLine: { lineStyle: { color: gridClr, type: "dashed" } },
+    },
+    yAxis: {
+      name: "Put/Call Ratio", nameTextStyle: { color: axisClr, fontSize: 10 },
+      axisLabel: { color: axisClr, fontSize: 10 },
+      splitLine: { lineStyle: { color: gridClr, type: "dashed" } },
+      axisLine: { show: false }, axisTick: { show: false },
+    },
+    series: [
+      { name: "P/C 日值", type: "line", data: pcVals, symbol: "none",
+        lineStyle: { color: tc("#30363d", "#d0d7de"), width: 1 } },
+      { name: "P/C 20日均", type: "line", data: ma20, symbol: "none",
+        lineStyle: { color: "#58a6ff", width: 2 },
+        markLine: { silent: true, symbol: "none",
+          lineStyle: { color: "#3fb950", type: "dashed", width: 1 },
+          label: { color: "#3fb950", fontSize: 9, position: "insideEndTop" },
+          data: [
+            p10 != null ? { yAxis: +p10.toFixed(2), label: { formatter: `全樣本P10：${p10.toFixed(2)}` } } : null,
+            p90 != null ? { yAxis: +p90.toFixed(2), label: { formatter: `全樣本P90：${p90.toFixed(2)}` } } : null,
+          ].filter(Boolean) } },
+    ],
+    tooltip: {
+      trigger: "axis",
+      backgroundColor: tipBg, borderColor: tipBdr,
+      textStyle: { color: tipText, fontSize: 12 },
+      formatter(params) {
+        const d = params[0]?.axisValue || "";
+        const map = {};
+        for (const p of params) map[p.seriesName] = p.value;
+        let s = `<b>${d}</b>`;
+        if (map["P/C 日值"]   != null) s += `<br>P/C 日值：${map["P/C 日值"]}`;
+        if (map["P/C 20日均"] != null) s += `<br><span style="color:#58a6ff">P/C 20日均：${map["P/C 20日均"]}</span>`;
+        return s;
+      },
+    },
+    legend: {
+      right: 0, top: 2, itemWidth: 16, itemHeight: 2,
+      textStyle: { color: axisClr, fontSize: 11 },
+    },
+  };
+
+  if (!pcChart) pcChart = echarts.init(el, isLight() ? null : "dark");
+  pcChart.setOption(opt, { notMerge: true });
 }
 
 // ── signal table ──────────────────────────────────────────────────────────────

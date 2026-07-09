@@ -10,6 +10,8 @@ Output: data/vix_skew.json
 資料來源：
   ^SKEW, SPY: yfinance（1993+）
   VIX: 從 data/VIX_early.json + data/VIX.json 拼接（避免重複下載）
+  ^VIX3M, ^VIX9D: yfinance period="max"（VIX3M 2006-07+、VIX9D 2011-01+，用於
+    期限結構 term structure：ts_ratio = VIX / VIX3M，>1 = backwardation 恐慌）
 """
 from __future__ import annotations
 
@@ -40,6 +42,8 @@ def is_fresh() -> bool:
         return False
     try:
         d = json.loads(OUT.read_text())
+        if "term_structure" not in d:
+            return False  # force one-time refresh to backfill new term-structure fields
         updated = d.get("updated", "")
         return (date.today() - date.fromisoformat(updated)).days <= FRESHNESS_DAYS
     except Exception:
@@ -95,10 +99,19 @@ def main() -> None:
                       auto_adjust=True, progress=False)
     closes = raw["Close"].rename(columns={"^SKEW": "skew", "SPY": "spy"})
 
+    print("Fetching VIX3M + VIX9D (term structure) …")
+    ts_raw = yf.download(["^VIX3M", "^VIX9D"], period="max",
+                          auto_adjust=True, progress=False)
+    ts_closes = ts_raw["Close"].rename(columns={"^VIX3M": "vix3m", "^VIX9D": "vix9d"})
+
     vix = load_vix_from_cache()
     df = pd.DataFrame({"vix": vix, "skew": closes["skew"], "spy": closes["spy"]})
     df = df.dropna(subset=["vix", "skew", "spy"]).sort_index()
     print(f"  Combined: {len(df)} rows, {df.index[0].date()} – {df.index[-1].date()}")
+
+    # term structure columns are sparse (start later than df) → left-join, keep NaN outside range
+    df = df.join(ts_closes[["vix3m", "vix9d"]], how="left")
+    df["ts_ratio"] = df["vix"] / df["vix3m"]
 
     breadth = load_breadth()
     if breadth is not None:
@@ -193,6 +206,10 @@ def main() -> None:
     bear_now    = bool(df.iloc[last_i]["bear_trend"])
     breadth_now = round(float(breadth.iloc[-1]), 1) if breadth is not None else None
 
+    vix3m_now = df.iloc[last_i]["vix3m"]
+    vix9d_now = df.iloc[last_i]["vix9d"]
+    ts_ratio_now = df.iloc[last_i]["ts_ratio"]
+
     current = {
         "date":           dt_last.strftime("%Y-%m-%d"),
         "vix":            round(vix_now, 1),
@@ -211,10 +228,15 @@ def main() -> None:
         "breadth_above200": breadth_now,
         "breadth_weak":   breadth_now is not None and breadth_now < 50,
         "full_alert":     seq_alert and bear_now,
+        "vix3m":          round(float(vix3m_now), 2) if not np.isnan(vix3m_now) else None,
+        "vix9d":          round(float(vix9d_now), 2) if not np.isnan(vix9d_now) else None,
+        "ts_ratio":       round(float(ts_ratio_now), 3) if not np.isnan(ts_ratio_now) else None,
+        "ts_backwardation": bool(not np.isnan(ts_ratio_now) and ts_ratio_now > 1.0),
     }
 
     # ── History rows (all trading days → frontend samples as needed) ──────────
     history_rows = []
+    term_structure_rows = []
     for idx, row in df.iterrows():
         d_str = idx.strftime("%Y-%m-%d")
         r: dict = {
@@ -225,6 +247,20 @@ def main() -> None:
         }
         if not np.isnan(float(row["div_score"])):
             r["ds"] = round(float(row["div_score"]), 1)
+        vix3m_v = float(row["vix3m"])
+        if not np.isnan(vix3m_v):
+            r["vix3m"] = round(vix3m_v, 2)
+            ts_v = float(row["ts_ratio"])
+            r["ts_ratio"] = round(ts_v, 3) if not np.isnan(ts_v) else None
+            vix9d_v = float(row["vix9d"])
+            r["vix9d"] = round(vix9d_v, 2) if not np.isnan(vix9d_v) else None
+            term_structure_rows.append({
+                "date":    d_str,
+                "vix":     round(float(row["vix"]), 2),
+                "vix3m":   round(vix3m_v, 2),
+                "vix9d":   round(vix9d_v, 2) if not np.isnan(vix9d_v) else None,
+                "ts_ratio": round(ts_v, 3) if not np.isnan(ts_v) else None,
+            })
         history_rows.append(r)
 
     payload = {
@@ -232,12 +268,15 @@ def main() -> None:
         "current":  current,
         "signals":  signals,
         "history":  history_rows,
+        "term_structure": term_structure_rows,
     }
     OUT.write_text(json.dumps(payload, ensure_ascii=False) + "\n")
-    print(f"Wrote {len(history_rows)} history rows, {len(signals)} signals → {OUT.name}")
+    print(f"Wrote {len(history_rows)} history rows, {len(signals)} signals, "
+          f"{len(term_structure_rows)} term_structure rows → {OUT.name}")
     print(f"Current: VIX={current['vix']}  SKEW={current['skew']}  "
           f"seq_alert={'⚠️' if current['seq_alert'] else 'OK'}  "
-          f"full_alert={'🚨' if current['full_alert'] else 'OK'}")
+          f"full_alert={'🚨' if current['full_alert'] else 'OK'}  "
+          f"ts_ratio={current['ts_ratio']}")
 
 
 if __name__ == "__main__":

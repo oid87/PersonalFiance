@@ -3,18 +3,37 @@
 import { isLight, tc, mob } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 
-let chart = null, gauge = null, mcChart = null, basisChart = null;
+let chart = null, gauge = null, mcChart = null, basisChart = null, chipsChart = null;
 let sent = null;            // taiwan_sentiment.json
 let twii = null, pc = null, fut = null, mar = null, mr = null;   // raw component arrays (mr=融資維持率[[date,ratio]])
 let mcData = null;          // taiwan_margin_mktcap.json: {data:[{date,ratio,...}], k_billion_per_point, ...}
 let basisData = null;       // taiwan_basis.json: {data:[{date,futures,spot,basis,basis_pct,contract}], ...}
+let tdccData = null;        // tdcc_holders.json: {data:{"0050":[{date,holders}],"00631L":[...],"00675L":[...]}}
+let daytradeData = null;    // tw_daytrading.json: {data:[{date,shares_ratio,amount,amount_ratio}], skip_dates}
 let rangePreset = "5Y";
 
 const C = {
   twii: "#58a6ff", comp: "#f778ba", pcv: "#f0883e", pco: "#d2a8ff",
   retail: "#3fb950", foreign: "#f85149", margin: "#e3b341", maint: "#7ee787",
   mcap: "#a371f7",
+  h631: "#ffa657", h675: "#f85149", dtDaily: "#58a6ff", dtMA: "#f778ba",
+  shortDaily: "#3fb950", shortMA: "#e3b341",
 };
+
+// 簡單移動平均, rows=[[date,value],...] 升冪, 回傳同長度陣列 (前 window-1 筆為 null)
+function movingAvg(rows, window) {
+  const out = [];
+  for (let i = 0; i < rows.length; i++) {
+    if (i < window - 1) { out.push([rows[i][0], null]); continue; }
+    let sum = 0, n = 0;
+    for (let j = i - window + 1; j <= i; j++) {
+      const v = rows[j][1];
+      if (v != null) { sum += v; n++; }
+    }
+    out.push([rows[i][0], n ? sum / n : null]);
+  }
+  return out;
+}
 
 export async function init() {
   const status = document.getElementById("twsent-status");
@@ -46,12 +65,15 @@ export async function init() {
 
     try { const rb = await fetch("data/taiwan_basis.json"); if (rb.ok) basisData = (await rb.json()).data || null; } catch (e) {}
 
+    try { const rt = await fetch("data/tdcc_holders.json"); if (rt.ok) tdccData = await rt.json(); } catch (e) { /* optional — 缺檔則該序列不畫 */ }
+    try { const rd = await fetch("data/tw_daytrading.json"); if (rd.ok) daytradeData = await rd.json(); } catch (e) { /* optional — 缺檔則該序列不畫 */ }
+
     document.querySelectorAll("[data-twsent-range]").forEach(el =>
       el.addEventListener("click", () => {
         rangePreset = el.dataset.twsentRange;
         document.querySelectorAll("[data-twsent-range]").forEach(e =>
           e.classList.toggle("active", e.dataset.twsentRange === rangePreset));
-        renderChart(); renderTable(); renderMktcap(); renderBasis();
+        renderChart(); renderTable(); renderMktcap(); renderBasis(); renderChips();
       }));
 
     renderAll();
@@ -89,6 +111,7 @@ function renderAll() {
   renderTable();
   renderMktcap();
   renderBasis();
+  renderChips();
 }
 
 function renderMktcap() {
@@ -229,6 +252,86 @@ function renderBasis() {
         label: { formatter: `${latest.basis >= 0 ? "+" : ""}${latest.basis.toFixed(1)}`, position: "top", color: basisColor, fontSize: 11, fontWeight: 600 },
       }] : []) },
     }],
+  }, true);
+}
+
+// 散戶籌碼:槓桿ETF受益人數(00631L/00675L,週頻) + 當沖占比(日值+20日均) + 融券餘額(原值+20日均)
+// 三 grid 直排,獨立參考,未併入恐懼貪婪合成分數 (compute_taiwan_sentiment.py 不碰)
+function renderChips() {
+  const chartEl = document.getElementById("twsent-chips-chart");
+  if (!chartEl) return;
+  if (!chipsChart) {
+    chipsChart = echarts.init(chartEl, isLight() ? null : "dark");
+    window.addEventListener("resize", () => chipsChart && chipsChart.resize());
+  }
+
+  const from = fromDate();
+  const fil = arr => from ? arr.filter(r => r[0] >= from) : arr;
+
+  const h631All = ((tdccData?.data?.["00631L"]) || []).map(r => [r.date, r.holders]);
+  const h675All = ((tdccData?.data?.["00675L"]) || []).map(r => [r.date, r.holders]);
+  const dtAll = (daytradeData?.data || []).map(r => [r.date, r.shares_ratio]);
+  const dtMAAll = movingAvg(dtAll, 20);
+  const shortAll = mar.filter(r => r.short_lots != null).map(r => [r.date, r.short_lots]);
+  const shortMAAll = movingAvg(shortAll, 20);
+
+  const h631 = fil(h631All), h675 = fil(h675All);
+  const dt = fil(dtAll), dtMA = fil(dtMAAll);
+  const short = fil(shortAll), shortMA = fil(shortMAAll);
+
+  const allDates = [h631, h675, dt, short].flat().map(r => r[0]);
+  if (!allDates.length) return;
+  const xmin = from || allDates.reduce((a, b) => (a < b ? a : b));
+  const xmax = allDates.reduce((a, b) => (a > b ? a : b));
+
+  const tipBg = tc("#161b22", "#ffffff"), tipBdr = tc("#30363d", "#d0d7de");
+  const tipTx = tc("#e6edf3", "#1f2328"), axCl = tc("#8b949e", "#57606a");
+  const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
+  const xAx = i => ({ type: "time", gridIndex: i, min: xmin, max: xmax,
+    axisLabel: { show: i === 2, color: axCl, fontSize: 11 }, axisLine: { lineStyle: { color: gridCl } }, splitLine: { show: false } });
+
+  chipsChart.setOption({
+    backgroundColor: "transparent", animation: false,
+    axisPointer: { link: [{ xAxisIndex: "all" }], label: { backgroundColor: axCl } },
+    legend: { top: 6, left: "center", textStyle: { color: axCl, fontSize: 11 }, itemWidth: mob() ? 14 : 25, itemGap: mob() ? 8 : 16,
+      data: ["00631L受益人數", "00675L受益人數", "當沖占比(日)", "當沖占比20日均", "融券餘額(張)", "融券20日均"] },
+    tooltip: { trigger: "axis", backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipTx, fontSize: 12 },
+      formatter: params => {
+        if (!params.length) return "";
+        let html = `<b>${tsToLocalDate(params[0].axisValue)}</b><br/>`;
+        for (const p of params) {
+          const v = p.value?.[1]; if (v == null) continue;
+          let s;
+          if (p.seriesName.includes("受益人數")) s = v.toLocaleString("en-US");
+          else if (p.seriesName.includes("當沖")) s = v.toFixed(1) + "%";
+          else s = v.toLocaleString("en-US") + " 張";
+          html += `<span style="color:${p.color}">● ${p.seriesName}: <b>${s}</b></span><br/>`;
+        }
+        return html;
+      } },
+    grid: [
+      { left: mob() ? 48 : 64, right: mob() ? 20 : 30, top: mob() ? 60 : 40, height: mob() ? "22%" : "23%" },
+      { left: mob() ? 48 : 64, right: mob() ? 20 : 30, top: "42%", height: mob() ? "20%" : "21%" },
+      { left: mob() ? 48 : 64, right: mob() ? 20 : 30, top: "76%", height: mob() ? "20%" : "21%" },
+    ],
+    xAxis: [xAx(0), xAx(1), xAx(2)],
+    yAxis: [
+      { type: "value", gridIndex: 0, scale: true, name: "人數", nameTextStyle: { color: axCl, fontSize: 10 }, axisLabel: { color: axCl, fontSize: 10 }, splitLine: { lineStyle: { color: gridCl } } },
+      { type: "value", gridIndex: 1, scale: true, name: "%", nameTextStyle: { color: axCl, fontSize: 10 }, axisLabel: { color: axCl, fontSize: 10 }, splitLine: { lineStyle: { color: gridCl } } },
+      { type: "value", gridIndex: 2, scale: true, name: "張", nameTextStyle: { color: axCl, fontSize: 10 }, axisLabel: { color: axCl, fontSize: 10 }, splitLine: { lineStyle: { color: gridCl } } },
+    ],
+    series: [
+      { name: "00631L受益人數", type: "line", xAxisIndex: 0, yAxisIndex: 0, data: h631, symbol: "none", itemStyle: { color: C.h631 }, lineStyle: { color: C.h631, width: 1.5 } },
+      { name: "00675L受益人數", type: "line", xAxisIndex: 0, yAxisIndex: 0, data: h675, symbol: "none", itemStyle: { color: C.h675 }, lineStyle: { color: C.h675, width: 1.5 } },
+      { name: "當沖占比(日)", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: dt, symbol: "none", itemStyle: { color: C.dtDaily }, lineStyle: { color: C.dtDaily, width: 0.8, opacity: 0.45 } },
+      { name: "當沖占比20日均", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: dtMA, symbol: "none", connectNulls: true, itemStyle: { color: C.dtMA }, lineStyle: { color: C.dtMA, width: 1.6 } },
+      { name: "融券餘額(張)", type: "line", xAxisIndex: 2, yAxisIndex: 2, data: short, symbol: "none", itemStyle: { color: C.shortDaily }, lineStyle: { color: C.shortDaily, width: 0.8, opacity: 0.45 } },
+      { name: "融券20日均", type: "line", xAxisIndex: 2, yAxisIndex: 2, data: shortMA, symbol: "none", connectNulls: true, itemStyle: { color: C.shortMA }, lineStyle: { color: C.shortMA, width: 1.6 } },
+    ],
+    dataZoom: [
+      { type: "inside", xAxisIndex: [0, 1, 2] },
+      { type: "slider", xAxisIndex: [0, 1, 2], height: 16, bottom: 6, fillerColor: "rgba(88,166,255,0.1)", borderColor: tc("#30363d", "#d0d7de") },
+    ],
   }, true);
 }
 
@@ -385,6 +488,7 @@ export function onThemeChange(light) {
   if (gauge) { gauge.dispose(); gauge = echarts.init(document.getElementById("twsent-gauge"), light ? null : "dark"); renderGauge(sent.latest.composite); }
   if (mcChart) { mcChart.dispose(); mcChart = null; renderMktcap(); }
   if (basisChart) { basisChart.dispose(); basisChart = null; renderBasis(); }
+  if (chipsChart) { chipsChart.dispose(); chipsChart = null; renderChips(); }
 }
 
-export function resize() { chart?.resize(); gauge?.resize(); mcChart?.resize(); basisChart?.resize(); }
+export function resize() { chart?.resize(); gauge?.resize(); mcChart?.resize(); basisChart?.resize(); chipsChart?.resize(); }

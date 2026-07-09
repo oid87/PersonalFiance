@@ -117,7 +117,17 @@ def _parse_naaim_date(s: str) -> str:
 
 
 def _parse_naaim_js(html: str) -> list[dict]:
-    """Try to extract NAAIM data from embedded JavaScript chart data."""
+    """Try to extract NAAIM data from embedded JavaScript chart data.
+
+    NOTE: unused by fetch_naaim() as of 2026-07 — the naaim.org page embeds
+    TWO date/value chart series back to back (NAAIM mean exposure AND an S&P
+    500 overlay), both matched by this same regex. When merged by date in
+    main(), the second (S&P 500) series clobbers the first, which is exactly
+    how the previously-committed data/bullbear.json ended up with `mean`
+    values like 5881/7483 (S&P 500 index points, not 0–200 exposure). Kept
+    here only as a reference; do not wire back in without de-interleaving
+    the two series first.
+    """
     rows = []
     for match in re.finditer(r'\[(?:new\s+Date\(|Date\.UTC\()(\d{4}),\s*(\d+),\s*(\d+)\),\s*([\d.+-]+)\]', html):
         y, m, d, v = match.groups()
@@ -132,18 +142,80 @@ def _parse_naaim_js(html: str) -> list[dict]:
     return sorted(rows, key=lambda x: x["date"])
 
 
+NAAIM_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://naaim.org/",
+}
+
+
+def _find_naaim_history_link(html: str) -> str | None:
+    """Look for a linked historical data export (xls/xlsx/csv) on the NAAIM page."""
+    soup = BeautifulSoup(html, "lxml")
+    for a in soup.find_all("a", href=True):
+        href = a["href"]
+        if not re.search(r"\.(xlsx|xls|csv)(\?|$)", href, re.IGNORECASE):
+            continue
+        text = a.get_text(strip=True).lower()
+        haystack = f"{href} {text}".lower()
+        if any(kw in haystack for kw in ("export", "data", "history", "since", "inception", "here")):
+            return href
+    return None
+
+
+def _parse_naaim_history_file(content: bytes, url: str) -> list[dict]:
+    """Parse the NAAIM historical xls/xlsx/csv export → [{date, mean}] (Mean/Average Exposure)."""
+    import pandas as pd
+
+    if url.lower().split("?")[0].endswith(".csv"):
+        df = pd.read_csv(io.BytesIO(content))
+    else:
+        df = pd.read_excel(io.BytesIO(content))
+    df.columns = [str(c).strip() for c in df.columns]
+    date_col = next((c for c in df.columns if "date" in c.lower()), None)
+    mean_col = next((c for c in df.columns if "mean" in c.lower() or "average" in c.lower()), None)
+    if date_col is None or mean_col is None:
+        raise ValueError(f"expected Date/Mean columns not found: {list(df.columns)}")
+    by_date: dict[str, dict] = {}
+    for _, r in df.iterrows():
+        try:
+            dt = pd.to_datetime(r[date_col]).strftime("%Y-%m-%d")
+            mean = round(float(r[mean_col]), 2)
+        except (ValueError, TypeError):
+            continue
+        by_date[dt] = {"date": dt, "mean": mean}
+    return sorted(by_date.values(), key=lambda x: x["date"])
+
+
 def fetch_naaim() -> list[dict]:
-    """Fetch NAAIM Exposure Index weekly readings."""
-    resp = requests.get(NAAIM_URL, timeout=30, headers={
-        **UA,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-    })
+    """Fetch NAAIM Exposure Index weekly readings (Mean/Average Exposure).
+
+    Tries the linked historical export (xls/xlsx/csv, typically full history
+    since 2006) first; falls back to the recent-weeks HTML table if no link
+    is found or the download/parse fails.
+    """
+    resp = requests.get(NAAIM_URL, timeout=30, headers=NAAIM_HEADERS)
     resp.raise_for_status()
-    rows = _parse_naaim_table(resp.text)
-    if not rows:
-        rows = _parse_naaim_js(resp.text)
-    return rows
+    html = resp.text
+
+    link = _find_naaim_history_link(html)
+    if link:
+        try:
+            file_url = link if link.startswith("http") else requests.compat.urljoin(NAAIM_URL, link)
+            file_resp = requests.get(file_url, timeout=40, headers=NAAIM_HEADERS)
+            file_resp.raise_for_status()
+            rows = _parse_naaim_history_file(file_resp.content, file_url)
+            if rows:
+                print(f"  [NAAIM]  history file {file_url} -> {len(rows)} weeks")
+                return rows
+        except Exception as exc:
+            print(f"  [NAAIM]  history file failed ({exc}); falling back to page table")
+
+    return _parse_naaim_table(html)
 
 
 # ── 2. CFTC COT — Leveraged Funds positioning in S&P 500 E-Mini ─────────────
