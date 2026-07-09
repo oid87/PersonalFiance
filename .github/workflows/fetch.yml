@@ -124,6 +124,12 @@ jobs:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python scripts/fetch_taiwan_fut_inst.py
 
+      - name: Fetch Taiwan index-futures basis (台指期近月正逆價差)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_basis.py
+
       - name: Fetch Taiwan market margin balance (FinMind, 大盤融資餘額)
         continue-on-error: true
         env:

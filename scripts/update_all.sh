@@ -26,6 +26,7 @@ $PYTHON fetch_fear_greed.py    || true
 $PYTHON fetch_aaii.py          || true
 $PYTHON fetch_taiwan_pcratio.py || true
 $PYTHON fetch_taiwan_fut_inst.py || true
+$PYTHON fetch_taiwan_basis.py  || true
 $PYTHON fetch_taiwan_margin_total.py || true
 $PYTHON fetch_taiwan_margin_ratio.py || true
 $PYTHON fetch_taiwan_investors.py || true
