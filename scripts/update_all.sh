@@ -28,6 +28,8 @@ $PYTHON fetch_taiwan_pcratio.py || true
 $PYTHON fetch_taiwan_fut_inst.py || true
 $PYTHON fetch_taiwan_basis.py  || true
 $PYTHON fetch_taiwan_margin_total.py || true
+$PYTHON fetch_tdcc_holders.py  || true
+$PYTHON fetch_tw_daytrading.py || true
 $PYTHON fetch_taiwan_margin_ratio.py || true
 $PYTHON fetch_taiwan_investors.py || true
 $PYTHON fetch_taiwan_mktcap_anchor.py || true
@@ -55,6 +57,7 @@ $PYTHON fetch_bullbear.py      || true
 $PYTHON fetch_liquidity.py     || true
 $PYTHON fetch_taiwan_money_supply.py || true
 $PYTHON fetch_vix_skew.py      || true
+$PYTHON fetch_putcall.py       || true
 $PYTHON fetch_fsi.py           || true
 $PYTHON fetch_usdtwd.py        || true
 $PYTHON compute_taiwan_stress.py || true

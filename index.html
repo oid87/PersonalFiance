@@ -516,6 +516,13 @@
       <p style="color:var(--muted);font-size:12px;margin-top:8px">基差 = 台指期近月日盤收盤 − 加權指數現貨。<b>逆價差(負)</b>= 期貨低於現貨,通常反映避險/看空情緒較濃;<b>正價差(正)</b>反之。台股獨有的期貨情緒維度,<b>獨立參考,未併入上方恐慌貪婪合成分數</b>。資料:FinMind TaiwanFuturesDaily(TX)+ 加權指數現貨。</p>
     </div>
 
+    <!-- 散戶籌碼:槓桿ETF受益人數 + 當沖占比 + 融券餘額 — 獨立參考,未併入上方恐慌貪婪合成分數 -->
+    <div class="twsent-chips-section" style="margin-top:22px">
+      <div class="aaii-table-title" style="margin-bottom:8px">散戶籌碼:槓桿 ETF 受益人數 · 當沖占比 · 融券餘額</div>
+      <div id="twsent-chips-chart"></div>
+      <p style="color:var(--muted);font-size:12px;margin-top:8px">槓桿ETF受益人數(00631L元大台灣50正2、00675L富邦臺灣加權正2,週頻,TDCC集保股權分散表)、當沖占比(TWSE當日沖銷交易統計,日頻自2021起回補中)、融券餘額(FinMind大盤融券張數,2008+)。三者皆<b>獨立參考,未併入上方恐慌貪婪合成分數</b>。</p>
+    </div>
+
     <div class="status" id="twsent-status">切換至此 tab 自動載入…</div>
     <div class="aaii-table-wrap">
       <div class="aaii-table-title">每日對照表 <span id="twsent-table-count" style="color:var(--muted);font-weight:400"></span></div>
@@ -1466,6 +1473,18 @@
         </p>
       </div>
     </div>
+
+    <div class="controls" style="margin-top:20px">
+      <span style="font-size:13px;color:var(--muted)">VIX 期限結構 · VIX / VIX3M · Backwardation（ts_ratio&gt;1）= 恐慌確認 · 2006起</span>
+    </div>
+    <div class="status" id="vts-status">載入中…</div>
+    <div id="vts-chart" style="height:260px"></div>
+
+    <div class="controls" style="margin-top:20px">
+      <span style="font-size:13px;color:var(--muted)">美股 Total Put/Call Ratio（OCC + CBOE 拼接）· 20日均線 · P10/P90 參考線 · 2006起</span>
+    </div>
+    <div class="status" id="pc-status">載入中…</div>
+    <div id="pc-chart" style="height:260px"></div>
   </section>
 
   <!-- ── 金融壓力指數 tab ────────────────────────────────────────── -->

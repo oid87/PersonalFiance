@@ -569,12 +569,14 @@
     #twsent-cards .aaii-card { flex: 1 1 130px; min-width: 120px; padding: 10px 14px;
       border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
     #twsent-chart { width: 100%; height: 820px; min-height: 680px; }
+    #twsent-chips-chart { width: 100%; height: 620px; min-height: 520px; }
     @media (max-width: 600px) {
       #twsent-top { padding: 8px 12px 0; gap: 10px; }
       #twsent-gauge { width: 160px; height: 96px; }
       #twsent-cards { min-width: 100%; gap: 6px; }
       #twsent-cards .aaii-card { flex: 1 1 100px; min-width: 96px; padding: 7px 10px; }
       #twsent-chart { height: 720px; min-height: 620px; }
+      #twsent-chips-chart { height: 560px; min-height: 460px; }
     }
     @media (max-width: 600px) {
       #aaii-cards { padding: 8px 12px 0; gap: 6px; }
@@ -601,7 +603,7 @@
     .info-table tr:last-child td { border-bottom: none; }
 
     /* ── 市場廣度 / 位階 tab ─────────────────────────────────────── */
-    #breadth-top, #pos-top, #fsi-top, #ts-top {
+    #breadth-top, #pos-top, #fsi-top, #ts-top, #nfci-top {
       display: flex; gap: 24px; padding: 16px 24px;
       border-bottom: 1px solid var(--border); flex-wrap: wrap; align-items: center;
     }
