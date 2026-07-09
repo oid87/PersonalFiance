@@ -3,10 +3,11 @@
 import { isLight, tc, mob } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 
-let chart = null, gauge = null, mcChart = null;
+let chart = null, gauge = null, mcChart = null, basisChart = null;
 let sent = null;            // taiwan_sentiment.json
 let twii = null, pc = null, fut = null, mar = null, mr = null;   // raw component arrays (mr=融資維持率[[date,ratio]])
 let mcData = null;          // taiwan_margin_mktcap.json: {data:[{date,ratio,...}], k_billion_per_point, ...}
+let basisData = null;       // taiwan_basis.json: {data:[{date,futures,spot,basis,basis_pct,contract}], ...}
 let rangePreset = "5Y";
 
 const C = {
@@ -43,12 +44,14 @@ export async function init() {
       if (mc.ok) mcData = await mc.json();
     } catch { /* optional — 缺檔則隱藏該 section */ }
 
+    try { const rb = await fetch("data/taiwan_basis.json"); if (rb.ok) basisData = (await rb.json()).data || null; } catch (e) {}
+
     document.querySelectorAll("[data-twsent-range]").forEach(el =>
       el.addEventListener("click", () => {
         rangePreset = el.dataset.twsentRange;
         document.querySelectorAll("[data-twsent-range]").forEach(e =>
           e.classList.toggle("active", e.dataset.twsentRange === rangePreset));
-        renderChart(); renderTable(); renderMktcap();
+        renderChart(); renderTable(); renderMktcap(); renderBasis();
       }));
 
     renderAll();
@@ -85,6 +88,7 @@ function renderAll() {
   renderChart();
   renderTable();
   renderMktcap();
+  renderBasis();
 }
 
 function renderMktcap() {
@@ -154,6 +158,75 @@ function renderMktcap() {
         coord: [latest.date, latest.ratio],
         itemStyle: { color: C.mcap, borderColor: tc("#0d1117", "#ffffff"), borderWidth: 2 },
         label: { formatter: `${latest.ratio.toFixed(2)} ‰`, position: "top", color: C.mcap, fontSize: 11, fontWeight: 600 },
+      }] : []) },
+    }],
+  }, true);
+}
+
+function renderBasis() {
+  const cardEl = document.getElementById("twsent-basis-card");
+  const chartEl = document.getElementById("twsent-basis-chart");
+  if (!cardEl || !chartEl) return;
+  if (!basisData || !basisData.length) {
+    cardEl.innerHTML = `<div style="color:var(--muted);font-size:12px">無資料（taiwan_basis.json 未產生）</div>`;
+    return;
+  }
+  const from = fromDate();
+  const rows = from ? basisData.filter(r => r.date >= from) : basisData;
+  if (!rows.length) {
+    cardEl.innerHTML = `<div style="color:var(--muted);font-size:12px">所選範圍內無資料</div>`;
+    return;
+  }
+  const latest = basisData.at(-1);   // card 永遠秀最新一筆 (不被範圍篩掉)
+  const basisColor = latest.basis < 0 ? "#f85149" : "#3fb950";
+  const basisKind = latest.basis < 0 ? "逆價差" : "正價差";
+  cardEl.innerHTML =
+    `<span style="color:var(--muted);font-size:12px">最新</span>
+     <span style="font-size:22px;font-weight:700;color:${basisColor};margin-left:8px">
+       ${latest.basis >= 0 ? "+" : ""}${latest.basis.toFixed(1)} 點</span>
+     <span style="color:${basisColor};font-size:13px;margin-left:6px">（${basisKind}）</span>
+     <span style="color:var(--muted);font-size:12px;margin-left:8px">${latest.date}</span>
+     <span style="color:var(--muted);font-size:12px;margin-left:14px">
+       近月 ${latest.contract} · ${latest.basis_pct >= 0 ? "+" : ""}${latest.basis_pct.toFixed(2)}%</span>`;
+
+  if (!basisChart) {
+    basisChart = echarts.init(chartEl, isLight() ? null : "dark");
+    window.addEventListener("resize", () => basisChart && basisChart.resize());
+  }
+  const series = rows.map(r => [r.date, r.basis]);
+  const contractMap = Object.fromEntries(rows.map(r => [r.date, r.contract]));
+  const tipBg = tc("#161b22", "#ffffff"), tipBdr = tc("#30363d", "#d0d7de");
+  const tipTx = tc("#e6edf3", "#1f2328"), axCl = tc("#8b949e", "#57606a");
+  const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
+  basisChart.setOption({
+    backgroundColor: "transparent", animation: false,
+    grid: { left: mob() ? 44 : 56, right: mob() ? 14 : 28, top: 18, bottom: 30 },
+    tooltip: {
+      trigger: "axis", backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipTx, fontSize: 12 },
+      formatter: params => {
+        if (!params.length) return "";
+        const p = params[0]; const v = p.value?.[1]; const d = tsToLocalDate(p.axisValue);
+        const ct = contractMap[d] || "";
+        return `<b>${d}</b><br/>
+          <span style="color:${p.color}">● ${p.seriesName}: <b>${v >= 0 ? "+" : ""}${v.toFixed(1)} 點</b></span>
+          <span style="color:${tipTx};font-size:11px"> · 近月 ${ct}</span>`;
+      },
+    },
+    xAxis: { type: "time", axisLabel: { color: axCl, fontSize: 11 },
+      axisLine: { lineStyle: { color: gridCl } }, splitLine: { show: false } },
+    yAxis: { type: "value", scale: true, name: "點", nameTextStyle: { color: axCl, fontSize: 10 },
+      axisLabel: { color: axCl, fontSize: 10 }, splitLine: { lineStyle: { color: gridCl } } },
+    series: [{
+      name: "基差", type: "line", data: series, symbol: "none",
+      lineStyle: { color: C.margin, width: 1.5 },
+      markLine: { silent: true, symbol: "none", data: [
+        { yAxis: 0, lineStyle: { color: axCl, type: "dashed", width: 1.2 },
+          label: { formatter: "0", color: axCl, fontSize: 10, position: "insideEndTop" } },
+      ] },
+      markPoint: { symbol: "circle", symbolSize: 9, data: (rows.includes(latest) ? [{
+        coord: [latest.date, latest.basis],
+        itemStyle: { color: basisColor, borderColor: tc("#0d1117", "#ffffff"), borderWidth: 2 },
+        label: { formatter: `${latest.basis >= 0 ? "+" : ""}${latest.basis.toFixed(1)}`, position: "top", color: basisColor, fontSize: 11, fontWeight: 600 },
       }] : []) },
     }],
   }, true);
@@ -311,6 +384,7 @@ export function onThemeChange(light) {
   if (chart) { chart.dispose(); chart = echarts.init(document.getElementById("twsent-chart"), light ? null : "dark"); renderChart(); }
   if (gauge) { gauge.dispose(); gauge = echarts.init(document.getElementById("twsent-gauge"), light ? null : "dark"); renderGauge(sent.latest.composite); }
   if (mcChart) { mcChart.dispose(); mcChart = null; renderMktcap(); }
+  if (basisChart) { basisChart.dispose(); basisChart = null; renderBasis(); }
 }
 
-export function resize() { chart?.resize(); gauge?.resize(); mcChart?.resize(); }
+export function resize() { chart?.resize(); gauge?.resize(); mcChart?.resize(); basisChart?.resize(); }
