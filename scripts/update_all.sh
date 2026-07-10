@@ -60,6 +60,7 @@ $PYTHON fetch_liquidity_leverage.py || true   # 多國融資超額×流動性 ta
 $PYTHON fetch_vix_skew.py      || true
 $PYTHON fetch_putcall.py       || true
 $PYTHON fetch_fsi.py           || true
+$PYTHON fetch_nfci.py          || true
 $PYTHON fetch_usdtwd.py        || true
 $PYTHON compute_taiwan_stress.py || true
 $PYTHON fetch_umich.py         || true

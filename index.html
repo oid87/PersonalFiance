@@ -1549,6 +1549,62 @@
     </div>
   </section>
 
+  <!-- ── 金融狀況指數 tab (Chicago Fed NFCI) ───────────────────────── -->
+  <section id="tab-nfci" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span id="nfci-sp-toggle" class="chip active" data-tooltip="疊上 S&P 500（對數右軸）">疊 S&amp;P 500</span>
+      <span id="nfci-anfci-toggle" class="chip" data-tooltip="疊上 ANFCI（剔除景氣循環效果的調整版）">疊 ANFCI</span>
+      <div id="nfci-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-nfci-range="1Y">1Y</span>
+        <span class="chip" data-nfci-range="3Y">3Y</span>
+        <span class="chip" data-nfci-range="5Y">5Y</span>
+        <span class="chip active" data-nfci-range="10Y">10Y</span>
+        <span class="chip" data-nfci-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="nfci-top">
+      <div class="breadth-card">
+        <div class="bc-label">NFCI 總分（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="nfci-level-val">—</span></div>
+        <div class="bc-count" id="nfci-level-sub">—</div>
+        <div class="bc-signal" id="nfci-level-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">緊鬆趨勢（vs MA13）</div>
+        <div class="bc-main"><span class="bc-pct" id="nfci-trend-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="nfci-trend-sub">—</div>
+        <div class="bc-signal" id="nfci-trend-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">最大驅動細項</div>
+        <div class="bc-main"><span class="bc-pct" id="nfci-driver-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="nfci-driver-sub">—</div>
+        <div class="bc-signal" id="nfci-driver-signal">—</div>
+      </div>
+    </div>
+    <div id="nfci-chart" style="height:580px"></div>
+    <div class="status" id="nfci-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 金融狀況指數（Chicago Fed NFCI）怎麼看？</div>
+      <div class="info-panel-body">
+        <p>這是芝加哥聯準銀行編製的 <b>National Financial Conditions Index（NFCI）</b>，把貨幣市場、債市、股市、傳統與影子銀行體系共 105 項指標合成一條週頻分數。<b>0＝各變量在歷史均值</b>（回溯至 1971 年）；<b>大於 0＝金融條件比歷史均值緊</b>，小於 0＝比均值鬆。</p>
+        <p><b>跟「金融壓力」（FSI）tab 的差異</b>：FSI 只在市場失序時才明顯偏離 0，是一個「事中／同步」的壓力溫度計；NFCI 涵蓋的是<b>整個鬆緊光譜</b>，包含市場風平浪靜、資金氾濫、資產價格堆積泡沫的「過度寬鬆」階段（此時 NFCI 會落在深負值，但 FSI 幾乎不會有反應）——兩者互補，一個看「危不危險」，一個看「鬆不鬆」。</p>
+        <p>上圖是 <b>NFCI 總分＋MA4/13/52 週均線</b>（約對應 1個月/1季/1年），可疊 S&amp;P 500（對數右軸）與 <b>ANFCI</b>（剔除當下景氣循環與通膨效果後的調整版，同軸虛線，用來判斷金融條件是否比「基本面該有的水準」更緊或更鬆）。下圖是<b>風險／信用／槓桿</b>三大細項，各自獨立走勢對照，判斷目前緊縮主要來自哪個面向。</p>
+        <table class="info-table">
+          <thead><tr><th>細項</th><th>衡量什麼</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#f85149">風險 Risk</td><td>資產價格波動度、資金風險溢酬（VIX 類指標權重最高）</td></tr>
+            <tr><td style="color:#e3b341">信用 Credit</td><td>借貸雙方意願與信用利差條件</td></tr>
+            <tr><td style="color:#58a6ff">槓桿 Leverage</td><td>債務相對股權水位（家庭＋企業＋金融部門）</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+          ⚠️ <b>誠實揭露</b>：查證芝加哥聯準官方 FAQ 後確認，風險／信用／槓桿三細項<b>各自獨立</b>被標準化為均值 0、標準差 1（不像「金融壓力」FSI 的五細項那樣直接加總＝總分），所以三者加總<b>不會</b>精確等於 NFCI 總分，壓力期間（如 2008）落差可以到 -5～-6，這是指數建構方式的結構性特性、不是資料錯誤。下圖三細項僅供<b>方向性對照</b>（哪個面向偏緊/偏鬆），不是總分的拆解。</p>
+        <p style="margin-top:8px;color:var(--muted)">資料：FRED NFCI / ANFCI / NFCIRISK / NFCICREDIT / NFCILEVERAGE（芝加哥聯準銀行編製、每週五、免費、無 key，回溯 1971 年）。定位「環境理解」，非交易訊號。台灣目前無免費可訂閱的官方 FCI 時序（僅央行學術論文，非持續更新），暫不提供台版對照。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 台股金融壓力 tab ──────────────────────────────────────────── -->
   <section id="tab-twstress" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
@@ -1948,6 +2004,25 @@
           ⚠️ 樣本數小（事件型訊號次數少，統計顯著性有限）；週K本身無條件收漲基率約 57–60%（見下表「全樣本無條件基率」列），訊號要明顯優於這個基準才有意義；本 tab 定位「環境理解」輔助判讀，<b>不是</b>交易觸發訊號。
         </p>
         <p style="margin-top:8px;color:var(--muted)">資料：直接讀 data/SP500.json（^GSPC）／data/QQQ.json 日 OHLCV，前端重採樣週K並即時計算，無另開 fetch 腳本。防前視：訊號當週收盤成立，前瞻報酬從次週收盤起算；資料末端未走完的一週（partial）排除於所有統計。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 週MACD死叉→回MA20 tab ───────────────────────────────────── -->
+  <section id="tab-qqqmacd" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="qqqmacd-ticker-picker" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div id="qqqmacd-chart" style="width:100%;height:520px"></div>
+    <div class="status" id="qqqmacd-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div id="qqqmacd-tables" style="padding:8px 24px"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 週MACD死叉怎麼看？</div>
+      <div class="info-panel-body">
+        <p>週MACD死叉（DIF 由上而下穿越 DEA）= 一次<b>又快又淺的 MA20 拉回擇時訊號</b>，edge 主要在 2–4 週（觸及率明顯高於全樣本無條件基率，且倍數隨 horizon 拉長逐漸收斂到 1x）；<b>不是崩跌預警</b>——死叉後 ≥8% 大跌的捕捉率 ≈ 基率，並未系統性抬高。</p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+          ⚠️ 樣本數小（QQQ N=56、SPX N=91，事件型訊號次數少，統計顯著性有限）；本 tab 定位「環境理解」輔助判讀，<b>不是</b>交易觸發訊號；下檔捕捉那條腿誠實呈現無 edge，勿誤讀成崩跌預警。</p>
+        <p style="margin-top:8px;color:var(--muted)">資料：直接讀 data/QQQ.json／data/SP500.json（^GSPC）日 OHLCV，前端重採樣週K並即時計算 MACD(12,26,9)/MA20/MA50，無另開 fetch 腳本。防前視：死叉在第 i 週收盤確立，只用到 i 週(含)以前資料；觸及/下檔統計一律從 i+1 週起算；資料末端未走完的一週整根丟棄，不進入統計或圖表。</p>
       </div>
     </div>
   </section>

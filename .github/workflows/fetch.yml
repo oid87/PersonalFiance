@@ -194,6 +194,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_fsi.py
 
+      - name: Fetch Chicago Fed National Financial Conditions Index (FRED, weekly, 1971+)
+        continue-on-error: true
+        run: python scripts/fetch_nfci.py
+
       - name: Fetch USD/TWD spot (Yahoo TWD=X, for Taiwan stress FX leg)
         continue-on-error: true
         run: python scripts/fetch_usdtwd.py
