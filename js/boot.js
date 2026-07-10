@@ -23,6 +23,7 @@ import * as waveTab      from './tabs/wave.js';
 import * as twCycleTab   from './tabs/twcycle.js';
 import * as vixSkewTab   from './tabs/vixskew.js';
 import * as fsiTab        from './tabs/fsi.js';
+import * as nfciTab       from './tabs/nfci.js';
 import * as twStressTab   from './tabs/twstress.js';
 import * as umichTab      from './tabs/umich.js';
 import * as flowsTab      from './tabs/flows.js';
@@ -32,6 +33,7 @@ import * as twSectorFlowTab  from './tabs/twsectorflow.js';
 import * as wkrevTab         from './tabs/wkrev.js';
 import * as marginheatTab    from './tabs/marginheat.js';
 import * as baniniTab        from './tabs/banini.js';
+import * as qqqmacdTab       from './tabs/qqqmacd.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -54,6 +56,7 @@ registerAll([
   { id: 'twcycle',   module: twCycleTab   },
   { id: 'vixskew',   module: vixSkewTab   },
   { id: 'fsi',       module: fsiTab       },
+  { id: 'nfci',      module: nfciTab      },
   { id: 'twstress',  module: twStressTab  },
   { id: 'umich',     module: umichTab     },
   { id: 'flows',    module: flowsTab     },
@@ -63,6 +66,7 @@ registerAll([
   { id: 'wkrev',         module: wkrevTab         },
   { id: 'marginheat',    module: marginheatTab    },
   { id: 'banini',        module: baniniTab        },
+  { id: 'qqqmacd',       module: qqqmacdTab       },
 ]);
 
 setupResizeHandler();
@@ -85,6 +89,7 @@ const CATEGORIES = [
       { id: 'marginheat', label: '融資熱度' },
       { id: 'breadth',   label: '市場廣度' },
       { id: 'fsi',       label: '金融壓力' },
+      { id: 'nfci',      label: '金融狀況' },
       { id: 'twstress',  label: '台股壓力' },
       { id: 'vixskew',   label: 'VIX-SKEW' },
       { id: 'inflation', label: '通膨預期' },
@@ -111,6 +116,7 @@ const CATEGORIES = [
       { id: 'wave',     label: '波浪理論' },
       { id: 'leverage', label: '槓桿模擬' },
       { id: 'wkrev',    label: '週K反轉' },
+      { id: 'qqqmacd',  label: 'MACD死叉' },
     ]
   },
 ];

@@ -177,6 +177,25 @@ export function computeBounceSignals(qqqData, fgData, ma200Data) {
 
 const CHANNEL_SIGMA_MULT = 2.5;
 
+// MACD: DIF = EMA(fast) - EMA(slow); DEA = EMA(DIF, signal); HIST = DIF - DEA.
+// EMA 用遞迴式 adjust=False（對應 pandas ewm(adjust=False)）：ema[0]=x[0]; ema[i]=a*x[i]+(1-a)*ema[i-1]。
+// closes：純數字陣列（非 [date,val] pair），回傳同長度的 {dif, dea, hist} 陣列。
+export function computeMACD(closes, fast = 12, slow = 26, signal = 9) {
+  const ema = (arr, span) => {
+    const a = 2 / (span + 1);
+    const out = new Array(arr.length);
+    out[0] = arr[0];
+    for (let i = 1; i < arr.length; i++) out[i] = a * arr[i] + (1 - a) * out[i - 1];
+    return out;
+  };
+  const emaFast = ema(closes, fast);
+  const emaSlow = ema(closes, slow);
+  const dif = closes.map((_, i) => emaFast[i] - emaSlow[i]);
+  const dea = ema(dif, signal);
+  const hist = dif.map((v, i) => v - dea[i]);
+  return { dif, dea, hist };
+}
+
 export function computeChannelBands(weeklyAll) {
   const N = 20;
   const ma20 = [], upper = [], lower = [];
