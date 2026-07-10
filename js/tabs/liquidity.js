@@ -1,24 +1,29 @@
-// 資金面 tab — 台股資金面綜合視圖
-//   上 grid: 加權指數 (^TWII) + 櫃買指數 (^TWOII, 可切)
-//   下 grid: M1B-M2 同比利差（黃柱，月頻拉平到日頻）
-//           + 融資餘額（紅線，億）+ 外資累計買超（綠線，億，window 內歸零起算）
-// 邏輯重點：MacroMicro 看到的「指數新高 + 利差沒跟」背離，可手動 toggle markArea。
+// 流動性×槓桿 tab — 台/美/日 融資餘額 vs 指數「超額成長 + 翻頭」判準
+//   國別 toggle：TW / US / JP（TW 預設）
+//   上圖：excess = margin_yoy − index_yoy（0 軸標線 + ⚠️ 行動點＝超額>0 且翻頭）
+//   下圖：YoY 疊圖 — index_yoy / margin_yoy / M2_yoy / M1(B)_yoy 四線（可各自 legend toggle）
+//         TW 額外可疊「外資累計買超」（僅 TW，重用既有 data/taiwan_investors.json）
+//   資料源：data/liquidity_leverage.json（scripts/fetch_liquidity_leverage.py 產出，
+//   YoY/excess/翻頭皆已在 Python 端算好，前端只畫，不重算）。
+//
+//   邏輯出處：Financial_work/margin_vs_index_excess.py（已驗證 PASS）。
+//   ⚠️ 融資絕對金額各國單位/定義不同不可比，本圖只用 YoY%/超額（比率）跨國比較；
+//   當月未滿月讀數會隨月底重取樣持續變動。
 
 import { isLight, tc, mob } from '../utils/theme.js';
 
-let liqChart = null;
-let liqRange = "2Y";
-let showTwoii   = true;
-let showMargin  = true;
-let showForeign = true;
-let showDivergence = false;
+let excessChart = null;
+let yoyChart = null;
+let market = "tw";       // tw | us | jp
+let llRange = "5Y";
+let showForeign = true;  // TW-only overlay
 
-// Cached raw data (loaded once)
-let twii = null;       // [{date,close}]
-let twoii = null;      // [{date,close}]
-let money = null;      // { monthly:[{date,m1b_yoy,m2_yoy,spread}], annual:[...] }
-let margin = null;     // [{date,margin_yi,short_units}]
-let investors = null;  // [{date,foreign,foreign_cum,...}]
+let llData = null;        // full liquidity_leverage.json
+let investors = null;     // [[date, foreign, foreign_cum], ...] — TW only, reused from taiwan_investors.json
+
+const MARKET_LABEL = { tw: "台灣", us: "美國", jp: "日本" };
+const M1_FIELD = { tw: "m1b_yoy", us: "m1_yoy", jp: "m1_yoy" };
+const M1_LABEL = { tw: "M1B 年增率", us: "M1 年增率", jp: "M1 年增率" };
 
 async function loadAll() {
   const fetchJson = async (path, optional = false) => {
@@ -32,316 +37,264 @@ async function loadAll() {
     }
   };
 
-  const [tw, tot, mon, mar, inv] = await Promise.all([
-    fetchJson("data/TWII.json"),
-    fetchJson("data/TWOII.json", true),
-    fetchJson("data/taiwan_money_supply.json"),
-    fetchJson("data/taiwan_margin_total.json", true),
+  const [ll, inv] = await Promise.all([
+    fetchJson("data/liquidity_leverage.json"),
     fetchJson("data/taiwan_investors.json", true),
   ]);
-  twii  = (tw?.data  ?? []).map(r => [r.date, r.close]);
-  twoii = (tot?.data ?? []).map(r => [r.date, r.close]);
-  money = mon ?? { monthly: [], annual: [] };
-  margin    = (mar?.data ?? []).map(r => [r.date, r.margin_money, r.short_lots ?? null]);
+  llData = ll;
   investors = (inv?.data ?? []).map(r => [r.date, r.foreign, r.foreign_cum]);
+}
+
+function rows() {
+  return llData?.[market]?.monthly ?? [];
 }
 
 function rangeStart(rangeKey) {
   if (rangeKey === "MAX") return "1900-01-01";
   const d = new Date();
   const map = { "1Y": 1, "2Y": 2, "5Y": 5, "10Y": 10 };
-  d.setFullYear(d.getFullYear() - (map[rangeKey] ?? 2));
+  d.setFullYear(d.getFullYear() - (map[rangeKey] ?? 5));
   return d.toISOString().slice(0, 10);
 }
 
-function filterByDate(rows, from) {
-  return rows.filter(r => r[0] >= from);
+function filteredRows() {
+  const from = rangeStart(llRange);
+  return rows().filter(r => r.date >= from);
 }
 
-// Build a daily-grain spread series by holding monthly value forward to next month
-function spreadAsDaily(monthlyRows, dailyDates) {
-  if (!monthlyRows.length || !dailyDates.length) return [];
-  const sorted = monthlyRows.slice().sort((a, b) => a.date.localeCompare(b.date));
-  const out = [];
-  let mi = 0;
-  for (const d of dailyDates) {
-    while (mi + 1 < sorted.length && sorted[mi + 1].date <= d) mi++;
-    const cur = sorted[mi];
-    if (cur && cur.date <= d) out.push([d, cur.spread]);
-  }
-  return out;
-}
-
-// Re-anchor foreign cumulative to zero at the window start
-function rebaseCumulative(rows, from) {
-  // rows: [date, foreign_daily, foreign_cum]
-  const filtered = rows.filter(r => r[0] >= from);
+// Re-anchor foreign cumulative to zero at the window start (same logic as old liquidity.js)
+function rebaseCumulative(rowsArr, from) {
+  const filtered = rowsArr.filter(r => r[0] >= from);
   if (!filtered.length) return [];
   let acc = 0;
   return filtered.map(r => { acc += r[1] || 0; return [r[0], +acc.toFixed(2)]; });
 }
 
-// Detect divergence intervals: TAIEX makes new high vs prior 6M but spread is below
-// its prior 6M average. Greedy merge of adjacent monthly windows.
-function detectDivergence(twiiF, monthlyAll, from) {
-  if (!twiiF.length || !monthlyAll.length) return [];
-  const months = monthlyAll.filter(m => m.date >= from);
-  // Build month → spread, also a 6M lookback avg
-  const indexByDate = new Map(twiiF.map((r, i) => [r[0], i]));
-  const zones = [];
-  let zStart = null, zEnd = null;
-  for (let i = 0; i < months.length; i++) {
-    const m = months[i];
-    // closest TWII bar
-    let twPt = null;
-    for (let j = indexByDate.get(m.date) ?? 0; j < twiiF.length && twiiF[j][0] <= m.date.slice(0, 7) + "-31"; j++) twPt = twiiF[j];
-    // fallback: scan
-    if (!twPt) {
-      const candidates = twiiF.filter(r => r[0] <= m.date);
-      twPt = candidates[candidates.length - 1];
-    }
-    if (!twPt) continue;
-    // Index 6M high
-    const sixMoAgo = new Date(twPt[0]); sixMoAgo.setMonth(sixMoAgo.getMonth() - 6);
-    const sixIso = sixMoAgo.toISOString().slice(0, 10);
-    const hi6m = twiiF.filter(r => r[0] >= sixIso && r[0] <= twPt[0])
-                      .reduce((a, r) => Math.max(a, r[1]), 0);
-    const isHigh = twPt[1] >= hi6m * 0.995;
-    // Spread 6M avg vs current
-    const sixMonths = months.slice(Math.max(0, i - 5), i + 1);
-    const avg = sixMonths.reduce((a, x) => a + x.spread, 0) / sixMonths.length;
-    const spreadWeak = m.spread < avg && m.spread < 2.0;
-    const div = isHigh && spreadWeak;
-    if (div) {
-      if (!zStart) zStart = m.date;
-      zEnd = m.date;
-    } else if (zStart) {
-      zones.push([zStart, zEnd]);
-      zStart = null;
-    }
-  }
-  if (zStart) zones.push([zStart, zEnd]);
-  return zones;
-}
-
-function fmt(n, dp = 2) {
+function fmt(n, dp = 1) {
   if (n == null || !isFinite(n)) return "—";
   const sign = n > 0 ? "+" : "";
   return sign + (+n).toFixed(dp);
 }
 
+// ── Top summary cards ────────────────────────────────────────────────────
 function renderSummary() {
-  const lat = money?.latest;
-  if (lat) {
-    document.getElementById("lc-m1b").textContent = (+lat.m1b_yoy).toFixed(2);
-    document.getElementById("lc-m1b").style.color = lat.m1b_yoy >= 6 ? "#22c55e" : lat.m1b_yoy >= 4 ? "" : "#f59e0b";
-    document.getElementById("lc-m2").textContent  = (+lat.m2_yoy).toFixed(2);
-    document.getElementById("lc-spread").textContent = fmt(lat.spread, 2);
-    document.getElementById("lc-spread").style.color = lat.spread > 0 ? "#22c55e" : "#f0883e";
-    document.getElementById("lc-m1b-date").textContent = "資料月 " + lat.date.slice(0, 7);
-    document.getElementById("lc-m2-date").textContent  = "資料月 " + lat.date.slice(0, 7);
-    document.getElementById("lc-spread-note").textContent = lat.spread > 1 ? "資金活絡，黃金交叉" : lat.spread > 0 ? "輕微正向" : "負利差 — 資金避險";
+  const f = filteredRows();
+  const last = [...rows()].reverse().find(r => r.index_yoy != null && r.margin_yoy != null);
+  document.getElementById("ll-m1-label").textContent = M1_LABEL[market].replace(" 年增率", "");
+  if (last) {
+    document.getElementById("ll-index-yoy").textContent = fmt(last.index_yoy);
+    document.getElementById("ll-margin-yoy").textContent = fmt(last.margin_yoy);
+    const excessEl = document.getElementById("ll-excess");
+    excessEl.textContent = fmt(last.excess);
+    excessEl.style.color = last.excess > 0 ? "#22c55e" : "#f85149";
+    document.getElementById("ll-excess-note").textContent = last.action_point
+      ? "⚠️ 行動點（超額>0 且翻頭）" : last.excess > 0 ? "超額為正" : "超額為負";
+    const m1v = last[M1_FIELD[market]];
+    document.getElementById("ll-m1").textContent = m1v == null ? "—" : fmt(m1v);
+    document.getElementById("ll-m2").textContent = last.m2_yoy == null ? "—" : fmt(last.m2_yoy);
+    document.getElementById("ll-date").textContent = "資料月 " + last.date.slice(0, 7);
+  } else {
+    for (const id of ["ll-index-yoy", "ll-margin-yoy", "ll-excess", "ll-m1", "ll-m2"])
+      document.getElementById(id).textContent = "—";
+    document.getElementById("ll-date").textContent = "—";
   }
-  const margLat = margin?.[margin.length - 1];
-  if (margLat) {
-    document.getElementById("lc-margin").textContent = (margLat[1] / 1).toFixed(0);
-    document.getElementById("lc-margin-date").textContent = margLat[0];
+
+  const foreignCard = document.getElementById("ll-foreign-card");
+  if (foreignCard) {
+    if (market === "tw" && investors?.length) {
+      foreignCard.style.display = "";
+      const tail = investors.slice(-30);
+      const sum = tail.reduce((a, r) => a + (r[1] || 0), 0);
+      const el = document.getElementById("ll-foreign");
+      el.textContent = fmt(sum, 0);
+      el.style.color = sum > 0 ? "#22c55e" : "#f85149";
+      document.getElementById("ll-foreign-date").textContent = "最新 " + investors[investors.length - 1][0];
+    } else {
+      foreignCard.style.display = "none";
+    }
   }
-  if (investors?.length) {
-    // Sum last 30 trading days net foreign
-    const tail = investors.slice(-30);
-    const sum = tail.reduce((a, r) => a + (r[1] || 0), 0);
-    const el = document.getElementById("lc-foreign");
-    el.textContent = fmt(sum, 0);
-    el.style.color = sum > 0 ? "#22c55e" : "#f85149";
-    document.getElementById("lc-foreign-date").textContent = "最新 " + investors[investors.length - 1][0];
-  }
+  void f;
 }
 
-export function render() {
-  if (!liqChart) return;
-  const from = rangeStart(liqRange);
-  const twiiF = filterByDate(twii,  from);
-  const twoiiF = filterByDate(twoii, from);
-  const marginF = filterByDate(margin, from);
-  const foreignCumF = rebaseCumulative(investors, from);
-  const spreadDaily = spreadAsDaily(money.monthly, twiiF.map(r => r[0]));
+// ── 上圖：excess + ⚠️ 行動點 ──────────────────────────────────────────────
+function renderExcessChart() {
+  if (!excessChart) return;
+  const f = filteredRows();
+  const excessData = f.map(r => [r.date, r.excess]);
+  const actionPts = f.filter(r => r.action_point).map(r => ({
+    coord: [r.date, r.excess],
+    symbol: "circle", symbolSize: 14,
+    itemStyle: { color: "#f85149", borderColor: "#fff", borderWidth: 1 },
+    label: { show: true, formatter: "⚠️", position: "top", fontSize: 13 },
+  }));
 
   const axisClr = tc("#8b949e", "#57606a");
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
+  const tipBg = tc("#161b22", "#ffffff");
+  const tipBdr = tc("#30363d", "#d0d7de");
   const tipText = tc("#e6edf3", "#1f2328");
 
-  const divergenceZones = showDivergence ? detectDivergence(twiiF, money.monthly, from) : [];
-  const divergenceMarkArea = divergenceZones.map(([s, e]) => [
-    { xAxis: s, itemStyle: { color: "rgba(239,68,68,0.10)" } },
-    { xAxis: e },
-  ]);
-
-  const legendData = ["加權指數"];
-  if (showTwoii)   legendData.push("櫃買指數");
-  legendData.push("M1B-M2 利差");
-  if (showMargin)  legendData.push("融資餘額");
-  if (showForeign) legendData.push("外資累計");
-
-  // === Y-axis layout ===
-  // grid 0: TAIEX (left) + 櫃買 (right when toggled)
-  // grid 1: spread (left, % units, ~−5..+15) + margin (right offset 0) + foreign (right offset ~70)
-  const grid0YAxes = [
-    { gridIndex: 0, scale: true, name: "加權",
-      nameTextStyle: { color: tc("#e6edf3", "#1f2328"), fontSize: 11 },
-      axisLine: { lineStyle: { color: axisClr } },
-      axisLabel: { color: axisClr, fontSize: 11 },
-      splitLine: { lineStyle: { color: gridClr } } },
-  ];
-  let twoiiAxisIdx = -1;
-  if (showTwoii) {
-    twoiiAxisIdx = grid0YAxes.length;
-    grid0YAxes.push({ gridIndex: 0, scale: true, position: "right",
-      name: "櫃買", nameTextStyle: { color: "#7c3aed", fontSize: 11 },
-      axisLine: { lineStyle: { color: "#7c3aed" } },
-      axisLabel: { color: "#7c3aed", fontSize: 11 }, splitLine: { show: false } });
-  }
-  const spreadAxisIdx = grid0YAxes.length;
-  const grid1YAxes = [
-    { gridIndex: 1, scale: true, name: "M1B-M2 (%)", nameTextStyle: { color: "#e3b341", fontSize: 11 },
-      axisLine: { lineStyle: { color: "#e3b341" } },
-      axisLabel: { color: "#e3b341", fontSize: 11, formatter: v => v.toFixed(1) },
-      splitLine: { lineStyle: { color: gridClr } },
-      markLine: { silent: true, symbol: "none",
-        data: [{ yAxis: 0, lineStyle: { color: axisClr, type: "dashed", width: 1, opacity: 0.5 } }] } },
-  ];
-  let marginAxisIdx = -1, foreignAxisIdx = -1;
-  if (showMargin) {
-    marginAxisIdx = grid0YAxes.length + grid1YAxes.length;
-    grid1YAxes.push({ gridIndex: 1, scale: true, position: "right",
-      name: "融資 (億)", nameTextStyle: { color: "#f85149", fontSize: 11 },
-      axisLine: { lineStyle: { color: "#f85149" } },
-      axisLabel: { color: "#f85149", fontSize: 11, formatter: v => v.toFixed(0) },
-      splitLine: { show: false } });
-  }
-  if (showForeign) {
-    foreignAxisIdx = grid0YAxes.length + grid1YAxes.length;
-    grid1YAxes.push({ gridIndex: 1, scale: true, position: "right",
-      offset: showMargin ? (mob() ? 38 : 56) : 0,
-      name: "外資累計 (億)", nameTextStyle: { color: "#22c55e", fontSize: 11 },
-      axisLine: { lineStyle: { color: "#22c55e" } },
-      axisLabel: { color: "#22c55e", fontSize: 11, formatter: v => v.toFixed(0) },
-      splitLine: { show: false } });
-  }
-  // Final yAxis array (preserve indices)
-  const yAxis = [...grid0YAxes, ...grid1YAxes];
-
-  const rightPadGrid = (showMargin && showForeign) ? (mob() ? 90 : 120)
-                    : (showMargin || showForeign) ? (mob() ? 50 : 70)
-                    : (mob() ? 16 : 32);
-
-  // === Series ===
-  const series = [
-    { name: "加權指數", type: "line", xAxisIndex: 0, yAxisIndex: 0, data: twiiF,
-      symbol: "none",
-      lineStyle: { width: 1.8, color: tc("#e6edf3", "#1f2937") },
-      itemStyle: { color: tc("#e6edf3", "#1f2937") },
-      markArea: divergenceMarkArea.length
-        ? { silent: true, data: divergenceMarkArea } : undefined },
-  ];
-  if (showTwoii && twoiiF.length) {
-    series.push({ name: "櫃買指數", type: "line", xAxisIndex: 0, yAxisIndex: twoiiAxisIdx,
-      data: twoiiF, symbol: "none", lineStyle: { width: 1.4, color: "#7c3aed", type: "dashed" },
-      itemStyle: { color: "#7c3aed" } });
-  }
-  series.push({ name: "M1B-M2 利差", type: "bar", xAxisIndex: 1, yAxisIndex: spreadAxisIdx,
-    data: spreadDaily, barMaxWidth: 4,
-    itemStyle: { color: p => (p.value?.[1] ?? 0) >= 0 ? "rgba(227,179,65,0.7)" : "rgba(248,81,73,0.55)" } });
-  if (showMargin && marginF.length) {
-    series.push({ name: "融資餘額", type: "line", xAxisIndex: 1, yAxisIndex: marginAxisIdx,
-      data: marginF.map(r => [r[0], r[1]]),
-      symbol: "none", lineStyle: { width: 1.5, color: "#f85149" }, itemStyle: { color: "#f85149" } });
-  }
-  if (showForeign && foreignCumF.length) {
-    series.push({ name: "外資累計", type: "line", xAxisIndex: 1, yAxisIndex: foreignAxisIdx,
-      data: foreignCumF, symbol: "none",
-      lineStyle: { width: 1.5, color: "#22c55e" }, itemStyle: { color: "#22c55e" } });
-  }
-
-  liqChart.setOption({
+  excessChart.setOption({
     backgroundColor: "transparent",
+    title: {
+      text: `${MARKET_LABEL[market]}：融資超額成長（margin_yoy − index_yoy）`,
+      left: 8, top: 4, textStyle: { color: tipText, fontSize: 12, fontWeight: 600 },
+    },
     tooltip: {
       trigger: "axis",
-      axisPointer: { type: "cross", link: [{ xAxisIndex: "all" }] },
-      backgroundColor: tipBg, borderColor: tipBdr,
-      textStyle: { color: tipText, fontSize: 12 },
+      backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText, fontSize: 12 },
+      formatter(params) {
+        const p = params.find(x => x.seriesName === "超額 excess") || params[0];
+        if (!p) return "";
+        const row = f.find(r => r.date === p.value[0]);
+        if (!row) return "";
+        return `<b>${row.date.slice(0, 7)}</b><br/>`
+          + `超額 excess: <b>${fmt(row.excess)}%</b><br/>`
+          + `margin_yoy: ${fmt(row.margin_yoy)}%　index_yoy: ${fmt(row.index_yoy)}%<br/>`
+          + (row.action_point ? `<span style="color:#f85149">⚠️ 行動點（超額>0 且翻頭）</span>` : "");
+      },
+    },
+    grid: { left: mob() ? 44 : 60, right: mob() ? 16 : 32, top: 40, bottom: 28 },
+    xAxis: { type: "time", axisLine: { lineStyle: { color: axisClr } },
+      axisLabel: { color: axisClr, fontSize: 11 }, splitLine: { show: false } },
+    yAxis: { type: "value", scale: true,
+      axisLine: { lineStyle: { color: axisClr } },
+      axisLabel: { color: axisClr, fontSize: 11, formatter: v => v + "%" },
+      splitLine: { lineStyle: { color: gridClr } } },
+    series: [{
+      name: "超額 excess", type: "line", data: excessData, symbol: "none",
+      lineStyle: { width: 1.8, color: "#58a6ff" },
+      areaStyle: { color: "rgba(88,166,255,0.12)" },
+      itemStyle: { color: "#58a6ff" },
+      markLine: { silent: true, symbol: "none",
+        data: [{ yAxis: 0, lineStyle: { color: axisClr, type: "dashed", width: 1, opacity: 0.7 } }] },
+      markPoint: actionPts.length ? { data: actionPts, symbol: "circle" } : undefined,
+    }],
+    dataZoom: [
+      { type: "inside" },
+      { type: "slider", height: 14, bottom: 4, fillerColor: "rgba(88,166,255,0.12)",
+        borderColor: tc("#30363d", "#d0d7de") },
+    ],
+  }, { notMerge: true });
+}
+
+// ── 下圖：YoY 疊圖（index/margin/M2/M1(B)）＋ TW 外資累計可選 ──────────────
+function renderYoyChart() {
+  if (!yoyChart) return;
+  const f = filteredRows();
+  const from = rangeStart(llRange);
+  const m1Field = M1_FIELD[market];
+
+  const indexYoy = f.map(r => [r.date, r.index_yoy]);
+  const marginYoy = f.map(r => [r.date, r.margin_yoy]);
+  const m2Yoy = f.map(r => [r.date, r.m2_yoy]);
+  const m1Yoy = f.map(r => [r.date, r[m1Field]]);
+
+  const axisClr = tc("#8b949e", "#57606a");
+  const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
+  const tipBg = tc("#161b22", "#ffffff");
+  const tipBdr = tc("#30363d", "#d0d7de");
+  const tipText = tc("#e6edf3", "#1f2328");
+
+  const legendData = ["指數 index_yoy", "融資 margin_yoy", "M2 年增率", M1_LABEL[market]];
+  const isTwForeign = market === "tw" && showForeign;
+  if (isTwForeign) legendData.push("外資累計");
+
+  const series = [
+    { name: "指數 index_yoy", type: "line", yAxisIndex: 0, data: indexYoy, symbol: "none",
+      lineStyle: { width: 1.6, color: tc("#e6edf3", "#1f2937") }, itemStyle: { color: tc("#e6edf3", "#1f2937") } },
+    { name: "融資 margin_yoy", type: "line", yAxisIndex: 0, data: marginYoy, symbol: "none",
+      lineStyle: { width: 1.6, color: "#f85149" }, itemStyle: { color: "#f85149" } },
+    { name: "M2 年增率", type: "line", yAxisIndex: 0, data: m2Yoy, symbol: "none",
+      lineStyle: { width: 1.4, color: "#e3b341", type: "dashed" }, itemStyle: { color: "#e3b341" } },
+    { name: M1_LABEL[market], type: "line", yAxisIndex: 0, data: m1Yoy, symbol: "none",
+      lineStyle: { width: 1.4, color: "#7c3aed", type: "dashed" }, itemStyle: { color: "#7c3aed" } },
+  ];
+
+  const yAxis = [
+    { type: "value", scale: true,
+      axisLine: { lineStyle: { color: axisClr } },
+      axisLabel: { color: axisClr, fontSize: 11, formatter: v => v + "%" },
+      splitLine: { lineStyle: { color: gridClr } } },
+  ];
+  if (isTwForeign) {
+    const foreignCumF = rebaseCumulative(investors, from);
+    series.push({ name: "外資累計", type: "line", yAxisIndex: 1, data: foreignCumF, symbol: "none",
+      lineStyle: { width: 1.4, color: "#22c55e" }, itemStyle: { color: "#22c55e" } });
+    yAxis.push({ type: "value", scale: true, position: "right",
+      axisLine: { lineStyle: { color: "#22c55e" } },
+      axisLabel: { color: "#22c55e", fontSize: 11, formatter: v => v.toFixed(0) + "億" },
+      splitLine: { show: false } });
+  }
+
+  yoyChart.setOption({
+    backgroundColor: "transparent",
+    title: {
+      text: `${MARKET_LABEL[market]}：YoY 疊圖（指數／融資／貨幣供給）`,
+      left: 8, top: 4, textStyle: { color: tipText, fontSize: 12, fontWeight: 600 },
+    },
+    tooltip: {
+      trigger: "axis", axisPointer: { type: "cross" },
+      backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText, fontSize: 12 },
       formatter(params) {
         if (!params?.length) return "";
         const ts = params[0].axisValueLabel || params[0].axisValue;
-        const dateLabel = typeof ts === "string" ? ts.slice(0, 10)
-                        : new Date(ts).toISOString().slice(0, 10);
-        const seen = new Set();
+        const dateLabel = typeof ts === "string" ? ts.slice(0, 7) : new Date(ts).toISOString().slice(0, 7);
         let html = `<b>${dateLabel}</b><br/>`;
         for (const p of params) {
-          if (seen.has(p.seriesName)) continue; seen.add(p.seriesName);
           const v = p.value?.[1];
           if (v == null) continue;
-          const unit = p.seriesName === "M1B-M2 利差" ? "%"
-                     : (p.seriesName === "融資餘額" || p.seriesName === "外資累計") ? " 億" : "";
-          const formatted = (Math.abs(v) >= 1000) ? v.toFixed(0) : v.toFixed(2);
-          html += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${formatted}${unit}</b><br/>`;
+          const unit = p.seriesName === "外資累計" ? " 億" : "%";
+          html += `<span style="color:${p.color}">●</span> ${p.seriesName}: <b>${fmt(v, unit === "%" ? 1 : 0)}${unit}</b><br/>`;
         }
         return html;
       },
     },
-    legend: { data: legendData, top: 4, textStyle: { color: tipText, fontSize: 12 } },
-    axisPointer: { link: [{ xAxisIndex: "all" }] },
-    grid: [
-      { left: mob() ? 50 : 72, right: rightPadGrid, top: 36, height: "52%" },
-      { left: mob() ? 50 : 72, right: rightPadGrid, top: "64%", height: "26%" },
-    ],
-    xAxis: [
-      { type: "time", gridIndex: 0, axisLabel: { show: false },
-        axisLine: { lineStyle: { color: axisClr } }, splitLine: { show: false } },
-      { type: "time", gridIndex: 1,
-        axisLine: { lineStyle: { color: axisClr } },
-        axisLabel: { color: axisClr, fontSize: 11 }, splitLine: { show: false } },
-    ],
+    legend: { data: legendData, top: 26, right: 8, textStyle: { color: tipText, fontSize: 11 } },
+    grid: { left: mob() ? 44 : 60, right: isTwForeign ? (mob() ? 60 : 78) : (mob() ? 16 : 32), top: 56, bottom: 28 },
+    xAxis: { type: "time", axisLine: { lineStyle: { color: axisClr } },
+      axisLabel: { color: axisClr, fontSize: 11 }, splitLine: { show: false } },
     yAxis,
+    series,
     dataZoom: [
-      { type: "inside", xAxisIndex: [0, 1] },
-      { type: "slider", xAxisIndex: [0, 1], height: 16, bottom: 8,
-        fillerColor: "rgba(88,166,255,0.12)",
+      { type: "inside" },
+      { type: "slider", height: 14, bottom: 4, fillerColor: "rgba(88,166,255,0.12)",
         borderColor: tc("#30363d", "#d0d7de") },
     ],
-    series,
   }, { notMerge: true });
+}
 
-  // Status line
-  const lat = money?.latest;
-  const latestTwii = twiiF[twiiF.length - 1];
+function renderAll() {
+  renderSummary();
+  renderExcessChart();
+  renderYoyChart();
+
   const statusEl = document.getElementById("liquidity-status");
   if (statusEl) {
-    const parts = [];
-    if (latestTwii) parts.push(`加權 ${latestTwii[1]?.toFixed(0)} (${latestTwii[0]})`);
-    if (lat) parts.push(`M1B-M2 ${fmt(lat.spread, 2)}% (${lat.date.slice(0, 7)})`);
-    if (divergenceZones.length) parts.push(`偵測到 ${divergenceZones.length} 段背離區`);
-    parts.push(`範圍 ${liqRange}`);
+    const f = filteredRows();
+    const last = f[f.length - 1];
+    const parts = [`${MARKET_LABEL[market]}`];
+    if (last) parts.push(`最新 ${last.date.slice(0, 7)}`);
+    parts.push(`範圍 ${llRange}`);
+    const note = llData?.[market]?.note;
+    if (note) parts.push(note);
     statusEl.textContent = parts.join(" · ");
   }
 }
 
 async function initOnce() {
-  if (twii && money) return;
+  if (llData) return;
   await loadAll();
-  renderSummary();
 }
 
 export async function activate() {
-  const el = document.getElementById("liquidity-chart");
-  if (!liqChart && el) {
-    liqChart = echarts.init(el, isLight() ? null : "dark");
-  }
+  const elTop = document.getElementById("liquidity-chart");
+  const elBottom = document.getElementById("liquidity-yoy-chart");
+  if (!excessChart && elTop) excessChart = echarts.init(elTop, isLight() ? null : "dark");
+  if (!yoyChart && elBottom) yoyChart = echarts.init(elBottom, isLight() ? null : "dark");
   try {
     await initOnce();
-    setTimeout(() => { liqChart?.resize(); render(); }, 50);
+    setTimeout(() => { excessChart?.resize(); yoyChart?.resize(); renderAll(); }, 50);
   } catch (e) {
     const s = document.getElementById("liquidity-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
@@ -350,40 +303,40 @@ export async function activate() {
 }
 
 export function onThemeChange(light) {
-  if (!liqChart) return;
-  liqChart.dispose();
-  liqChart = echarts.init(document.getElementById("liquidity-chart"), light ? null : "dark");
-  render();
+  if (!excessChart && !yoyChart) return;
+  excessChart?.dispose();
+  yoyChart?.dispose();
+  excessChart = echarts.init(document.getElementById("liquidity-chart"), light ? null : "dark");
+  yoyChart = echarts.init(document.getElementById("liquidity-yoy-chart"), light ? null : "dark");
+  renderAll();
 }
 
-export function resize() { liqChart?.resize(); }
+export function resize() { excessChart?.resize(); yoyChart?.resize(); }
 
 // === Event wiring ===
-document.getElementById("liq-twoii-toggle")?.addEventListener("click", e => {
-  showTwoii = !showTwoii;
-  e.currentTarget.classList.toggle("active", showTwoii);
-  render();
-});
-document.getElementById("liq-margin-toggle")?.addEventListener("click", e => {
-  showMargin = !showMargin;
-  e.currentTarget.classList.toggle("active", showMargin);
-  render();
-});
-document.getElementById("liq-foreign-toggle")?.addEventListener("click", e => {
-  showForeign = !showForeign;
-  e.currentTarget.classList.toggle("active", showForeign);
-  render();
-});
-document.getElementById("liq-divergence-toggle")?.addEventListener("click", e => {
-  showDivergence = !showDivergence;
-  e.currentTarget.classList.toggle("active", showDivergence);
-  render();
-});
-document.getElementById("liq-range-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-liq-range]");
+document.getElementById("ll-market-picker")?.addEventListener("click", e => {
+  const t = e.target.closest(".chip[data-ll-mkt]");
   if (!t) return;
-  liqRange = t.dataset.liqRange;
+  market = t.dataset.llMkt;
   for (const c of e.currentTarget.querySelectorAll(".chip"))
     c.classList.toggle("active", c === t);
-  render();
+  const foreignToggle = document.getElementById("ll-foreign-toggle");
+  if (foreignToggle) foreignToggle.style.display = market === "tw" ? "" : "none";
+  renderAll();
+});
+
+document.getElementById("ll-foreign-toggle")?.addEventListener("click", e => {
+  if (market !== "tw") return;
+  showForeign = !showForeign;
+  e.currentTarget.classList.toggle("active", showForeign);
+  renderYoyChart();
+});
+
+document.getElementById("ll-range-picker")?.addEventListener("click", e => {
+  const t = e.target.closest(".chip[data-ll-range]");
+  if (!t) return;
+  llRange = t.dataset.llRange;
+  for (const c of e.currentTarget.querySelectorAll(".chip"))
+    c.classList.toggle("active", c === t);
+  renderAll();
 });

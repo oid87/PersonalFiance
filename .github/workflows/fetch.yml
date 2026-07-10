@@ -178,6 +178,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_taiwan_money_supply.py
 
+      - name: Fetch multi-market margin-excess x liquidity (TW/US/JP index+margin+money supply)
+        continue-on-error: true
+        run: python scripts/fetch_liquidity_leverage.py
+
       - name: Fetch VIX-SKEW sequential divergence signal (yfinance SKEW+SPY, stitched VIX)
         continue-on-error: true
         run: python scripts/fetch_vix_skew.py

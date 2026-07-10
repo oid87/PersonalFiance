@@ -56,6 +56,7 @@ $PYTHON compute_sentiment.py   || true
 $PYTHON fetch_bullbear.py      || true
 $PYTHON fetch_liquidity.py     || true
 $PYTHON fetch_taiwan_money_supply.py || true
+$PYTHON fetch_liquidity_leverage.py || true   # 多國融資超額×流動性 tab(依賴 liquidity/taiwan_money_supply/TWII/SPY/M2,須排在其後)
 $PYTHON fetch_vix_skew.py      || true
 $PYTHON fetch_putcall.py       || true
 $PYTHON fetch_fsi.py           || true
