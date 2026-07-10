@@ -1914,7 +1914,7 @@
         "margin_yoy": -19.8618,
         "excess": -18.0401,
         "action_point": false,
-        "m1_yoy": -2.2636,
+        "m1_yoy": null,
         "m2_yoy": 6.6565
       },
       {
@@ -1923,7 +1923,7 @@
         "margin_yoy": -30.0201,
         "excess": -20.2066,
         "action_point": false,
-        "m1_yoy": -0.6675,
+        "m1_yoy": null,
         "m2_yoy": 7.1802
       },
       {
@@ -1932,7 +1932,7 @@
         "margin_yoy": -41.7213,
         "excess": -19.3207,
         "action_point": false,
-        "m1_yoy": 0.1264,
+        "m1_yoy": null,
         "m2_yoy": 7.7063
       },
       {
@@ -1941,7 +1941,7 @@
         "margin_yoy": -34.4676,
         "excess": -21.7629,
         "action_point": false,
-        "m1_yoy": 0.0986,
+        "m1_yoy": null,
         "m2_yoy": 7.7877
       },
       {
@@ -1950,7 +1950,7 @@
         "margin_yoy": -28.7396,
         "excess": -16.9321,
         "action_point": false,
-        "m1_yoy": 1.2309,
+        "m1_yoy": null,
         "m2_yoy": 8.022
       },
       {
@@ -1959,7 +1959,7 @@
         "margin_yoy": -32.0965,
         "excess": -16.4846,
         "action_point": false,
-        "m1_yoy": 2.1404,
+        "m1_yoy": null,
         "m2_yoy": 8.5156
       },
       {
@@ -1968,7 +1968,7 @@
         "margin_yoy": -34.1445,
         "excess": -19.0047,
         "action_point": false,
-        "m1_yoy": 3.208,
+        "m1_yoy": null,
         "m2_yoy": 8.7388
       },
       {
@@ -1977,7 +1977,7 @@
         "margin_yoy": -36.1472,
         "excess": -11.0764,
         "action_point": false,
-        "m1_yoy": 4.5446,
+        "m1_yoy": null,
         "m2_yoy": 8.8038
       },
       {
@@ -1986,7 +1986,7 @@
         "margin_yoy": -41.5521,
         "excess": -14.2692,
         "action_point": false,
-        "m1_yoy": 9.639,
+        "m1_yoy": null,
         "m2_yoy": 10.2962
       },
       {
@@ -1995,7 +1995,7 @@
         "margin_yoy": -39.2876,
         "excess": -13.2978,
         "action_point": false,
-        "m1_yoy": 6.0981,
+        "m1_yoy": null,
         "m2_yoy": 9.6997
       },
       {
@@ -2004,7 +2004,7 @@
         "margin_yoy": -32.9839,
         "excess": -19.2018,
         "action_point": false,
-        "m1_yoy": 7.1952,
+        "m1_yoy": null,
         "m2_yoy": 10.3385
       },
       {
@@ -2013,7 +2013,7 @@
         "margin_yoy": -23.7241,
         "excess": -10.8513,
         "action_point": false,
-        "m1_yoy": 8.6901,
+        "m1_yoy": null,
         "m2_yoy": 10.4087
       },
       {
@@ -2022,7 +2022,7 @@
         "margin_yoy": -22.896,
         "excess": -5.4971,
         "action_point": false,
-        "m1_yoy": 8.5712,
+        "m1_yoy": null,
         "m2_yoy": 9.6941
       },
       {
@@ -2031,7 +2031,7 @@
         "margin_yoy": -22.101,
         "excess": -11.7742,
         "action_point": false,
-        "m1_yoy": 8.1184,
+        "m1_yoy": null,
         "m2_yoy": 9.4319
       },
       {
@@ -2040,7 +2040,7 @@
         "margin_yoy": -8.4143,
         "excess": -6.5547,
         "action_point": false,
-        "m1_yoy": 7.6111,
+        "m1_yoy": null,
         "m2_yoy": 8.4181
       },
       {
@@ -2049,7 +2049,7 @@
         "margin_yoy": -9.6675,
         "excess": 5.1754,
         "action_point": false,
-        "m1_yoy": 6.2864,
+        "m1_yoy": null,
         "m2_yoy": 7.0635
       },
       {
@@ -2058,7 +2058,7 @@
         "margin_yoy": -13.7887,
         "excess": 1.0823,
         "action_point": false,
-        "m1_yoy": 6.3299,
+        "m1_yoy": null,
         "m2_yoy": 7.6131
       },
       {
@@ -2067,7 +2067,7 @@
         "margin_yoy": -14.2623,
         "excess": 5.0199,
         "action_point": false,
-        "m1_yoy": 5.9581,
+        "m1_yoy": null,
         "m2_yoy": 7.2045
       },
       {
@@ -2076,7 +2076,7 @@
         "margin_yoy": -17.1436,
         "excess": 7.7349,
         "action_point": false,
-        "m1_yoy": 5.2858,
+        "m1_yoy": null,
         "m2_yoy": 7.4088
       },
       {
@@ -2085,7 +2085,7 @@
         "margin_yoy": -17.8188,
         "excess": 1.7783,
         "action_point": false,
-        "m1_yoy": 3.2081,
+        "m1_yoy": null,
         "m2_yoy": 7.5232
       },
       {
@@ -2094,7 +2094,7 @@
         "margin_yoy": -13.8187,
         "excess": 7.8684,
         "action_point": false,
-        "m1_yoy": -0.7962,
+        "m1_yoy": null,
         "m2_yoy": 5.7366
       },
       {
@@ -2103,7 +2103,7 @@
         "margin_yoy": -9.0046,
         "excess": 7.3281,
         "action_point": false,
-        "m1_yoy": 3.2856,
+        "m1_yoy": null,
         "m2_yoy": 6.7985
       },
       {
@@ -2112,7 +2112,7 @@
         "margin_yoy": -12.5238,
         "excess": 5.0737,
         "action_point": false,
-        "m1_yoy": 3.2963,
+        "m1_yoy": null,
         "m2_yoy": 6.8789
       },
       {
@@ -2121,7 +2121,7 @@
         "margin_yoy": -13.1,
         "excess": 9.7084,
         "action_point": false,
-        "m1_yoy": 3.1271,
+        "m1_yoy": null,
         "m2_yoy": 6.2292
       },
       {
@@ -2130,7 +2130,7 @@
         "margin_yoy": -12.1282,
         "excess": 11.8336,
         "action_point": false,
-        "m1_yoy": 3.0738,
+        "m1_yoy": null,
         "m2_yoy": 6.4312
       },
       {
@@ -2139,7 +2139,7 @@
         "margin_yoy": -9.3041,
         "excess": 14.3126,
         "action_point": false,
-        "m1_yoy": 3.998,
+        "m1_yoy": null,
         "m2_yoy": 6.5207
       },
       {
@@ -2148,7 +2148,7 @@
         "margin_yoy": -9.8833,
         "excess": 16.1209,
         "action_point": false,
-        "m1_yoy": 3.8549,
+        "m1_yoy": null,
         "m2_yoy": 6.6594
       },
       {
@@ -2157,7 +2157,7 @@
         "margin_yoy": -9.9546,
         "excess": 4.8331,
         "action_point": false,
-        "m1_yoy": 5.3164,
+        "m1_yoy": null,
         "m2_yoy": 7.3317
       },
       {
@@ -2166,7 +2166,7 @@
         "margin_yoy": -2.5836,
         "excess": 6.9948,
         "action_point": false,
-        "m1_yoy": 6.6846,
+        "m1_yoy": null,
         "m2_yoy": 7.9048
       },
       {
@@ -2175,7 +2175,7 @@
         "margin_yoy": 9.2932,
         "excess": 10.6372,
         "action_point": false,
-        "m1_yoy": 7.3494,
+        "m1_yoy": null,
         "m2_yoy": 8.0835
       },
       {
@@ -2184,7 +2184,7 @@
         "margin_yoy": 21.2098,
         "excess": 12.1817,
         "action_point": false,
-        "m1_yoy": 7.3722,
+        "m1_yoy": null,
         "m2_yoy": 8.0969
       },
       {
@@ -2193,7 +2193,7 @@
         "margin_yoy": 20.1616,
         "excess": 9.6364,
         "action_point": false,
-        "m1_yoy": 9.2073,
+        "m1_yoy": null,
         "m2_yoy": 8.3146
       },
       {
@@ -2202,7 +2202,7 @@
         "margin_yoy": 25.779,
         "excess": 3.5758,
         "action_point": false,
-        "m1_yoy": 8.4525,
+        "m1_yoy": null,
         "m2_yoy": 7.3716
       },
       {
@@ -2211,7 +2211,7 @@
         "margin_yoy": 26.5285,
         "excess": 7.5724,
         "action_point": false,
-        "m1_yoy": 7.7907,
+        "m1_yoy": null,
         "m2_yoy": 6.3587
       },
       {
@@ -2220,7 +2220,7 @@
         "margin_yoy": 30.913,
         "excess": 17.6442,
         "action_point": false,
-        "m1_yoy": 7.3991,
+        "m1_yoy": null,
         "m2_yoy": 5.5122
       },
       {
@@ -2229,7 +2229,7 @@
         "margin_yoy": 30.1238,
         "excess": 3.9989,
         "action_point": false,
-        "m1_yoy": 7.048,
+        "m1_yoy": null,
         "m2_yoy": 5.094
       },
       {
@@ -2238,7 +2238,7 @@
         "margin_yoy": 33.9753,
         "excess": 2.1138,
         "action_point": false,
-        "m1_yoy": 6.4125,
+        "m1_yoy": null,
         "m2_yoy": 4.6455
       },
       {
@@ -2247,7 +2247,7 @@
         "margin_yoy": 35.5347,
         "excess": 0.0577,
         "action_point": false,
-        "m1_yoy": 6.7194,
+        "m1_yoy": null,
         "m2_yoy": 4.6784
       },
       {
@@ -2256,7 +2256,7 @@
         "margin_yoy": 32.706,
         "excess": -0.7611,
         "action_point": false,
-        "m1_yoy": 7.2137,
+        "m1_yoy": null,
         "m2_yoy": 4.9332
       },
       {
@@ -2265,7 +2265,7 @@
         "margin_yoy": 38.7756,
         "excess": 18.0488,
         "action_point": false,
-        "m1_yoy": 6.624,
+        "m1_yoy": null,
         "m2_yoy": 4.9682
       },
       {
@@ -2274,7 +2274,7 @@
         "margin_yoy": 26.0973,
         "excess": 9.6867,
         "action_point": true,
-        "m1_yoy": 5.0835,
+        "m1_yoy": null,
         "m2_yoy": 5.2034
       },
       {
@@ -2283,7 +2283,7 @@
         "margin_yoy": 15.2792,
         "excess": -2.031,
         "action_point": false,
-        "m1_yoy": 4.8165,
+        "m1_yoy": null,
         "m2_yoy": 4.5933
       },
       {
@@ -2292,7 +2292,7 @@
         "margin_yoy": 7.692,
         "excess": -3.8282,
         "action_point": false,
-        "m1_yoy": 4.1398,
+        "m1_yoy": null,
         "m2_yoy": 4.0006
       },
       {
@@ -2301,7 +2301,7 @@
         "margin_yoy": 12.3373,
         "excess": 2.8046,
         "action_point": false,
-        "m1_yoy": 4.4662,
+        "m1_yoy": null,
         "m2_yoy": 3.4501
       },
       {
@@ -2310,7 +2310,7 @@
         "margin_yoy": 13.1278,
         "excess": 1.3119,
         "action_point": false,
-        "m1_yoy": 5.0339,
+        "m1_yoy": null,
         "m2_yoy": 4.4821
       },
       {
@@ -2319,7 +2319,7 @@
         "margin_yoy": 12.8662,
         "excess": 5.3639,
         "action_point": false,
-        "m1_yoy": 4.9699,
+        "m1_yoy": null,
         "m2_yoy": 5.1038
       },
       {
@@ -2328,7 +2328,7 @@
         "margin_yoy": 15.5679,
         "excess": 4.8211,
         "action_point": false,
-        "m1_yoy": 5.7809,
+        "m1_yoy": null,
         "m2_yoy": 5.4448
       },
       {
@@ -2337,7 +2337,7 @@
         "margin_yoy": 19.902,
         "excess": 11.2841,
         "action_point": false,
-        "m1_yoy": 5.3437,
+        "m1_yoy": null,
         "m2_yoy": 5.774
       },
       {
@@ -2346,7 +2346,7 @@
         "margin_yoy": 16.2029,
         "excess": 12.0788,
         "action_point": false,
-        "m1_yoy": 4.6784,
+        "m1_yoy": null,
         "m2_yoy": 5.7332
       },
       {
@@ -2355,7 +2355,7 @@
         "margin_yoy": 17.1737,
         "excess": 12.2963,
         "action_point": false,
-        "m1_yoy": 3.7612,
+        "m1_yoy": null,
         "m2_yoy": 5.1798
       },
       {
@@ -2364,7 +2364,7 @@
         "margin_yoy": 18.5034,
         "excess": 14.2063,
         "action_point": true,
-        "m1_yoy": 3.176,
+        "m1_yoy": null,
         "m2_yoy": 4.7159
       },
       {
@@ -2373,7 +2373,7 @@
         "margin_yoy": 9.3919,
         "excess": 5.075,
         "action_point": false,
-        "m1_yoy": 1.9208,
+        "m1_yoy": null,
         "m2_yoy": 4.2411
       },
       {
@@ -2382,7 +2382,7 @@
         "margin_yoy": 13.1864,
         "excess": 7.3208,
         "action_point": false,
-        "m1_yoy": 2.4526,
+        "m1_yoy": null,
         "m2_yoy": 3.2395
       },
       {
@@ -2391,7 +2391,7 @@
         "margin_yoy": 15.547,
         "excess": 11.4869,
         "action_point": false,
-        "m1_yoy": 2.7854,
+        "m1_yoy": null,
         "m2_yoy": 3.7242
       },
       {
@@ -2400,7 +2400,7 @@
         "margin_yoy": 24.3505,
         "excess": 12.7121,
         "action_point": false,
-        "m1_yoy": 2.1032,
+        "m1_yoy": null,
         "m2_yoy": 4.012
       },
       {
@@ -2409,7 +2409,7 @@
         "margin_yoy": 23.1978,
         "excess": 12.8747,
         "action_point": false,
-        "m1_yoy": 1.7352,
+        "m1_yoy": null,
         "m2_yoy": 4.0916
       },
       {
@@ -2418,7 +2418,7 @@
         "margin_yoy": 26.3342,
         "excess": 16.2412,
         "action_point": false,
-        "m1_yoy": 1.1817,
+        "m1_yoy": null,
         "m2_yoy": 4.06
       },
       {
@@ -2427,7 +2427,7 @@
         "margin_yoy": 21.1461,
         "excess": 15.0242,
         "action_point": true,
-        "m1_yoy": 1.0424,
+        "m1_yoy": null,
         "m2_yoy": 4.1396
       },
       {
@@ -2436,7 +2436,7 @@
         "margin_yoy": 15.1138,
         "excess": 8.735,
         "action_point": false,
-        "m1_yoy": 0.1383,
+        "m1_yoy": null,
         "m2_yoy": 3.9711
       },
       {
@@ -2445,7 +2445,7 @@
         "margin_yoy": 12.1913,
         "excess": 9.1798,
         "action_point": false,
-        "m1_yoy": -0.1235,
+        "m1_yoy": null,
         "m2_yoy": 4.0984
       },
       {
@@ -2454,7 +2454,7 @@
         "margin_yoy": 16.206,
         "excess": 8.3015,
         "action_point": false,
-        "m1_yoy": 0.907,
+        "m1_yoy": null,
         "m2_yoy": 4.6542
       },
       {
@@ -2463,7 +2463,7 @@
         "margin_yoy": 11.8545,
         "excess": 5.5543,
         "action_point": false,
-        "m1_yoy": 0.5324,
+        "m1_yoy": null,
         "m2_yoy": 4.9046
       },
       {
@@ -2472,7 +2472,7 @@
         "margin_yoy": 14.3224,
         "excess": 4.2596,
         "action_point": false,
-        "m1_yoy": 0.8972,
+        "m1_yoy": null,
         "m2_yoy": 4.9781
       },
       {
@@ -2481,7 +2481,7 @@
         "margin_yoy": 21.9442,
         "excess": 8.3632,
         "action_point": false,
-        "m1_yoy": 1.6932,
+        "m1_yoy": null,
         "m2_yoy": 5.3406
       },
       {
@@ -2490,7 +2490,7 @@
         "margin_yoy": 16.5011,
         "excess": 9.7803,
         "action_point": false,
-        "m1_yoy": 1.552,
+        "m1_yoy": null,
         "m2_yoy": 5.1659
       },
       {
@@ -2499,7 +2499,7 @@
         "margin_yoy": 12.1979,
         "excess": 5.4015,
         "action_point": false,
-        "m1_yoy": -0.3406,
+        "m1_yoy": null,
         "m2_yoy": 5.2229
       },
       {
@@ -2508,7 +2508,7 @@
         "margin_yoy": 9.6029,
         "excess": 6.2814,
         "action_point": false,
-        "m1_yoy": 0.2484,
+        "m1_yoy": null,
         "m2_yoy": 5.3503
       },
       {
@@ -2517,7 +2517,7 @@
         "margin_yoy": 7.7649,
         "excess": 1.1896,
         "action_point": false,
-        "m1_yoy": -0.3919,
+        "m1_yoy": null,
         "m2_yoy": 5.3039
       },
       {
@@ -2526,7 +2526,7 @@
         "margin_yoy": 6.989,
         "excess": -1.5773,
         "action_point": false,
-        "m1_yoy": -1.03,
+        "m1_yoy": null,
         "m2_yoy": 5.1784
       },
       {
@@ -2535,7 +2535,7 @@
         "margin_yoy": 11.6072,
         "excess": -3.0935,
         "action_point": false,
-        "m1_yoy": -0.4504,
+        "m1_yoy": null,
         "m2_yoy": 5.3854
       },
       {
@@ -2544,7 +2544,7 @@
         "margin_yoy": 21.4056,
         "excess": 9.3491,
         "action_point": false,
-        "m1_yoy": -0.3851,
+        "m1_yoy": null,
         "m2_yoy": 5.6526
       },
       {
@@ -2553,7 +2553,7 @@
         "margin_yoy": 24.2485,
         "excess": 10.5066,
         "action_point": false,
-        "m1_yoy": -0.5603,
+        "m1_yoy": null,
         "m2_yoy": 5.8659
       },
       {
@@ -2562,7 +2562,7 @@
         "margin_yoy": 21.7796,
         "excess": 9.0345,
         "action_point": false,
-        "m1_yoy": -0.5654,
+        "m1_yoy": null,
         "m2_yoy": 5.7681
       },
       {
@@ -2571,7 +2571,7 @@
         "margin_yoy": 28.6696,
         "excess": 18.7656,
         "action_point": false,
-        "m1_yoy": -1.1172,
+        "m1_yoy": null,
         "m2_yoy": 5.6198
       },
       {
@@ -2580,7 +2580,7 @@
         "margin_yoy": 22.5034,
         "excess": 13.1296,
         "action_point": true,
-        "m1_yoy": -1.2073,
+        "m1_yoy": null,
         "m2_yoy": 5.8928
       },
       {
@@ -2589,7 +2589,7 @@
         "margin_yoy": 29.0085,
         "excess": 16.2147,
         "action_point": false,
-        "m1_yoy": -0.2461,
+        "m1_yoy": null,
         "m2_yoy": 6.3729
       },
       {
@@ -2598,7 +2598,7 @@
         "margin_yoy": 49.5697,
         "excess": 29.3281,
         "action_point": false,
-        "m1_yoy": -0.4542,
+        "m1_yoy": null,
         "m2_yoy": 6.4708
       },
       {
@@ -2607,7 +2607,7 @@
         "margin_yoy": 62.4064,
         "excess": 44.2182,
         "action_point": false,
-        "m1_yoy": -0.5235,
+        "m1_yoy": null,
         "m2_yoy": 6.3633
       },
       {
@@ -2616,7 +2616,7 @@
         "margin_yoy": 62.6473,
         "excess": 48.6699,
         "action_point": false,
-        "m1_yoy": -0.0437,
+        "m1_yoy": null,
         "m2_yoy": 6.1666
       },
       {
@@ -2625,7 +2625,7 @@
         "margin_yoy": 45.3575,
         "excess": 32.3829,
         "action_point": true,
-        "m1_yoy": 0.2842,
+        "m1_yoy": null,
         "m2_yoy": 6.7826
       },
       {
@@ -2634,7 +2634,7 @@
         "margin_yoy": 37.1835,
         "excess": 22.9599,
         "action_point": false,
-        "m1_yoy": 0.8282,
+        "m1_yoy": null,
         "m2_yoy": 6.6251
       },
       {
@@ -2643,7 +2643,7 @@
         "margin_yoy": 40.8162,
         "excess": 28.5802,
         "action_point": false,
-        "m1_yoy": 0.6641,
+        "m1_yoy": null,
         "m2_yoy": 6.0899
       },
       {
@@ -2652,7 +2652,7 @@
         "margin_yoy": 28.7197,
         "excess": 22.9344,
         "action_point": false,
-        "m1_yoy": 0.073,
+        "m1_yoy": null,
         "m2_yoy": 5.9171
       },
       {
@@ -2661,7 +2661,7 @@
         "margin_yoy": 17.1467,
         "excess": 13.9057,
         "action_point": false,
-        "m1_yoy": 0.4976,
+        "m1_yoy": null,
         "m2_yoy": 5.7033
       },
       {
@@ -2670,7 +2670,7 @@
         "margin_yoy": 17.3627,
         "excess": 21.801,
         "action_point": false,
-        "m1_yoy": 0.4374,
+        "m1_yoy": null,
         "m2_yoy": 5.6081
       },
       {
@@ -2679,7 +2679,7 @@
         "margin_yoy": 17.4104,
         "excess": 22.4554,
         "action_point": false,
-        "m1_yoy": 1.2766,
+        "m1_yoy": null,
         "m2_yoy": 6.5837
       },
       {
@@ -2688,7 +2688,7 @@
         "margin_yoy": 9.9711,
         "excess": 17.0345,
         "action_point": false,
-        "m1_yoy": 1.6246,
+        "m1_yoy": null,
         "m2_yoy": 7.0004
       },
       {
@@ -2697,7 +2697,7 @@
         "margin_yoy": -2.8592,
         "excess": 3.9045,
         "action_point": false,
-        "m1_yoy": 0.9724,
+        "m1_yoy": null,
         "m2_yoy": 6.5159
       },
       {
@@ -2706,7 +2706,7 @@
         "margin_yoy": -10.6463,
         "excess": -2.1868,
         "action_point": false,
-        "m1_yoy": 0.9052,
+        "m1_yoy": null,
         "m2_yoy": 6.4869
       },
       {
@@ -2715,7 +2715,7 @@
         "margin_yoy": -15.0699,
         "excess": -0.146,
         "action_point": false,
-        "m1_yoy": 2.6604,
+        "m1_yoy": null,
         "m2_yoy": 6.2584
       },
       {
@@ -2724,7 +2724,7 @@
         "margin_yoy": -17.5565,
         "excess": -4.5933,
         "action_point": false,
-        "m1_yoy": 3.5938,
+        "m1_yoy": null,
         "m2_yoy": 6.4561
       },
       {
@@ -2733,7 +2733,7 @@
         "margin_yoy": -10.39,
         "excess": 2.348,
         "action_point": false,
-        "m1_yoy": 2.2597,
+        "m1_yoy": null,
         "m2_yoy": 5.558
       },
       {
@@ -2742,7 +2742,7 @@
         "margin_yoy": -3.7201,
         "excess": 20.2608,
         "action_point": false,
-        "m1_yoy": 6.2732,
+        "m1_yoy": null,
         "m2_yoy": 6.1972
       },
       {
@@ -2751,7 +2751,7 @@
         "margin_yoy": -26.3704,
         "excess": 11.0172,
         "action_point": false,
-        "m1_yoy": 6.8436,
+        "m1_yoy": null,
         "m2_yoy": 7.3612
       },
       {
@@ -2760,7 +2760,7 @@
         "margin_yoy": -40.1111,
         "excess": -0.7125,
         "action_point": false,
-        "m1_yoy": 10.4097,
+        "m1_yoy": null,
         "m2_yoy": 7.6929
       },
       {
@@ -2769,7 +2769,7 @@
         "margin_yoy": -40.8416,
         "excess": -2.5611,
         "action_point": false,
-        "m1_yoy": 16.623,
+        "m1_yoy": null,
         "m2_yoy": 9.6313
       },
       {
@@ -2778,7 +2778,7 @@
         "margin_yoy": -43.9246,
         "excess": -4.2217,
         "action_point": false,
-        "m1_yoy": 14.8871,
+        "m1_yoy": null,
         "m2_yoy": 10.2627
       },
       {
@@ -2787,7 +2787,7 @@
         "margin_yoy": -47.0535,
         "excess": -2.2993,
         "action_point": false,
-        "m1_yoy": 13.5323,
+        "m1_yoy": null,
         "m2_yoy": 9.4069
       },
       {
@@ -2796,7 +2796,7 @@
         "margin_yoy": -41.6268,
         "excess": -1.8829,
         "action_point": false,
-        "m1_yoy": 13.6963,
+        "m1_yoy": null,
         "m2_yoy": 9.3403
       },
       {
@@ -2805,7 +2805,7 @@
         "margin_yoy": -37.4035,
         "excess": -0.6322,
         "action_point": false,
-        "m1_yoy": 15.8258,
+        "m1_yoy": null,
         "m2_yoy": 8.7987
       },
       {
@@ -2814,7 +2814,7 @@
         "margin_yoy": -37.2381,
         "excess": -3.1661,
         "action_point": false,
-        "m1_yoy": 16.083,
+        "m1_yoy": null,
         "m2_yoy": 9.3719
       },
       {
@@ -2823,7 +2823,7 @@
         "margin_yoy": -37.4041,
         "excess": -9.2513,
         "action_point": false,
-        "m1_yoy": 18.0977,
+        "m1_yoy": null,
         "m2_yoy": 9.2382
       },
       {
@@ -2832,7 +2832,7 @@
         "margin_yoy": -33.3714,
         "excess": -11.2788,
         "action_point": false,
-        "m1_yoy": 16.9868,
+        "m1_yoy": null,
         "m2_yoy": 8.629
       },
       {
@@ -2841,7 +2841,7 @@
         "margin_yoy": -27.2658,
         "excess": -6.8216,
         "action_point": false,
-        "m1_yoy": 17.948,
+        "m1_yoy": null,
         "m2_yoy": 8.4194
       },
       {
@@ -2850,7 +2850,7 @@
         "margin_yoy": -26.5045,
         "excess": -17.5382,
         "action_point": false,
-        "m1_yoy": 13.8782,
+        "m1_yoy": null,
         "m2_yoy": 7.4844
       },
       {
@@ -2859,7 +2859,7 @@
         "margin_yoy": -4.3823,
         "excess": -11.3327,
         "action_point": false,
-        "m1_yoy": 13.835,
+        "m1_yoy": null,
         "m2_yoy": 6.4327
       },
       {
@@ -2868,7 +2868,7 @@
         "margin_yoy": 10.405,
         "excess": -11.6286,
         "action_point": false,
-        "m1_yoy": 11.1184,
+        "m1_yoy": null,
         "m2_yoy": 6.1044
       },
       {
@@ -2877,7 +2877,7 @@
         "margin_yoy": 24.8419,
         "excess": 1.349,
         "action_point": false,
-        "m1_yoy": 5.6877,
+        "m1_yoy": null,
         "m2_yoy": 3.7479
       },
       {
@@ -2886,7 +2886,7 @@
         "margin_yoy": 29.9736,
         "excess": 0.3225,
         "action_point": false,
-        "m1_yoy": 5.8062,
+        "m1_yoy": null,
         "m2_yoy": 2.2765
       },
       {
@@ -2895,7 +2895,7 @@
         "margin_yoy": 32.0563,
         "excess": -17.734,
         "action_point": false,
-        "m1_yoy": 8.4609,
+        "m1_yoy": null,
         "m2_yoy": 2.5002
       },
       {
@@ -2904,7 +2904,7 @@
         "margin_yoy": 36.1975,
         "excess": -10.9353,
         "action_point": false,
-        "m1_yoy": 8.4236,
+        "m1_yoy": null,
         "m2_yoy": 1.6348
       },
       {
@@ -2913,7 +2913,7 @@
         "margin_yoy": 42.0845,
         "excess": 6.1774,
         "action_point": false,
-        "m1_yoy": 5.4232,
+        "m1_yoy": null,
         "m2_yoy": 1.9509
       },
       {
@@ -2922,7 +2922,7 @@
         "margin_yoy": 25.2634,
         "excess": 7.0639,
         "action_point": true,
-        "m1_yoy": 5.7249,
+        "m1_yoy": null,
         "m2_yoy": 1.8913
       },
       {
@@ -2931,7 +2931,7 @@
         "margin_yoy": 21.213,
         "excess": 8.9564,
         "action_point": false,
-        "m1_yoy": 4.3887,
+        "m1_yoy": null,
         "m2_yoy": 1.9954
       },
       {
@@ -2940,7 +2940,7 @@
         "margin_yoy": 16.9341,
         "excess": 5.3361,
         "action_point": false,
-        "m1_yoy": 3.6992,
+        "m1_yoy": null,
         "m2_yoy": 2.0795
       },
       {
@@ -2949,7 +2949,7 @@
         "margin_yoy": 13.5957,
         "excess": 10.8141,
         "action_point": false,
-        "m1_yoy": 5.3434,
+        "m1_yoy": null,
         "m2_yoy": 2.6575
       },
       {
@@ -2958,7 +2958,7 @@
         "margin_yoy": 13.5506,
         "excess": 5.4627,
         "action_point": false,
-        "m1_yoy": 6.0844,
+        "m1_yoy": null,
         "m2_yoy": 3.0384
       },
       {
@@ -2967,7 +2967,7 @@
         "margin_yoy": 14.3268,
         "excess": -0.0899,
         "action_point": false,
-        "m1_yoy": 6.1215,
+        "m1_yoy": null,
         "m2_yoy": 3.3047
       },
       {
@@ -2976,7 +2976,7 @@
         "margin_yoy": 23.2489,
         "excess": 15.472,
         "action_point": false,
-        "m1_yoy": 8.6393,
+        "m1_yoy": null,
         "m2_yoy": 3.1936
       },
       {
@@ -2985,7 +2985,7 @@
         "margin_yoy": 19.5424,
         "excess": 6.7014,
         "action_point": false,
-        "m1_yoy": 8.5302,
+        "m1_yoy": null,
         "m2_yoy": 3.6536
       },
       {
@@ -2994,7 +2994,7 @@
         "margin_yoy": 22.6729,
         "excess": 2.8479,
         "action_point": false,
-        "m1_yoy": 10.4914,
+        "m1_yoy": null,
         "m2_yoy": 4.3797
       },
       {
@@ -3003,7 +3003,7 @@
         "margin_yoy": 32.361,
         "excess": 12.1244,
         "action_point": false,
-        "m1_yoy": 10.2836,
+        "m1_yoy": null,
         "m2_yoy": 4.5266
       },
       {
@@ -3012,7 +3012,7 @@
         "margin_yoy": 27.9394,
         "excess": 14.6146,
         "action_point": false,
-        "m1_yoy": 11.0579,
+        "m1_yoy": null,
         "m2_yoy": 5.2561
       },
       {
@@ -3021,7 +3021,7 @@
         "margin_yoy": 22.1056,
         "excess": 7.2752,
         "action_point": true,
-        "m1_yoy": 11.9423,
+        "m1_yoy": null,
         "m2_yoy": 5.6144
       },
       {
@@ -3030,7 +3030,7 @@
         "margin_yoy": 32.4576,
         "excess": 9.1148,
         "action_point": false,
-        "m1_yoy": 13.853,
+        "m1_yoy": null,
         "m2_yoy": 5.7939
       },
       {
@@ -3039,7 +3039,7 @@
         "margin_yoy": 31.1818,
         "excess": 3.3286,
         "action_point": false,
-        "m1_yoy": 13.7099,
+        "m1_yoy": null,
         "m2_yoy": 6.4209
       },
       {
@@ -3048,7 +3048,7 @@
         "margin_yoy": 28.8274,
         "excess": 11.5425,
         "action_point": false,
-        "m1_yoy": 16.1137,
+        "m1_yoy": null,
         "m2_yoy": 8.1567
       },
       {
@@ -3057,7 +3057,7 @@
         "margin_yoy": 15.0892,
         "excess": -0.9682,
         "action_point": false,
-        "m1_yoy": 21.3187,
+        "m1_yoy": null,
         "m2_yoy": 9.7043
       },
       {
@@ -3066,7 +3066,7 @@
         "margin_yoy": 3.3746,
         "excess": 4.2332,
         "action_point": false,
-        "m1_yoy": 20.3941,
+        "m1_yoy": null,
         "m2_yoy": 9.5519
       },
       {
@@ -3075,7 +3075,7 @@
         "margin_yoy": 4.4821,
         "excess": -1.434,
         "action_point": false,
-        "m1_yoy": 19.9169,
+        "m1_yoy": null,
         "m2_yoy": 9.3061
       },
       {
@@ -3084,7 +3084,7 @@
         "margin_yoy": -1.7489,
         "excess": -7.2346,
         "action_point": false,
-        "m1_yoy": 19.7167,
+        "m1_yoy": null,
         "m2_yoy": 9.6427
       },
       {
@@ -3093,7 +3093,7 @@
         "margin_yoy": -3.8453,
         "excess": -3.6465,
         "action_point": false,
-        "m1_yoy": 18.2506,
+        "m1_yoy": null,
         "m2_yoy": 9.755
       },
       {
@@ -3102,7 +3102,7 @@
         "margin_yoy": -5.2082,
         "excess": -7.2598,
         "action_point": false,
-        "m1_yoy": 19.385,
+        "m1_yoy": null,
         "m2_yoy": 10.2678
       },
       {
@@ -3111,7 +3111,7 @@
         "margin_yoy": -7.4383,
         "excess": -10.3448,
         "action_point": false,
-        "m1_yoy": 18.1532,
+        "m1_yoy": null,
         "m2_yoy": 10.058
       },
       {
@@ -3120,7 +3120,7 @@
         "margin_yoy": -6.921,
         "excess": -13.1205,
         "action_point": false,
-        "m1_yoy": 17.5942,
+        "m1_yoy": null,
         "m2_yoy": 9.8356
       },
       {
@@ -3129,7 +3129,7 @@
         "margin_yoy": -7.1295,
         "excess": -9.6509,
         "action_point": false,
-        "m1_yoy": 18.0609,
+        "m1_yoy": null,
         "m2_yoy": 9.6579
       },
       {
@@ -3138,7 +3138,7 @@
         "margin_yoy": -11.4099,
         "excess": -8.8672,
         "action_point": false,
-        "m1_yoy": 16.3277,
+        "m1_yoy": null,
         "m2_yoy": 9.2624
       },
       {
@@ -3147,7 +3147,7 @@
         "margin_yoy": -7.044,
         "excess": -10.1735,
         "action_point": false,
-        "m1_yoy": 16.0081,
+        "m1_yoy": null,
         "m2_yoy": 9.1428
       },
       {
@@ -3156,7 +3156,7 @@
         "margin_yoy": -9.0103,
         "excess": -15.4899,
         "action_point": false,
-        "m1_yoy": 16.1005,
+        "m1_yoy": null,
         "m2_yoy": 7.8155
       },
       {
@@ -3165,7 +3165,7 @@
         "margin_yoy": 3.7327,
         "excess": -11.764,
         "action_point": false,
-        "m1_yoy": 11.407,
+        "m1_yoy": null,
         "m2_yoy": 6.4484
       },
       {
@@ -3174,7 +3174,7 @@
         "margin_yoy": 13.7061,
         "excess": -13.5321,
         "action_point": false,
-        "m1_yoy": 12.6975,
+        "m1_yoy": null,
         "m2_yoy": 7.0628
       },
       {
@@ -3183,7 +3183,7 @@
         "margin_yoy": 7.9794,
         "excess": -4.6501,
         "action_point": false,
-        "m1_yoy": 13.8126,
+        "m1_yoy": null,
         "m2_yoy": 7.387
       },
       {
@@ -3192,7 +3192,7 @@
         "margin_yoy": 15.6322,
         "excess": 1.9031,
         "action_point": false,
-        "m1_yoy": 11.9969,
+        "m1_yoy": null,
         "m2_yoy": 7.5276
       },
       {
@@ -3201,7 +3201,7 @@
         "margin_yoy": 17.7023,
         "excess": 4.2282,
         "action_point": false,
-        "m1_yoy": 13.7261,
+        "m1_yoy": null,
         "m2_yoy": 8.2632
       },
       {
@@ -3210,7 +3210,7 @@
         "margin_yoy": 25.264,
         "excess": 11.2677,
         "action_point": false,
-        "m1_yoy": 12.5979,
+        "m1_yoy": null,
         "m2_yoy": 7.6914
       },
       {
@@ -3219,7 +3219,7 @@
         "margin_yoy": 20.8438,
         "excess": 10.1958,
         "action_point": false,
-        "m1_yoy": 11.9735,
+        "m1_yoy": null,
         "m2_yoy": 7.3162
       },
       {
@@ -3228,7 +3228,7 @@
         "margin_yoy": 22.1024,
         "excess": 10.839,
         "action_point": false,
-        "m1_yoy": 11.2627,
+        "m1_yoy": null,
         "m2_yoy": 7.4072
       },
       {
@@ -3237,7 +3237,7 @@
         "margin_yoy": 21.9371,
         "excess": 7.7739,
         "action_point": true,
-        "m1_yoy": 12.0602,
+        "m1_yoy": null,
         "m2_yoy": 7.1015
       },
       {
@@ -3246,7 +3246,7 @@
         "margin_yoy": 27.4345,
         "excess": 3.1096,
         "action_point": false,
-        "m1_yoy": 11.9475,
+        "m1_yoy": null,
         "m2_yoy": 6.9809
       },
       {
@@ -3255,7 +3255,7 @@
         "margin_yoy": 27.0224,
         "excess": 9.1532,
         "action_point": false,
-        "m1_yoy": 10.8922,
+        "m1_yoy": null,
         "m2_yoy": 6.8023
       },
       {
@@ -3264,7 +3264,7 @@
         "margin_yoy": 31.4412,
         "excess": 8.9301,
         "action_point": false,
-        "m1_yoy": 9.9178,
+        "m1_yoy": null,
         "m2_yoy": 6.6336
       },
       {
@@ -3273,7 +3273,7 @@
         "margin_yoy": 29.3535,
         "excess": 13.4212,
         "action_point": false,
-        "m1_yoy": 8.479,
+        "m1_yoy": null,
         "m2_yoy": 6.4619
       },
       {
@@ -3282,7 +3282,7 @@
         "margin_yoy": 27.6251,
         "excess": 10.9272,
         "action_point": false,
-        "m1_yoy": 8.4377,
+        "m1_yoy": null,
         "m2_yoy": 6.2184
       },
       {
@@ -3291,7 +3291,7 @@
         "margin_yoy": 29.9999,
         "excess": 5.6348,
         "action_point": true,
-        "m1_yoy": 8.8275,
+        "m1_yoy": null,
         "m2_yoy": 6.7419
       },
       {
@@ -3300,7 +3300,7 @@
         "margin_yoy": 29.8591,
         "excess": 2.5288,
         "action_point": false,
-        "m1_yoy": 8.195,
+        "m1_yoy": null,
         "m2_yoy": 6.1157
       },
       {
@@ -3309,7 +3309,7 @@
         "margin_yoy": 34.7859,
         "excess": 5.097,
         "action_point": false,
-        "m1_yoy": 8.7708,
+        "m1_yoy": null,
         "m2_yoy": 5.494
       },
       {
@@ -3318,7 +3318,7 @@
         "margin_yoy": 25.6171,
         "excess": 6.5924,
         "action_point": true,
-        "m1_yoy": 9.6808,
+        "m1_yoy": null,
         "m2_yoy": 5.9259
       },
       {
@@ -3327,7 +3327,7 @@
         "margin_yoy": 28.626,
         "excess": 5.7516,
         "action_point": false,
-        "m1_yoy": 10.6689,
+        "m1_yoy": null,
         "m2_yoy": 6.3576
       },
       {
@@ -3336,7 +3336,7 @@
         "margin_yoy": 20.7953,
         "excess": 1.4297,
         "action_point": false,
-        "m1_yoy": 11.1035,
+        "m1_yoy": null,
         "m2_yoy": 6.1301
       },
       {
@@ -3345,7 +3345,7 @@
         "margin_yoy": 16.2764,
         "excess": -1.6532,
         "action_point": false,
-        "m1_yoy": 10.8338,
+        "m1_yoy": null,
         "m2_yoy": 6.2801
       },
       {
@@ -3354,7 +3354,7 @@
         "margin_yoy": 18.3653,
         "excess": 0.4821,
         "action_point": false,
-        "m1_yoy": 10.4516,
+        "m1_yoy": null,
         "m2_yoy": 6.5442
       },
       {
@@ -3363,7 +3363,7 @@
         "margin_yoy": 23.2017,
         "excess": 1.197,
         "action_point": false,
-        "m1_yoy": 11.8239,
+        "m1_yoy": null,
         "m2_yoy": 6.4915
       },
       {
@@ -3372,7 +3372,7 @@
         "margin_yoy": 21.007,
         "excess": 6.5562,
         "action_point": false,
-        "m1_yoy": 11.6731,
+        "m1_yoy": null,
         "m2_yoy": 6.6109
       },
       {
@@ -3381,7 +3381,7 @@
         "margin_yoy": 20.8854,
         "excess": -1.7605,
         "action_point": false,
-        "m1_yoy": 9.3139,
+        "m1_yoy": null,
         "m2_yoy": 6.2595
       },
       {
@@ -3390,7 +3390,7 @@
         "margin_yoy": 16.4142,
         "excess": -0.8527,
         "action_point": false,
-        "m1_yoy": 10.7366,
+        "m1_yoy": null,
         "m2_yoy": 6.0495
       },
       {
@@ -3399,7 +3399,7 @@
         "margin_yoy": 10.7559,
         "excess": -3.9606,
         "action_point": false,
-        "m1_yoy": 9.5485,
+        "m1_yoy": null,
         "m2_yoy": 5.5232
       },
       {
@@ -3408,7 +3408,7 @@
         "margin_yoy": 8.7566,
         "excess": -5.7186,
         "action_point": false,
-        "m1_yoy": 9.5272,
+        "m1_yoy": null,
         "m2_yoy": 5.8078
       },
       {
@@ -3417,7 +3417,7 @@
         "margin_yoy": 3.6058,
         "excess": -7.6834,
         "action_point": false,
-        "m1_yoy": 10.6013,
+        "m1_yoy": null,
         "m2_yoy": 5.9448
       },
       {
@@ -3426,7 +3426,7 @@
         "margin_yoy": -0.344,
         "excess": -12.2813,
         "action_point": false,
-        "m1_yoy": 8.9729,
+        "m1_yoy": null,
         "m2_yoy": 6.0589
       },
       {
@@ -3435,7 +3435,7 @@
         "margin_yoy": 0.5636,
         "excess": -12.5181,
         "action_point": false,
-        "m1_yoy": 10.8755,
+        "m1_yoy": null,
         "m2_yoy": 6.484
       },
       {
@@ -3444,7 +3444,7 @@
         "margin_yoy": 6.1736,
         "excess": -4.2109,
         "action_point": false,
-        "m1_yoy": 9.234,
+        "m1_yoy": null,
         "m2_yoy": 6.1241
       },
       {
@@ -3453,7 +3453,7 @@
         "margin_yoy": 15.7344,
         "excess": 5.0339,
         "action_point": false,
-        "m1_yoy": 8.3118,
+        "m1_yoy": null,
         "m2_yoy": 6.0021
       },
       {
@@ -3462,7 +3462,7 @@
         "margin_yoy": 13.9492,
         "excess": 4.3685,
         "action_point": false,
-        "m1_yoy": 7.0059,
+        "m1_yoy": null,
         "m2_yoy": 5.6406
       },
       {
@@ -3471,7 +3471,7 @@
         "margin_yoy": 9.0961,
         "excess": 3.9203,
         "action_point": false,
-        "m1_yoy": 7.0927,
+        "m1_yoy": null,
         "m2_yoy": 5.4842
       },
       {
@@ -3480,7 +3480,7 @@
         "margin_yoy": 6.4317,
         "excess": -2.5848,
         "action_point": false,
-        "m1_yoy": 7.0457,
+        "m1_yoy": null,
         "m2_yoy": 5.361
       },
       {
@@ -3489,7 +3489,7 @@
         "margin_yoy": 2.986,
         "excess": 4.5007,
         "action_point": false,
-        "m1_yoy": 8.2242,
+        "m1_yoy": null,
         "m2_yoy": 5.53
       },
       {
@@ -3498,7 +3498,7 @@
         "margin_yoy": -1.3141,
         "excess": 1.4216,
         "action_point": false,
-        "m1_yoy": 6.2552,
+        "m1_yoy": null,
         "m2_yoy": 5.6845
       },
       {
@@ -3507,7 +3507,7 @@
         "margin_yoy": 4.2714,
         "excess": 1.1622,
         "action_point": false,
-        "m1_yoy": 4.8569,
+        "m1_yoy": null,
         "m2_yoy": 5.4524
       },
       {
@@ -3516,7 +3516,7 @@
         "margin_yoy": 3.8419,
         "excess": 3.1228,
         "action_point": false,
-        "m1_yoy": 6.5265,
+        "m1_yoy": null,
         "m2_yoy": 5.8689
       },
       {
@@ -3525,7 +3525,7 @@
         "margin_yoy": 1.5508,
         "excess": 2.3633,
         "action_point": false,
-        "m1_yoy": 5.1744,
+        "m1_yoy": null,
         "m2_yoy": 5.7205
       },
       {
@@ -3534,7 +3534,7 @@
         "margin_yoy": 0.2733,
         "excess": 3.1462,
         "action_point": false,
-        "m1_yoy": 5.116,
+        "m1_yoy": null,
         "m2_yoy": 6.0423
       },
       {
@@ -3543,7 +3543,7 @@
         "margin_yoy": -6.0934,
         "excess": 2.0239,
         "action_point": false,
-        "m1_yoy": 4.0977,
+        "m1_yoy": null,
         "m2_yoy": 5.7126
       },
       {
@@ -3552,7 +3552,7 @@
         "margin_yoy": -6.5912,
         "excess": -6.1504,
         "action_point": false,
-        "m1_yoy": 5.7869,
+        "m1_yoy": null,
         "m2_yoy": 6.2187
       },
       {
@@ -3561,7 +3561,7 @@
         "margin_yoy": -9.9617,
         "excess": -8.94,
         "action_point": false,
-        "m1_yoy": 7.1906,
+        "m1_yoy": null,
         "m2_yoy": 6.5966
       },
       {
@@ -3570,7 +3570,7 @@
         "margin_yoy": -9.5637,
         "excess": -8.948,
         "action_point": false,
-        "m1_yoy": 8.773,
+        "m1_yoy": null,
         "m2_yoy": 6.8382
       },
       {
@@ -3579,7 +3579,7 @@
         "margin_yoy": -11.0083,
         "excess": -12.7718,
         "action_point": false,
-        "m1_yoy": 7.7866,
+        "m1_yoy": null,
         "m2_yoy": 6.8975
       },
       {
@@ -3588,7 +3588,7 @@
         "margin_yoy": -3.3016,
         "excess": -6.4465,
         "action_point": false,
-        "m1_yoy": 6.8669,
+        "m1_yoy": null,
         "m2_yoy": 7.0017
       },
       {
@@ -3597,7 +3597,7 @@
         "margin_yoy": -1.1247,
         "excess": -11.0959,
         "action_point": false,
-        "m1_yoy": 9.6598,
+        "m1_yoy": null,
         "m2_yoy": 7.2465
       },
       {
@@ -3606,7 +3606,7 @@
         "margin_yoy": 8.7146,
         "excess": -4.1591,
         "action_point": false,
-        "m1_yoy": 8.9482,
+        "m1_yoy": null,
         "m2_yoy": 7.2368
       },
       {
@@ -3615,7 +3615,7 @@
         "margin_yoy": 1.9105,
         "excess": -0.3114,
         "action_point": false,
-        "m1_yoy": 9.9717,
+        "m1_yoy": null,
         "m2_yoy": 7.3422
       },
       {
@@ -3624,7 +3624,7 @@
         "margin_yoy": 4.7655,
         "excess": -0.8361,
         "action_point": false,
-        "m1_yoy": 8.6212,
+        "m1_yoy": null,
         "m2_yoy": 7.2396
       },
       {
@@ -3633,7 +3633,7 @@
         "margin_yoy": 5.1501,
         "excess": -4.4933,
         "action_point": false,
-        "m1_yoy": 7.8212,
+        "m1_yoy": null,
         "m2_yoy": 6.8373
       },
       {
@@ -3642,7 +3642,7 @@
         "margin_yoy": 13.6201,
         "excess": -3.833,
         "action_point": false,
-        "m1_yoy": 9.5613,
+        "m1_yoy": null,
         "m2_yoy": 6.3682
       },
       {
@@ -3651,7 +3651,7 @@
         "margin_yoy": 19.9261,
         "excess": -2.2427,
         "action_point": false,
-        "m1_yoy": 8.4788,
+        "m1_yoy": null,
         "m2_yoy": 6.275
       },
       {
@@ -3660,7 +3660,7 @@
         "margin_yoy": 19.3766,
         "excess": 4.6724,
         "action_point": false,
-        "m1_yoy": 9.4815,
+        "m1_yoy": null,
         "m2_yoy": 6.3324
       },
       {
@@ -3669,7 +3669,7 @@
         "margin_yoy": 19.31,
         "excess": 3.9221,
         "action_point": false,
-        "m1_yoy": 7.9035,
+        "m1_yoy": null,
         "m2_yoy": 6.1091
       },
       {
@@ -3678,7 +3678,7 @@
         "margin_yoy": 18.9637,
         "excess": 3.9046,
         "action_point": true,
-        "m1_yoy": 8.7741,
+        "m1_yoy": null,
         "m2_yoy": 5.9905
       },
       {
@@ -3687,7 +3687,7 @@
         "margin_yoy": 19.8144,
         "excess": 4.3857,
         "action_point": false,
-        "m1_yoy": 8.6555,
+        "m1_yoy": null,
         "m2_yoy": 5.6643
       },
       {
@@ -3696,7 +3696,7 @@
         "margin_yoy": 15.8203,
         "excess": 2.1642,
         "action_point": true,
-        "m1_yoy": 9.3918,
+        "m1_yoy": null,
         "m2_yoy": 5.663
       },
       {
@@ -3705,7 +3705,7 @@
         "margin_yoy": 16.9379,
         "excess": 3.0866,
         "action_point": false,
-        "m1_yoy": 8.2857,
+        "m1_yoy": null,
         "m2_yoy": 5.4505
       },
       {
@@ -3714,7 +3714,7 @@
         "margin_yoy": 12.1563,
         "excess": -3.9925,
         "action_point": false,
-        "m1_yoy": 7.4358,
+        "m1_yoy": null,
         "m2_yoy": 5.2869
       },
       {
@@ -3723,7 +3723,7 @@
         "margin_yoy": 16.0528,
         "excess": -4.9305,
         "action_point": false,
-        "m1_yoy": 8.2802,
+        "m1_yoy": null,
         "m2_yoy": 5.1612
       },
       {
@@ -3732,7 +3732,7 @@
         "margin_yoy": 16.1953,
         "excess": -4.0561,
         "action_point": false,
-        "m1_yoy": 8.2761,
+        "m1_yoy": null,
         "m2_yoy": 4.8059
       },
       {
@@ -3741,7 +3741,7 @@
         "margin_yoy": 21.4265,
         "excess": 2.0421,
         "action_point": false,
-        "m1_yoy": 7.9066,
+        "m1_yoy": null,
         "m2_yoy": 4.8871
       },
       {
@@ -3750,7 +3750,7 @@
         "margin_yoy": 20.2615,
         "excess": -3.6342,
         "action_point": false,
-        "m1_yoy": 7.8215,
+        "m1_yoy": null,
         "m2_yoy": 4.3903
       },
       {
@@ -3759,7 +3759,7 @@
         "margin_yoy": 13.4404,
         "excess": -1.4368,
         "action_point": false,
-        "m1_yoy": 6.1865,
+        "m1_yoy": null,
         "m2_yoy": 4.1397
       },
       {
@@ -3768,7 +3768,7 @@
         "margin_yoy": 11.6954,
         "excess": 0.0681,
         "action_point": false,
-        "m1_yoy": 6.215,
+        "m1_yoy": null,
         "m2_yoy": 4.0784
       },
       {
@@ -3777,7 +3777,7 @@
         "margin_yoy": 10.4107,
         "excess": -0.6906,
         "action_point": false,
-        "m1_yoy": 6.0738,
+        "m1_yoy": null,
         "m2_yoy": 3.8028
       },
       {
@@ -3786,7 +3786,7 @@
         "margin_yoy": 14.7875,
         "excess": 2.5691,
         "action_point": false,
-        "m1_yoy": 4.0586,
+        "m1_yoy": null,
         "m2_yoy": 3.8581
       },
       {
@@ -3795,7 +3795,7 @@
         "margin_yoy": 10.7269,
         "excess": -1.465,
         "action_point": false,
-        "m1_yoy": 3.6171,
+        "m1_yoy": null,
         "m2_yoy": 4.0993
       },
       {
@@ -3804,7 +3804,7 @@
         "margin_yoy": 9.8208,
         "excess": -4.1842,
         "action_point": false,
-        "m1_yoy": 3.6891,
+        "m1_yoy": null,
         "m2_yoy": 3.8957
       },
       {
@@ -3813,7 +3813,7 @@
         "margin_yoy": 9.3582,
         "excess": -7.9435,
         "action_point": false,
-        "m1_yoy": 2.9957,
+        "m1_yoy": null,
         "m2_yoy": 3.8364
       },
       {
@@ -3822,7 +3822,7 @@
         "margin_yoy": 6.8926,
         "excess": -8.8261,
         "action_point": false,
-        "m1_yoy": 3.6743,
+        "m1_yoy": null,
         "m2_yoy": 3.6406
       },
       {
@@ -3831,7 +3831,7 @@
         "margin_yoy": -0.0318,
         "excess": -5.2738,
         "action_point": false,
-        "m1_yoy": 3.3093,
+        "m1_yoy": null,
         "m2_yoy": 3.3079
       },
       {
@@ -3840,7 +3840,7 @@
         "margin_yoy": -5.5511,
         "excess": -9.5661,
         "action_point": false,
-        "m1_yoy": 2.0331,
+        "m1_yoy": null,
         "m2_yoy": 3.1733
       },
       {
@@ -3849,7 +3849,7 @@
         "margin_yoy": -13.77,
         "excess": -7.4221,
         "action_point": false,
-        "m1_yoy": 3.9482,
+        "m1_yoy": null,
         "m2_yoy": 3.6386
       },
       {
@@ -3858,7 +3858,7 @@
         "margin_yoy": -14.6133,
         "excess": -10.3671,
         "action_point": false,
-        "m1_yoy": 2.6031,
+        "m1_yoy": null,
         "m2_yoy": 4.0244
       },
       {
@@ -3867,7 +3867,7 @@
         "margin_yoy": -9.8996,
         "excess": -12.4875,
         "action_point": false,
-        "m1_yoy": 3.7379,
+        "m1_yoy": null,
         "m2_yoy": 3.993
       },
       {
@@ -3876,7 +3876,7 @@
         "margin_yoy": -11.0381,
         "excess": -18.3838,
         "action_point": false,
-        "m1_yoy": 1.8472,
+        "m1_yoy": null,
         "m2_yoy": 3.8879
       },
       {
@@ -3885,7 +3885,7 @@
         "margin_yoy": -9.7473,
         "excess": -20.9038,
         "action_point": false,
-        "m1_yoy": 3.2867,
+        "m1_yoy": null,
         "m2_yoy": 3.9812
       },
       {
@@ -3894,7 +3894,7 @@
         "margin_yoy": -14.9773,
         "excess": -16.5754,
         "action_point": false,
-        "m1_yoy": 3.6563,
+        "m1_yoy": null,
         "m2_yoy": 4.3428
       },
       {
@@ -3903,7 +3903,7 @@
         "margin_yoy": -7.8257,
         "excess": -15.8322,
         "action_point": false,
-        "m1_yoy": 4.6915,
+        "m1_yoy": null,
         "m2_yoy": 4.7081
       },
       {
@@ -3912,7 +3912,7 @@
         "margin_yoy": -7.7592,
         "excess": -13.482,
         "action_point": false,
-        "m1_yoy": 4.9302,
+        "m1_yoy": null,
         "m2_yoy": 5.0245
       },
       {
@@ -3921,7 +3921,7 @@
         "margin_yoy": -13.4123,
         "excess": -14.1494,
         "action_point": false,
-        "m1_yoy": 4.5233,
+        "m1_yoy": null,
         "m2_yoy": 5.2815
       },
       {
@@ -3930,7 +3930,7 @@
         "margin_yoy": -14.2281,
         "excess": -16.3091,
         "action_point": false,
-        "m1_yoy": 5.5654,
+        "m1_yoy": null,
         "m2_yoy": 5.6263
       },
       {
@@ -3939,7 +3939,7 @@
         "margin_yoy": -8.7289,
         "excess": -20.8119,
         "action_point": false,
-        "m1_yoy": 5.6358,
+        "m1_yoy": null,
         "m2_yoy": 6.5058
       },
       {
@@ -3948,7 +3948,7 @@
         "margin_yoy": -4.9125,
         "excess": -18.9375,
         "action_point": false,
-        "m1_yoy": 6.7022,
+        "m1_yoy": null,
         "m2_yoy": 7.0938
       },
       {
@@ -3957,7 +3957,7 @@
         "margin_yoy": 4.4988,
         "excess": -24.2864,
         "action_point": false,
-        "m1_yoy": 6.3375,
+        "m1_yoy": null,
         "m2_yoy": 6.6776
       },
       {
@@ -3966,7 +3966,7 @@
         "margin_yoy": -1.1648,
         "excess": -20.3549,
         "action_point": false,
-        "m1_yoy": 6.2992,
+        "m1_yoy": null,
         "m2_yoy": 6.6903
       },
       {
@@ -3975,7 +3975,7 @@
         "margin_yoy": -6.2074,
         "excess": -12.5158,
         "action_point": false,
-        "m1_yoy": 6.3241,
+        "m1_yoy": null,
         "m2_yoy": 6.8046
       },
       {
@@ -3984,7 +3984,7 @@
         "margin_yoy": -16.5017,
         "excess": -7.7471,
         "action_point": false,
-        "m1_yoy": 14.2929,
+        "m1_yoy": null,
         "m2_yoy": 10.1357
       },
       {
@@ -3993,7 +3993,7 @@
         "margin_yoy": -10.8753,
         "excess": -9.6713,
         "action_point": false,
-        "m1_yoy": 26.8751,
+        "m1_yoy": null,
         "m2_yoy": 16.9281
       },
       {
@@ -4002,7 +4002,7 @@
         "margin_yoy": -2.8498,
         "excess": -13.403,
         "action_point": false,
-        "m1_yoy": 326.5375,
+        "m1_yoy": null,
         "m2_yoy": 21.956
       },
       {
@@ -4011,7 +4011,7 @@
         "margin_yoy": -1.95,
         "excess": -7.1923,
         "action_point": false,
-        "m1_yoy": 330.7074,
+        "m1_yoy": null,
         "m2_yoy": 22.8437
       },
       {
@@ -4020,7 +4020,7 @@
         "margin_yoy": 1.9416,
         "excess": -7.8389,
         "action_point": false,
-        "m1_yoy": 332.555,
+        "m1_yoy": null,
         "m2_yoy": 23.1655
       },
       {
@@ -4029,7 +4029,7 @@
         "margin_yoy": 14.2775,
         "excess": -5.1651,
         "action_point": false,
-        "m1_yoy": 336.5596,
+        "m1_yoy": null,
         "m2_yoy": 22.9512
       },
       {
@@ -4038,7 +4038,7 @@
         "margin_yoy": 17.7032,
         "excess": 4.8583,
         "action_point": false,
-        "m1_yoy": 338.2598,
+        "m1_yoy": null,
         "m2_yoy": 23.6293
       },
       {
@@ -4047,7 +4047,7 @@
         "margin_yoy": 18.88,
         "excess": 11.2282,
         "action_point": false,
-        "m1_yoy": 339.9883,
+        "m1_yoy": null,
         "m2_yoy": 23.5345
       },
       {
@@ -4056,7 +4056,7 @@
         "margin_yoy": 28.1528,
         "excess": 12.9608,
         "action_point": false,
-        "m1_yoy": 345.132,
+        "m1_yoy": null,
         "m2_yoy": 24.1959
       },
       {
@@ -4065,7 +4065,7 @@
         "margin_yoy": 34.3247,
         "excess": 18.1624,
         "action_point": false,
-        "m1_yoy": 342.9844,
+        "m1_yoy": null,
         "m2_yoy": 24.5525
       },
       {
@@ -4074,7 +4074,7 @@
         "margin_yoy": 42.1481,
         "excess": 27.1231,
         "action_point": false,
-        "m1_yoy": 349.6895,
+        "m1_yoy": null,
         "m2_yoy": 25.6166
       },
       {
@@ -4083,7 +4083,7 @@
         "margin_yoy": 49.2643,
         "excess": 20.8771,
         "action_point": false,
-        "m1_yoy": 356.9182,
+        "m1_yoy": null,
         "m2_yoy": 26.7753
       },
       {
@@ -4092,7 +4092,7 @@
         "margin_yoy": 71.6183,
         "excess": 17.853,
         "action_point": false,
-        "m1_yoy": 331.5945,
+        "m1_yoy": null,
         "m2_yoy": 23.9518
       },
       {
@@ -4101,7 +4101,7 @@
         "margin_yoy": 61.4623,
         "excess": 17.8035,
         "action_point": false,
-        "m1_yoy": 290.8945,
+        "m1_yoy": null,
         "m2_yoy": 18.2241
       },
       {
@@ -4110,7 +4110,7 @@
         "margin_yoy": 55.9383,
         "excess": 17.9125,
         "action_point": false,
-        "m1_yoy": 18.2388,
+        "m1_yoy": null,
         "m2_yoy": 14.0853
       },
       {
@@ -4119,7 +4119,7 @@
         "margin_yoy": 50.8704,
         "excess": 12.0521,
         "action_point": true,
-        "m1_yoy": 16.4134,
+        "m1_yoy": null,
         "m2_yoy": 12.6081
       },
       {
@@ -4128,7 +4128,7 @@
         "margin_yoy": 37.5501,
         "excess": 3.2521,
         "action_point": false,
-        "m1_yoy": 16.0351,
+        "m1_yoy": null,
         "m2_yoy": 12.532
       },
       {
@@ -4137,7 +4137,7 @@
         "margin_yoy": 41.2051,
         "excess": 11.9331,
         "action_point": false,
-        "m1_yoy": 16.4778,
+        "m1_yoy": null,
         "m2_yoy": 13.1952
       },
       {
@@ -4146,7 +4146,7 @@
         "margin_yoy": 38.0229,
         "excess": 9.8793,
         "action_point": false,
-        "m1_yoy": 15.753,
+        "m1_yoy": null,
         "m2_yoy": 12.7859
       },
       {
@@ -4155,7 +4155,7 @@
         "margin_yoy": 41.945,
         "excess": 1.3038,
         "action_point": false,
-        "m1_yoy": 15.5313,
+        "m1_yoy": null,
         "m2_yoy": 12.8108
       },
       {
@@ -4164,7 +4164,7 @@
         "margin_yoy": 27.2088,
         "excess": 1.3844,
         "action_point": true,
-        "m1_yoy": 14.836,
+        "m1_yoy": null,
         "m2_yoy": 12.3109
       },
       {
@@ -4173,7 +4173,7 @@
         "margin_yoy": 16.9637,
         "excess": -10.0717,
         "action_point": false,
-        "m1_yoy": 14.6867,
+        "m1_yoy": null,
         "m2_yoy": 12.4662
       },
       {
@@ -4182,7 +4182,7 @@
         "margin_yoy": 3.8858,
         "excess": -17.6885,
         "action_point": false,
-        "m1_yoy": 13.6715,
+        "m1_yoy": null,
         "m2_yoy": 11.7189
       },
       {
@@ -4191,7 +4191,7 @@
         "margin_yoy": 2.6515,
         "excess": -12.1423,
         "action_point": false,
-        "m1_yoy": 12.4385,
+        "m1_yoy": null,
         "m2_yoy": 10.6049
       },
       {
@@ -4200,7 +4200,7 @@
         "margin_yoy": -2.7829,
         "excess": -16.7385,
         "action_point": false,
-        "m1_yoy": 11.2132,
+        "m1_yoy": null,
         "m2_yoy": 9.6296
       },
       {
@@ -4209,7 +4209,7 @@
         "margin_yoy": -8.7638,
         "excess": -7.4938,
         "action_point": false,
-        "m1_yoy": 9.2871,
+        "m1_yoy": null,
         "m2_yoy": 7.9012
       },
       {
@@ -4218,7 +4218,7 @@
         "margin_yoy": -12.6136,
         "excess": -10.9209,
         "action_point": false,
-        "m1_yoy": 7.3223,
+        "m1_yoy": null,
         "m2_yoy": 6.1607
       },
       {
@@ -4227,7 +4227,7 @@
         "margin_yoy": -22.521,
         "excess": -10.6511,
         "action_point": false,
-        "m1_yoy": 6.6175,
+        "m1_yoy": null,
         "m2_yoy": 5.7338
       },
       {
@@ -4236,7 +4236,7 @@
         "margin_yoy": -17.4747,
         "excess": -11.4269,
         "action_point": false,
-        "m1_yoy": 5.3818,
+        "m1_yoy": null,
         "m2_yoy": 4.9401
       },
       {
@@ -4245,7 +4245,7 @@
         "margin_yoy": -24.5471,
         "excess": -12.0615,
         "action_point": false,
-        "m1_yoy": 3.8104,
+        "m1_yoy": null,
         "m2_yoy": 3.8305
       },
       {
@@ -4254,7 +4254,7 @@
         "margin_yoy": -26.4759,
         "excess": -9.7074,
         "action_point": false,
-        "m1_yoy": 2.1545,
+        "m1_yoy": null,
         "m2_yoy": 2.6486
       },
       {
@@ -4263,7 +4263,7 @@
         "margin_yoy": -30.5861,
         "excess": -14.6819,
         "action_point": false,
-        "m1_yoy": 0.3195,
+        "m1_yoy": null,
         "m2_yoy": 1.4215
       },
       {
@@ -4272,7 +4272,7 @@
         "margin_yoy": -29.9168,
         "excess": -19.4066,
         "action_point": false,
-        "m1_yoy": -1.4026,
+        "m1_yoy": null,
         "m2_yoy": 0.3309
       },
       {
@@ -4281,7 +4281,7 @@
         "margin_yoy": -33.3357,
         "excess": -13.8541,
         "action_point": false,
-        "m1_yoy": -3.3626,
+        "m1_yoy": null,
         "m2_yoy": -0.967
       },
       {
@@ -4290,7 +4290,7 @@
         "margin_yoy": -22.7098,
         "excess": -13.0568,
         "action_point": false,
-        "m1_yoy": -4.7843,
+        "m1_yoy": null,
         "m2_yoy": -1.7118
       },
       {
@@ -4299,7 +4299,7 @@
         "margin_yoy": -25.2469,
         "excess": -16.0011,
         "action_point": false,
-        "m1_yoy": -6.0141,
+        "m1_yoy": null,
         "m2_yoy": -2.2196
       },
       {
@@ -4308,7 +4308,7 @@
         "margin_yoy": -19.2871,
         "excess": -9.9323,
         "action_point": false,
-        "m1_yoy": -8.4585,
+        "m1_yoy": null,
         "m2_yoy": -3.8564
       },
       {
@@ -4317,7 +4317,7 @@
         "margin_yoy": -18.2409,
         "excess": -19.1948,
         "action_point": false,
-        "m1_yoy": -10.116,
+        "m1_yoy": null,
         "m2_yoy": -4.6308
       },
       {
@@ -4326,7 +4326,7 @@
         "margin_yoy": -14.4465,
         "excess": -15.638,
         "action_point": false,
-        "m1_yoy": -10.229,
+        "m1_yoy": null,
         "m2_yoy": -4.0959
       },
       {
@@ -4335,7 +4335,7 @@
         "margin_yoy": -0.3244,
         "excess": -17.8274,
         "action_point": false,
-        "m1_yoy": -10.422,
+        "m1_yoy": null,
         "m2_yoy": -3.9347
       },
       {
@@ -4344,7 +4344,7 @@
         "margin_yoy": 1.8733,
         "excess": -9.2434,
         "action_point": false,
-        "m1_yoy": -10.5974,
+        "m1_yoy": null,
         "m2_yoy": -3.9783
       },
       {
@@ -4353,7 +4353,7 @@
         "margin_yoy": 0.2033,
         "excess": -13.7575,
         "action_point": false,
-        "m1_yoy": -10.7753,
+        "m1_yoy": null,
         "m2_yoy": -3.9831
       },
       {
@@ -4362,7 +4362,7 @@
         "margin_yoy": 2.5357,
         "excess": -17.1463,
         "action_point": false,
-        "m1_yoy": -10.5441,
+        "m1_yoy": null,
         "m2_yoy": -3.664
       },
       {
@@ -4371,7 +4371,7 @@
         "margin_yoy": -2.2078,
         "excess": -10.4908,
         "action_point": false,
-        "m1_yoy": -10.2351,
+        "m1_yoy": null,
         "m2_yoy": -3.3935
       },
       {
@@ -4380,7 +4380,7 @@
         "margin_yoy": 2.6568,
         "excess": -9.2938,
         "action_point": false,
-        "m1_yoy": -9.8455,
+        "m1_yoy": null,
         "m2_yoy": -3.0818
       },
       {
@@ -4389,7 +4389,7 @@
         "margin_yoy": 15.5137,
         "excess": -8.7731,
         "action_point": false,
-        "m1_yoy": -8.9107,
+        "m1_yoy": null,
         "m2_yoy": -2.409
       },
       {
@@ -4398,7 +4398,7 @@
         "margin_yoy": 9.4735,
         "excess": -9.322,
         "action_point": false,
-        "m1_yoy": -8.1441,
+        "m1_yoy": null,
         "m2_yoy": -2.0475
       },
       {
@@ -4407,7 +4407,7 @@
         "margin_yoy": 18.9923,
         "excess": -9.2265,
         "action_point": false,
-        "m1_yoy": -7.2207,
+        "m1_yoy": null,
         "m2_yoy": -1.4871
       },
       {
@@ -4416,7 +4416,7 @@
         "margin_yoy": 21.4907,
         "excess": -6.2775,
         "action_point": false,
-        "m1_yoy": -4.9862,
+        "m1_yoy": null,
         "m2_yoy": 0.1275
       },
       {
@@ -4425,7 +4425,7 @@
         "margin_yoy": 22.7099,
         "excess": 2.0213,
         "action_point": false,
-        "m1_yoy": -3.4825,
+        "m1_yoy": null,
         "m2_yoy": 0.9551
       },
       {
@@ -4434,7 +4434,7 @@
         "margin_yoy": 25.6549,
         "excess": -0.5555,
         "action_point": false,
-        "m1_yoy": -2.9732,
+        "m1_yoy": null,
         "m2_yoy": 0.917
       },
       {
@@ -4443,7 +4443,7 @@
         "margin_yoy": 18.8034,
         "excess": -3.9678,
         "action_point": false,
-        "m1_yoy": -2.2282,
+        "m1_yoy": null,
         "m2_yoy": 1.2943
       },
       {
@@ -4452,7 +4452,7 @@
         "margin_yoy": 14.2288,
         "excess": -6.0905,
         "action_point": false,
-        "m1_yoy": -1.7792,
+        "m1_yoy": null,
         "m2_yoy": 1.4631
       },
       {
@@ -4461,7 +4461,7 @@
         "margin_yoy": 15.6673,
         "excess": -9.4975,
         "action_point": false,
-        "m1_yoy": -0.8684,
+        "m1_yoy": null,
         "m2_yoy": 1.9719
       },
       {
@@ -4470,7 +4470,7 @@
         "margin_yoy": 19.4413,
         "excess": -14.7779,
         "action_point": false,
-        "m1_yoy": 0.0435,
+        "m1_yoy": null,
         "m2_yoy": 2.5155
       },
       {
@@ -4479,7 +4479,7 @@
         "margin_yoy": 28.3488,
         "excess": -7.6244,
         "action_point": false,
-        "m1_yoy": 0.8788,
+        "m1_yoy": null,
         "m2_yoy": 2.8881
       },
       {
@@ -4488,7 +4488,7 @@
         "margin_yoy": 34.7964,
         "excess": 2.7741,
         "action_point": false,
-        "m1_yoy": 1.945,
+        "m1_yoy": null,
         "m2_yoy": 3.401
       },
       {
@@ -4497,7 +4497,7 @@
         "margin_yoy": 28.3107,
         "excess": 5.0059,
         "action_point": false,
-        "m1_yoy": 2.3004,
+        "m1_yoy": null,
         "m2_yoy": 3.407
       },
       {
@@ -4506,7 +4506,7 @@
         "margin_yoy": 33.5166,
         "excess": 8.8852,
         "action_point": false,
-        "m1_yoy": 2.561,
+        "m1_yoy": null,
         "m2_yoy": 3.3794
       },
       {
@@ -4515,7 +4515,7 @@
         "margin_yoy": 23.5787,
         "excess": 6.6325,
         "action_point": true,
-        "m1_yoy": 2.6637,
+        "m1_yoy": null,
         "m2_yoy": 3.2815
       },
       {
@@ -4524,7 +4524,7 @@
         "margin_yoy": 12.2657,
         "excess": 5.3221,
         "action_point": false,
-        "m1_yoy": 2.8165,
+        "m1_yoy": null,
         "m2_yoy": 3.4339
       },
       {
@@ -4533,7 +4533,7 @@
         "margin_yoy": 9.6838,
         "excess": -0.7868,
         "action_point": false,
-        "m1_yoy": 3.4648,
+        "m1_yoy": null,
         "m2_yoy": 3.8942
       },
       {
@@ -4542,7 +4542,7 @@
         "margin_yoy": 13.7787,
         "excess": 2.0184,
         "action_point": false,
-        "m1_yoy": 3.5086,
+        "m1_yoy": null,
         "m2_yoy": 3.8691
       },
       {
@@ -4551,7 +4551,7 @@
         "margin_yoy": 24.5439,
         "excess": 11.0144,
         "action_point": false,
-        "m1_yoy": 3.8978,
+        "m1_yoy": null,
         "m2_yoy": 4.1308
       },
       {
@@ -4560,7 +4560,7 @@
         "margin_yoy": 26.1105,
         "excess": 11.3559,
         "action_point": false,
-        "m1_yoy": 4.2327,
+        "m1_yoy": null,
         "m2_yoy": 4.3853
       },
       {
@@ -4569,7 +4569,7 @@
         "margin_yoy": 32.937,
         "excess": 18.5015,
         "action_point": false,
-        "m1_yoy": 4.0698,
+        "m1_yoy": null,
         "m2_yoy": 4.2498
       },
       {
@@ -4578,7 +4578,7 @@
         "margin_yoy": 38.5242,
         "excess": 22.4164,
         "action_point": false,
-        "m1_yoy": 4.0658,
+        "m1_yoy": null,
         "m2_yoy": 4.2356
       },
       {
@@ -4587,7 +4587,7 @@
         "margin_yoy": 45.1679,
         "excess": 25.2221,
         "action_point": false,
-        "m1_yoy": 4.1524,
+        "m1_yoy": null,
         "m2_yoy": 4.2809
       },
       {
@@ -4596,7 +4596,7 @@
         "margin_yoy": 36.3101,
         "excess": 22.8938,
         "action_point": false,
-        "m1_yoy": 3.6098,
+        "m1_yoy": null,
         "m2_yoy": 3.8462
       },
       {
@@ -4605,7 +4605,7 @@
         "margin_yoy": 36.3034,
         "excess": 19.9507,
         "action_point": true,
-        "m1_yoy": 3.8031,
+        "m1_yoy": null,
         "m2_yoy": 4.038
       },
       {
@@ -4614,7 +4614,7 @@
         "margin_yoy": 36.4671,
         "excess": 21.4875,
         "action_point": false,
-        "m1_yoy": 3.953,
+        "m1_yoy": null,
         "m2_yoy": 4.0895
       },
       {
@@ -4623,7 +4623,7 @@
         "margin_yoy": 36.4919,
         "excess": 21.0403,
         "action_point": false,
-        "m1_yoy": 4.7295,
+        "m1_yoy": null,
         "m2_yoy": 4.6892
       },
       {
@@ -4632,7 +4632,7 @@
         "margin_yoy": 38.6913,
         "excess": 22.4326,
         "action_point": false,
-        "m1_yoy": 4.7452,
+        "m1_yoy": null,
         "m2_yoy": 4.5755
       },
       {
@@ -4641,7 +4641,7 @@
         "margin_yoy": 53.3442,
         "excess": 23.7485,
         "action_point": false,
-        "m1_yoy": 4.8856,
+        "m1_yoy": null,
         "m2_yoy": 4.7241
       },
       {
@@ -4650,11 +4650,11 @@
         "margin_yoy": 53.7045,
         "excess": 25.3549,
         "action_point": false,
-        "m1_yoy": 5.8309,
+        "m1_yoy": null,
         "m2_yoy": 5.5803
       }
     ],
-    "note": "融資=data/liquidity.json margin[].debit(FINRA margin debit balance,USD millions,起點 1997-01-01)；指數=data/SPY.json(SPY,起點 2000-01-03)；M1=FRED M1SL(本腳本新抓,無 key CSV)；M2=重用 data/M2.json(FRED M2SL,fetch_yields.py 既有產物)。美國無 M1B,只有 M1/M2,別跟台灣 M1B 混用。"
+    "note": "融資=data/liquidity.json margin[].debit(FINRA margin debit balance,USD millions,起點 1997-01-01)；指數=data/SPY.json(SPY,起點 2000-01-03)；M1=不可得(FRED M1SL 抓取失敗)；M2=重用 data/M2.json(FRED M2SL,fetch_yields.py 既有產物)。美國無 M1B,只有 M1/M2,別跟台灣 M1B 混用。"
   },
   "jp": {
     "monthly": [
@@ -4664,8 +4664,8 @@
         "margin_yoy": -1.5152,
         "excess": -9.0443,
         "action_point": false,
-        "m1_yoy": 29.4353,
-        "m2_yoy": 1.4291
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2003-09-01",
@@ -4673,8 +4673,8 @@
         "margin_yoy": 40.5412,
         "excess": 31.6343,
         "action_point": false,
-        "m1_yoy": 32.4568,
-        "m2_yoy": 1.1662
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2003-10-01",
@@ -4682,8 +4682,8 @@
         "margin_yoy": 91.3962,
         "excess": 69.1855,
         "action_point": false,
-        "m1_yoy": 30.8345,
-        "m2_yoy": 0.9988
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2003-11-01",
@@ -4691,8 +4691,8 @@
         "margin_yoy": 128.1281,
         "excess": 118.5246,
         "action_point": false,
-        "m1_yoy": 27.8272,
-        "m2_yoy": 0.9927
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2003-12-01",
@@ -4700,8 +4700,8 @@
         "margin_yoy": 123.6016,
         "excess": 99.15,
         "action_point": false,
-        "m1_yoy": 29.8007,
-        "m2_yoy": 1.1178
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-01-01",
@@ -4709,8 +4709,8 @@
         "margin_yoy": 154.3701,
         "excess": 125.0692,
         "action_point": false,
-        "m1_yoy": 29.9765,
-        "m2_yoy": 1.1927
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-02-01",
@@ -4718,8 +4718,8 @@
         "margin_yoy": 135.3338,
         "excess": 103.3014,
         "action_point": false,
-        "m1_yoy": 28.2666,
-        "m2_yoy": 1.2561
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-03-01",
@@ -4727,8 +4727,8 @@
         "margin_yoy": 166.2417,
         "excess": 119.2981,
         "action_point": false,
-        "m1_yoy": 30.2041,
-        "m2_yoy": 1.3023
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-04-01",
@@ -4736,8 +4736,8 @@
         "margin_yoy": 210.176,
         "excess": 159.9888,
         "action_point": false,
-        "m1_yoy": 4.5469,
-        "m2_yoy": 1.8771
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-05-01",
@@ -4745,8 +4745,8 @@
         "margin_yoy": 191.7207,
         "excess": 158.3436,
         "action_point": false,
-        "m1_yoy": 3.3441,
-        "m2_yoy": 1.997
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-06-01",
@@ -4754,8 +4754,8 @@
         "margin_yoy": 172.9837,
         "excess": 142.4241,
         "action_point": false,
-        "m1_yoy": 4.3627,
-        "m2_yoy": 1.7576
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-07-01",
@@ -4763,8 +4763,8 @@
         "margin_yoy": 120.4106,
         "excess": 101.9799,
         "action_point": false,
-        "m1_yoy": 4.3336,
-        "m2_yoy": 1.8665
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-08-01",
@@ -4772,8 +4772,8 @@
         "margin_yoy": 92.1889,
         "excess": 85.0517,
         "action_point": false,
-        "m1_yoy": 4.8722,
-        "m2_yoy": 1.862
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-09-01",
@@ -4781,8 +4781,8 @@
         "margin_yoy": 51.9748,
         "excess": 46.0592,
         "action_point": false,
-        "m1_yoy": 4.2519,
-        "m2_yoy": 1.9391
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-10-01",
@@ -4790,8 +4790,8 @@
         "margin_yoy": 7.3626,
         "excess": 5.3566,
         "action_point": false,
-        "m1_yoy": 2.8722,
-        "m2_yoy": 1.9604
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-11-01",
@@ -4799,8 +4799,8 @@
         "margin_yoy": 16.9554,
         "excess": 9.0482,
         "action_point": false,
-        "m1_yoy": 5.2114,
-        "m2_yoy": 1.9615
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2004-12-01",
@@ -4808,8 +4808,8 @@
         "margin_yoy": 18.7495,
         "excess": 11.143,
         "action_point": false,
-        "m1_yoy": 4.5433,
-        "m2_yoy": 2.0351
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-01-01",
@@ -4817,8 +4817,8 @@
         "margin_yoy": 19.9361,
         "excess": 14.3352,
         "action_point": false,
-        "m1_yoy": 3.8769,
-        "m2_yoy": 1.9588
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-02-01",
@@ -4826,8 +4826,8 @@
         "margin_yoy": 25.4161,
         "excess": 19.0886,
         "action_point": false,
-        "m1_yoy": 5.4849,
-        "m2_yoy": 1.8094
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-03-01",
@@ -4835,8 +4835,8 @@
         "margin_yoy": 31.1774,
         "excess": 31.5738,
         "action_point": false,
-        "m1_yoy": 4.8757,
-        "m2_yoy": 2.0263
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-04-01",
@@ -4844,8 +4844,8 @@
         "margin_yoy": 6.1727,
         "excess": 12.5738,
         "action_point": false,
-        "m1_yoy": 4.9106,
-        "m2_yoy": 1.7801
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-05-01",
@@ -4853,8 +4853,8 @@
         "margin_yoy": 11.0196,
         "excess": 10.6617,
         "action_point": false,
-        "m1_yoy": 4.8709,
-        "m2_yoy": 1.4921
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-06-01",
@@ -4862,8 +4862,8 @@
         "margin_yoy": 2.69,
         "excess": 5.0077,
         "action_point": false,
-        "m1_yoy": 4.6675,
-        "m2_yoy": 1.6146
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-07-01",
@@ -4871,8 +4871,8 @@
         "margin_yoy": -0.5841,
         "excess": -5.6506,
         "action_point": false,
-        "m1_yoy": 3.1591,
-        "m2_yoy": 1.6777
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-08-01",
@@ -4880,8 +4880,8 @@
         "margin_yoy": 1.0729,
         "excess": -10.9451,
         "action_point": false,
-        "m1_yoy": 4.5193,
-        "m2_yoy": 1.6111
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-09-01",
@@ -4889,8 +4889,8 @@
         "margin_yoy": 10.7921,
         "excess": -14.6222,
         "action_point": false,
-        "m1_yoy": 5.1358,
-        "m2_yoy": 1.9593
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-10-01",
@@ -4898,8 +4898,8 @@
         "margin_yoy": 49.1794,
         "excess": 22.859,
         "action_point": false,
-        "m1_yoy": 5.6185,
-        "m2_yoy": 1.9168
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-11-01",
@@ -4907,8 +4907,8 @@
         "margin_yoy": 76.4155,
         "excess": 39.9644,
         "action_point": false,
-        "m1_yoy": 4.7763,
-        "m2_yoy": 1.9923
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2005-12-01",
@@ -4916,8 +4916,8 @@
         "margin_yoy": 125.7005,
         "excess": 85.4641,
         "action_point": false,
-        "m1_yoy": 4.6617,
-        "m2_yoy": 1.8929
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-01-01",
@@ -4925,8 +4925,8 @@
         "margin_yoy": 106.4446,
         "excess": 60.2344,
         "action_point": false,
-        "m1_yoy": 5.4588,
-        "m2_yoy": 1.7473
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-02-01",
@@ -4934,8 +4934,8 @@
         "margin_yoy": 90.7977,
         "excess": 52.7688,
         "action_point": false,
-        "m1_yoy": 5.1079,
-        "m2_yoy": 1.6815
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-03-01",
@@ -4943,8 +4943,8 @@
         "margin_yoy": 73.7782,
         "excess": 27.5811,
         "action_point": true,
-        "m1_yoy": 4.3609,
-        "m2_yoy": 1.3581
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-04-01",
@@ -4952,8 +4952,8 @@
         "margin_yoy": 79.7393,
         "excess": 26.1705,
         "action_point": false,
-        "m1_yoy": 3.1542,
-        "m2_yoy": 1.5895
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-05-01",
@@ -4961,8 +4961,8 @@
         "margin_yoy": 81.5049,
         "excess": 44.3417,
         "action_point": false,
-        "m1_yoy": 4.0532,
-        "m2_yoy": 1.3315
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-06-01",
@@ -4970,8 +4970,8 @@
         "margin_yoy": 55.4693,
         "excess": 21.6195,
         "action_point": false,
-        "m1_yoy": 3.3461,
-        "m2_yoy": 1.0701
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-07-01",
@@ -4979,8 +4979,8 @@
         "margin_yoy": 40.7234,
         "excess": 10.8298,
         "action_point": false,
-        "m1_yoy": 4.1099,
-        "m2_yoy": 0.5445
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-08-01",
@@ -4988,8 +4988,8 @@
         "margin_yoy": 37.9978,
         "excess": 7.973,
         "action_point": false,
-        "m1_yoy": 2.3088,
-        "m2_yoy": 0.4424
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-09-01",
@@ -4997,8 +4997,8 @@
         "margin_yoy": 22.3869,
         "excess": 3.5772,
         "action_point": false,
-        "m1_yoy": 1.0964,
-        "m2_yoy": 0.515
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-10-01",
@@ -5006,8 +5006,8 @@
         "margin_yoy": -1.8092,
         "excess": -22.3353,
         "action_point": false,
-        "m1_yoy": 1.2881,
-        "m2_yoy": 0.5516
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-11-01",
@@ -5015,8 +5015,8 @@
         "margin_yoy": -14.0613,
         "excess": -23.4896,
         "action_point": false,
-        "m1_yoy": 0.7472,
-        "m2_yoy": 0.5864
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2006-12-01",
@@ -5024,8 +5024,8 @@
         "margin_yoy": -30.9493,
         "excess": -37.8661,
         "action_point": false,
-        "m1_yoy": -1.2521,
-        "m2_yoy": 0.7172
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-01-01",
@@ -5033,8 +5033,8 @@
         "margin_yoy": -32.4603,
         "excess": -36.8663,
         "action_point": false,
-        "m1_yoy": 0.1922,
-        "m2_yoy": 0.8951
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-02-01",
@@ -5042,8 +5042,8 @@
         "margin_yoy": -28.1887,
         "excess": -36.8197,
         "action_point": false,
-        "m1_yoy": 0.2816,
-        "m2_yoy": 0.969
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-03-01",
@@ -5051,8 +5051,8 @@
         "margin_yoy": -18.524,
         "excess": -19.8604,
         "action_point": false,
-        "m1_yoy": 0.0185,
-        "m2_yoy": 1.0777
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-04-01",
@@ -5060,8 +5060,8 @@
         "margin_yoy": -29.4123,
         "excess": -32.3353,
         "action_point": false,
-        "m1_yoy": 1.8335,
-        "m2_yoy": 1.1493
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-05-01",
@@ -5069,8 +5069,8 @@
         "margin_yoy": -28.0869,
         "excess": -43.6579,
         "action_point": false,
-        "m1_yoy": 0.1933,
-        "m2_yoy": 1.4604
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-06-01",
@@ -5078,8 +5078,8 @@
         "margin_yoy": -10.5473,
         "excess": -27.5298,
         "action_point": false,
-        "m1_yoy": 0.1101,
-        "m2_yoy": 1.7458
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-07-01",
@@ -5087,8 +5087,8 @@
         "margin_yoy": 5.002,
         "excess": -6.5921,
         "action_point": false,
-        "m1_yoy": -0.0169,
-        "m2_yoy": 2.0636
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-08-01",
@@ -5096,8 +5096,8 @@
         "margin_yoy": -6.8816,
         "excess": -9.5353,
         "action_point": false,
-        "m1_yoy": -0.4404,
-        "m2_yoy": 1.7551
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-09-01",
@@ -5105,8 +5105,8 @@
         "margin_yoy": -12.9227,
         "excess": -17.0034,
         "action_point": false,
-        "m1_yoy": -1.3296,
-        "m2_yoy": 1.7283
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-10-01",
@@ -5114,8 +5114,8 @@
         "margin_yoy": -2.5576,
         "excess": -4.6201,
         "action_point": false,
-        "m1_yoy": 0.4735,
-        "m2_yoy": 1.8886
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-11-01",
@@ -5123,8 +5123,8 @@
         "margin_yoy": -14.4729,
         "excess": -10.8251,
         "action_point": false,
-        "m1_yoy": 0.4698,
-        "m2_yoy": 2.017
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2007-12-01",
@@ -5132,8 +5132,8 @@
         "margin_yoy": -17.1564,
         "excess": -6.0216,
         "action_point": false,
-        "m1_yoy": 2.6147,
-        "m2_yoy": 2.1286
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-01-01",
@@ -5141,8 +5141,8 @@
         "margin_yoy": -36.0167,
         "excess": -14.2088,
         "action_point": false,
-        "m1_yoy": 0.4494,
-        "m2_yoy": 2.1636
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-02-01",
@@ -5150,8 +5150,8 @@
         "margin_yoy": -37.9424,
         "excess": -15.2142,
         "action_point": false,
-        "m1_yoy": -0.2533,
-        "m2_yoy": 2.3274
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-03-01",
@@ -5159,8 +5159,8 @@
         "margin_yoy": -50.1541,
         "excess": -22.6078,
         "action_point": false,
-        "m1_yoy": -0.5591,
-        "m2_yoy": 2.2646
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-04-01",
@@ -5168,8 +5168,8 @@
         "margin_yoy": -54.774,
         "excess": -34.3698,
         "action_point": false,
-        "m1_yoy": -1.1123,
-        "m2_yoy": 1.8837
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-05-01",
@@ -5177,8 +5177,8 @@
         "margin_yoy": -53.6827,
         "excess": -33.895,
         "action_point": false,
-        "m1_yoy": -0.3569,
-        "m2_yoy": 2.046
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-06-01",
@@ -5186,8 +5186,8 @@
         "margin_yoy": -47.6984,
         "excess": -22.0236,
         "action_point": false,
-        "m1_yoy": -0.3545,
-        "m2_yoy": 2.1568
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-07-01",
@@ -5195,8 +5195,8 @@
         "margin_yoy": -52.0671,
         "excess": -29.6188,
         "action_point": false,
-        "m1_yoy": -0.3253,
-        "m2_yoy": 2.1319
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-08-01",
@@ -5204,8 +5204,8 @@
         "margin_yoy": -48.5106,
         "excess": -27.4098,
         "action_point": false,
-        "m1_yoy": -1.3147,
-        "m2_yoy": 2.3822
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-09-01",
@@ -5213,8 +5213,8 @@
         "margin_yoy": -46.5855,
         "excess": -13.6657,
         "action_point": false,
-        "m1_yoy": 0.9378,
-        "m2_yoy": 2.1742
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-10-01",
@@ -5222,8 +5222,8 @@
         "margin_yoy": -66.6764,
         "excess": -17.92,
         "action_point": false,
-        "m1_yoy": -1.0681,
-        "m2_yoy": 1.7883
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-11-01",
@@ -5231,8 +5231,8 @@
         "margin_yoy": -63.4618,
         "excess": -17.7469,
         "action_point": false,
-        "m1_yoy": -1.947,
-        "m2_yoy": 1.8063
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2008-12-01",
@@ -5240,8 +5240,8 @@
         "margin_yoy": -66.3004,
         "excess": -24.1766,
         "action_point": false,
-        "m1_yoy": -0.8081,
-        "m2_yoy": 1.8761
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-01-01",
@@ -5249,8 +5249,8 @@
         "margin_yoy": -54.3812,
         "excess": -13.1935,
         "action_point": false,
-        "m1_yoy": -0.7483,
-        "m2_yoy": 2.0102
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-02-01",
@@ -5258,8 +5258,8 @@
         "margin_yoy": -55.1763,
         "excess": -10.8141,
         "action_point": false,
-        "m1_yoy": 0.2142,
-        "m2_yoy": 2.1518
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-03-01",
@@ -5267,8 +5267,8 @@
         "margin_yoy": -58.7856,
         "excess": -23.5296,
         "action_point": false,
-        "m1_yoy": 0.6669,
-        "m2_yoy": 2.2779
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-04-01",
@@ -5276,8 +5276,8 @@
         "margin_yoy": -40.8101,
         "excess": -4.5521,
         "action_point": false,
-        "m1_yoy": 0.4542,
-        "m2_yoy": 2.6669
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-05-01",
@@ -5285,8 +5285,8 @@
         "margin_yoy": -37.0298,
         "excess": -3.4417,
         "action_point": false,
-        "m1_yoy": -0.8797,
-        "m2_yoy": 2.6419
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-06-01",
@@ -5294,8 +5294,8 @@
         "margin_yoy": -31.5844,
         "excess": -5.4525,
         "action_point": false,
-        "m1_yoy": 0.6782,
-        "m2_yoy": 2.473
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-07-01",
@@ -5303,8 +5303,8 @@
         "margin_yoy": -31.9299,
         "excess": -9.3537,
         "action_point": false,
-        "m1_yoy": 0.2497,
-        "m2_yoy": 2.7114
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-08-01",
@@ -5312,8 +5312,8 @@
         "margin_yoy": -21.1321,
         "excess": -1.3939,
         "action_point": false,
-        "m1_yoy": 1.8415,
-        "m2_yoy": 2.7929
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-09-01",
@@ -5321,8 +5321,8 @@
         "margin_yoy": -10.5633,
         "excess": -0.5576,
         "action_point": false,
-        "m1_yoy": 0.8153,
-        "m2_yoy": 2.9649
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-10-01",
@@ -5330,8 +5330,8 @@
         "margin_yoy": 42.0464,
         "excess": 25.0502,
         "action_point": false,
-        "m1_yoy": 0.847,
-        "m2_yoy": 3.3434
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-11-01",
@@ -5339,8 +5339,8 @@
         "margin_yoy": 43.196,
         "excess": 33.4068,
         "action_point": false,
-        "m1_yoy": 2.1029,
-        "m2_yoy": 3.2765
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2009-12-01",
@@ -5348,8 +5348,8 @@
         "margin_yoy": 41.7917,
         "excess": 22.7514,
         "action_point": false,
-        "m1_yoy": 1.1563,
-        "m2_yoy": 3.1111
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-01-01",
@@ -5357,8 +5357,8 @@
         "margin_yoy": 45.7999,
         "excess": 18.2296,
         "action_point": false,
-        "m1_yoy": -0.3706,
-        "m2_yoy": 3.0365
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-02-01",
@@ -5366,8 +5366,8 @@
         "margin_yoy": 52.8495,
         "excess": 19.0563,
         "action_point": false,
-        "m1_yoy": -0.4076,
-        "m2_yoy": 2.795
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-03-01",
@@ -5375,8 +5375,8 @@
         "margin_yoy": 63.4782,
         "excess": 26.7262,
         "action_point": false,
-        "m1_yoy": 0.9306,
-        "m2_yoy": 2.7094
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-04-01",
@@ -5384,8 +5384,8 @@
         "margin_yoy": 58.8291,
         "excess": 33.5791,
         "action_point": false,
-        "m1_yoy": 1.5559,
-        "m2_yoy": 2.8515
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-05-01",
@@ -5393,8 +5393,8 @@
         "margin_yoy": 63.1605,
         "excess": 60.575,
         "action_point": false,
-        "m1_yoy": 2.8897,
-        "m2_yoy": 3.0815
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-06-01",
@@ -5402,8 +5402,8 @@
         "margin_yoy": 34.392,
         "excess": 40.1741,
         "action_point": true,
-        "m1_yoy": 1.6662,
-        "m2_yoy": 2.8731
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-07-01",
@@ -5411,8 +5411,8 @@
         "margin_yoy": 32.8329,
         "excess": 40.7459,
         "action_point": false,
-        "m1_yoy": 2.2989,
-        "m2_yoy": 2.7167
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-08-01",
@@ -5420,8 +5420,8 @@
         "margin_yoy": 20.7745,
         "excess": 36.6761,
         "action_point": false,
-        "m1_yoy": 2.4593,
-        "m2_yoy": 2.7871
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-09-01",
@@ -5429,8 +5429,8 @@
         "margin_yoy": 1.3609,
         "excess": 8.8993,
         "action_point": false,
-        "m1_yoy": 3.2335,
-        "m2_yoy": 2.7691
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-10-01",
@@ -5438,8 +5438,8 @@
         "margin_yoy": -11.8182,
         "excess": -3.5241,
         "action_point": false,
-        "m1_yoy": 1.7069,
-        "m2_yoy": 2.7353
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-11-01",
@@ -5447,8 +5447,8 @@
         "margin_yoy": -20.4972,
         "excess": -26.8263,
         "action_point": false,
-        "m1_yoy": 3.4177,
-        "m2_yoy": 2.5451
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2010-12-01",
@@ -5456,8 +5456,8 @@
         "margin_yoy": -2.5657,
         "excess": 0.445,
         "action_point": false,
-        "m1_yoy": 3.2783,
-        "m2_yoy": 2.3439
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-01-01",
@@ -5465,8 +5465,8 @@
         "margin_yoy": 0.1826,
         "excess": -0.2085,
         "action_point": false,
-        "m1_yoy": 5.0321,
-        "m2_yoy": 2.3409
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-02-01",
@@ -5474,8 +5474,8 @@
         "margin_yoy": 5.7383,
         "excess": 0.8197,
         "action_point": false,
-        "m1_yoy": 5.1837,
-        "m2_yoy": 2.4448
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-03-01",
@@ -5483,8 +5483,8 @@
         "margin_yoy": 1.6699,
         "excess": 13.7064,
         "action_point": false,
-        "m1_yoy": 5.5477,
-        "m2_yoy": 2.5975
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-04-01",
@@ -5492,8 +5492,8 @@
         "margin_yoy": -12.7348,
         "excess": -1.8131,
         "action_point": false,
-        "m1_yoy": 4.9621,
-        "m2_yoy": 2.6959
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-05-01",
@@ -5501,8 +5501,8 @@
         "margin_yoy": -15.3668,
         "excess": -14.5993,
         "action_point": false,
-        "m1_yoy": 5.293,
-        "m2_yoy": 2.6868
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-06-01",
@@ -5510,8 +5510,8 @@
         "margin_yoy": -19.2244,
         "excess": -23.8441,
         "action_point": false,
-        "m1_yoy": 5.3068,
-        "m2_yoy": 2.8219
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-07-01",
@@ -5519,8 +5519,8 @@
         "margin_yoy": -15.2837,
         "excess": -18.3845,
         "action_point": false,
-        "m1_yoy": 3.7469,
-        "m2_yoy": 2.936
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-08-01",
@@ -5528,8 +5528,8 @@
         "margin_yoy": -12.2402,
         "excess": -13.7264,
         "action_point": false,
-        "m1_yoy": 5.0988,
-        "m2_yoy": 2.7116
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-09-01",
@@ -5537,8 +5537,8 @@
         "margin_yoy": -12.4545,
         "excess": -5.3136,
         "action_point": false,
-        "m1_yoy": 4.8014,
-        "m2_yoy": 2.7401
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-10-01",
@@ -5546,8 +5546,8 @@
         "margin_yoy": -7.1959,
         "excess": -4.8698,
         "action_point": false,
-        "m1_yoy": 6.4752,
-        "m2_yoy": 2.799
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-11-01",
@@ -5555,8 +5555,8 @@
         "margin_yoy": 9.4915,
         "excess": 24.611,
         "action_point": false,
-        "m1_yoy": 4.9988,
-        "m2_yoy": 2.9731
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2011-12-01",
@@ -5564,8 +5564,8 @@
         "margin_yoy": -0.558,
         "excess": 16.7807,
         "action_point": false,
-        "m1_yoy": 4.4205,
-        "m2_yoy": 3.1108
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-01-01",
@@ -5573,8 +5573,8 @@
         "margin_yoy": -24.2574,
         "excess": -10.2369,
         "action_point": false,
-        "m1_yoy": 5.0848,
-        "m2_yoy": 3.0429
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-02-01",
@@ -5582,8 +5582,8 @@
         "margin_yoy": -30.6779,
         "excess": -22.1986,
         "action_point": false,
-        "m1_yoy": 4.5205,
-        "m2_yoy": 2.9356
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-03-01",
@@ -5591,8 +5591,8 @@
         "margin_yoy": -6.9931,
         "excess": -10.3601,
         "action_point": false,
-        "m1_yoy": 3.3839,
-        "m2_yoy": 2.9257
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-04-01",
@@ -5600,8 +5600,8 @@
         "margin_yoy": 1.5193,
         "excess": 4.858,
         "action_point": false,
-        "m1_yoy": 3.8837,
-        "m2_yoy": 2.6147
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-05-01",
@@ -5609,8 +5609,8 @@
         "margin_yoy": -6.1287,
         "excess": 5.7449,
         "action_point": false,
-        "m1_yoy": 3.1679,
-        "m2_yoy": 2.1952
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-06-01",
@@ -5618,8 +5618,8 @@
         "margin_yoy": -8.4467,
         "excess": -0.2019,
         "action_point": false,
-        "m1_yoy": 2.8505,
-        "m2_yoy": 2.2563
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-07-01",
@@ -5627,8 +5627,8 @@
         "margin_yoy": -6.03,
         "excess": 5.543,
         "action_point": false,
-        "m1_yoy": 4.7774,
-        "m2_yoy": 2.3102
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-08-01",
@@ -5636,8 +5636,8 @@
         "margin_yoy": -13.1907,
         "excess": -11.9033,
         "action_point": false,
-        "m1_yoy": 3.3117,
-        "m2_yoy": 2.4781
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-09-01",
@@ -5645,8 +5645,8 @@
         "margin_yoy": -10.0252,
         "excess": -11.9776,
         "action_point": false,
-        "m1_yoy": 2.2911,
-        "m2_yoy": 2.4451
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-10-01",
@@ -5654,8 +5654,8 @@
         "margin_yoy": -10.2114,
         "excess": -9.5427,
         "action_point": false,
-        "m1_yoy": 3.2958,
-        "m2_yoy": 2.281
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-11-01",
@@ -5663,8 +5663,8 @@
         "margin_yoy": -15.2128,
         "excess": -27.2038,
         "action_point": false,
-        "m1_yoy": 3.1109,
-        "m2_yoy": 2.0748
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2012-12-01",
@@ -5672,8 +5672,8 @@
         "margin_yoy": -3.9413,
         "excess": -26.8834,
         "action_point": false,
-        "m1_yoy": 3.9282,
-        "m2_yoy": 2.5013
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-01-01",
@@ -5681,8 +5681,8 @@
         "margin_yoy": 37.22,
         "excess": 10.6804,
         "action_point": false,
-        "m1_yoy": 3.5486,
-        "m2_yoy": 2.6418
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-02-01",
@@ -5690,8 +5690,8 @@
         "margin_yoy": 66.8034,
         "excess": 47.9196,
         "action_point": false,
-        "m1_yoy": 3.8202,
-        "m2_yoy": 2.8881
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-03-01",
@@ -5699,8 +5699,8 @@
         "margin_yoy": 74.0403,
         "excess": 51.0886,
         "action_point": false,
-        "m1_yoy": 2.4528,
-        "m2_yoy": 3.0514
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-04-01",
@@ -5708,8 +5708,8 @@
         "margin_yoy": 72.7204,
         "excess": 27.1368,
         "action_point": false,
-        "m1_yoy": 3.8746,
-        "m2_yoy": 3.2193
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-05-01",
@@ -5717,8 +5717,8 @@
         "margin_yoy": 104.7586,
         "excess": 43.5158,
         "action_point": false,
-        "m1_yoy": 4.6773,
-        "m2_yoy": 3.4975
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-06-01",
@@ -5726,8 +5726,8 @@
         "margin_yoy": 85.0078,
         "excess": 33.152,
         "action_point": false,
-        "m1_yoy": 3.6449,
-        "m2_yoy": 3.8266
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-07-01",
@@ -5735,8 +5735,8 @@
         "margin_yoy": 102.4784,
         "excess": 45.282,
         "action_point": false,
-        "m1_yoy": 5.0486,
-        "m2_yoy": 3.7875
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-08-01",
@@ -5744,8 +5744,8 @@
         "margin_yoy": 110.5299,
         "excess": 59.0707,
         "action_point": false,
-        "m1_yoy": 5.152,
-        "m2_yoy": 3.8139
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-09-01",
@@ -5753,8 +5753,8 @@
         "margin_yoy": 121.3826,
         "excess": 58.4115,
         "action_point": false,
-        "m1_yoy": 6.4849,
-        "m2_yoy": 3.9096
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-10-01",
@@ -5762,8 +5762,8 @@
         "margin_yoy": 149.1457,
         "excess": 88.6677,
         "action_point": false,
-        "m1_yoy": 5.6236,
-        "m2_yoy": 4.1364
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-11-01",
@@ -5771,8 +5771,8 @@
         "margin_yoy": 132.2648,
         "excess": 66.4607,
         "action_point": false,
-        "m1_yoy": 5.7695,
-        "m2_yoy": 4.3
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2013-12-01",
@@ -5780,8 +5780,8 @@
         "margin_yoy": 130.3984,
         "excess": 73.6786,
         "action_point": false,
-        "m1_yoy": 5.848,
-        "m2_yoy": 4.1574
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-01-01",
@@ -5789,8 +5789,8 @@
         "margin_yoy": 114.4656,
         "excess": 80.5669,
         "action_point": true,
-        "m1_yoy": 5.382,
-        "m2_yoy": 4.2574
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-02-01",
@@ -5798,8 +5798,8 @@
         "margin_yoy": 63.3168,
         "excess": 34.9268,
         "action_point": false,
-        "m1_yoy": 5.1793,
-        "m2_yoy": 3.9201
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-03-01",
@@ -5807,8 +5807,8 @@
         "margin_yoy": 29.3561,
         "excess": 9.7567,
         "action_point": false,
-        "m1_yoy": 6.4574,
-        "m2_yoy": 3.5801
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-04-01",
@@ -5816,8 +5816,8 @@
         "margin_yoy": 14.2954,
         "excess": 11.0975,
         "action_point": false,
-        "m1_yoy": 4.8123,
-        "m2_yoy": 3.5018
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-05-01",
@@ -5825,8 +5825,8 @@
         "margin_yoy": -12.577,
         "excess": -18.8047,
         "action_point": false,
-        "m1_yoy": 4.5752,
-        "m2_yoy": 3.2731
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-06-01",
@@ -5834,8 +5834,8 @@
         "margin_yoy": -1.2585,
         "excess": -12.1142,
         "action_point": false,
-        "m1_yoy": 5.8474,
-        "m2_yoy": 3.0722
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-07-01",
@@ -5843,8 +5843,8 @@
         "margin_yoy": -12.5008,
         "excess": -26.7853,
         "action_point": false,
-        "m1_yoy": 4.1519,
-        "m2_yoy": 3.0179
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-08-01",
@@ -5852,8 +5852,8 @@
         "margin_yoy": -5.5761,
         "excess": -20.7807,
         "action_point": false,
-        "m1_yoy": 2.9488,
-        "m2_yoy": 2.9887
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-09-01",
@@ -5861,8 +5861,8 @@
         "margin_yoy": -5.0648,
         "excess": -16.9474,
         "action_point": false,
-        "m1_yoy": 4.6168,
-        "m2_yoy": 3.1152
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-10-01",
@@ -5870,8 +5870,8 @@
         "margin_yoy": -10.8496,
         "excess": -25.4073,
         "action_point": false,
-        "m1_yoy": 4.0902,
-        "m2_yoy": 3.1787
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-11-01",
@@ -5879,8 +5879,8 @@
         "margin_yoy": -0.6287,
         "excess": -12.1087,
         "action_point": false,
-        "m1_yoy": 3.4491,
-        "m2_yoy": 3.5253
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2014-12-01",
@@ -5888,8 +5888,8 @@
         "margin_yoy": -3.3097,
         "excess": -10.4267,
         "action_point": false,
-        "m1_yoy": 4.3303,
-        "m2_yoy": 3.527
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-01-01",
@@ -5897,8 +5897,8 @@
         "margin_yoy": -11.6274,
         "excess": -30.1319,
         "action_point": false,
-        "m1_yoy": 4.4861,
-        "m2_yoy": 3.3357
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-02-01",
@@ -5906,8 +5906,8 @@
         "margin_yoy": -12.7324,
         "excess": -39.394,
         "action_point": false,
-        "m1_yoy": 4.8381,
-        "m2_yoy": 3.4912
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-03-01",
@@ -5915,8 +5915,8 @@
         "margin_yoy": -2.8686,
         "excess": -32.4019,
         "action_point": false,
-        "m1_yoy": 5.1414,
-        "m2_yoy": 3.6598
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-04-01",
@@ -5924,8 +5924,8 @@
         "margin_yoy": -2.4024,
         "excess": -38.8668,
         "action_point": false,
-        "m1_yoy": 5.1339,
-        "m2_yoy": 3.6727
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-05-01",
@@ -5933,8 +5933,8 @@
         "margin_yoy": 4.1009,
         "excess": -36.431,
         "action_point": false,
-        "m1_yoy": 4.3731,
-        "m2_yoy": 4.0892
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-06-01",
@@ -5942,8 +5942,8 @@
         "margin_yoy": 15.4571,
         "excess": -18.0055,
         "action_point": false,
-        "m1_yoy": 5.7149,
-        "m2_yoy": 3.9608
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-07-01",
@@ -5951,8 +5951,8 @@
         "margin_yoy": 28.2079,
         "excess": -3.5733,
         "action_point": false,
-        "m1_yoy": 5.6565,
-        "m2_yoy": 4.0684
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-08-01",
@@ -5960,8 +5960,8 @@
         "margin_yoy": 18.1868,
         "excess": -4.2831,
         "action_point": false,
-        "m1_yoy": 6.847,
-        "m2_yoy": 4.1725
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-09-01",
@@ -5969,8 +5969,8 @@
         "margin_yoy": 21.1367,
         "excess": 13.6267,
         "action_point": false,
-        "m1_yoy": 4.8506,
-        "m2_yoy": 3.8265
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-10-01",
@@ -5978,8 +5978,8 @@
         "margin_yoy": 12.2341,
         "excess": -4.0287,
         "action_point": false,
-        "m1_yoy": 5.1679,
-        "m2_yoy": 3.649
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-11-01",
@@ -5987,8 +5987,8 @@
         "margin_yoy": 9.4133,
         "excess": -3.6889,
         "action_point": false,
-        "m1_yoy": 6.0894,
-        "m2_yoy": 3.3035
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2015-12-01",
@@ -5996,8 +5996,8 @@
         "margin_yoy": 3.2442,
         "excess": -5.8267,
         "action_point": false,
-        "m1_yoy": 4.5482,
-        "m2_yoy": 3.0853
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-01-01",
@@ -6005,8 +6005,8 @@
         "margin_yoy": -6.5148,
         "excess": -5.6316,
         "action_point": false,
-        "m1_yoy": 3.1587,
-        "m2_yoy": 3.1345
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-02-01",
@@ -6014,8 +6014,8 @@
         "margin_yoy": -11.8976,
         "excess": 2.8443,
         "action_point": false,
-        "m1_yoy": 5.1347,
-        "m2_yoy": 3.2008
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-03-01",
@@ -6023,8 +6023,8 @@
         "margin_yoy": -11.8181,
         "excess": 0.9289,
         "action_point": false,
-        "m1_yoy": 6.1881,
-        "m2_yoy": 3.2145
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-04-01",
@@ -6032,8 +6032,8 @@
         "margin_yoy": -14.9162,
         "excess": -0.2955,
         "action_point": false,
-        "m1_yoy": 6.1875,
-        "m2_yoy": 3.4713
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-05-01",
@@ -6041,8 +6041,8 @@
         "margin_yoy": -13.7445,
         "excess": 2.4406,
         "action_point": false,
-        "m1_yoy": 8.3428,
-        "m2_yoy": 3.423
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-06-01",
@@ -6050,8 +6050,8 @@
         "margin_yoy": -25.1495,
         "excess": -2.1219,
         "action_point": false,
-        "m1_yoy": 6.8451,
-        "m2_yoy": 3.4713
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-07-01",
@@ -6059,8 +6059,8 @@
         "margin_yoy": -36.5108,
         "excess": -17.0018,
         "action_point": false,
-        "m1_yoy": 5.8476,
-        "m2_yoy": 3.3976
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-08-01",
@@ -6068,8 +6068,8 @@
         "margin_yoy": -31.8339,
         "excess": -21.2303,
         "action_point": false,
-        "m1_yoy": 7.8238,
-        "m2_yoy": 3.236
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-09-01",
@@ -6077,8 +6077,8 @@
         "margin_yoy": -33.1211,
         "excess": -27.7248,
         "action_point": false,
-        "m1_yoy": 7.4318,
-        "m2_yoy": 3.5425
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-10-01",
@@ -6086,8 +6086,8 @@
         "margin_yoy": -31.6769,
         "excess": -22.9881,
         "action_point": false,
-        "m1_yoy": 8.175,
-        "m2_yoy": 3.68
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-11-01",
@@ -6095,8 +6095,8 @@
         "margin_yoy": -33.5456,
         "excess": -26.2587,
         "action_point": false,
-        "m1_yoy": 8.6182,
-        "m2_yoy": 3.8947
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2016-12-01",
@@ -6104,8 +6104,8 @@
         "margin_yoy": -31.5973,
         "excess": -32.0211,
         "action_point": false,
-        "m1_yoy": 8.3949,
-        "m2_yoy": 4.0432
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2017-01-01",
@@ -6113,8 +6113,8 @@
         "margin_yoy": -23.898,
         "excess": -32.592,
         "action_point": false,
-        "m1_yoy": 11.8879,
-        "m2_yoy": 4.0808
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2017-02-01",
@@ -6122,8 +6122,8 @@
         "margin_yoy": -1.9031,
         "excess": -21.1973,
         "action_point": false,
-        "m1_yoy": 9.202,
-        "m2_yoy": 4.2162
+        "m1_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2017-03-01",
@@ -7134,6 +7134,6 @@
         "m2_yoy": null
       }
     ],
-    "note": "融資=JPX官網「信用取引現在高 過去推移表」(東京・名古屋二市場合計買残高金額,百万円,即時抓取,起點 2002-08-02)；指數=yfinance ^N225(起點 1990-01-04)；M1=FRED MYAGM1JPM189S(國家貨幣,原始序列最後一筆 2017-02，之後留空)；M2=FRED MYAGM2JPM189S(國家貨幣,原始序列最後一筆 2017-02，之後留空)。 日本無 M1B,只有 M1/M2。"
+    "note": "融資=JPX官網「信用取引現在高 過去推移表」(東京・名古屋二市場合計買残高金額,百万円,即時抓取,起點 2002-08-02)；指數=yfinance ^N225(起點 1990-01-04)；M1=不可得(FRED MYAGM1JPM189S 抓取失敗)；M2=不可得(FRED MYAGM2JPM189S 抓取失敗)。 日本無 M1B,只有 M1/M2。"
   }
 }
