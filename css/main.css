@@ -729,3 +729,56 @@
     @media (max-width: 900px) {
       .sf-grid { grid-template-columns: repeat(2, 1fr); }
     }
+
+    /* ── 工具箱 tab ──────────────────────────────────────────────── */
+    .tools-body { padding: 16px 24px 4px; }
+    .tools-sec h3 { margin: 0 0 8px; font-size: 16px; }
+    .tools-lead { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+    .tools-note { color: var(--muted); font-size: 12px; margin: 8px 0 0; line-height: 1.6; }
+    .tools-sub-title { font-size: 12.5px; font-weight: 600; margin: 0 0 8px; color: var(--text); }
+    .tools-callout {
+      margin: 12px 0; padding: 10px 14px; border-radius: 8px;
+      background: var(--panel); border: 1px solid var(--border);
+      font-size: 12.5px; line-height: 1.7; color: var(--muted);
+    }
+    .tools-callout p { margin: 0 0 6px; }
+    .tools-callout p:last-child { margin-bottom: 0; }
+    .tools-callout b { color: var(--text); }
+    .tools-calc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 14px; }
+    .tools-calc {
+      border: 1px solid var(--border); border-radius: 8px; background: var(--panel);
+      padding: 14px 16px;
+    }
+    .tools-calc h4 { margin: 0 0 10px; font-size: 13.5px; }
+    .tools-fields { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .tools-field { flex: 1 1 130px; display: flex; flex-direction: column; gap: 4px; }
+    .tools-field label { font-size: 11.5px; color: var(--muted); }
+    .tools-field input {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); padding: 6px 8px; font-size: 13px; font-variant-numeric: tabular-nums;
+      width: 100%;
+    }
+    .tools-result { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+    .tools-res-item {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 12px; flex: 1 1 120px; min-width: 100px;
+    }
+    .tools-res-item .tr-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+    .tools-res-item .tr-val { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .tools-res-item .tr-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .tools-avg-rows { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .tools-avg-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .tools-avg-row input {
+      background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      color: var(--text); padding: 5px 7px; font-size: 12.5px; width: 90px;
+    }
+    .tools-avg-x { font-size: 12px; color: var(--muted); }
+    .tools-row-del { color: var(--muted); cursor: pointer; font-size: 13px; padding: 0 4px; }
+    .tools-row-del:hover { color: var(--text); }
+    .tools-hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+    @media (max-width: 600px) {
+      .tools-body { padding: 12px 12px 4px; }
+      .tools-fields { flex-direction: column; }
+      .tools-field { flex: 1 1 auto; }
+      .tools-calc-grid { grid-template-columns: 1fr; }
+    }

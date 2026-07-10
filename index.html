@@ -785,6 +785,67 @@
     </div>
   </section>
 
+  <!-- ── 結構判讀 tab (QQQ 支撐/上升通道/趨勢結構) ─────────────────── -->
+  <section id="tab-struct" class="tab-section" hidden>
+    <div style="padding:16px 24px;display:flex;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
+        <div style="font-weight:600;margin-bottom:6px">① 支撐</div>
+        <div style="font-size:13px;line-height:1.75;color:var(--text)">某個價位有大量持股成本集中，當股價跌到附近時，持股者或新買盤容易進場承接，因此形成支撐；若籌碼沒明顯鬆動，通常較不容易跌破該區間。</div>
+        <div style="margin-top:8px;padding:8px 10px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px;font-size:12px;color:var(--muted)">
+          ⚠️ QQQ 是指數 ETF，沒有「持股者成本分佈」資料。本頁支撐用「成交量價格分佈（VPVR）」代理——代表該價位過去成交/換手密集，不是真的籌碼成本。
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)">均線（季線/年線）常被當動態支撐或壓力；整數關卡與成交量密集區也是常見來源。</div>
+      </div>
+      <div style="flex:1;min-width:240px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
+        <div style="font-weight:600;margin-bottom:6px">② 上升通道突破</div>
+        <div style="font-size:13px;line-height:1.75;color:var(--text)">股價長期沿上升通道往上，若後續放量突破上緣，通常代表多方力道延續，行情有機會加速。</div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted)">⚠️ 剛突破就拉回、剛跌破又收上來是常見洗盤（假突破/假跌破），要搭配成交量與後續幾根 K 確認，別一突破就追。支撐壓力是「區間」不是精準的線，屬機率性參考。</div>
+      </div>
+      <div style="flex:1;min-width:240px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
+        <div style="font-weight:600;margin-bottom:6px">③ 下跌趨勢</div>
+        <div style="font-size:13px;line-height:1.75;color:var(--text)">高點越來越低、低點也越來越低＝結構偏弱；此時即使短線反彈，也先視為反彈，不要急著當反轉。</div>
+      </div>
+      <div style="flex:1;min-width:240px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
+        <div style="font-weight:600;margin-bottom:6px">④ 支撐壓力互換</div>
+        <div style="font-size:13px;line-height:1.75;color:var(--text)">帶量突破壓力後，原壓力常反過來變支撐（賣壓被消化）；跌破支撐後原支撐變壓力。這叫支撐壓力互換。</div>
+      </div>
+    </div>
+
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span style="font-size:12px;color:var(--muted)">lookback</span>
+      <div id="struct-lookback-picker" style="display:flex;gap:6px">
+        <span class="chip" data-struct-lookback="126">126日</span>
+        <span class="chip active" data-struct-lookback="252">252日</span>
+        <span class="chip" data-struct-lookback="504">504日</span>
+      </div>
+    </div>
+
+    <div id="struct-top" style="display:flex;gap:24px;padding:16px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center">
+      <div class="breadth-card">
+        <div class="bc-label">趨勢結構（swing pivot）</div>
+        <div class="bc-main"><span class="bc-pct" id="struct-trend-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="struct-trend-sub">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">通道狀態（迴歸±2σ）</div>
+        <div class="bc-main"><span class="bc-pct" id="struct-channel-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="struct-channel-sub">—</div>
+      </div>
+      <div class="breadth-card" style="min-width:260px">
+        <div class="bc-label">最近支撐 / 壓力（VPVR HVN）</div>
+        <div class="bc-main"><span class="bc-pct" id="struct-sr-val" style="font-size:15px">—</span></div>
+        <div class="bc-count" id="struct-sr-sub">—</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;padding:0 24px">
+      <div id="struct-chart" style="flex:1;min-width:0;height:520px"></div>
+      <div id="struct-vpvr" style="width:200px;height:520px"></div>
+    </div>
+    <div class="status" id="struct-status" style="padding:8px 24px">切換至此 tab 自動載入…</div>
+    <div class="status" id="struct-notes" style="padding:0 24px 12px;font-size:12px"></div>
+  </section>
+
   <!-- ── 流動性 tab ──────────────────────────────────────────────── -->
   <section id="tab-liquidity" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
@@ -2049,6 +2110,23 @@
         <p style="margin-top:8px;color:var(--muted)">資料：直接讀 data/QQQ.json／data/SP500.json（^GSPC）日 OHLCV，前端重採樣週K並即時計算 MACD(12,26,9)/MA20/MA50，無另開 fetch 腳本。防前視：死叉在第 i 週收盤確立，只用到 i 週(含)以前資料；觸及/下檔統計一律從 i+1 週起算；資料末端未走完的一週整根丟棄，不進入統計或圖表。</p>
       </div>
     </div>
+  </section>
+
+  <!-- ── 工具箱 tab（教育速查 + 純前端互動計算機，無外部資料源） ──── -->
+  <section id="tab-tools" class="tab-section" hidden>
+    <div class="controls">
+      <div id="tools-nav" style="display:flex;gap:6px;flex-wrap:wrap">
+        <span class="chip active" data-tools-sec="indicators">技術指標速查</span>
+        <span class="chip" data-tools-sec="margin">融資維持率</span>
+        <span class="chip" data-tools-sec="calc">互動計算機</span>
+      </div>
+    </div>
+    <div id="tools-body" class="tools-body">
+      <div id="tools-sec-indicators" class="tools-sec"></div>
+      <div id="tools-sec-margin" class="tools-sec" style="display:none"></div>
+      <div id="tools-sec-calc" class="tools-sec" style="display:none"></div>
+    </div>
+    <div class="status">本頁教育與試算內容改編整理自公開台股常識，費率/法規參數（融資成數、追繳線、當沖稅率等）以證交所/金管會官方公告為準，非投資建議。</div>
   </section>
 
   <nav class="cat-bar">
