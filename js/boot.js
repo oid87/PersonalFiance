@@ -81,7 +81,7 @@ const CATEGORIES = [
   },
   {
     id: 'liquidity', tabs: [
-      { id: 'liquidity', label: '流動性' },
+      { id: 'liquidity', label: '流動性×槓桿' },
       { id: 'marginheat', label: '融資熱度' },
       { id: 'breadth',   label: '市場廣度' },
       { id: 'fsi',       label: '金融壓力' },

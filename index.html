@@ -788,59 +788,67 @@
   <!-- ── 流動性 tab ──────────────────────────────────────────────── -->
   <section id="tab-liquidity" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <span id="liq-twoii-toggle" class="chip active" data-tooltip="疊上櫃買指數（^TWOII）">櫃買指數</span>
-      <span id="liq-margin-toggle" class="chip active" data-tooltip="疊上融資餘額（億）">融資餘額</span>
-      <span id="liq-foreign-toggle" class="chip active" data-tooltip="疊上外資累計買超（億，區間內歸零起算）">外資累計</span>
-      <span id="liq-divergence-toggle" class="chip" data-tooltip="標示指數創高但 M1B-M2 利差未跟上的背離區間">背離標示</span>
-      <div id="liq-range-picker" style="margin-left:auto;display:flex;gap:4px">
-        <span class="chip" data-liq-range="1Y">1Y</span>
-        <span class="chip active" data-liq-range="2Y">2Y</span>
-        <span class="chip" data-liq-range="5Y">5Y</span>
-        <span class="chip" data-liq-range="10Y">10Y</span>
-        <span class="chip" data-liq-range="MAX">MAX</span>
+      <div id="ll-market-picker" style="display:flex;gap:4px">
+        <span class="chip active" data-ll-mkt="tw">🇹🇼 台灣</span>
+        <span class="chip" data-ll-mkt="us">🇺🇸 美國</span>
+        <span class="chip" data-ll-mkt="jp">🇯🇵 日本</span>
+      </div>
+      <span id="ll-foreign-toggle" class="chip active" data-tooltip="疊上外資累計買超（億，僅台灣，區間內歸零起算）">外資累計</span>
+      <div id="ll-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-ll-range="1Y">1Y</span>
+        <span class="chip" data-ll-range="2Y">2Y</span>
+        <span class="chip active" data-ll-range="5Y">5Y</span>
+        <span class="chip" data-ll-range="10Y">10Y</span>
+        <span class="chip" data-ll-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="liq-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div id="ll-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
       <div class="breadth-card">
-        <div class="bc-label">M1B 年增率</div>
-        <div class="bc-main"><span class="bc-pct" id="lc-m1b">—</span></div>
-        <div class="bc-count" id="lc-m1b-date">—</div>
+        <div class="bc-label">指數年增率 index_yoy</div>
+        <div class="bc-main"><span class="bc-pct" id="ll-index-yoy">—</span></div>
+        <div class="bc-count" id="ll-date">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">融資年增率 margin_yoy</div>
+        <div class="bc-main"><span class="bc-pct" id="ll-margin-yoy">—</span></div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">超額 excess</div>
+        <div class="bc-main"><span class="bc-pct" id="ll-excess">—</span></div>
+        <div class="bc-signal" id="ll-excess-note">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label"><span id="ll-m1-label">M1B</span> 年增率</div>
+        <div class="bc-main"><span class="bc-pct" id="ll-m1">—</span></div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">M2 年增率</div>
-        <div class="bc-main"><span class="bc-pct" id="lc-m2">—</span></div>
-        <div class="bc-count" id="lc-m2-date">—</div>
+        <div class="bc-main"><span class="bc-pct" id="ll-m2">—</span></div>
       </div>
-      <div class="breadth-card">
-        <div class="bc-label">M1B − M2 利差</div>
-        <div class="bc-main"><span class="bc-pct" id="lc-spread">—</span></div>
-        <div class="bc-signal" id="lc-spread-note">—</div>
-      </div>
-      <div class="breadth-card">
-        <div class="bc-label">融資餘額（億）</div>
-        <div class="bc-main"><span class="bc-pct" id="lc-margin">—</span></div>
-        <div class="bc-count" id="lc-margin-date">—</div>
-      </div>
-      <div class="breadth-card">
+      <div class="breadth-card" id="ll-foreign-card">
         <div class="bc-label">外資近 30 日累計（億）</div>
-        <div class="bc-main"><span class="bc-pct" id="lc-foreign">—</span></div>
-        <div class="bc-count" id="lc-foreign-date">—</div>
+        <div class="bc-main"><span class="bc-pct" id="ll-foreign">—</span></div>
+        <div class="bc-count" id="ll-foreign-date">—</div>
       </div>
     </div>
-    <div id="liquidity-chart" style="width:100%;height:480px"></div>
+    <div style="font-size:12px;color:var(--muted);padding:0 16px 8px">
+      融資絕對金額各國單位/定義不同不可比，本圖只用 YoY%／超額（比率）跨國比較；當月未滿月讀數會變動。
+    </div>
+    <div id="liquidity-chart" style="width:100%;height:280px"></div>
+    <div id="liquidity-yoy-chart" style="width:100%;height:280px;margin-top:8px"></div>
     <div id="liquidity-status" class="status"></div>
     <div class="info-panel">
-      <div class="info-panel-header"><i class="chevron">▶</i> 台股資金面：M1B-M2 利差與融資/外資</div>
+      <div class="info-panel-header"><i class="chevron">▶</i> 融資超額成長 + 翻頭判準（台/美/日）</div>
       <div class="info-panel-body">
-        <p><b>M1B − M2 年增率利差</b>：MacroMicro 常用的資金動能指標，轉正（黃金交叉）代表資金活絡、偏好流動性高的資產（股市），轉負代表資金轉趨保守。</p>
-        <p><b>融資餘額</b>：反映散戶槓桿投機水位，餘額大幅萎縮常伴隨去槓桿拋售。<b>外資累計買超</b>：三大法人中對台股影響最大的族群，累計轉向常領先大盤轉折。</p>
-        <p><b>背離標示</b>：當加權指數創高但 M1B-M2 利差未同步走高，可能代表上漲缺乏資金動能支撐。</p>
+        <p><b>超額 excess = margin_yoy − index_yoy</b>：融資餘額會隨股價自然放大（抵押品市值上升），單看融資餘額創高看不出散戶是否在「主動加碼」。扣掉指數自身漲幅，才抓得到超額槓桿。</p>
+        <p><b>⚠️ 行動點</b>：超額 &gt; 0 且 margin_yoy 近3個月動能由正轉負（翻頭）同時成立。行動點只是歷史標記，不代表「之後必跌」，不做因果宣稱。</p>
+        <p><b>下圖 YoY 疊圖</b>：指數／融資／M2／M1(B) 四線年增率，可跨國比較「相對強度」，但各國融資統計定義範圍不同（台=全市場合計融資餘額、美=FINRA 全美券商 debit balance、日=東京・名古屋二市場合計買残高），不做精確數值加減。</p>
         <table class="info-table">
-          <thead><tr><th>指標</th><th>頻率</th><th>來源</th></tr></thead>
+          <thead><tr><th>市場</th><th>融資源</th><th>指數源</th><th>貨幣源</th></tr></thead>
           <tbody>
-            <tr><td>M1B / M2</td><td>月</td><td>中央銀行 CBC</td></tr>
-            <tr><td>加權指數 / 櫃買指數</td><td>日</td><td>Yahoo Finance</td></tr>
-            <tr><td>融資餘額 / 外資買超</td><td>日</td><td>FinMind</td></tr>
+            <tr><td>台灣</td><td>FinMind 全市場合計融資餘額（億元）</td><td>^TWII</td><td>央行 M1B/M2</td></tr>
+            <tr><td>美國</td><td>FINRA margin debit balance（USD millions）</td><td>SPY</td><td>FRED M1SL/M2SL</td></tr>
+            <tr><td>日本</td><td>JPX 信用取引現在高（百万円）</td><td>^N225</td><td>FRED MYAGM1/2JPM189S（⚠️已於2017-02停更）</td></tr>
           </tbody>
         </table>
       </div>
