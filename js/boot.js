@@ -34,6 +34,8 @@ import * as wkrevTab         from './tabs/wkrev.js';
 import * as marginheatTab    from './tabs/marginheat.js';
 import * as baniniTab        from './tabs/banini.js';
 import * as qqqmacdTab       from './tabs/qqqmacd.js';
+import * as structTab        from './tabs/struct.js';
+import * as toolsTab         from './tabs/tools.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -67,6 +69,8 @@ registerAll([
   { id: 'marginheat',    module: marginheatTab    },
   { id: 'banini',        module: baniniTab        },
   { id: 'qqqmacd',       module: qqqmacdTab       },
+  { id: 'struct',        module: structTab        },
+  { id: 'tools',         module: toolsTab         },
 ]);
 
 setupResizeHandler();
@@ -103,7 +107,9 @@ const CATEGORIES = [
       { id: 'macro',     label: '宏觀' },
       { id: 'valuation', label: '估值' },
       { id: 'position',  label: '位階' },
+      { id: 'struct',    label: '結構判讀' },
       { id: 'twcycle',   label: '景氣燈號' },
+      { id: 'tools',     label: '工具箱' },
     ]
   },
   {
