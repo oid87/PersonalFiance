@@ -1493,6 +1493,30 @@
     </div>
     <div class="status" id="pc-status">載入中…</div>
     <div id="pc-chart" style="height:260px"></div>
+
+    <div class="controls" style="margin-top:20px">
+      <span style="font-size:13px;color:var(--muted)">⑥ 低SKEW裸奔回測 · 2年滾動百分位&le;10 反指標檢定 · 1993起</span>
+    </div>
+    <div class="status" id="cx-status">載入中…</div>
+    <div id="cx-chart" style="height:300px"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 低SKEW（裸奔）反指標回測說明</div>
+      <div class="info-panel-body">
+        <p style="font-size:13px;line-height:1.8">
+          <b>⚠️ 注意</b>：這裡用的是<b>指數層級 CBOE SKEW</b>（S&amp;P 500 整體 OTM Put 尾部避險需求），
+          <b>非個股平均 skew</b>（網路瘋傳「個股平均 skew 崩到歷史低=裸奔」那種券商 desk 專有資料，免費撈不到）。
+          兩者是不同序列，方向可能背離，此處僅為可自我複核的類比檢定。
+        </p>
+        <p style="font-size:13px;line-height:1.8">
+          方法：2 年滾動百分位（504 交易日窗、最少 120 筆，僅用歷史資料 trailing 計算）落在最低十分位
+          （最不避險/最樂觀）時標記訊號，同一訊號間隔 &lt;30 曆日去重，比較訊號後 SPY 1M/3M/6M 報酬 vs 全樣本基準。
+        </p>
+        <p style="color:var(--muted);font-size:12px">
+          結論：訊號組報酬與基準組報酬差異很小，<b>無反指標 edge</b>。且現值 SKEW 其實在全史高位，
+          與病毒圖「裸奔」方向相反。
+        </p>
+      </div>
+    </div>
   </section>
 
   <!-- ── 金融壓力指數 tab ────────────────────────────────────────── -->

@@ -10,6 +10,7 @@ import { isLight, tc, mob } from '../utils/theme.js';
 let chart   = null;
 let tsChart = null;
 let pcChart = null;
+let cxChart = null;
 let vsData  = null;
 let pcData  = null;
 let vsRange = "5Y";
@@ -72,9 +73,10 @@ export function onThemeChange() {
   if (chart)   { chart.dispose();   chart   = null; if (vsData) renderChart(); }
   if (tsChart) { tsChart.dispose(); tsChart = null; if (vsData) renderTSChart(); }
   if (pcChart) { pcChart.dispose(); pcChart = null; if (pcData) renderPCChart(); }
+  if (cxChart) { cxChart.dispose(); cxChart = null; if (vsData) renderComplacency(); }
 }
 
-export function resize() { chart?.resize(); tsChart?.resize(); pcChart?.resize(); }
+export function resize() { chart?.resize(); tsChart?.resize(); pcChart?.resize(); cxChart?.resize(); }
 
 // ── render helpers ────────────────────────────────────────────────────────────
 
@@ -84,6 +86,7 @@ function renderAll() {
   renderTable();
   renderTSChart();
   renderPCChart();
+  renderComplacency();
 }
 
 function rangeStart(key) {
@@ -555,6 +558,173 @@ function renderPCChart() {
 
   if (!pcChart) pcChart = echarts.init(el, isLight() ? null : "dark");
   pcChart.setOption(opt, { notMerge: true });
+}
+
+// ── ⑥ 低SKEW裸奔回測（index-level CBOE SKEW 反指標檢定）────────────────────────
+// ground truth: Financial_work/skew_complacency.py（lab.rolling_pct_rank / dedupe_signals / fwd_ret 同慣例）
+
+const CX_WINDOW        = 504;  // 2年滾動視窗（交易日），與 python ROLL_WIN 一致
+const CX_MIN_PERIODS   = 120;  // 與 python MIN_PER 一致
+const CX_PCT_THRESHOLD = 10;   // 2年滾動百分位 <=10 視為「最不避險/最樂觀」
+const CX_GAP_DAYS      = 30;   // 訊號去重間距（曆日）
+const CX_HORIZONS      = [21, 63, 126]; // 1M / 3M / 6M 交易日
+
+// trailing 2年滾動百分位：只看 [i-window+1 .. i]（含 i），不用未來資料。
+// 定義 = count(窗口內 <= 當前值) / 窗口內筆數 * 100 —— 簡化版
+// pandas `rolling.rank(pct=True)*100`（未做 tie 平均排名，spec 允許此簡化）。
+function cxRollingPctRank(arr, window, minPeriods) {
+  const out = new Array(arr.length).fill(null);
+  for (let i = 0; i < arr.length; i++) {
+    const lo = Math.max(0, i - window + 1);
+    const v = arr[i];
+    let n = 0, countLE = 0;
+    for (let j = lo; j <= i; j++) {
+      n++;
+      if (arr[j] <= v) countLE++;
+    }
+    out[i] = n >= minPeriods ? (countLE / n) * 100 : null;
+  }
+  return out;
+}
+
+// 同 python lab.dedupe_signals：排序後與前一保留訊號相差 <gapDays 曆日則跳過。
+function cxDedupeSignals(idxList, dates, gapDays) {
+  const out = [];
+  let lastMs = null;
+  for (const i of idxList) {
+    const ms = new Date(dates[i]).getTime();
+    if (lastMs === null || (ms - lastMs) / 86400000 >= gapDays) {
+      out.push(i);
+      lastMs = ms;
+    }
+  }
+  return out;
+}
+
+function cxSummarize(vals) {
+  if (!vals.length) return { n: 0, mean: null, median: null, winrate: null };
+  const sorted = [...vals].sort((a, b) => a - b);
+  const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
+  const mid  = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  const winrate = (vals.filter(v => v > 0).length / vals.length) * 100;
+  return { n: vals.length, mean, median, winrate };
+}
+
+function renderComplacency() {
+  const el     = document.getElementById("cx-chart");
+  const status = document.getElementById("cx-status");
+  if (!el || !vsData) return;
+
+  // 1. 平行陣列（過濾 sk 或 sp 任一為 null/NaN 的列）
+  const rows  = vsData.history.filter(r => r.sk != null && r.sp != null);
+  const dates = rows.map(r => r.d);
+  const sk    = rows.map(r => r.sk);
+  const sp    = rows.map(r => r.sp);
+  const n     = sk.length;
+  if (n < CX_MIN_PERIODS + 10) { if (status) status.textContent = "資料不足"; return; }
+
+  // 2. 2年滾動百分位（trailing only，無未來函數）
+  const skPct = cxRollingPctRank(sk, CX_WINDOW, CX_MIN_PERIODS);
+
+  // 3. 訊號：百分位 <=10（最低十分位），gap 30 曆日去重
+  const rawIdx = [];
+  for (let i = 0; i < n; i++) {
+    if (skPct[i] != null && skPct[i] <= CX_PCT_THRESHOLD) rawIdx.push(i);
+  }
+  const sigIdx = cxDedupeSignals(rawIdx, dates, CX_GAP_DAYS);
+
+  // 4-6. 前向報酬（right-censoring 丟棄不補）+ baseline，每個 horizon 一組
+  const result = {};
+  for (const td of CX_HORIZONS) {
+    const sigVals = [];
+    for (const i of sigIdx) {
+      if (i + td < n) sigVals.push((sp[i + td] / sp[i] - 1) * 100);
+    }
+    const baseVals = [];
+    for (let i = 0; i < n; i++) {
+      if (i + td < n) baseVals.push((sp[i + td] / sp[i] - 1) * 100);
+    }
+    const sigStat  = cxSummarize(sigVals);
+    const baseStat = cxSummarize(baseVals);
+    const diff = (sigStat.mean != null && baseStat.mean != null) ? sigStat.mean - baseStat.mean : null;
+    result[td] = { signal: sigStat, baseline: baseStat, diff };
+  }
+
+  // 現值全史百分位（非滾動，僅供標註，不進訊號判定）
+  const curSk = sk[n - 1];
+  const curPctFull = (sk.filter(v => v <= curSk).length / n) * 100;
+
+  console.log("[vixskew:complacency] n_signals=" + sigIdx.length,
+    JSON.stringify(Object.fromEntries(CX_HORIZONS.map(td => [td, result[td]]))),
+    "cur_skew=" + curSk, "cur_pct_full=" + curPctFull.toFixed(1));
+
+  if (status) {
+    status.textContent =
+      `低SKEW裸奔回測 · ${sigIdx.length} 次訊號 · 現值 SKEW=${curSk.toFixed(1)} 全史第${curPctFull.toFixed(0)}百分位（非低，與病毒圖方向相反）`;
+  }
+
+  const axisClr = tc("#8b949e", "#57606a");
+  const gridClr = tc("rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)");
+  const tipBg   = tc("#161b22", "#ffffff");
+  const tipBdr  = tc("#30363d", "#d0d7de");
+  const tipText = tc("#e6edf3", "#1f2328");
+
+  const horizonLabel = { 21: "1M", 63: "3M", 126: "6M" };
+  const cats = CX_HORIZONS.map(td => horizonLabel[td]);
+  const toBar = (stat) => ({
+    value: stat.mean != null ? +stat.mean.toFixed(2) : 0,
+    n: stat.n, median: stat.median, winrate: stat.winrate,
+  });
+  const sigData  = CX_HORIZONS.map(td => toBar(result[td].signal));
+  const baseData = CX_HORIZONS.map(td => toBar(result[td].baseline));
+
+  const opt = {
+    backgroundColor: "transparent",
+    animation: false,
+    grid: { top: "14%", left: "8%", right: "5%", bottom: "10%" },
+    xAxis: {
+      type: "category", data: cats,
+      axisLine: { lineStyle: { color: gridClr } }, axisTick: { show: false },
+      axisLabel: { color: axisClr, fontSize: 11 },
+    },
+    yAxis: {
+      name: "平均前向報酬 %", nameTextStyle: { color: axisClr, fontSize: 10 },
+      axisLabel: { color: axisClr, fontSize: 10, formatter: v => v + "%" },
+      splitLine: { lineStyle: { color: gridClr, type: "dashed" } },
+      axisLine: { show: false }, axisTick: { show: false },
+    },
+    series: [
+      { name: "低SKEW訊號組", type: "bar", data: sigData,
+        itemStyle: { color: "#f778ba" } },
+      { name: "全樣本基準",   type: "bar", data: baseData,
+        itemStyle: { color: "#58a6ff" } },
+    ],
+    tooltip: {
+      trigger: "axis",
+      backgroundColor: tipBg, borderColor: tipBdr,
+      textStyle: { color: tipText, fontSize: 12 },
+      formatter(params) {
+        const d = params[0]?.axisValue || "";
+        let s = `<b>${d}</b>`;
+        for (const p of params) {
+          const v = p.data;
+          const medStr = v.median != null ? (v.median > 0 ? "+" : "") + v.median.toFixed(2) + "%" : "—";
+          const winStr = v.winrate != null ? v.winrate.toFixed(1) + "%" : "—";
+          s += `<br><span style="color:${p.color}">${p.seriesName}</span>：` +
+            `mean ${v.value > 0 ? "+" : ""}${v.value}%　n=${v.n}　median ${medStr}　勝率 ${winStr}`;
+        }
+        return s;
+      },
+    },
+    legend: {
+      right: 0, top: 2, itemWidth: 16, itemHeight: 10,
+      textStyle: { color: axisClr, fontSize: 11 },
+    },
+  };
+
+  if (!cxChart) cxChart = echarts.init(el, isLight() ? null : "dark");
+  cxChart.setOption(opt, { notMerge: true });
 }
 
 // ── signal table ──────────────────────────────────────────────────────────────
