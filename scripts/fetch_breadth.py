@@ -119,6 +119,12 @@ def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
     new_lo  = (price_df < prev_lo).where(valid_hl, False).sum(axis=1)
     n_hl    = valid_hl.sum(axis=1)
 
+    rolling_high = price_df.rolling(win52, min_periods=win52).max()
+    valid_bear   = price_df.notna() & rolling_high.notna()
+    is_bear      = (price_df <= rolling_high * 0.80).where(valid_bear, False)
+    bear_count   = is_bear.sum(axis=1)
+    n_bear       = valid_bear.sum(axis=1)
+
     records: list[dict] = []
     dropped_lowcov = 0
     recent_cutoff  = (date.today() - timedelta(days=RECENT_WINDOW_DAYS)).isoformat()
@@ -136,6 +142,8 @@ def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
         vhl  = int(n_hl[dt])
         nh   = int(new_hi[dt]) if vhl > 0 else None
         nl   = int(new_lo[dt]) if vhl > 0 else None
+        vbear = int(n_bear[dt])
+        bc    = int(bear_count[dt]) if vbear > 0 else None
 
         records.append({
             "date":           dt.strftime("%Y-%m-%d"),
@@ -146,6 +154,9 @@ def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
             "new_hi_count":   nh,
             "new_lo_count":   nl,
             "hl_total":       vhl if vhl > 0 else None,
+            "bear_count": bc,
+            "bear_pct": round(bc / vbear * 100, 1) if (vbear > 0 and bc is not None) else None,
+            "bear_total": vbear if vbear > 0 else None,
             "total":          v50,
         })
     if dropped_lowcov:
@@ -165,8 +176,8 @@ def main() -> None:
     today    = date.today()
 
     # ── Schema migration: missing new_hi_count → force full backfill ──
-    if existing and "new_hi_count" not in existing[0]:
-        print("Existing data missing new_hi_count field — full backfill to recompute schema")
+    if existing and ("new_hi_count" not in existing[0] or "bear_count" not in existing[0]):
+        print("Existing data missing new_hi_count/bear_count field — full backfill to recompute schema")
         existing = []
 
     # ── Freshness check FIRST — skip Wikipedia + yfinance if not needed ──
