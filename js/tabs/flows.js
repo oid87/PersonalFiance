@@ -24,6 +24,13 @@ let rawData = null;
 let fgWeekly = null;   // Map<date, avgFG>
 let vixWeekly = null;  // Map<date, closeVIX>
 
+// ── QQQ 板塊資金流向榜（sub-view）───────────────────────────────────────
+const SECTOR_WINDOWS = { '1d': '當日', '5d': '5 日', '20d': '20 日' };
+let view = 'timeseries';       // 'timeseries' | 'sector'
+let sectorWindow = '1d';
+let sectorData = null;
+let sectorLoadPromise = null;
+
 async function loadAll() {
   if (rawData) return;
   const r = await fetch('data/flows.json', { cache: 'no-cache' });
@@ -294,6 +301,93 @@ function render() {
   }, { notMerge: true });
 }
 
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
+}
+
+async function loadSectorData() {
+  if (sectorData) return;
+  if (!sectorLoadPromise) {
+    sectorLoadPromise = fetch('data/qqq_sector_flows.json', { cache: 'no-cache' })
+      .then(r => {
+        if (!r.ok) throw new Error(`qqq_sector_flows.json: HTTP ${r.status}`);
+        return r.json();
+      })
+      .then(j => { sectorData = j; });
+  }
+  await sectorLoadPromise;
+}
+
+function renderSectorRank() {
+  const host = document.getElementById('flows-sector-rank');
+  if (!host) return;
+
+  if (!sectorData) { host.innerHTML = ''; return; }
+
+  const rows = sectorData.windows?.[sectorWindow] ?? [];
+  const status = document.getElementById('flows-sector-status');
+  const note = document.getElementById('flows-sector-note');
+  if (note) note.textContent = sectorData.note ?? '';
+
+  if (!rows.length) {
+    host.innerHTML = `<div class="status">此視窗無資料</div>`;
+    if (status) status.textContent = '—';
+    return;
+  }
+
+  const maxAbs = Math.max(...rows.map(r => Math.abs(r.flow)), 1e-9);
+  const textClr  = tc('#c9d1d9', '#24292f');
+  const trackBg  = tc('rgba(255,255,255,0.05)', 'rgba(0,0,0,0.05)');
+  const posColor = tc('#f85149', '#cf222e');  // 紅＝淨流入
+  const negColor = tc('#3fb950', '#1a7f37');  // 綠＝淨流出
+  const labelW = mob() ? 92 : 168;
+  const valW   = mob() ? 56 : 68;
+
+  host.innerHTML = rows.map(r => {
+    const pct = Math.max(1, Math.min(100, Math.abs(r.flow) / maxAbs * 100));
+    const isPos = r.flow >= 0;
+    const barColor = isPos ? posColor : negColor;
+    const sign = isPos ? '+' : '';
+    const label = `${r.group}（${r.count}）`;
+    return `
+      <div style="display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12px;line-height:16px">
+        <div style="width:${labelW}px;flex:0 0 auto;color:${textClr};text-align:right;
+                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+             title="${escapeHtml(r.group)} · ${r.count} 檔 · ${r.days} 個淨流入日">${escapeHtml(label)}</div>
+        <div style="flex:1 1 auto;position:relative;height:15px;background:${trackBg};border-radius:2px;overflow:hidden">
+          <div style="position:absolute;top:0;bottom:0;left:0;width:${pct}%;background:${barColor};border-radius:2px"></div>
+        </div>
+        <div style="width:${valW}px;flex:0 0 auto;color:${barColor};font-weight:600;text-align:right">${sign}${r.flow.toFixed(1)}B</div>
+      </div>`;
+  }).join('');
+
+  if (status) {
+    const winLabel = SECTOR_WINDOWS[sectorWindow] ?? sectorWindow;
+    status.textContent =
+      `${winLabel}窗 · ${rows.length} 組 · 成分覆蓋 ${sectorData.coverage?.mapped ?? '?'}/${sectorData.coverage?.total ?? '?'} 檔 · 更新於 ${sectorData.updated ?? ''} · 數字＝${winLabel}窗淨流入天數/組內檔數`;
+  }
+}
+
+function applyView() {
+  const tsHost = document.getElementById('flows-timeseries-view');
+  const secHost = document.getElementById('flows-sector-view');
+  if (tsHost) tsHost.hidden = view !== 'timeseries';
+  if (secHost) secHost.hidden = view !== 'sector';
+  if (view === 'timeseries') {
+    setTimeout(() => { chart?.resize(); }, 30);
+  } else {
+    loadSectorData()
+      .then(renderSectorRank)
+      .catch(e => {
+        const status = document.getElementById('flows-sector-status');
+        if (status) status.textContent = '載入失敗：' + (e.message || e);
+        console.error('[flows] sector load failed', e);
+      });
+  }
+}
+
 function buildControls() {
   const sw = document.getElementById('flows-ticker-picker');
   if (sw && !sw.dataset.built) {
@@ -335,6 +429,29 @@ function buildControls() {
       render();
     });
   }
+
+  const vp = document.getElementById('flows-view-picker');
+  if (vp && !vp.dataset.built) {
+    vp.dataset.built = '1';
+    vp.addEventListener('click', e => {
+      const t = e.target.closest('.chip[data-flows-view]');
+      if (!t) return;
+      view = t.dataset.flowsView;
+      vp.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === t));
+      applyView();
+    });
+  }
+  const swp = document.getElementById('flows-sector-window-picker');
+  if (swp && !swp.dataset.built) {
+    swp.dataset.built = '1';
+    swp.addEventListener('click', e => {
+      const t = e.target.closest('.chip[data-flows-sector-window]');
+      if (!t) return;
+      sectorWindow = t.dataset.flowsSectorWindow;
+      swp.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === t));
+      renderSectorRank();
+    });
+  }
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
@@ -343,6 +460,7 @@ export async function activate() {
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   buildControls();
+  applyView();
   try {
     await loadAll();
     setTimeout(() => { chart?.resize(); render(); }, 50);
@@ -353,9 +471,11 @@ export async function activate() {
   }
 }
 export function onThemeChange(light) {
-  if (!chart) return;
-  chart.dispose();
-  chart = echarts.init(document.getElementById('flows-chart'), light ? null : 'dark');
-  if (rawData) render();
+  if (chart) {
+    chart.dispose();
+    chart = echarts.init(document.getElementById('flows-chart'), light ? null : 'dark');
+    if (rawData) render();
+  }
+  if (view === 'sector' && sectorData) renderSectorRank();
 }
 export function resize() { chart?.resize(); }

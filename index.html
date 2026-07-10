@@ -1843,42 +1843,65 @@
 
   <section id="tab-flows" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="flows-ticker-picker" style="display:flex;gap:4px">
-        <span class="chip active" data-flows-ticker="semi">半導體 (SOXX+SMH)</span>
-        <span class="chip" data-flows-ticker="qqq">QQQ</span>
-        <span class="chip" data-flows-ticker="tw50">0050.TW</span>
-      </div>
-      <span id="flows-fg-toggle" class="chip" data-tooltip="疊 CNN Fear & Greed（右軸 0-100）">F&G</span>
-      <span id="flows-vix-toggle" class="chip" data-tooltip="疊 VIX（右軸）">VIX</span>
-      <div id="flows-range-picker" style="margin-left:auto;display:flex;gap:4px">
-        <span class="chip" data-flows-range="3Y">3Y</span>
-        <span class="chip" data-flows-range="5Y">5Y</span>
-        <span class="chip" data-flows-range="10Y">10Y</span>
-        <span class="chip active" data-flows-range="MAX">MAX</span>
+      <div id="flows-view-picker" style="display:flex;gap:4px">
+        <span class="chip active" data-flows-view="timeseries">時序圖</span>
+        <span class="chip" data-flows-view="sector">板塊榜</span>
       </div>
     </div>
-    <div id="flows-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
-      <div class="breadth-card">
-        <div class="bc-label">本週簽名成交量</div>
-        <div class="bc-main"><span class="bc-pct" id="flows-cur-val">—</span></div>
-        <div class="bc-count" id="flows-cur-sub">—</div>
-        <div class="bc-signal" id="flows-cur-signal">—</div>
+
+    <div id="flows-timeseries-view">
+      <div class="controls" style="flex-wrap:wrap;gap:8px">
+        <div id="flows-ticker-picker" style="display:flex;gap:4px">
+          <span class="chip active" data-flows-ticker="semi">半導體 (SOXX+SMH)</span>
+          <span class="chip" data-flows-ticker="qqq">QQQ</span>
+          <span class="chip" data-flows-ticker="tw50">0050.TW</span>
+        </div>
+        <span id="flows-fg-toggle" class="chip" data-tooltip="疊 CNN Fear & Greed（右軸 0-100）">F&G</span>
+        <span id="flows-vix-toggle" class="chip" data-tooltip="疊 VIX（右軸）">VIX</span>
+        <div id="flows-range-picker" style="margin-left:auto;display:flex;gap:4px">
+          <span class="chip" data-flows-range="3Y">3Y</span>
+          <span class="chip" data-flows-range="5Y">5Y</span>
+          <span class="chip" data-flows-range="10Y">10Y</span>
+          <span class="chip active" data-flows-range="MAX">MAX</span>
+        </div>
       </div>
-      <div class="breadth-card">
-        <div class="bc-label">絕對值百分位（擁擠度）</div>
-        <div class="bc-main"><span class="bc-pct" id="flows-rank-val" style="font-size:22px">—</span></div>
-        <div class="bc-count" id="flows-rank-sub">—</div>
-        <div class="bc-signal" id="flows-rank-signal">—</div>
+      <div id="flows-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+        <div class="breadth-card">
+          <div class="bc-label">本週簽名成交量</div>
+          <div class="bc-main"><span class="bc-pct" id="flows-cur-val">—</span></div>
+          <div class="bc-count" id="flows-cur-sub">—</div>
+          <div class="bc-signal" id="flows-cur-signal">—</div>
+        </div>
+        <div class="breadth-card">
+          <div class="bc-label">絕對值百分位（擁擠度）</div>
+          <div class="bc-main"><span class="bc-pct" id="flows-rank-val" style="font-size:22px">—</span></div>
+          <div class="bc-count" id="flows-rank-sub">—</div>
+          <div class="bc-signal" id="flows-rank-signal">—</div>
+        </div>
+        <div class="breadth-card">
+          <div class="bc-label">歷史最大正向週</div>
+          <div class="bc-main"><span class="bc-pct" id="flows-max-val" style="font-size:22px">—</span></div>
+          <div class="bc-count" id="flows-max-sub">—</div>
+          <div class="bc-signal" id="flows-max-signal">—</div>
+        </div>
       </div>
-      <div class="breadth-card">
-        <div class="bc-label">歷史最大正向週</div>
-        <div class="bc-main"><span class="bc-pct" id="flows-max-val" style="font-size:22px">—</span></div>
-        <div class="bc-count" id="flows-max-sub">—</div>
-        <div class="bc-signal" id="flows-max-signal">—</div>
-      </div>
+      <div id="flows-chart" style="height:520px"></div>
+      <div class="status" id="flows-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
     </div>
-    <div id="flows-chart" style="height:520px"></div>
-    <div class="status" id="flows-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+
+    <div id="flows-sector-view" hidden>
+      <div class="controls" style="flex-wrap:wrap;gap:8px">
+        <div id="flows-sector-window-picker" style="display:flex;gap:4px">
+          <span class="chip active" data-flows-sector-window="1d">當日</span>
+          <span class="chip" data-flows-sector-window="5d">5 日</span>
+          <span class="chip" data-flows-sector-window="20d">20 日</span>
+        </div>
+      </div>
+      <div id="flows-sector-note" style="padding:8px 24px 0;color:var(--muted);font-size:11px"></div>
+      <div id="flows-sector-rank" style="padding:12px 24px"></div>
+      <div class="status" id="flows-sector-status" style="padding:0 24px">切換至板塊榜自動載入…</div>
+    </div>
+
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 資金脈衝（簽名成交量）怎麼看？</div>
       <div class="info-panel-body">
