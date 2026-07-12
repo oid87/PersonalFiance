@@ -2312,6 +2312,107 @@
     </div>
   </section>
 
+  <!-- ── 實質利率 tab ──────────────────────────────────────────────── -->
+  <section id="tab-real_rates" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="realr-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-realr-range="1Y">1Y</span>
+        <span class="chip active" data-realr-range="3Y">3Y</span>
+        <span class="chip" data-realr-range="5Y">5Y</span>
+        <span class="chip" data-realr-range="10Y">10Y</span>
+        <span class="chip" data-realr-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="realr-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">10Y 實質殖利率（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="realr-10y-val">—</span></div>
+        <div class="bc-count" id="realr-10y-sub">—</div>
+        <div class="bc-signal" id="realr-10y-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">政策實質狀態</div>
+        <div class="bc-main"><span class="bc-pct" id="realr-state-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="realr-state-sub">—</div>
+        <div class="bc-signal" id="realr-state-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">5Y 實質殖利率</div>
+        <div class="bc-main"><span class="bc-pct" id="realr-5y-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="realr-5y-sub">—</div>
+        <div class="bc-signal" id="realr-5y-signal">—</div>
+      </div>
+    </div>
+    <div id="realr-chart" style="height:520px"></div>
+    <div class="status" id="realr-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 實質利率怎麼看？</div>
+      <div class="info-panel-body">
+        <p><b>實質殖利率 = 名目公債殖利率 − 市場隱含通膨預期</b>（TIPS 抗通膨債券的殖利率直接反映）。實質殖利率為正代表扣掉通膨後投資人仍有正報酬，貨幣政策具「實質限制性」（偏緊）；為負則代表政策相對寬鬆、鼓勵冒險。</p>
+        <table class="info-table">
+          <thead><tr><th>期別</th><th>含義</th></tr></thead>
+          <tbody>
+            <tr><td>DFII5 / DFII10 / DFII30</td><td>5 / 10 / 30 年期 TIPS 實質殖利率</td></tr>
+            <tr><td>&gt; 0</td><td>實質偏緊，貨幣政策具限制性</td></tr>
+            <tr><td>&lt; 0</td><td>實質偏鬆，鼓勵風險資產</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">資料：FRED DFII5 / DFII10 / DFII30（免費，無 key）。單位：%。定位「貨幣環境理解」，非交易觸發訊號。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 貨幣市場壓力 tab ──────────────────────────────────────────── -->
+  <section id="tab-money_market" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="mmkt-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-mmkt-range="1Y">1Y</span>
+        <span class="chip active" data-mmkt-range="3Y">3Y</span>
+        <span class="chip" data-mmkt-range="5Y">5Y</span>
+        <span class="chip" data-mmkt-range="10Y">10Y</span>
+        <span class="chip" data-mmkt-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="mmkt-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">SOFR（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="mmkt-sofr-val">—</span></div>
+        <div class="bc-count" id="mmkt-sofr-sub">—</div>
+        <div class="bc-signal" id="mmkt-sofr-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">SOFR − IORB 利差</div>
+        <div class="bc-main"><span class="bc-pct" id="mmkt-spread-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="mmkt-spread-sub">—</div>
+        <div class="bc-signal" id="mmkt-spread-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">EFFR</div>
+        <div class="bc-main"><span class="bc-pct" id="mmkt-effr-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="mmkt-effr-sub">—</div>
+        <div class="bc-signal" id="mmkt-effr-signal">—</div>
+      </div>
+    </div>
+    <div id="mmkt-chart" style="height:520px"></div>
+    <div class="status" id="mmkt-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 貨幣市場壓力怎麼看？</div>
+      <div class="info-panel-body">
+        <p><b>SOFR − IORB 利差</b>是觀察隔夜擔保資金是否吃緊的關鍵。IORB（準備金利率）是政策利率下限，正常時 SOFR 應貼著或略低於 IORB；當 SOFR 明顯高於 IORB（利差 spike &gt; 0）代表銀行體系搶短錢、擔保隔夜資金緊張（如 2019-09 回購危機）。</p>
+        <table class="info-table">
+          <thead><tr><th>指標</th><th>含義</th></tr></thead>
+          <tbody>
+            <tr><td>SOFR</td><td>擔保隔夜融資利率，反映回購市場實際成本</td></tr>
+            <tr><td>IORB</td><td>準備金利率，Fed 政策利率下限</td></tr>
+            <tr><td>EFFR</td><td>有效聯邦基金利率，無擔保隔夜拆借</td></tr>
+            <tr><td>SOFR − IORB &gt; 0 且 spike</td><td>隔夜擔保資金吃緊訊號</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">資料：FRED SOFR / IORB / EFFR（免費，無 key）。單位：%。定位「資金面壓力理解」，非交易觸發訊號。</p>
+      </div>
+    </div>
+  </section>
+
   <nav class="cat-bar">
     <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
     <button class="cat-btn" data-cat="liquidity">💧　流動性</button>

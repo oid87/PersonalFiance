@@ -72,6 +72,8 @@ $PYTHON fetch_banini.py        || true
 $PYTHON fetch_net_liquidity.py || true
 $PYTHON fetch_yield_curve.py   || true
 $PYTHON fetch_vix_term.py      || true
+$PYTHON fetch_real_rates.py    || true
+$PYTHON fetch_money_market.py  || true
 
 # 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"

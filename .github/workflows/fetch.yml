@@ -246,6 +246,14 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_vix_term.py
 
+      - name: Fetch US real yields (FRED DFII5/DFII10/DFII30, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_real_rates.py
+
+      - name: Fetch money market rates (FRED SOFR/IORB/EFFR, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_money_market.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 

@@ -39,6 +39,8 @@ import * as toolsTab         from './tabs/tools.js';
 import * as netLiqTab        from './tabs/net_liquidity.js';
 import * as yieldCurveTab    from './tabs/yield_curve.js';
 import * as vixTermTab       from './tabs/vix_term.js';
+import * as realRatesTab     from './tabs/real_rates.js';
+import * as moneyMktTab      from './tabs/money_market.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -77,6 +79,8 @@ registerAll([
   { id: 'net_liquidity', module: netLiqTab        },
   { id: 'yield_curve',   module: yieldCurveTab    },
   { id: 'vix_term',      module: vixTermTab       },
+  { id: 'real_rates',    module: realRatesTab     },
+  { id: 'money_market',  module: moneyMktTab      },
 ]);
 
 setupResizeHandler();
@@ -107,6 +111,8 @@ const CATEGORIES = [
       { id: 'net_liquidity', label: '淨流動性' },
       { id: 'yield_curve',   label: '殖利率曲線' },
       { id: 'vix_term',      label: 'VIX期限結構' },
+      { id: 'real_rates',    label: '實質利率' },
+      { id: 'money_market',  label: '貨幣市場' },
     ]
   },
   {
