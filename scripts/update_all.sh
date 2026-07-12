@@ -46,6 +46,7 @@ $PYTHON fetch_cape.py          || true
 $PYTHON fetch_sp500_pe.py      || true
 $PYTHON fetch_qqq_valuation.py || true
 $PYTHON fetch_spy_valuation.py  || true
+$PYTHON fetch_wsj_pe.py         || true
 $PYTHON fetch_soxx_valuation.py || true
 $PYTHON fetch_tw_valuation.py   || true
 $PYTHON fetch_mags_valuation.py || true
