@@ -74,6 +74,8 @@ $PYTHON fetch_yield_curve.py   || true
 $PYTHON fetch_vix_term.py      || true
 $PYTHON fetch_real_rates.py    || true
 $PYTHON fetch_money_market.py  || true
+$PYTHON fetch_central_banks.py || true
+$PYTHON fetch_infl_nowcast.py  || true
 
 # 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"

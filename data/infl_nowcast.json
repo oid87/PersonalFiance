@@ -1,0 +1,49 @@
+{
+  "source": "Federal Reserve Bank of Cleveland — Inflation Nowcasting (clevelandfed.org/indicators-and-data/inflation-nowcasting)",
+  "note": "月/季 CPI、PCE nowcast（含核心）。⚠️這是對『當月/當季』甚至部分尚未結束期間的模型預估值，不是已公布的實際數據——這是 nowcasting 指標本身的定義，date/quarter欄位代表『預估的目標期間』而非『已實現的期間』，即使該期間等於或晚於抓取當下的日期也是預期行為（頁面本身也會用 nowcast 暫代因公布延遲而缺漏的官方數據，例如曾用nowcast 取代延遲公布的 2025-10 CPI）。與本 dashboard 其他 tab『不存未來日期』的慣例不同，下游若要用這份資料，需明確標示為『預估』而非『實績』。頁面本身只顯示最近 1-2 期，無歷史封存；本檔靠每次執行合併累積歷史。",
+  "updated": "2026-07-12",
+  "data": [
+    {
+      "date": "2026-06-01",
+      "cpi_mom": -0.06,
+      "core_cpi_mom": 0.23,
+      "pce_mom": 0.1,
+      "core_pce_mom": 0.28,
+      "updated": "2026-07-10",
+      "cpi_yoy": 3.92,
+      "core_cpi_yoy": 2.85,
+      "pce_yoy": 3.88,
+      "core_pce_yoy": 3.43
+    },
+    {
+      "date": "2026-07-01",
+      "cpi_mom": -0.0,
+      "core_cpi_mom": 0.23,
+      "pce_mom": 0.13,
+      "core_pce_mom": 0.28,
+      "updated": "2026-07-10",
+      "cpi_yoy": 3.71,
+      "core_cpi_yoy": 2.81,
+      "pce_yoy": 3.84,
+      "core_pce_yoy": 3.47
+    }
+  ],
+  "data_quarterly": [
+    {
+      "quarter": "2026-Q2",
+      "cpi": 6.59,
+      "core_cpi": 3.23,
+      "pce": 5.41,
+      "core_pce": 3.6,
+      "updated": "2026-07-10"
+    },
+    {
+      "quarter": "2026-Q3",
+      "cpi": 1.47,
+      "core_cpi": 2.75,
+      "pce": 2.6,
+      "core_pce": 3.5,
+      "updated": "2026-07-10"
+    }
+  ]
+}

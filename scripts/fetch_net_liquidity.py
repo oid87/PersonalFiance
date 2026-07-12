@@ -129,6 +129,8 @@ def main() -> None:
             })
 
         merged = idempotent_merge(existing, new_rows)
+        today_str = date.today().isoformat()
+        merged = [r for r in merged if r["date"] <= today_str]  # 防來源前瞻公告未來日
 
         payload = {
             "source": "FRED (St. Louis Fed) — WALCL / WTREGEN / RRPONTSYD",

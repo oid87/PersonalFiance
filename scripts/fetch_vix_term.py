@@ -112,6 +112,8 @@ def main() -> None:
 
         out = DATA_DIR / "vix_term.json"
         merged = idempotent_merge(out, new_rows)
+        today_str = date.today().isoformat()
+        merged = [r for r in merged if r["date"] <= today_str]  # 防來源前瞻公告未來日
 
         note = (
             "CBOE official daily close: vix9d=VIX9D (9-day), vix=VIX (30-day), "
