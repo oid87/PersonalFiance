@@ -2152,6 +2152,166 @@
     <div class="status">本頁教育與試算內容改編整理自公開台股常識，費率/法規參數（融資成數、追繳線、當沖稅率等）以證交所/金管會官方公告為準，非投資建議。</div>
   </section>
 
+  <!-- ── 淨流動性 tab ──────────────────────────────────────────────── -->
+  <section id="tab-net_liquidity" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="netliq-sub-toggles" style="display:flex;gap:4px">
+        <span class="chip" data-netliq-sub="walcl">Fed 總資產</span>
+        <span class="chip" data-netliq-sub="tga">TGA</span>
+        <span class="chip" data-netliq-sub="rrp">RRP</span>
+      </div>
+      <div id="netliq-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-netliq-range="1Y">1Y</span>
+        <span class="chip active" data-netliq-range="3Y">3Y</span>
+        <span class="chip" data-netliq-range="5Y">5Y</span>
+        <span class="chip" data-netliq-range="10Y">10Y</span>
+        <span class="chip" data-netliq-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="netliq-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">淨流動性（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="netliq-cur-val">—</span></div>
+        <div class="bc-count" id="netliq-cur-sub">—</div>
+        <div class="bc-signal" id="netliq-cur-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">近 1 年變化</div>
+        <div class="bc-main"><span class="bc-pct" id="netliq-1y-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="netliq-1y-sub">—</div>
+        <div class="bc-signal" id="netliq-1y-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">近 3 個月變化</div>
+        <div class="bc-main"><span class="bc-pct" id="netliq-3m-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="netliq-3m-sub">—</div>
+        <div class="bc-signal" id="netliq-3m-signal">—</div>
+      </div>
+    </div>
+    <div id="netliq-chart" style="height:520px"></div>
+    <div class="status" id="netliq-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 淨流動性怎麼看？</div>
+      <div class="info-panel-body">
+        <p><b>淨流動性 = Fed 總資產（WALCL）− 財政部帳戶（TGA）− 隔夜逆回購（RRP）</b>，是市場觀察 Fed 貨幣政策對風險資產影響力的常用代理指標。淨流動性上升 = 銀行體系可用資金增加，通常與風險資產（股市）同向；下降則反映流動性緊縮。</p>
+        <table class="info-table">
+          <thead><tr><th>組成</th><th>含義</th></tr></thead>
+          <tbody>
+            <tr><td>WALCL（Fed 總資產）</td><td>Fed 資產負債表規模，QE 擴張/QT 縮表直接反映在此</td></tr>
+            <tr><td>TGA（財政部一般帳戶）</td><td>美國財政部在 Fed 的存款帳戶，發債補充/支出釋出會影響銀行體系流動性</td></tr>
+            <tr><td>RRP（隔夜逆回購）</td><td>貨幣市場基金停泊在 Fed 的資金，屬於「被鎖住」未進入市場的流動性</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">資料：FRED WALCL / WTREGEN / RRPONTSYD（免費，無 key）。單位：百萬美元。定位「流動性環境理解」，非交易觸發訊號。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 殖利率曲線 tab ────────────────────────────────────────────── -->
+  <section id="tab-yield_curve" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="yc-yield-toggles" style="display:flex;gap:4px;flex-wrap:wrap">
+        <span class="chip" data-yc-yield="dgs3mo">3M</span>
+        <span class="chip" data-yc-yield="dgs2">2Y</span>
+        <span class="chip" data-yc-yield="dgs5">5Y</span>
+        <span class="chip" data-yc-yield="dgs10">10Y</span>
+        <span class="chip" data-yc-yield="dgs30">30Y</span>
+      </div>
+      <div id="yc-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-yc-range="1Y">1Y</span>
+        <span class="chip active" data-yc-range="3Y">3Y</span>
+        <span class="chip" data-yc-range="5Y">5Y</span>
+        <span class="chip" data-yc-range="10Y">10Y</span>
+        <span class="chip" data-yc-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="yc-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">10Y − 2Y 利差</div>
+        <div class="bc-main"><span class="bc-pct" id="yc-2y-val">—</span></div>
+        <div class="bc-count" id="yc-2y-sub">—</div>
+        <div class="bc-signal" id="yc-2y-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">10Y − 3M 利差</div>
+        <div class="bc-main"><span class="bc-pct" id="yc-3m-val">—</span></div>
+        <div class="bc-count" id="yc-3m-sub">—</div>
+        <div class="bc-signal" id="yc-3m-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">是否倒掛</div>
+        <div class="bc-main"><span class="bc-pct" id="yc-inv-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="yc-inv-sub">—</div>
+        <div class="bc-signal" id="yc-inv-signal">—</div>
+      </div>
+    </div>
+    <div id="yc-chart" style="height:520px"></div>
+    <div class="status" id="yc-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 殖利率曲線倒掛怎麼看？</div>
+      <div class="info-panel-body">
+        <p><b>殖利率曲線倒掛</b>指長天期公債殖利率低於短天期（例如 10Y &lt; 2Y 或 10Y &lt; 3M），歷史上被視為經濟衰退的領先指標之一（美國近幾次衰退前皆曾出現倒掛）。倒掛本身不是精準的擇時工具——領先時間可長達數月至兩年，且倒掛「解除」（重新轉正）往往比倒掛本身更接近衰退發生時點。</p>
+        <table class="info-table">
+          <thead><tr><th>系列</th><th>含義</th></tr></thead>
+          <tbody>
+            <tr><td>10Y−2Y（T10Y2Y）</td><td>最常被引用的版本，Fed/媒體最常討論</td></tr>
+            <tr><td>10Y−3M（T10Y3M）</td><td>NY Fed 衰退機率模型採用版本，對短端政策利率更敏感</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">資料：FRED DGS3MO/DGS2/DGS5/DGS10/DGS30 + T10Y2Y/T10Y3M（免費，無 key，日頻）。紅色區塊 = 10Y−2Y 倒掛期間。純描述性資訊，非投資建議。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── VIX 期限結構 tab ──────────────────────────────────────────── -->
+  <section id="tab-vix_term" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="vixterm-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-vixterm-range="1Y">1Y</span>
+        <span class="chip active" data-vixterm-range="3Y">3Y</span>
+        <span class="chip" data-vixterm-range="5Y">5Y</span>
+        <span class="chip" data-vixterm-range="10Y">10Y</span>
+        <span class="chip" data-vixterm-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="vixterm-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">ts_ratio（VIX/VIX3M）</div>
+        <div class="bc-main"><span class="bc-pct" id="vixterm-ratio-val">—</span></div>
+        <div class="bc-count" id="vixterm-ratio-sub">—</div>
+        <div class="bc-signal" id="vixterm-ratio-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">結構狀態</div>
+        <div class="bc-main"><span class="bc-pct" id="vixterm-struct-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="vixterm-struct-sub">—</div>
+        <div class="bc-signal" id="vixterm-struct-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">VIX（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="vixterm-vix-val">—</span></div>
+        <div class="bc-count" id="vixterm-vix-sub">—</div>
+        <div class="bc-signal" id="vixterm-vix-signal">—</div>
+      </div>
+    </div>
+    <div id="vixterm-chart" style="height:560px"></div>
+    <div class="status" id="vixterm-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> VIX 期限結構斜率怎麼看？</div>
+      <div class="info-panel-body">
+        <p>VIX 期限結構指不同到期天數的波動率指數（VIX9D/VIX/VIX3M/VIX6M，天期由短到長）之間的關係。正常市場下，較長天期波動率略高於短天期（<b>contango，正斜率</b>），反映時間價值與不確定性隨時間累積。當短天期波動率超越長天期（<b>backwardation，倒斜率</b>），代表市場對「近期」的恐慌程度高於對「未來」的擔憂，通常伴隨股市急跌或黑天鵝事件。</p>
+        <table class="info-table">
+          <thead><tr><th>ts_ratio = VIX / VIX3M</th><th>解讀</th></tr></thead>
+          <tbody>
+            <tr><td>&gt; 1.0</td><td>Backwardation，近月恐慌，市場正在消化立即性風險</td></tr>
+            <tr><td>&lt; 1.0</td><td>Contango，正常期限結構，市場平靜</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">資料：CBOE 官方每日收盤 VIX9D/VIX/VIX3M/VIX6M（免費，無 key）。紅色區塊 = backwardation 期間（ts_ratio &gt; 1）。定位「恐慌程度/市場結構理解」，非交易觸發訊號。</p>
+      </div>
+    </div>
+  </section>
+
   <nav class="cat-bar">
     <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
     <button class="cat-btn" data-cat="liquidity">💧　流動性</button>

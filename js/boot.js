@@ -36,6 +36,9 @@ import * as baniniTab        from './tabs/banini.js';
 import * as qqqmacdTab       from './tabs/qqqmacd.js';
 import * as structTab        from './tabs/struct.js';
 import * as toolsTab         from './tabs/tools.js';
+import * as netLiqTab        from './tabs/net_liquidity.js';
+import * as yieldCurveTab    from './tabs/yield_curve.js';
+import * as vixTermTab       from './tabs/vix_term.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -71,6 +74,9 @@ registerAll([
   { id: 'qqqmacd',       module: qqqmacdTab       },
   { id: 'struct',        module: structTab        },
   { id: 'tools',         module: toolsTab         },
+  { id: 'net_liquidity', module: netLiqTab        },
+  { id: 'yield_curve',   module: yieldCurveTab    },
+  { id: 'vix_term',      module: vixTermTab       },
 ]);
 
 setupResizeHandler();
@@ -98,6 +104,9 @@ const CATEGORIES = [
       { id: 'vixskew',   label: 'VIX-SKEW' },
       { id: 'inflation', label: '通膨預期' },
       { id: 'credit',    label: '信用' },
+      { id: 'net_liquidity', label: '淨流動性' },
+      { id: 'yield_curve',   label: '殖利率曲線' },
+      { id: 'vix_term',      label: 'VIX期限結構' },
     ]
   },
   {
