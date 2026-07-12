@@ -79,6 +79,8 @@ def main() -> None:
         new_rows = merge_three(dfii5, dfii10, dfii30, "dfii5", "dfii10", "dfii30")
         out = DATA_DIR / "real_rates.json"
         merged = idempotent_merge(out, new_rows)
+        today_str = date.today().isoformat()
+        merged = [r for r in merged if r["date"] <= today_str]  # 防來源前瞻公告未來日
         out.write_text(json.dumps({
             "source": "FRED DFII5 / DFII10 / DFII30",
             "note": (

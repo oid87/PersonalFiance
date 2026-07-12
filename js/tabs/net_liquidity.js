@@ -119,13 +119,15 @@ export function render() {
 
   for (const ln of SUB_LINES) {
     if (!showSet.has(ln.key)) continue;
+    // RRP 目前僅數十億、與兆級主線同軸會貼底 → 放獨立右軸;WALCL/TGA 與主線同量級留主軸
+    const onRight = ln.key === "rrp";
     series.push({
-      name: ln.name, type: "line",
+      name: ln.name + (onRight ? "（右軸）" : ""), type: "line",
       data: view.map(r => r[ln.key] != null ? +r[ln.key].toFixed(0) : null),
       symbol: "none", connectNulls: true,
       itemStyle: { color: ln.color },
-      lineStyle: { color: ln.color, width: 1.3, opacity: 0.85 },
-      yAxisIndex: 0, z: 3,
+      lineStyle: { color: ln.color, width: 1.3, opacity: 0.85, type: onRight ? "dashed" : "solid" },
+      yAxisIndex: onRight ? 1 : 0, z: 3,
     });
   }
 
@@ -157,13 +159,22 @@ export function render() {
       axisLabel: { color: axisClr, fontSize: 11 },
       splitLine: { show: false },
     },
-    yAxis: [{
-      type: "value", scale: true, name: "$M",
-      nameTextStyle: { color: axisClr, fontSize: 10 },
-      axisLabel: { color: axisClr, fontSize: 11, formatter: v => (v / 1e6).toFixed(1) + "T" },
-      axisLine: { show: false }, axisTick: { show: false },
-      splitLine: { lineStyle: { color: gridClr } },
-    }],
+    yAxis: [
+      {
+        type: "value", scale: true, name: "$T",
+        nameTextStyle: { color: axisClr, fontSize: 10 },
+        axisLabel: { color: axisClr, fontSize: 11, formatter: v => (v / 1e6).toFixed(1) + "T" },
+        axisLine: { show: false }, axisTick: { show: false },
+        splitLine: { lineStyle: { color: gridClr } },
+      },
+      {
+        type: "value", scale: true, name: "RRP $T", position: "right",
+        nameTextStyle: { color: axisClr, fontSize: 10 },
+        axisLabel: { color: axisClr, fontSize: 11, formatter: v => (v / 1e6).toFixed(2) + "T" },
+        axisLine: { show: false }, axisTick: { show: false },
+        splitLine: { show: false },
+      },
+    ],
     dataZoom: [{ type: "inside", filterMode: "none" }],
     series,
   }, { notMerge: true });

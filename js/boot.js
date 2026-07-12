@@ -41,6 +41,9 @@ import * as yieldCurveTab    from './tabs/yield_curve.js';
 import * as vixTermTab       from './tabs/vix_term.js';
 import * as realRatesTab     from './tabs/real_rates.js';
 import * as moneyMktTab      from './tabs/money_market.js';
+import * as putcallTab       from './tabs/putcall.js';
+import * as centralBanksTab  from './tabs/central_banks.js';
+import * as inflNowcastTab   from './tabs/infl_nowcast.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -81,6 +84,9 @@ registerAll([
   { id: 'vix_term',      module: vixTermTab       },
   { id: 'real_rates',    module: realRatesTab     },
   { id: 'money_market',  module: moneyMktTab      },
+  { id: 'putcall',       module: putcallTab       },
+  { id: 'central_banks', module: centralBanksTab  },
+  { id: 'infl_nowcast',  module: inflNowcastTab   },
 ]);
 
 setupResizeHandler();
@@ -95,6 +101,7 @@ const CATEGORIES = [
       { id: 'umich',     label: '消費者信心' },
       { id: 'flows',    label: '資金脈衝' },
       { id: 'banini',   label: '反指標(8zz)' },
+      { id: 'putcall',  label: 'Put/Call' },
     ]
   },
   {
@@ -113,6 +120,8 @@ const CATEGORIES = [
       { id: 'vix_term',      label: 'VIX期限結構' },
       { id: 'real_rates',    label: '實質利率' },
       { id: 'money_market',  label: '貨幣市場' },
+      { id: 'central_banks', label: '全球央行資產' },
+      { id: 'infl_nowcast',  label: '通膨Nowcast' },
     ]
   },
   {

@@ -2413,6 +2413,139 @@
     </div>
   </section>
 
+  <!-- ── Put/Call ratio tab ────────────────────────────────────────── -->
+  <section id="tab-putcall" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="putc-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-putc-range="1Y">1Y</span>
+        <span class="chip active" data-putc-range="3Y">3Y</span>
+        <span class="chip" data-putc-range="5Y">5Y</span>
+        <span class="chip" data-putc-range="10Y">10Y</span>
+        <span class="chip" data-putc-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="putc-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">Total P/C（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="putc-total-val">—</span></div>
+        <div class="bc-count" id="putc-total-sub">—</div>
+        <div class="bc-signal" id="putc-total-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">反向情緒判讀</div>
+        <div class="bc-main"><span class="bc-pct" id="putc-state-val" style="font-size:20px">—</span></div>
+        <div class="bc-count" id="putc-state-sub">—</div>
+        <div class="bc-signal" id="putc-state-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">Equity P/C</div>
+        <div class="bc-main"><span class="bc-pct" id="putc-equity-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="putc-equity-sub">—</div>
+        <div class="bc-signal" id="putc-equity-signal">—</div>
+      </div>
+    </div>
+    <div id="putc-chart" style="height:520px"></div>
+    <div class="status" id="putc-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> Put/Call 怎麼看？</div>
+      <div class="info-panel-body">
+        <p><b>Put/Call ratio = 賣權成交量 / 買權成交量</b>,是常用的<b>反向</b>情緒指標。比值高(&gt;1)代表市場搶買賣權避險、看空氣氛濃,反而常是階段性底部;比值低(&lt;0.7)代表市場貪婪、幾乎沒人避險,反而是風險偏高。</p>
+        <table class="info-table">
+          <thead><tr><th>P/C</th><th>含義</th></tr></thead>
+          <tbody>
+            <tr><td>&gt; 1.0</td><td>看空情緒濃、避險買盤重(反向偏多)</td></tr>
+            <tr><td>0.7 ~ 1.0</td><td>中性偏空區間</td></tr>
+            <tr><td>&lt; 0.7</td><td>貪婪、避險不足(反向偏空)</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">資料：CBOE 凍結 archive(2006-2019)接 OCC daily-volume-totals(2019+,19 家交易所加總)。⚠️兩段口徑不同(單一交易所 vs 19 家加總),接續處未平滑。定位「情緒理解」,非交易觸發訊號。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 全球央行資產表 tab ────────────────────────────────────────── -->
+  <section id="tab-central_banks" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="cb-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-cb-range="3Y">3Y</span>
+        <span class="chip" data-cb-range="5Y">5Y</span>
+        <span class="chip active" data-cb-range="10Y">10Y</span>
+        <span class="chip" data-cb-range="20Y">20Y</span>
+        <span class="chip" data-cb-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="cb-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">Fed 擴縮(視窗基期以來)</div>
+        <div class="bc-main"><span class="bc-pct" id="cb-fed-val">—</span></div>
+        <div class="bc-count" id="cb-fed-sub">—</div>
+        <div class="bc-signal" id="cb-fed-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">ECB 擴縮</div>
+        <div class="bc-main"><span class="bc-pct" id="cb-ecb-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="cb-ecb-sub">—</div>
+        <div class="bc-signal" id="cb-ecb-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">BOJ 擴縮</div>
+        <div class="bc-main"><span class="bc-pct" id="cb-boj-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="cb-boj-sub">—</div>
+        <div class="bc-signal" id="cb-boj-signal">—</div>
+      </div>
+    </div>
+    <div id="cb-chart" style="height:520px"></div>
+    <div class="status" id="cb-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 全球央行資產表怎麼看？</div>
+      <div class="info-panel-body">
+        <p><b>三大央行(Fed / ECB / BOJ)總資產</b>是全球流動性的源頭。擴表(QE)= 注入流動性、通常利多風險資產;縮表(QT)= 抽走流動性。三者幣別不同(USD/EUR/JPY),<b>不可直接相加</b>,本圖將各行<b>以視窗起點 rebase 成 100</b>,比較的是「相對擴縮速度」而非絕對規模。</p>
+        <table class="info-table">
+          <thead><tr><th>央行</th><th>FRED 序列 / 單位</th></tr></thead>
+          <tbody>
+            <tr><td>Fed</td><td>WALCL,百萬美元,週頻</td></tr>
+            <tr><td>ECB</td><td>ECBASSETSW,百萬歐元,週頻</td></tr>
+            <tr><td>BOJ</td><td>JPNASSETS,億日圓,月頻</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">資料：FRED(免費,無 key)。三者頻率/幣別不同,rebase 後僅供擴縮速度比較。定位「全球流動性環境理解」,非交易觸發訊號。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 通膨 Nowcast tab ──────────────────────────────────────────── -->
+  <section id="tab-infl_nowcast" class="tab-section" hidden>
+    <div id="nowc-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">CPI YoY(當月預估)</div>
+        <div class="bc-main"><span class="bc-pct" id="nowc-cpi-val">—</span></div>
+        <div class="bc-count" id="nowc-cpi-sub">—</div>
+        <div class="bc-signal" id="nowc-cpi-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">Core CPI YoY(當月預估)</div>
+        <div class="bc-main"><span class="bc-pct" id="nowc-corecpi-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="nowc-corecpi-sub">—</div>
+        <div class="bc-signal" id="nowc-corecpi-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">Core PCE YoY(當月預估)</div>
+        <div class="bc-main"><span class="bc-pct" id="nowc-corepce-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="nowc-corepce-sub">—</div>
+        <div class="bc-signal" id="nowc-corepce-signal">—</div>
+      </div>
+    </div>
+    <div id="nowc-chart" style="height:420px"></div>
+    <div class="status" id="nowc-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 通膨 Nowcast 怎麼看？</div>
+      <div class="info-panel-body">
+        <p><b>Cleveland Fed Inflation Nowcasting</b> 用高頻資料(油價、公債殖利率等)即時預估<b>當月與次月</b>的 CPI/PCE,比官方每月延遲公布搶先一步。長條圖比較四個口徑的 YoY 預估與 2% Fed 目標。</p>
+        <p style="margin-top:8px;color:var(--muted)">⚠️這是<b>模型預估值(nowcast),非已公布實績</b>,date 語意是「預估目標月」而非已實現月份——與本站其他 tab「不留未來日期」的慣例刻意不同。官網只提供最近 1-2 期,歷史序列靠每日自動累積。資料：Cleveland Fed(免費,無 key)。</p>
+      </div>
+    </div>
+  </section>
+
   <nav class="cat-bar">
     <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
     <button class="cat-btn" data-cat="liquidity">💧　流動性</button>

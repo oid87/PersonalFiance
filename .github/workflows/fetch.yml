@@ -254,6 +254,14 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_money_market.py
 
+      - name: Fetch global central bank balance sheets (FRED Fed/ECB/BOJ, free)
+        continue-on-error: true
+        run: python scripts/fetch_central_banks.py
+
+      - name: Fetch Cleveland Fed inflation nowcast (free)
+        continue-on-error: true
+        run: python scripts/fetch_infl_nowcast.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 

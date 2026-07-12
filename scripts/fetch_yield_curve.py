@@ -87,6 +87,8 @@ def main() -> None:
         new_rows = merge_many(series_rows)
         out = DATA_DIR / "yield_curve.json"
         merged = idempotent_merge(out, new_rows)
+        today_str = date.today().isoformat()
+        merged = [r for r in merged if r["date"] <= today_str]  # 防來源前瞻公告未來日
         out.write_text(json.dumps({
             "source": "FRED (Federal Reserve Bank of St. Louis)",
             "note": (
