@@ -32,6 +32,7 @@ import * as creditTab        from './tabs/credit.js';
 import * as twSectorFlowTab  from './tabs/twsectorflow.js';
 import * as wkrevTab         from './tabs/wkrev.js';
 import * as marginheatTab    from './tabs/marginheat.js';
+import * as marginpeakTab    from './tabs/marginpeak.js';
 import * as baniniTab        from './tabs/banini.js';
 import * as qqqmacdTab       from './tabs/qqqmacd.js';
 import * as structTab        from './tabs/struct.js';
@@ -75,6 +76,7 @@ registerAll([
   { id: 'twsectorflow',  module: twSectorFlowTab  },
   { id: 'wkrev',         module: wkrevTab         },
   { id: 'marginheat',    module: marginheatTab    },
+  { id: 'marginpeak',    module: marginpeakTab    },
   { id: 'banini',        module: baniniTab        },
   { id: 'qqqmacd',       module: qqqmacdTab       },
   { id: 'struct',        module: structTab        },
@@ -147,6 +149,7 @@ const CATEGORIES = [
       { id: 'leverage', label: '槓桿模擬' },
       { id: 'wkrev',    label: '週K反轉' },
       { id: 'qqqmacd',  label: 'MACD死叉' },
+      { id: 'marginpeak', label: '融資峰值' },
     ]
   },
 ];
