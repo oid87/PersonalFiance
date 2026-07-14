@@ -7,43 +7,41 @@
       "date": "2026-06-01",
       "cpi_mom": -0.06,
       "core_cpi_mom": 0.23,
-      "pce_mom": 0.1,
-      "core_pce_mom": 0.28,
-      "updated": "2026-07-13",
+      "pce_mom": -0.12,
+      "core_pce_mom": 0.19,
+      "updated": "2026-07-14",
       "cpi_yoy": 3.92,
       "core_cpi_yoy": 2.85,
-      "pce_yoy": 3.88,
-      "core_pce_yoy": 3.43
+      "pce_yoy": 3.65,
+      "core_pce_yoy": 3.33
     },
     {
       "date": "2026-07-01",
-      "cpi_mom": -0.0,
-      "core_cpi_mom": 0.23,
-      "pce_mom": 0.13,
-      "core_pce_mom": 0.28,
-      "updated": "2026-07-13",
-      "cpi_yoy": 3.71,
-      "core_cpi_yoy": 2.81,
-      "pce_yoy": 3.84,
-      "core_pce_yoy": 3.47
+      "cpi_mom": -0.04,
+      "core_cpi_mom": 0.21,
+      "pce_mom": 0.11,
+      "core_pce_mom": 0.27,
+      "updated": "2026-07-14",
+      "cpi_yoy": 3.29,
+      "core_cpi_yoy": 2.52,
+      "pce_yoy": 3.58,
+      "core_pce_yoy": 3.36
     }
   ],
   "data_quarterly": [
     {
       "quarter": "2026-Q2",
-      "cpi": 6.59,
-      "core_cpi": 3.23,
-      "pce": 5.41,
-      "core_pce": 3.6,
-      "updated": "2026-07-13"
+      "pce": 5.1,
+      "core_pce": 3.47,
+      "updated": "2026-07-14"
     },
     {
       "quarter": "2026-Q3",
-      "cpi": 1.43,
-      "core_cpi": 2.75,
-      "pce": 2.57,
-      "core_pce": 3.5,
-      "updated": "2026-07-13"
+      "cpi": 0.66,
+      "core_cpi": 1.9,
+      "pce": 2.08,
+      "core_pce": 3.18,
+      "updated": "2026-07-14"
     }
   ]
 }
