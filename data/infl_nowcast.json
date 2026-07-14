@@ -1,7 +1,7 @@
 {
   "source": "Federal Reserve Bank of Cleveland — Inflation Nowcasting (clevelandfed.org/indicators-and-data/inflation-nowcasting)",
   "note": "月/季 CPI、PCE nowcast（含核心）。⚠️這是對『當月/當季』甚至部分尚未結束期間的模型預估值，不是已公布的實際數據——這是 nowcasting 指標本身的定義，date/quarter欄位代表『預估的目標期間』而非『已實現的期間』，即使該期間等於或晚於抓取當下的日期也是預期行為（頁面本身也會用 nowcast 暫代因公布延遲而缺漏的官方數據，例如曾用nowcast 取代延遲公布的 2025-10 CPI）。與本 dashboard 其他 tab『不存未來日期』的慣例不同，下游若要用這份資料，需明確標示為『預估』而非『實績』。頁面本身只顯示最近 1-2 期，無歷史封存；本檔靠每次執行合併累積歷史。",
-  "updated": "2026-07-13",
+  "updated": "2026-07-14",
   "data": [
     {
       "date": "2026-06-01",
