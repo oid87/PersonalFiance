@@ -3,7 +3,7 @@
 import { isLight, tc, mob } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 
-let chart = null, gauge = null, mcChart = null, basisChart = null, chipsChart = null;
+let chart = null, gauge = null, mcChart = null, basisChart = null, chipsChart = null, forcedChart = null;
 let sent = null;            // taiwan_sentiment.json
 let twii = null, pc = null, fut = null, mar = null, mr = null;   // raw component arrays (mr=融資維持率[[date,ratio]])
 let mcData = null;          // taiwan_margin_mktcap.json: {data:[{date,ratio,...}], k_billion_per_point, ...}
@@ -73,7 +73,7 @@ export async function init() {
         rangePreset = el.dataset.twsentRange;
         document.querySelectorAll("[data-twsent-range]").forEach(e =>
           e.classList.toggle("active", e.dataset.twsentRange === rangePreset));
-        renderChart(); renderTable(); renderMktcap(); renderBasis(); renderChips();
+        renderChart(); renderTable(); renderForced(); renderMktcap(); renderBasis(); renderChips();
       }));
 
     renderAll();
@@ -109,9 +109,140 @@ function renderAll() {
   }
   renderChart();
   renderTable();
+  renderForced();
   renderMktcap();
   renderBasis();
   renderChips();
+}
+
+// 韓式「融資水位 × 斷頭壓力」雙格:上=融資餘額+加權(背離),下=融資維持率(斷頭壓力代理)
+// 卡片=自可視範圍加權指數波段高點起,指數跌幅 vs 融資餘額降幅(洗乾淨了嗎)
+function renderForced() {
+  const cardEl = document.getElementById("twsent-forced-card");
+  const chartEl = document.getElementById("twsent-forced-chart");
+  if (!cardEl || !chartEl) return;
+
+  const from = fromDate();
+  const fil = arr => from ? arr.filter(r => (r[0] ?? r.date) >= from) : arr;
+  const mgn = fil(mar).map(r => [r.date, r.margin_money]);   // 融資餘額(億)
+  const twS = fil(twii);                                     // 加權指數
+  const mrt = mr ? fil(mr) : [];                             // 融資維持率(重建)
+
+  if (!mgn.length || !twS.length) {
+    cardEl.innerHTML = `<div style="color:var(--muted);font-size:12px">所選範圍內無融資/加權資料</div>`;
+    return;
+  }
+
+  // 卡片:找可視範圍內加權指數波段高點 → 算 指數與融資 自高點至今的降幅
+  let peakIdx = 0;
+  for (let i = 1; i < twS.length; i++) if (twS[i][1] > twS[peakIdx][1]) peakIdx = i;
+  const peakDate = twS[peakIdx][0];
+  const twPeak = twS[peakIdx][1], twNow = twS.at(-1)[1];
+  const twDrop = (twNow / twPeak - 1) * 100;                 // 指數自高點 %
+  // 融資餘額:取 peakDate 當日(或之後最近)一筆為基準
+  const mgnAtPeak = mgn.find(r => r[0] >= peakDate);
+  const mgnBase = mgnAtPeak ? mgnAtPeak[1] : mgn[0][1];
+  const mgnNow = mgn.at(-1)[1];
+  const mgnDrop = (mgnNow / mgnBase - 1) * 100;              // 融資自高點 %
+  // 「沒洗乾淨」訊號:指數明顯跌、融資卻幾乎沒降
+  const dirty = twDrop <= -8 && mgnDrop > twDrop / 2;
+  const mrLat = mrt.length ? mrt.at(-1) : null;
+
+  const dropSpan = (v, inv) => {
+    const bad = inv ? v > -3 : false;   // 融資降幅太小=壞(紅);指數跌本身用綠紅視覺
+    const col = v >= 0 ? "#f85149" : "#3fb950";
+    return `<span style="color:${col};font-weight:700">${v >= 0 ? "+" : ""}${v.toFixed(1)}%</span>`;
+  };
+  cardEl.innerHTML =
+    `<span style="color:var(--muted);font-size:12px">自波段高 ${peakDate} 起</span>
+     <span style="font-size:13px;margin-left:10px">加權 ${dropSpan(twDrop)}</span>
+     <span style="color:var(--muted)">·</span>
+     <span style="font-size:13px">融資餘額 ${dropSpan(mgnDrop, true)}</span>
+     ${mrLat ? `<span style="color:var(--muted)">·</span><span style="font-size:13px">維持率 <b style="color:${C.maint}">${mrLat[1].toFixed(0)}%</b></span>` : ""}
+     <span style="margin-left:12px;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;
+       background:${dirty ? "rgba(248,81,73,0.15)" : "rgba(63,185,80,0.15)"};
+       color:${dirty ? "#f85149" : "#3fb950"}">
+       ${dirty ? "⚠ 指數跌、融資未降 → 籌碼未洗清" : "融資隨指數同步收縮"}</span>`;
+
+  if (!forcedChart) {
+    forcedChart = echarts.init(chartEl, isLight() ? null : "dark");
+    window.addEventListener("resize", () => forcedChart && forcedChart.resize());
+  }
+
+  const xmin = from || mgn[0][0];
+  const xmax = [twS.at(-1)[0], mgn.at(-1)[0]].sort().at(-1);
+  const tipBg = tc("#161b22", "#ffffff"), tipBdr = tc("#30363d", "#d0d7de");
+  const tipTx = tc("#e6edf3", "#1f2328"), axCl = tc("#8b949e", "#57606a");
+  const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
+  const hasMr = mrt.length > 0;
+  const xAx = i => ({ type: "time", gridIndex: i, min: xmin, max: xmax,
+    axisLabel: { show: i === (hasMr ? 1 : 0), color: axCl, fontSize: 11 },
+    axisLine: { lineStyle: { color: gridCl } }, splitLine: { show: false } });
+
+  forcedChart.setOption({
+    backgroundColor: "transparent", animation: false,
+    axisPointer: { link: [{ xAxisIndex: "all" }], label: { backgroundColor: axCl } },
+    legend: { top: 4, left: "center", textStyle: { color: axCl, fontSize: 11 },
+      itemWidth: mob() ? 14 : 25, itemGap: mob() ? 8 : 16,
+      data: ["融資餘額", "加權指數"].concat(hasMr ? ["融資維持率"] : []) },
+    tooltip: { trigger: "axis", backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipTx, fontSize: 12 },
+      formatter: params => {
+        if (!params.length) return "";
+        let html = `<b>${tsToLocalDate(params[0].axisValue)}</b><br/>`;
+        for (const p of params) {
+          const v = p.value?.[1]; if (v == null) continue;
+          let s;
+          if (p.seriesName === "融資餘額") s = v.toLocaleString("en-US", { maximumFractionDigits: 0 }) + " 億";
+          else if (p.seriesName === "加權指數") s = v.toLocaleString("en-US", { maximumFractionDigits: 0 });
+          else s = v.toFixed(1) + "%";
+          html += `<span style="color:${p.color}">● ${p.seriesName}: <b>${s}</b></span><br/>`;
+        }
+        return html;
+      } },
+    grid: hasMr ? [
+      { left: mob() ? 52 : 66, right: mob() ? 52 : 64, top: mob() ? 52 : 36, height: "44%" },
+      { left: mob() ? 52 : 66, right: mob() ? 52 : 64, top: "68%", height: "24%" },
+    ] : [
+      { left: mob() ? 52 : 66, right: mob() ? 52 : 64, top: mob() ? 52 : 36, bottom: 40 },
+    ],
+    xAxis: hasMr ? [xAx(0), xAx(1)] : [xAx(0)],
+    yAxis: [
+      { type: "value", gridIndex: 0, scale: true, name: "融資億", nameTextStyle: { color: C.margin, fontSize: 10 },
+        axisLabel: { color: C.margin, fontSize: 10 }, splitLine: { lineStyle: { color: gridCl } } },
+      { type: "value", gridIndex: 0, scale: true, position: "right", name: "加權", nameTextStyle: { color: C.twii, fontSize: 10 },
+        axisLabel: { color: C.twii, fontSize: 10 }, splitLine: { show: false } },
+    ].concat(hasMr ? [
+      { type: "value", gridIndex: 1, scale: true, name: "維持率%", nameTextStyle: { color: C.maint, fontSize: 10 },
+        axisLabel: { color: C.maint, fontSize: 10 }, splitLine: { lineStyle: { color: gridCl } } },
+    ] : []),
+    series: [
+      { name: "融資餘額", type: "line", xAxisIndex: 0, yAxisIndex: 0, data: mgn, symbol: "none",
+        lineStyle: { color: C.margin, width: 1.8 },
+        areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [{ offset: 0, color: "rgba(227,179,65,0.22)" }, { offset: 1, color: "rgba(227,179,65,0.02)" }] } },
+        markLine: { silent: true, symbol: "none", data: [
+          { xAxis: peakDate, lineStyle: { color: axCl, type: "dashed", width: 1 },
+            label: { show: !mob(), formatter: "波段高", color: axCl, fontSize: 10, position: "insideEndTop" } },
+        ] } },
+      { name: "加權指數", type: "line", xAxisIndex: 0, yAxisIndex: 1, data: twS, symbol: "none",
+        lineStyle: { color: C.twii, width: 1.4 } },
+    ].concat(hasMr ? [
+      { name: "融資維持率", type: "line", xAxisIndex: 1, yAxisIndex: 2, data: mrt, symbol: "none",
+        lineStyle: { color: C.maint, width: 1.6 },
+        areaStyle: { color: { type: "linear", x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [{ offset: 0, color: "rgba(126,231,135,0.18)" }, { offset: 1, color: "rgba(126,231,135,0.02)" }] } },
+        markPoint: { symbol: "circle", symbolSize: 8, data: (mrLat ? [{
+          coord: [mrLat[0], mrLat[1]],
+          itemStyle: { color: C.maint, borderColor: tc("#0d1117", "#ffffff"), borderWidth: 2 },
+          label: { formatter: `${mrLat[1].toFixed(0)}%`, position: "top", color: C.maint, fontSize: 11, fontWeight: 600 },
+        }] : []) } },
+    ] : []),
+    dataZoom: [
+      { type: "inside", xAxisIndex: hasMr ? [0, 1] : [0] },
+      { type: "slider", xAxisIndex: hasMr ? [0, 1] : [0], height: 16, bottom: 6,
+        fillerColor: "rgba(88,166,255,0.1)", borderColor: tc("#30363d", "#d0d7de") },
+    ],
+  }, true);
 }
 
 function renderMktcap() {
@@ -486,9 +617,10 @@ function renderTable() {
 export function onThemeChange(light) {
   if (chart) { chart.dispose(); chart = echarts.init(document.getElementById("twsent-chart"), light ? null : "dark"); renderChart(); }
   if (gauge) { gauge.dispose(); gauge = echarts.init(document.getElementById("twsent-gauge"), light ? null : "dark"); renderGauge(sent.latest.composite); }
+  if (forcedChart) { forcedChart.dispose(); forcedChart = null; renderForced(); }
   if (mcChart) { mcChart.dispose(); mcChart = null; renderMktcap(); }
   if (basisChart) { basisChart.dispose(); basisChart = null; renderBasis(); }
   if (chipsChart) { chipsChart.dispose(); chipsChart = null; renderChips(); }
 }
 
-export function resize() { chart?.resize(); gauge?.resize(); mcChart?.resize(); basisChart?.resize(); chipsChart?.resize(); }
+export function resize() { chart?.resize(); gauge?.resize(); forcedChart?.resize(); mcChart?.resize(); basisChart?.resize(); chipsChart?.resize(); }
