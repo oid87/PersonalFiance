@@ -140,6 +140,12 @@ jobs:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python scripts/fetch_taiwan_margin_total.py
 
+      - name: Fetch Taiwan individual-stock margin concentration + clearance days (FinMind, 融資集中度)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_margin_concentration.py
+
       - name: Reconstruct Taiwan margin maintenance ratio (TWSE 大盤融資維持率, 重建)
         continue-on-error: true
         run: python scripts/fetch_taiwan_margin_ratio.py
