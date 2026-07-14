@@ -8,6 +8,8 @@ let breadthFgMap     = {};   // { date: value }
 let breadthVixActive = false;
 let breadthFgActive  = false;
 let breadthRange     = "2Y";
+let breadthMaWin     = 50;   // 50 | 200 — 一次只看一條廣度線 + 指數同窗均線
+let breadthMaMap     = {};   // { 50: {date: ma}, 200: {...} } — 以完整 overlay 歷史計算
 let hbTriggers       = [];   // ["YYYY-MM-DD", ...] Hindenburg-style trigger dates
 
 const UNIVERSE_CONFIG = {
@@ -99,11 +101,25 @@ async function loadUniverse(universe) {
     const overlayJson = await overlayResp.json();
     const overlay = {};
     for (const r of overlayJson.data) overlay[r.date] = r.close;
-    breadthCache[universe] = { data, overlay };
+    // 指數自身均線:用完整 overlay 歷史算,才不會在短窗(1Y/2Y)開頭缺一段
+    const sorted = [...overlayJson.data].sort((a, b) => a.date < b.date ? -1 : 1);
+    const maMaps = {};
+    for (const win of [50, 200]) {
+      const m = {};
+      let sum = 0;
+      for (let i = 0; i < sorted.length; i++) {
+        sum += sorted[i].close;
+        if (i >= win) sum -= sorted[i - win].close;
+        if (i >= win - 1) m[sorted[i].date] = sum / win;
+      }
+      maMaps[win] = m;
+    }
+    breadthCache[universe] = { data, overlay, maMaps };
   }
   breadthUniverse = universe;
   breadthData = breadthCache[universe].data;
   breadthSpy  = breadthCache[universe].overlay;
+  breadthMaMap = breadthCache[universe].maMaps;
 }
 
 function setBearCard(pct, count, total) {
@@ -179,6 +195,15 @@ export async function init() {
       });
     });
 
+    document.querySelectorAll("[data-breadth-ma]").forEach(el => {
+      el.addEventListener("click", () => {
+        breadthMaWin = +el.dataset.breadthMa;
+        document.querySelectorAll("[data-breadth-ma]").forEach(e =>
+          e.classList.toggle("active", +e.dataset.breadthMa === breadthMaWin));
+        renderBreadthChart();
+      });
+    });
+
     document.querySelectorAll("[data-breadth-universe]").forEach(el => {
       el.addEventListener("click", async () => {
         const u = el.dataset.breadthUniverse;
@@ -245,6 +270,9 @@ export function renderBreadthChart() {
   const above50  = rows.map(r => r.above50_pct  != null ? r.above50_pct  : null);
   const above200 = rows.map(r => r.above200_pct != null ? r.above200_pct : null);
   const spyVals  = rows.map(r => breadthSpy[r.date]   != null ? +breadthSpy[r.date].toFixed(2)   : null);
+  const breadthVals = breadthMaWin === 50 ? above50 : above200;
+  const maSrc    = breadthMaMap[breadthMaWin] || {};
+  const maVals   = rows.map(r => maSrc[r.date] != null ? +maSrc[r.date].toFixed(2) : null);
   const vixVals  = rows.map(r => breadthVixMap[r.date] != null ? +breadthVixMap[r.date].toFixed(2) : null);
   const fgVals   = rows.map(r => breadthFgMap[r.date]  != null ? +breadthFgMap[r.date].toFixed(1)  : null);
 
@@ -292,7 +320,7 @@ export function renderBreadthChart() {
         for (const p of params) {
           if (p.value == null) continue;
           let val;
-          if (p.seriesName === UNIVERSE_CONFIG[breadthUniverse].overlayName) val = `$${p.value.toFixed(2)}`;
+          if (p.seriesName.startsWith(UNIVERSE_CONFIG[breadthUniverse].overlayName)) val = `$${p.value.toFixed(2)}`;
           else if (p.seriesName === "VIX")   val = p.value.toFixed(1);
           else if (p.seriesName === "F&G")   val = p.value.toFixed(0);
           else                               val = `${p.value.toFixed(1)}%`;
@@ -326,14 +354,20 @@ export function renderBreadthChart() {
         name: UNIVERSE_CONFIG[breadthUniverse].overlayName,
         type: "line", data: spyVals, smooth: 0.3, symbol: "none",
         yAxisIndex: 1, z: 1,
-        lineStyle: { width: 1.5, color: "#a371f7", opacity: 0.7 },
+        lineStyle: { width: 1.2, color: "#a371f7", opacity: 0.6 },
       },
       {
-        name: "50日均線以上",
-        type: "line", data: above50, smooth: 0.3, symbol: "none",
+        name: `${UNIVERSE_CONFIG[breadthUniverse].overlayName} ${breadthMaWin}MA`,
+        type: "line", data: maVals, smooth: 0.3, symbol: "none",
+        yAxisIndex: 1, z: 2,
+        lineStyle: { width: 2, color: "#d2a8ff", type: "dashed" },
+      },
+      {
+        name: `${breadthMaWin}日均線以上`,
+        type: "line", data: breadthVals, smooth: 0.3, symbol: "none",
         yAxisIndex: 0, z: 3,
-        lineStyle: { width: 2, color: "#58a6ff" },
-        areaStyle: { color: "rgba(88,166,255,0.08)" },
+        lineStyle: { width: 2, color: breadthMaWin === 50 ? "#58a6ff" : "#3fb950" },
+        areaStyle: { color: breadthMaWin === 50 ? "rgba(88,166,255,0.08)" : "rgba(63,185,80,0.06)" },
         markLine: {
           silent: true, symbol: "none",
           data: [
@@ -359,13 +393,6 @@ export function renderBreadthChart() {
             [{ yAxis: 85, itemStyle: { color: "rgba(63,185,80,0.06)"  } }, { yAxis: 100 }],
           ],
         },
-      },
-      {
-        name: "200日均線以上",
-        type: "line", data: above200, smooth: 0.3, symbol: "none",
-        yAxisIndex: 0, z: 2,
-        lineStyle: { width: 2, color: "#3fb950" },
-        areaStyle: { color: "rgba(63,185,80,0.05)" },
       },
       ...(breadthVixActive ? [{
         name: "VIX",

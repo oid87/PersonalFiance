@@ -606,6 +606,10 @@
           <span class="chip" data-breadth-universe="XLG" data-tooltip="對應 XLG · S&amp;P 500 市值前 50 大">超大型50</span>
           <span class="chip" data-breadth-universe="TW50" data-tooltip="對應 0050 · 臺灣50指數(台灣前 50 大),台版超大型股廣度">台灣50</span>
         </div>
+        <div id="breadth-ma-picker" style="display:flex;gap:4px">
+          <span class="chip active" data-breadth-ma="50" data-tooltip="成分股站上 50MA 比例 + 指數自身 50MA（右軸）">50MA</span>
+          <span class="chip" data-breadth-ma="200" data-tooltip="成分股站上 200MA 比例 + 指數自身 200MA（右軸）">200MA</span>
+        </div>
         <span id="breadth-vix-toggle" class="chip" data-tooltip="疊加 VIX 恐慌指數（右軸）">VIX</span>
         <span id="breadth-fg-toggle"  class="chip" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
         <div id="breadth-range-picker" style="display:flex;gap:4px">
@@ -708,6 +712,7 @@
     </div>
   </section>
 
+  <!-- ── 波動率倍數 tab ────────────────────────────────────────── -->
   <!-- ── 位階 tab ────────────────────────────────────────────────── -->
   <section id="tab-position" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
@@ -2721,6 +2726,63 @@
       </div>
     </div>
   </section>
+
+  <!-- ── 美元流動性 tab ─────────────────────────────────────────────── -->
+  <section id="tab-usdliq" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="ul-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-ul-range="1Y">1Y</span>
+        <span class="chip active" data-ul-range="3Y">3Y</span>
+        <span class="chip" data-ul-range="MAX">MAX</span>
+      </div>
+    </div>
+
+    <!-- 1. 八層狀態燈 -->
+    <div id="ul-stack" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;padding:12px 16px"></div>
+
+    <!-- 2. 短端利率走廊 -->
+    <div style="padding:10px 16px 2px;color:var(--text);font-weight:600;font-size:13px;border-top:1px solid var(--border)">短端利率走廊（IORB 為判讀基準線）</div>
+    <div id="ul-corridor" style="width:100%;height:480px"></div>
+
+    <!-- 3. 緩衝墊耗盡 -->
+    <div style="padding:10px 16px 2px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border)">
+      <span style="color:var(--text);font-weight:600;font-size:13px">緩衝墊耗盡（Reserves / TGA / ON RRP）</span>
+      <div id="ul-buffer-scale" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip active" data-ul-scale="linear">線性</span>
+        <span class="chip" data-ul-scale="log">對數</span>
+      </div>
+    </div>
+    <div id="ul-buffer" style="width:100%;height:520px"></div>
+
+    <!-- 4. 供給側 -->
+    <div style="padding:10px 16px 2px;color:var(--text);font-weight:600;font-size:13px;border-top:1px solid var(--border)">供給側（Fails / 標售 Bid-to-Cover）</div>
+    <div id="ul-supply" style="width:100%;height:440px"></div>
+
+    <div class="status" id="ul-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 美元流動性八層怎麼看？</div>
+      <div class="info-panel-body">
+        <p>⚠️ <b>本表判斷的是「融資壓力」（funding stress），不是方向訊號</b>。八張卡由 Fed 操作層一路往下看到全球美元層，任一層轉紅只代表該層的資金摩擦升高，不是進出場訊號，定位「資金面壓力理解」。</p>
+        <table class="info-table">
+          <thead><tr><th>層級</th><th>看什麼</th></tr></thead>
+          <tbody>
+            <tr><td>L1 Fed 操作層</td><td>EFFR−IORB 利差 + Reserves 週變化</td></tr>
+            <tr><td>L2 財政現金層</td><td>TGA 近 20 個交易日變化（TGA 上升＝從市場抽水）</td></tr>
+            <tr><td>L3 銀行資金層</td><td>Primary Credit（貼現窗口）3 年百分位</td></tr>
+            <tr><td>L4 非銀行貨幣層</td><td>ON RRP 水位（緩衝墊厚薄）</td></tr>
+            <tr><td>L5 Repo/抵押品層</td><td>SOFR−IORB、SOFR99−SOFR（尾端擠壓）</td></tr>
+            <tr><td>L6 美債市場層</td><td>標售 Bid-to-Cover 均值變化 + CP90−EFFR 利差</td></tr>
+            <tr><td>L7 支付清算層</td><td>Fails to Deliver/Receive 3 年百分位</td></tr>
+            <tr><td>L8 全球美元層</td><td>央行互換 swaps、境外 RRP</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">⚠️ <b>ON RRP 幾近歸零代表「緩衝墊耗盡」，不是現金荒本身</b>——2021–2022 年時 ON RRP 曾高達 2 兆美元，是銀行體系準備金過剩、貨幣市場基金停泊資金的地方；隨著 Fed QT，這個緩衝墊被逐步用光，代表市場對準備金的餘裕正在收斂，需要更密切觀察 L1/L5 是否跟著轉緊，而不是直接解讀成「錢不夠」。</p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #8b949e;background:rgba(139,148,158,.08);border-radius:4px">⚠️ <b>L7 支付清算層（fails）為週頻且落後約兩週的資料</b>，新鮮度圓點多半只會是黃或灰，不代表資料異常，只是這個資料源本身的發布節奏。</p>
+        <p style="margin-top:8px;color:var(--muted)">資料：FRED / NY Fed Markets API / Treasury Fiscal Data / TreasuryDirect（皆免費，無 key）。金額單位十億美元（B），利率為 %。daily 陣列最後一筆常態性部分缺值（IORB 當天即有、SOFR/ON RRP 隔日才公布），本頁「最新值」一律取該欄最後一筆非 null 值，不是陣列最後一列。</p>
+      </div>
+    </div>
+  </section>
+
   <nav class="cat-bar">
     <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
     <button class="cat-btn" data-cat="liquidity">💧　流動性</button>

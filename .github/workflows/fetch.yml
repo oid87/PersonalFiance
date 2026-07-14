@@ -264,6 +264,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_money_market.py
 
+      - name: Fetch USD liquidity stack (FRED H.4.1 + NY Fed rates/RRP/seclending + Treasury DTS/auctions)
+        continue-on-error: true
+        run: python scripts/fetch_usdliq.py
+
       - name: Fetch global central bank balance sheets (FRED Fed/ECB/BOJ, free)
         continue-on-error: true
         run: python scripts/fetch_central_banks.py
@@ -271,6 +275,7 @@ jobs:
       - name: Fetch Cleveland Fed inflation nowcast (free)
         continue-on-error: true
         run: python scripts/fetch_infl_nowcast.py
+
       - name: Fetch CPI components (FRED + BLS, monthly, free)
         continue-on-error: true
         run: python scripts/fetch_cpi.py
