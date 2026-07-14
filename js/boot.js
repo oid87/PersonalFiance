@@ -36,6 +36,7 @@ import * as marginpeakTab    from './tabs/marginpeak.js';
 import * as baniniTab        from './tabs/banini.js';
 import * as qqqmacdTab       from './tabs/qqqmacd.js';
 import * as structTab        from './tabs/struct.js';
+import * as kellyTab         from './tabs/kelly.js';
 import * as toolsTab         from './tabs/tools.js';
 import * as netLiqTab        from './tabs/net_liquidity.js';
 import * as yieldCurveTab    from './tabs/yield_curve.js';
@@ -80,6 +81,7 @@ registerAll([
   { id: 'banini',        module: baniniTab        },
   { id: 'qqqmacd',       module: qqqmacdTab       },
   { id: 'struct',        module: structTab        },
+  { id: 'kelly',         module: kellyTab         },
   { id: 'tools',         module: toolsTab         },
   { id: 'net_liquidity', module: netLiqTab        },
   { id: 'yield_curve',   module: yieldCurveTab    },
@@ -134,6 +136,7 @@ const CATEGORIES = [
       { id: 'valuation', label: '估值' },
       { id: 'position',  label: '位階' },
       { id: 'struct',    label: '結構判讀' },
+      { id: 'kelly',     label: '凱利上限' },
       { id: 'twcycle',   label: '景氣燈號' },
       { id: 'tools',     label: '工具箱' },
     ]

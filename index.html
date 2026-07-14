@@ -858,6 +858,53 @@
     <div class="status" id="struct-notes" style="padding:0 24px 12px;font-size:12px"></div>
   </section>
 
+  <!-- ── 凱利上限 tab（QQQ 滾動凱利建議槓桿上限 vs 200MA 乖離） ───── -->
+  <section id="tab-kelly" class="tab-section" hidden>
+    <div id="kelly-top" style="display:flex;gap:14px;padding:16px 24px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">L*(252d) 全凱利（主看）</div>
+        <div class="bc-main"><span class="bc-pct" id="kelly-l252-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="kelly-l252-sub">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">L*(126d)</div>
+        <div class="bc-main"><span class="bc-pct" id="kelly-l126-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="kelly-l126-sub">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">L*(63d)</div>
+        <div class="bc-main"><span class="bc-pct" id="kelly-l63-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="kelly-l63-sub">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">200MA 乖離%</div>
+        <div class="bc-main"><span class="bc-pct" id="kelly-dev-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="kelly-dev-sub">—</div>
+      </div>
+    </div>
+
+    <div id="kelly-chart" style="width:100%;height:640px"></div>
+    <div class="status" id="kelly-status" style="padding:8px 24px">切換至此 tab 自動載入…</div>
+
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> L* 是天花板/尺，不是進場訊號</div>
+      <div class="info-panel-body">
+        <p>L* = μ/σ² 看不見偏度；QQQ 負偏（崩盤急殺），平靜期 σ² 被壓低會把 L* 灌大（現在叫你開
+          6~12x 是陷阱）。此線是當天花板/尺，非訊號。實際安全槓桿要比 L* 更往左。L*&lt;1 才與
+          「該收槓桿」一致。</p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+          ⚠️ 權威來源為 <code>Financial_work/kelly_leverage_ceiling.py</code>（RF=4% 固定、未接 FRED；
+          未來函數防護：L* 整條序列 shift(1)，t 日只用 t-1 收盤算出的值）。<b>本頁數字與 python
+          對照組有系統性落差</b>：<code>data/QQQ.json</code> 存的是未還原（不含股息）收盤價，python
+          端 <code>lab.download(auto_adjust=True)</code> 抓的是股息還原收盤價；QQQ 有配息，兩者歷史
+          年化報酬率不同，導致本頁 L*(252d)/L*(126d)/L*(63d)/200MA乖離% 四個當前值都與 python 對照組
+          有感差距（≈0.1–0.15，超出 &lt;0.01 對拍門檻），全史「L*(252d)&lt;1 段數」也不同（88 vs 87）。
+          已用獨立 python 腳本套用 <code>data/QQQ.json</code> 同一份原始資料重算，結果與本頁 JS 完全一致
+          ——確認公式/未來函數防護本身無誤，落差來源是還原息 vs 未還原息的資料內容差異，非邏輯 bug。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 流動性 tab ──────────────────────────────────────────────── -->
   <section id="tab-liquidity" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
