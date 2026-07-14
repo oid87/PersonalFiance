@@ -496,6 +496,18 @@
     </div>
     <div id="twsent-chart"></div>
 
+    <!-- 融資水位 × 斷頭壓力 (韓式雙軸) — 指數跌但融資不降=沒洗乾淨 -->
+    <div class="twsent-forced-section" style="margin-top:22px">
+      <div class="aaii-table-title" style="margin-bottom:8px">融資水位 × 斷頭壓力 — 洗乾淨了嗎？（韓式雙格）</div>
+      <div id="twsent-forced-card" style="margin-bottom:8px"></div>
+      <div id="twsent-forced-chart" style="height:420px"></div>
+      <p style="color:var(--muted);font-size:12px;margin-top:8px">
+        仿韓國 KOFIA 融資餘額×반대매매(斷頭)雙軸讀法。<b>上格</b>=大盤融資餘額(億)疊加權指數:指數重挫但融資餘額不降,代表被斷的部位反彈就有人開槓桿補回、籌碼未洗清。
+        <b>下格</b>=融資維持率(重建)當斷頭壓力代理,越低越接近追繳/斷頭。<b>卡片</b>=自可視範圍加權指數波段高點起,指數跌幅 vs 融資餘額降幅,兩者背離越大越危險。
+        ⚠️ 台灣無「已實現斷頭金額」免費公開數列(韓國有 반대매매),此處以維持率替代;重建維持率(擔保品市值÷融資)水位較券商整戶維持率偏高,故不硬畫 130% 追繳線,看趨勢方向為主。
+      </p>
+    </div>
+
     <!-- 融資 ÷ 上市市值 (千分比) — 台股槓桿密度，多年回測 -->
     <div class="twsent-mktcap-section" style="margin-top:22px">
       <div class="aaii-table-title" style="margin-bottom:8px">融資餘額 ÷ 上市市值 (千分比 ‰) — 台股槓桿密度（回測級）</div>
@@ -1749,6 +1761,20 @@
   <section id="tab-marginheat" class="tab-section" hidden>
     <div id="marginheat-status" style="padding:8px 16px;color:var(--muted);font-size:12px"></div>
     <div id="marginheat-chart" style="width:100%;height:420px"></div>
+
+    <!-- 融資水位 × 指數背離 (韓式) — 美股版:Margin Debt 絕對水位 vs S&P500 -->
+    <div style="padding:0 16px;margin-top:18px">
+      <div class="aaii-table-title" style="margin-bottom:8px">融資水位 × 指數背離 — 槓桿出清了嗎？（韓式）</div>
+      <div id="marginheat-forced-card" style="margin-bottom:8px"></div>
+      <div id="marginheat-forced-chart" style="width:100%;height:360px"></div>
+      <p style="color:var(--muted);font-size:12px;margin-top:8px">
+        仿韓國 KOFIA 融資餘額水位讀法的美股版。金線=FINRA Margin Debt 絕對水位($兆)、白線=S&P500(對數):
+        指數重挫但融資餘額不降,代表槓桿未被沖洗、反彈就有人補回。<b>卡片</b>=近18個月 S&P500 波段高點起,指數跌幅 vs 融資餘額降幅,背離越大越危險。
+        ⚠️ 美股<b>無「已實現斷頭金額/整戶維持率」免費公開源</b>(韓國有 반대매매、台灣可用重建維持率代理),故美股版只有水位背離、無斷頭壓力子格;
+        且 FINRA Margin Debt 為<b>月頻、公布落後約 2 個月</b>,背離訊號本質上慢半拍,只能事後確認、不能即時擇時。
+      </p>
+    </div>
+
     <div style="padding:12px 16px">
       <table class="info-table" id="marginheat-table">
         <thead><tr><th>事件</th><th>日期</th><th>Margin YoY</th><th>當時 S&P500</th><th>後續走勢</th><th>說明</th></tr></thead>
