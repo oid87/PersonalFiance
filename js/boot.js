@@ -48,6 +48,7 @@ import * as putcallTab       from './tabs/putcall.js';
 import * as centralBanksTab  from './tabs/central_banks.js';
 import * as inflNowcastTab   from './tabs/infl_nowcast.js';
 import * as cpiTab           from './tabs/cpi.js';
+import * as usdliqTab        from './tabs/usdliq.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -95,6 +96,7 @@ registerAll([
   { id: 'central_banks', module: centralBanksTab  },
   { id: 'infl_nowcast',  module: inflNowcastTab   },
   { id: 'cpi',           module: cpiTab           },
+  { id: 'usdliq',        module: usdliqTab        },
 ]);
 
 setupResizeHandler();
@@ -124,6 +126,7 @@ const CATEGORIES = [
       { id: 'inflation', label: '通膨預期' },
       { id: 'credit',    label: '信用' },
       { id: 'net_liquidity', label: '淨流動性' },
+      { id: 'usdliq',        label: '美元流動性' },
       { id: 'yield_curve',   label: '殖利率曲線' },
       { id: 'vix_term',      label: 'VIX期限結構' },
       { id: 'real_rates',    label: '實質利率' },
