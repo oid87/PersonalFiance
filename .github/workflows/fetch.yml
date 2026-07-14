@@ -271,6 +271,9 @@ jobs:
       - name: Fetch Cleveland Fed inflation nowcast (free)
         continue-on-error: true
         run: python scripts/fetch_infl_nowcast.py
+      - name: Fetch CPI components (FRED + BLS, monthly, free)
+        continue-on-error: true
+        run: python scripts/fetch_cpi.py
 
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py

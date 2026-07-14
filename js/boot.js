@@ -47,6 +47,7 @@ import * as moneyMktTab      from './tabs/money_market.js';
 import * as putcallTab       from './tabs/putcall.js';
 import * as centralBanksTab  from './tabs/central_banks.js';
 import * as inflNowcastTab   from './tabs/infl_nowcast.js';
+import * as cpiTab           from './tabs/cpi.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -93,6 +94,7 @@ registerAll([
   { id: 'putcall',       module: putcallTab       },
   { id: 'central_banks', module: centralBanksTab  },
   { id: 'infl_nowcast',  module: inflNowcastTab   },
+  { id: 'cpi',           module: cpiTab           },
 ]);
 
 setupResizeHandler();
@@ -128,6 +130,7 @@ const CATEGORIES = [
       { id: 'money_market',  label: '貨幣市場' },
       { id: 'central_banks', label: '全球央行資產' },
       { id: 'infl_nowcast',  label: '通膨Nowcast' },
+      { id: 'cpi',           label: 'CPI 分項' },
     ]
   },
   {

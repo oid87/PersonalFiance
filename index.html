@@ -2637,6 +2637,90 @@
     </div>
   </section>
 
+  <!-- ── CPI 分項 tab ──────────────────────────────────────────────── -->
+  <section id="tab-cpi" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span id="cpi-rollmin-toggle" class="chip active" data-tooltip="DGS10 疊上滾動 60 交易日最低值,檢驗低點是否不斷墊高">10Y 滾動低點</span>
+      <div id="cpi-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-cpi-range="1Y">1Y</span>
+        <span class="chip" data-cpi-range="3Y">3Y</span>
+        <span class="chip" data-cpi-range="5Y">5Y</span>
+        <span class="chip active" data-cpi-range="10Y">10Y</span>
+        <span class="chip" data-cpi-range="MAX">MAX</span>
+      </div>
+    </div>
+
+    <!-- 1. 頂部 readout -->
+    <div id="cpi-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
+      <div class="breadth-card">
+        <div class="bc-label">Headline CPI MoM</div>
+        <div class="bc-main"><span class="bc-pct" id="cpi-headline-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="cpi-headline-sub">—</div>
+        <div class="bc-signal" id="cpi-headline-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">Core CPI MoM</div>
+        <div class="bc-main"><span class="bc-pct" id="cpi-core-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="cpi-core-sub">—</div>
+        <div class="bc-signal" id="cpi-core-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">住房 MoM</div>
+        <div class="bc-main"><span class="bc-pct" id="cpi-housing-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="cpi-housing-sub">—</div>
+        <div class="bc-signal" id="cpi-housing-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">服務扣能源 MoM</div>
+        <div class="bc-main"><span class="bc-pct" id="cpi-svc-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="cpi-svc-sub">—</div>
+        <div class="bc-signal" id="cpi-svc-signal">—</div>
+      </div>
+    </div>
+
+    <!-- 2. 分項貢獻度瀑布(主圖):互斥窮盡五塊 + 近似誤差,吃 decomposition -->
+    <div style="padding:10px 16px 4px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <span style="color:var(--text);font-weight:600;font-size:13px">分項貢獻度分解(MECE)</span>
+      <select id="cpi-decomp-month" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px"></select>
+    </div>
+    <div id="cpi-contrib-subtitle" style="padding:0 16px 6px;color:var(--muted);font-size:12px"></div>
+    <div id="cpi-contrib-chart" style="width:100%;height:300px"></div>
+
+    <!-- 3. 分項熱力圖 -->
+    <div style="padding:10px 16px 4px;color:var(--text);font-weight:600;font-size:13px;border-top:1px solid var(--border)">分項熱力圖(近 24 個月 MoM)</div>
+    <div id="cpi-heatmap-subtitle" style="padding:0 16px 6px;color:var(--muted);font-size:12px"></div>
+    <div id="cpi-heatmap-chart" style="width:100%;height:560px"></div>
+
+    <!-- 4. 通膨廣度 -->
+    <div style="padding:10px 16px 4px;color:var(--text);font-weight:600;font-size:13px;border-top:1px solid var(--border)">通膨廣度:廣泛降溫 vs 少數項壓低平均</div>
+    <div id="cpi-breadth-subtitle" style="padding:0 16px 6px;color:var(--muted);font-size:12px"></div>
+    <div id="cpi-breadth-chart" style="width:100%;height:300px"></div>
+
+    <!-- 5. 黏性 vs 彈性 -->
+    <div style="padding:10px 16px 4px;color:var(--text);font-weight:600;font-size:13px;border-top:1px solid var(--border)">黏性 vs 彈性 CPI(年化 MoM,虛線 = 2% 目標)</div>
+    <div id="cpi-sticky-chart" style="width:100%;height:260px"></div>
+
+    <!-- 6. 市場解讀 -->
+    <div style="padding:10px 16px 4px;color:var(--text);font-weight:600;font-size:13px;border-top:1px solid var(--border)">市場解讀:公布後殖利率買不買單</div>
+    <div id="cpi-market-subtitle" style="padding:0 16px 6px;color:var(--muted);font-size:12px"></div>
+    <div id="cpi-market-chart" style="width:100%;height:420px"></div>
+    <div id="cpi-release-table" style="padding:8px 16px 4px"></div>
+
+    <div class="status" id="cpi-status" style="padding:8px 24px">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> CPI 分項怎麼看?</div>
+      <div class="info-panel-body">
+        <p>這個 tab 機械回答兩個問題:(1) 這次降溫是<b>廣泛</b>的,還是<b>少數高波動項</b>(通常是能源)壓低平均?看「分項貢獻度分解」與「通膨廣度」兩格。(2) 數據偏鴿之後,<b>市場買不買單</b>(殖利率有沒有跟著跌)?看「市場解讀」格與公布日殖利率變動表。</p>
+        <p><b>分項貢獻度分解</b>採用<b>互斥且窮盡(MECE)</b>的五塊拆法:能源、食品、核心商品、住房、核心服務(扣住房),外加一根「近似誤差」灰色長條 —— 五塊 contrib_pp 加近似誤差理論上等於 headline MoM(資料層已驗證此恆等式)。contrib_pp 本身是 weight × MoM 的<b>一階近似</b>,BLS 官方用 chained 公式計算貢獻度,兩者會有小幅差異;近似誤差也包含 BLS relative importance 權重 vintage(年更、非即時)造成的誤差 —— 這裡誠實揭露,不會把誤差硬塞進其他分項裡。</p>
+        <p><b>分項熱力圖</b>吃的是 24 個原始 BLS 分項(部分是大類加總、部分是細項,彼此本來就有重疊,例如「住房」是「服務」的子集),所以熱力圖<b>只看各分項自己的 MoM 走勢</b>,不做橫向加總;總體項(Headline / Core)獨立放最上面一區,不與其他細項混在同一級距比較。</p>
+        <p id="cpi-residual-note" style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">⚠️ 載入中…</p>
+        <p id="cpi-breadth-note" style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">⚠️ 載入中…</p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+          ⚠️ <b>誠實揭露</b>:本 tab <b>無市場 consensus 預期資料</b>(免費源撈不到華爾街一致預期),因此不計算、也不呈現「CPI surprise」,「市場解讀」格只呈現<b>公布日當日</b>殖利率的實際反應,不代表這是相對預期的驚訝程度。</p>
+        <p style="margin-top:8px;color:var(--muted)">資料:FRED(BLS CPI 分項序列、Cleveland Fed Median/Trimmed CPI、Atlanta Fed Sticky/Flex CPI、DGS10/DGS2/T10YIE),公布日期取自 ALFRED(St. Louis Fed 的 BLS 發布時程鏡像)。權重取自 BLS 官方 relative importance 正表(Table 1, 2024 Weights, December 2025 vintage, CPI-U);因 bls.gov 擋自動抓取且該表年更一次,故硬編碼於 fetch script,每年 BLS 發布新版時需手動更新。汽車保險/汽車維修/個人照護服務三項 FRED 無鏡射,改由 BLS 官方 API 取得。</p>
+      </div>
+    </div>
+  </section>
   <nav class="cat-bar">
     <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
     <button class="cat-btn" data-cat="liquidity">💧　流動性</button>
