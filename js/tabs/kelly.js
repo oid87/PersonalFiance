@@ -26,6 +26,12 @@ const RF = 0.04;
 const WINDOWS = [63, 126, 252];
 const MA200_PERIOD = 200;
 
+// L* 下格 y 軸可讀窗。L*(252d) 真實範圍約 -6.5 ~ +25（p50=3.0、p90=11.4），
+// 若照真實範圍畫，關鍵區間（L*=1 收槓桿門檻、L*=2 QLD 紅線）會被壓成一條縫。
+// 故固定窗口 + clamp 顯示值；超出者 tooltip 標「超出圖表範圍」並給真值。
+const Y_LO = -4;
+const Y_HI = 14;
+
 let chart = null;
 let allBars = null; // [{date, close}]
 let computed = null;
@@ -182,16 +188,21 @@ function render(res) {
     { gridIndex: 0, scale: true, name: '200MA乖離%', nameTextStyle: { color: axisClr, fontSize: 10 },
       axisLabel: { color: axisClr, fontSize: 11, formatter: v => v + '%' },
       axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: gridClr } } },
-    { gridIndex: 1, min: -2, max: 10, name: '建議槓桿倍數 L*', nameTextStyle: { color: axisClr, fontSize: 10 },
+    { gridIndex: 1, min: Y_LO, max: Y_HI, name: '建議槓桿倍數 L*（超出範圍已裁切）', nameTextStyle: { color: axisClr, fontSize: 10 },
       axisLabel: { color: axisClr, fontSize: 11 },
       axisLine: { show: false }, axisTick: { show: false }, splitLine: { lineStyle: { color: gridClr } } },
   ];
 
-  // 紅色區段標示：L*(252d) < 1
+  // 紅色區段標示：L*(252d) < 1 → 底部細 ribbon（不用整片 axvspan，避免糊成一片）
   const segAreas = res.segments252.map(([s, e]) => ([
-    { xAxis: s, itemStyle: { color: 'rgba(248,81,73,0.10)' } },
-    { xAxis: e },
+    { xAxis: s, yAxis: Y_LO, itemStyle: { color: 'rgba(248,81,73,0.55)' } },
+    { xAxis: e, yAxis: Y_LO + 0.55 },
   ]));
+
+  // 顯示用 clamp：L*(252d) 真實範圍 -6.5~+25，21.9% 落在可讀窗外。
+  // 不 clamp 的話線會一直飛出畫面再飛回來 → 看起來像尖刺（其實是裁切假象）。
+  // 這裡只 clamp「畫出來的值」，tooltip 一律顯示未裁切的真值。
+  const clampDisp = arr => arr.map(v => v == null ? null : Math.min(Y_HI, Math.max(Y_LO, v)));
 
   const devSeries = {
     name: '200MA乖離%', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: res.dev,
@@ -205,23 +216,27 @@ function render(res) {
   };
 
   const l63Series = {
-    name: 'L*(63d)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: res.lstar[63],
+    name: 'L*(63d)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: clampDisp(res.lstar[63]),
     showSymbol: false, connectNulls: false, z: 1,
     itemStyle: { color: '#bcc2c9' }, lineStyle: { color: '#bcc2c9', width: 0.8, opacity: 0.8 },
   };
   const l126Series = {
-    name: 'L*(126d)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: res.lstar[126],
+    name: 'L*(126d)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: clampDisp(res.lstar[126]),
     showSymbol: false, connectNulls: false, z: 1,
     itemStyle: { color: '#8b949e' }, lineStyle: { color: '#8b949e', width: 0.8, opacity: 0.85 },
   };
   const l252Series = {
-    name: 'L*(252d, 全凱利)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: res.lstar[252],
+    name: 'L*(252d, 全凱利)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: clampDisp(res.lstar[252]),
     showSymbol: false, connectNulls: false, z: 5,
     itemStyle: { color: '#e3830a' }, lineStyle: { color: '#e3830a', width: 2 },
     markLine: {
       silent: true, symbol: 'none',
-      data: [{ yAxis: 2.0, lineStyle: { color: '#f85149', type: 'solid', width: 1.3 },
-        label: { formatter: 'QLD 2x 紅線', color: '#f85149', fontSize: 10, position: 'insideEndTop' } }],
+      data: [
+        { yAxis: 2.0, lineStyle: { color: '#f85149', type: 'solid', width: 1.3 },
+          label: { formatter: 'QLD 2x 紅線', color: '#f85149', fontSize: 10, position: 'insideEndTop' } },
+        { yAxis: 1.0, lineStyle: { color: '#f85149', type: 'dashed', width: 1, opacity: 0.7 },
+          label: { formatter: 'L*=1 收槓桿門檻', color: '#f85149', fontSize: 9, position: 'insideEndBottom' } },
+      ],
     },
     markArea: {
       silent: true,
@@ -230,7 +245,7 @@ function render(res) {
     },
   };
   const lHalfSeries = {
-    name: 'L*/2(252d, 半凱利)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: res.lhalf[252],
+    name: 'L*/2(252d, 半凱利)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: clampDisp(res.lhalf[252]),
     showSymbol: false, connectNulls: false, z: 4,
     itemStyle: { color: '#e3830a' }, lineStyle: { color: '#e3830a', width: 1.4, type: 'dashed' },
   };
@@ -243,9 +258,22 @@ function render(res) {
       formatter(params) {
         const d = params[0]?.axisValue ?? '';
         let html = `<div style="font-weight:600;margin-bottom:4px">${d}</div>`;
+        // L* 系列畫的是 clamp 後的值，tooltip 一律回查未裁切真值（避免誤讀裁切值）
+        const RAW = {
+          'L*(63d)': res.lstar[63], 'L*(126d)': res.lstar[126],
+          'L*(252d, 全凱利)': res.lstar[252], 'L*/2(252d, 半凱利)': res.lhalf[252],
+        };
         for (const p of params) {
           if (p.value == null) continue;
-          const v = p.seriesName === '200MA乖離%' ? `${(+p.value).toFixed(2)}%` : (+p.value).toFixed(3);
+          let v;
+          if (p.seriesName === '200MA乖離%') {
+            v = `${(+p.value).toFixed(2)}%`;
+          } else {
+            const raw = RAW[p.seriesName]?.[p.dataIndex];
+            if (raw == null) continue;
+            const clipped = raw > Y_HI || raw < Y_LO;
+            v = (+raw).toFixed(2) + (clipped ? '（超出圖表範圍）' : '');
+          }
           html += `<div>${p.marker}${p.seriesName}: <b>${v}</b></div>`;
         }
         return html;
@@ -260,6 +288,8 @@ function render(res) {
     legend: [
       { data: ['200MA乖離%'], top: 2, left: 'center', textStyle: { color: textClr, fontSize: 11 }, inactiveColor: axisClr },
       { data: ['L*(63d)', 'L*(126d)', 'L*(252d, 全凱利)', 'L*/2(252d, 半凱利)'],
+        // 63d/126d 短窗 σ² 抖、雜訊高 → 預設關閉，需要時自己點開
+        selected: { 'L*(63d)': false, 'L*(126d)': false },
         top: '38%', left: 'center', textStyle: { color: textClr, fontSize: 11 }, inactiveColor: axisClr },
     ],
     series: [devSeries, l63Series, l126Series, l252Series, lHalfSeries],
