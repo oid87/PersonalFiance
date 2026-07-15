@@ -34,6 +34,7 @@ import * as wkrevTab         from './tabs/wkrev.js';
 import * as marginheatTab    from './tabs/marginheat.js';
 import * as marginpeakTab    from './tabs/marginpeak.js';
 import * as marginconcTab    from './tabs/marginconc.js';
+import * as marginmapTab     from './tabs/marginmap.js';
 import * as baniniTab        from './tabs/banini.js';
 import * as qqqmacdTab       from './tabs/qqqmacd.js';
 import * as structTab        from './tabs/struct.js';
@@ -82,6 +83,7 @@ registerAll([
   { id: 'marginheat',    module: marginheatTab    },
   { id: 'marginpeak',    module: marginpeakTab    },
   { id: 'marginconc',    module: marginconcTab    },
+  { id: 'marginmap',     module: marginmapTab     },
   { id: 'banini',        module: baniniTab        },
   { id: 'qqqmacd',       module: qqqmacdTab       },
   { id: 'struct',        module: structTab        },
@@ -144,6 +146,7 @@ const CATEGORIES = [
       { id: 'valuation', label: '估值' },
       { id: 'position',  label: '位階' },
       { id: 'struct',    label: '結構判讀' },
+      { id: 'marginmap', label: '融資斷頭地圖' },
       { id: 'kelly',     label: '凱利上限' },
       { id: 'twcycle',   label: '景氣燈號' },
       { id: 'tools',     label: '工具箱' },
