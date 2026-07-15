@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-14",
+  "as_of": "2026-07-15",
   "latest_data_date": "2026-07-14",
   "assumed_loan_ratio": 0.6,
   "denominator_basis": "market_value (=official MarginPurchaseMoney loan_amount / assumed_loan_ratio)",
