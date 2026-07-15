@@ -162,7 +162,10 @@ function renderForced() {
      <span style="margin-left:12px;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;
        background:${dirty ? "rgba(248,81,73,0.15)" : "rgba(63,185,80,0.15)"};
        color:${dirty ? "#f85149" : "#3fb950"}">
-       ${dirty ? "⚠ 指數跌、融資未降 → 籌碼未洗清" : "融資隨指數同步收縮"}</span>`;
+       ${dirty ? "⚠ 指數跌、融資未降 → 籌碼未洗清" : "融資隨指數同步收縮"}</span>
+     <div style="margin-top:5px;color:var(--muted);font-size:11px;line-height:1.45">
+       融資維持率＝玩股網式(融資現值 ÷ 放款金額);含/扣 ETF 幾乎相同(≈180%,因 ETF 與個股維持率此刻近乎一致)。
+       M平方 159% 係<b>不同公式、非同口徑</b>,勿跨家比絕對值——此線非券商整戶維持率,勿貼 130% 追繳線,看<b>相對位階與有無翻頭</b>即可。</div>`;
 
   if (!forcedChart) {
     forcedChart = echarts.init(chartEl, isLight() ? null : "dark");
