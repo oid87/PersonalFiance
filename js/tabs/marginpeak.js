@@ -18,7 +18,9 @@ const BASELINE = {
 };
 
 let chart = null;
-let state = null; // { dates, yoyData, spxData, qqqData, sigA, sigB, medA, medB, curYoy, curDate }
+let state = null; // { dates, yoyData, absData, spxData, qqqData, sigA, sigB, medA, medB, curYoy, curDate }
+let idxSel = 'QQQ';   // 顯示哪個指數（SPX / QQQ，一次一個）
+let marginMode = 'yoy'; // 紅線意義：'yoy' = Margin Debt YoY%；'abs' = 融資餘額絕對值($B)
 
 // ── date helpers ─────────────────────────────────────────────────────
 // margin 日期是 'YYYY-MM-01'；python 用 PeriodIndex('M').to_timestamp('M') 取月底當 anchor，
@@ -142,15 +144,20 @@ async function loadAll() {
   const qqqByMonth = new Map();
   for (const r of qqqSeries) qqqByMonth.set(r.date.slice(0, 7), r.close);
 
+  // margin debit 絕對值（$B；原始資料單位為 $M，/1000）對齊 yoySeries 月份
+  const debitByMonth = new Map();
+  for (const r of margin) if (r.debit != null) debitByMonth.set(r.date.slice(0, 7), r.debit / 1000);
+
   const dates = yoySeries.map(r => r.date);
   const yoyData = yoySeries.map(r => +r.yoy.toFixed(2));
+  const absData = dates.map(d => { const v = debitByMonth.get(d.slice(0, 7)); return v == null ? null : +v.toFixed(1); });
   const spxData = dates.map(d => spxByMonth.get(d.slice(0, 7)) ?? null);
   const qqqData = dates.map(d => qqqByMonth.get(d.slice(0, 7)) ?? null);
 
   const last = yoySeries[yoySeries.length - 1];
 
   state = {
-    dates, yoyData, spxData, qqqData,
+    dates, yoyData, absData, spxData, qqqData,
     sigA, sigB,
     sigADates: sigARaw.map(s => s.date),
     medA: groupMedians(sigA), medB: groupMedians(sigB),
@@ -211,10 +218,19 @@ function render() {
   const qqqClr  = '#58a6ff';
   const yoyClr  = '#f85149';
 
+  const idxClr = idxSel === 'QQQ' ? qqqClr : spxClr;
+  const idxData = idxSel === 'QQQ' ? state.qqqData : state.spxData;
+  const isAbs = marginMode === 'abs';
+  const marginData = isAbs ? state.absData : state.yoyData;
+  const marginName = isAbs ? '融資餘額 ($B)' : 'Margin YoY%';
+  const curAbs = [...state.absData].reverse().find(v => v != null);
+
   const status = document.getElementById('marginpeak-status');
   if (status) status.textContent =
-    `融資峰值：FINRA Margin Debt YoY% vs SPX/QQQ · ${state.dates.length} 個月（${state.dates[0] ?? ''} ~ ${state.dates[state.dates.length - 1] ?? ''}）` +
-    (state.curYoy != null ? ` · 現值(${state.curDate?.slice(0, 7)}) YoY = ${state.curYoy.toFixed(1)}%` : '');
+    `融資峰值：FINRA Margin Debt ${isAbs ? '餘額($B)' : 'YoY%'} vs ${idxSel} · ${state.dates.length} 個月（${state.dates[0] ?? ''} ~ ${state.dates[state.dates.length - 1] ?? ''}）` +
+    (isAbs
+      ? (curAbs != null ? ` · 現值(${state.curDate?.slice(0, 7)}) 餘額 = $${curAbs.toLocaleString()}B` : '')
+      : (state.curYoy != null ? ` · 現值(${state.curDate?.slice(0, 7)}) YoY = ${state.curYoy.toFixed(1)}%` : ''));
 
   const yoyMax = Math.max(60, ...state.yoyData.filter(v => v != null));
   const L = mob() ? 40 : 52, R = mob() ? 48 : 62;
@@ -222,20 +238,21 @@ function render() {
   const yAxis = [
     {
       type: 'log', scale: true,
-      name: 'SPX / QQQ', nameTextStyle: { color: spxClr, fontSize: 10 },
+      name: idxSel, nameTextStyle: { color: idxClr, fontSize: 10 },
       axisLabel: { color: axisClr, fontSize: 11 },
       axisLine: { show: false }, axisTick: { show: false },
       splitLine: { lineStyle: { color: gridClr } },
     },
     {
       type: 'value', scale: true, position: 'right',
-      name: 'Margin YoY%', nameTextStyle: { color: yoyClr, fontSize: 10 },
+      name: marginName, nameTextStyle: { color: yoyClr, fontSize: 10 },
       axisLine: { lineStyle: { color: yoyClr } },
-      axisLabel: { color: yoyClr, fontSize: 10, formatter: v => v + '%' },
+      axisLabel: { color: yoyClr, fontSize: 10, formatter: v => isAbs ? '$' + v : v + '%' },
       splitLine: { show: false },
     },
   ];
 
+  // YoY 模式才有 50% 門檻標註與訊號A豎線；餘額模式不畫（絕對值無門檻語義）
   const yoyMarkArea = {
     silent: true,
     data: [[{ yAxis: 50, itemStyle: { color: 'rgba(248,81,73,0.14)' } }, { yAxis: yoyMax + 10 }]],
@@ -254,26 +271,25 @@ function render() {
     data: state.sigADates.map(d => ({ xAxis: d })),
   };
 
+  const marginSeries = {
+    name: marginName, type: 'line', data: marginData,
+    symbol: 'none', z: 5,
+    itemStyle: { color: yoyClr }, lineStyle: { color: yoyClr, width: 2 },
+    yAxisIndex: 1,
+  };
+  if (!isAbs) {
+    marginSeries.markArea = yoyMarkArea;
+    marginSeries.markLine = { ...fiftyMarkLine, data: [...fiftyMarkLine.data, ...sigAMarkLine.data] };
+  }
+
   const series = [
     {
-      name: 'SPX', type: 'line', data: state.spxData,
-      symbol: 'none', z: 2, connectNulls: true,
-      itemStyle: { color: spxClr }, lineStyle: { color: spxClr, width: 1.3 },
-      yAxisIndex: 0,
-    },
-    {
-      name: 'QQQ', type: 'line', data: state.qqqData,
+      name: idxSel, type: 'line', data: idxData,
       symbol: 'none', z: 3, connectNulls: true,
-      itemStyle: { color: qqqClr }, lineStyle: { color: qqqClr, width: 1.3 },
+      itemStyle: { color: idxClr }, lineStyle: { color: idxClr, width: 1.3 },
       yAxisIndex: 0,
     },
-    {
-      name: 'Margin YoY%', type: 'line', data: state.yoyData,
-      symbol: 'none', z: 5,
-      itemStyle: { color: yoyClr }, lineStyle: { color: yoyClr, width: 2 },
-      markArea: yoyMarkArea, markLine: { ...fiftyMarkLine, data: [...fiftyMarkLine.data, ...sigAMarkLine.data] },
-      yAxisIndex: 1,
-    },
+    marginSeries,
   ];
 
   chart.setOption({
@@ -286,14 +302,17 @@ function render() {
         let html = `<div style="font-weight:600;margin-bottom:4px">${d}</div>`;
         for (const p of params) {
           if (p.value == null) continue;
-          const v = p.seriesName === 'Margin YoY%' ? (+p.value).toFixed(1) + '%' : Math.round(+p.value).toLocaleString();
+          let v;
+          if (p.seriesName === 'Margin YoY%') v = (+p.value).toFixed(1) + '%';
+          else if (p.seriesName === '融資餘額 ($B)') v = '$' + Math.round(+p.value).toLocaleString() + 'B';
+          else v = Math.round(+p.value).toLocaleString();
           html += `<div>${p.marker}${p.seriesName}: <b>${v}</b></div>`;
         }
         return html;
       },
     },
     legend: {
-      data: ['SPX', 'QQQ', 'Margin YoY%'], top: 2, left: 'center',
+      data: [idxSel, marginName], top: 2, left: 'center',
       textStyle: { color: textClr, fontSize: 11 }, inactiveColor: axisClr,
     },
     grid: { left: L, right: R, top: '12%', bottom: '12%' },
@@ -312,10 +331,30 @@ function render() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
+function syncChips() {
+  document.getElementById('marginpeak-idx-spx')?.classList.toggle('active', idxSel === 'SPX');
+  document.getElementById('marginpeak-idx-qqq')?.classList.toggle('active', idxSel === 'QQQ');
+  document.getElementById('marginpeak-mode-yoy')?.classList.toggle('active', marginMode === 'yoy');
+  document.getElementById('marginpeak-mode-abs')?.classList.toggle('active', marginMode === 'abs');
+}
+let wired = false;
+function wireControls() {
+  if (wired) return;
+  wired = true;
+  for (const el of document.querySelectorAll('#tab-marginpeak .chip[data-idx]')) {
+    el.addEventListener('click', () => { idxSel = el.dataset.idx; syncChips(); render(); });
+  }
+  for (const el of document.querySelectorAll('#tab-marginpeak .chip[data-mode]')) {
+    el.addEventListener('click', () => { marginMode = el.dataset.mode; syncChips(); render(); });
+  }
+}
+
 export async function activate() {
   const host = document.getElementById('marginpeak-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
+  wireControls();
+  syncChips();
   try {
     await loadAll();
     setTimeout(() => { chart?.resize(); render(); }, 50);

@@ -1867,6 +1867,14 @@
   <!-- ── 融資峰值 tab（Margin YoY 峰值 vs SPX/QQQ 後續表現） ───── -->
   <section id="tab-marginpeak" class="tab-section" hidden>
     <div id="marginpeak-status" style="padding:8px 16px;color:var(--muted);font-size:12px"></div>
+    <div style="padding:0 16px;display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+      <span style="color:var(--muted);font-size:12px">指數</span>
+      <span id="marginpeak-idx-spx" class="chip" data-idx="SPX">SPX</span>
+      <span id="marginpeak-idx-qqq" class="chip" data-idx="QQQ">QQQ</span>
+      <span style="color:var(--muted);font-size:12px;margin-left:8px">融資</span>
+      <span id="marginpeak-mode-yoy" class="chip" data-mode="yoy">YoY%</span>
+      <span id="marginpeak-mode-abs" class="chip" data-mode="abs">餘額$</span>
+    </div>
     <div id="marginpeak-chart" style="width:100%;height:420px"></div>
     <div style="padding:0 16px 24px">
       <table class="info-table" id="marginpeak-table"><!-- JS 填 --></table>
