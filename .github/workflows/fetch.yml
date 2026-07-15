@@ -2,17 +2,23 @@ name: Fetch market data
 
 on:
   schedule:
-    # 22:00 UTC Mon-Fri = 06:00 Tue-Sat Taipei（美股收盤後）
+    # 22:00 UTC Mon-Fri = 06:00 Tue-Sat Taipei（美股收盤後）→ us job
     - cron: "0 22 * * 1-5"
-    # 10:00 UTC Mon-Fri = 18:00 Taipei（台股收盤後）
+    # 10:00 UTC Mon-Fri = 18:00 Taipei（台股收盤後）→ tw job
     - cron: "0 10 * * 1-5"
   workflow_dispatch:
 
 permissions:
   contents: write
 
+# 兩個 job 各綁一個排程,避免同一批腳本一天被抓兩次(省 FinMind 免費 quota + Actions 時間)。
+# 手動 workflow_dispatch 時兩個都跑(完整刷新)。台股/美股各自寫的 data 檔不相交,
+# 併發時 commit 用 pull --rebase 重試化解競態。
+
 jobs:
-  fetch:
+  # ── 美股 / 總經:只在 06:00 台北(美股收盤後)跑 ──────────────────────
+  us:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 22 * * 1-5'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +32,7 @@ jobs:
       - name: Install deps
         run: pip install -r scripts/requirements.txt
 
+      # 跨市場:價格總表(US + 0050 + BTC/GLD/VIX),兩個 job 都跑取各自最新收盤
       - name: Fetch stock data
         continue-on-error: true
         run: python scripts/fetch_stocks.py
@@ -66,10 +73,6 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_soxx_valuation.py
 
-      - name: Fetch TW valuation (0050/TWII PE, TWSE weighted)
-        continue-on-error: true
-        run: python scripts/fetch_tw_valuation.py
-
       - name: Fetch MAGS valuation (Mag7 forward/trailing PE)
         continue-on-error: true
         run: python scripts/fetch_mags_valuation.py
@@ -86,10 +89,6 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_earnings.py
 
-      - name: Fetch investor conference dates (法說日, MOPS)
-        continue-on-error: true
-        run: python scripts/fetch_investor_conf.py
-
       - name: Compute S&P 500 market breadth
         continue-on-error: true
         run: python scripts/fetch_breadth.py
@@ -102,79 +101,9 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_breadth_xlg.py
 
-      - name: Compute 臺灣50 (0050) market breadth
-        continue-on-error: true
-        run: python scripts/fetch_breadth_tw50.py
-
-      - name: Fetch Taiwan business cycle signal (景氣對策信號, NDC)
-        continue-on-error: true
-        run: python scripts/fetch_taiwan_business_signal.py
-
-      - name: Fetch Taiwan sector indices (TWSE, 台股產業輪動)
-        continue-on-error: true
-        run: python scripts/fetch_taiwan_sector_index.py
-
       - name: Fetch sector ETF holdings (yfinance, 產業輪動持股彈窗)
         continue-on-error: true
         run: python scripts/fetch_sector_holdings.py
-
-      - name: Fetch Taiwan options Put/Call ratio (TAIFEX, 台股情緒)
-        continue-on-error: true
-        run: python scripts/fetch_taiwan_pcratio.py
-
-      - name: Fetch Taiwan futures institutional / retail positioning (FinMind, 台股情緒)
-        continue-on-error: true
-        env:
-          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python scripts/fetch_taiwan_fut_inst.py
-
-      - name: Fetch Taiwan index-futures basis (台指期近月正逆價差)
-        continue-on-error: true
-        env:
-          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python scripts/fetch_taiwan_basis.py
-
-      - name: Fetch Taiwan market margin balance (FinMind, 大盤融資餘額)
-        continue-on-error: true
-        env:
-          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python scripts/fetch_taiwan_margin_total.py
-
-      - name: Fetch Taiwan individual-stock margin concentration + clearance days (FinMind, 融資集中度)
-        continue-on-error: true
-        env:
-          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python scripts/fetch_margin_concentration.py
-
-      - name: Reconstruct Taiwan margin maintenance ratio (TWSE 大盤融資維持率, 重建)
-        continue-on-error: true
-        run: python scripts/fetch_taiwan_margin_ratio.py
-
-      - name: Fetch TDCC leveraged-ETF holder counts (集保股權分散, 00631L/00675L/0050)
-        continue-on-error: true
-        run: python scripts/fetch_tdcc_holders.py
-
-      - name: Fetch Taiwan day-trading ratio (TWSE TWTB4U, 當沖占比)
-        continue-on-error: true
-        run: python scripts/fetch_tw_daytrading.py
-
-      - name: Fetch Taiwan foreign investor net buy/sell (FinMind, 外資買賣超)
-        continue-on-error: true
-        env:
-          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python scripts/fetch_taiwan_investors.py
-
-      - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
-        continue-on-error: true
-        run: python scripts/fetch_taiwan_mktcap_anchor.py
-
-      - name: Compute Taiwan margin/market-cap ratio (融資 ÷ 上市市值, 槓桿密度)
-        continue-on-error: true
-        run: python scripts/compute_taiwan_margin_mktcap.py
-
-      - name: Compute Taiwan fear & greed composite
-        continue-on-error: true
-        run: python scripts/compute_taiwan_sentiment.py
 
       - name: Fetch Bull & Bear indicator (CFTC COT, FRED HY/SLOOS/UMCSENT/MMF)
         continue-on-error: true
@@ -184,10 +113,7 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_liquidity.py
 
-      - name: Fetch Taiwan M1B/M2 money supply (CBC EBOOKXLS, monthly YoY spread)
-        continue-on-error: true
-        run: python scripts/fetch_taiwan_money_supply.py
-
+      # 跨市場:TW/US/JP 融資超額×流動性,兩個 job 都跑(各自市場新鮮時重算)
       - name: Fetch multi-market margin-excess x liquidity (TW/US/JP index+margin+money supply)
         continue-on-error: true
         run: python scripts/fetch_liquidity_leverage.py
@@ -208,18 +134,11 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_nfci.py
 
-      - name: Fetch USD/TWD spot (Yahoo TWD=X, for Taiwan stress FX leg)
-        continue-on-error: true
-        run: python scripts/fetch_usdtwd.py
-
-      - name: Compute Taiwan financial-stress composite (FX/equity vol + margin ratio + foreign futures)
-        continue-on-error: true
-        run: python scripts/compute_taiwan_stress.py
-
       - name: Fetch UMich Consumer Sentiment + NBER recessions + SPY monthly (FRED, free)
         continue-on-error: true
         run: python scripts/fetch_umich.py
 
+      # 跨市場:signed dollar volume(SOXX+SMH, QQQ, 0050.TW),週頻,兩個 job 都跑
       - name: Fetch weekly signed dollar volume (SOXX+SMH, QQQ, 0050.TW — yfinance, free)
         continue-on-error: true
         run: python scripts/fetch_flows.py
@@ -235,10 +154,6 @@ jobs:
       - name: Fetch BDC P/NAV ratios (ARCC OBDC BXSL FSK MAIN, private credit proxy)
         continue-on-error: true
         run: python scripts/fetch_bdc.py
-
-      - name: Fetch Taiwan sector foreign flow (TWSE T86, 外資板塊流向)
-        continue-on-error: true
-        run: python scripts/fetch_tw_sector_flow.py
 
       - name: Fetch banini-tracker reverse indicator dataset (cablate, AGPL-3.0)
         continue-on-error: true
@@ -291,6 +206,154 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "chore: daily data update [skip ci]"
-            git push
+            git commit -m "chore: daily data update (US) [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin main && git push && break || sleep 5
+            done
+          fi
+
+  # ── 台股:只在 18:00 台北(台股收盤後)跑 ──────────────────────────────
+  tw:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 10 * * 1-5'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install deps
+        run: pip install -r scripts/requirements.txt
+
+      # 跨市場:價格總表(0050 台股收盤後最新 + US 昨收),兩個 job 都跑
+      - name: Fetch stock data
+        continue-on-error: true
+        run: python scripts/fetch_stocks.py
+
+      - name: Fetch TW valuation (0050/TWII PE, TWSE weighted)
+        continue-on-error: true
+        run: python scripts/fetch_tw_valuation.py
+
+      - name: Fetch investor conference dates (法說日, MOPS)
+        continue-on-error: true
+        run: python scripts/fetch_investor_conf.py
+
+      - name: Compute 臺灣50 (0050) market breadth
+        continue-on-error: true
+        run: python scripts/fetch_breadth_tw50.py
+
+      - name: Fetch Taiwan business cycle signal (景氣對策信號, NDC)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_business_signal.py
+
+      - name: Fetch Taiwan sector indices (TWSE, 台股產業輪動)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_sector_index.py
+
+      - name: Fetch Taiwan options Put/Call ratio (TAIFEX, 台股情緒)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_pcratio.py
+
+      - name: Fetch Taiwan futures institutional / retail positioning (FinMind, 台股情緒)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_fut_inst.py
+
+      - name: Fetch Taiwan index-futures basis (台指期近月正逆價差)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_basis.py
+
+      - name: Fetch Taiwan market margin balance (FinMind, 大盤融資餘額)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_margin_total.py
+
+      - name: Fetch Taiwan individual-stock margin concentration + clearance days (FinMind, 融資集中度)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_margin_concentration.py
+
+      - name: Reconstruct Taiwan margin maintenance ratio (TWSE 大盤融資維持率, 重建)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_margin_ratio.py
+
+      - name: Build Taiwan margin cost-basis / forced-liquidation map (TWSE MI_MARGN flow, 融資斷頭地圖)
+        continue-on-error: true
+        run: python scripts/fetch_margin_costmap.py
+
+      - name: Fetch TDCC leveraged-ETF holder counts (集保股權分散, 00631L/00675L/0050)
+        continue-on-error: true
+        run: python scripts/fetch_tdcc_holders.py
+
+      - name: Fetch Taiwan day-trading ratio (TWSE TWTB4U, 當沖占比)
+        continue-on-error: true
+        run: python scripts/fetch_tw_daytrading.py
+
+      - name: Fetch Taiwan foreign investor net buy/sell (FinMind, 外資買賣超)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_investors.py
+
+      - name: Fetch Taiwan sector foreign flow (TWSE T86, 外資板塊流向)
+        continue-on-error: true
+        run: python scripts/fetch_tw_sector_flow.py
+
+      - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_mktcap_anchor.py
+
+      - name: Compute Taiwan margin/market-cap ratio (融資 ÷ 上市市值, 槓桿密度)
+        continue-on-error: true
+        run: python scripts/compute_taiwan_margin_mktcap.py
+
+      - name: Fetch Taiwan M1B/M2 money supply (CBC EBOOKXLS, monthly YoY spread)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_money_supply.py
+
+      # 跨市場:TW/US/JP 融資超額×流動性,兩個 job 都跑
+      - name: Fetch multi-market margin-excess x liquidity (TW/US/JP index+margin+money supply)
+        continue-on-error: true
+        run: python scripts/fetch_liquidity_leverage.py
+
+      - name: Fetch USD/TWD spot (Yahoo TWD=X, for Taiwan stress FX leg)
+        continue-on-error: true
+        run: python scripts/fetch_usdtwd.py
+
+      - name: Compute Taiwan financial-stress composite (FX/equity vol + margin ratio + foreign futures)
+        continue-on-error: true
+        run: python scripts/compute_taiwan_stress.py
+
+      - name: Compute Taiwan fear & greed composite
+        continue-on-error: true
+        run: python scripts/compute_taiwan_sentiment.py
+
+      # 跨市場:signed dollar volume(含 0050.TW),週頻,兩個 job 都跑
+      - name: Fetch weekly signed dollar volume (SOXX+SMH, QQQ, 0050.TW — yfinance, free)
+        continue-on-error: true
+        run: python scripts/fetch_flows.py
+
+      - name: Validate data integrity (abort commit if corrupt)
+        run: python scripts/validate_data.py
+
+      - name: Commit updates
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: daily data update (TW) [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin main && git push && break || sleep 5
+            done
           fi
