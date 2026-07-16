@@ -4652,6 +4652,15 @@
         "action_point": false,
         "m1_yoy": null,
         "m2_yoy": 5.5803
+      },
+      {
+        "date": "2026-06-01",
+        "index_yoy": 20.8659,
+        "margin_yoy": 49.0208,
+        "excess": 28.1549,
+        "action_point": false,
+        "m1_yoy": null,
+        "m2_yoy": null
       }
     ],
     "note": "融資=data/liquidity.json margin[].debit(FINRA margin debit balance,USD millions,起點 1997-01-01)；指數=data/SPY.json(SPY,起點 2000-01-03)；M1=不可得(FRED M1SL 抓取失敗)；M2=重用 data/M2.json(FRED M2SL,fetch_yields.py 既有產物)。美國無 M1B,只有 M1/M2,別跟台灣 M1B 混用。"
