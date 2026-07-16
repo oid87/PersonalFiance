@@ -1,7 +1,7 @@
 {
   "source": "TWSE 集中市場月訊 (115年1月版起, 0005000107.pdf+) + 證期局 上市公司年度市值表",
   "note": "mktcap_billion 為當期『上市公司總市值』(單位：億新台幣). 月度錨點來自 TWSE 月訊 (fetch_taiwan_mktcap_anchor.py 每月自動拉新月份), 年度錨點來自 SFB 證期局 (其原表標『億元』但實為 10億元, 已 ×10 校正並對齊 PDF 月度值). 採近似月底; 年度錨用 12-31.",
-  "last_pdf_id": 111,
+  "last_pdf_id": 112,
   "anchors": [
     {
       "date": "2010-12-31",
@@ -152,6 +152,11 @@
       "date": "2026-05-31",
       "mktcap_billion": 1459100.0,
       "src": "TWSE 月訊 0005000111.pdf"
+    },
+    {
+      "date": "2026-06-30",
+      "mktcap_billion": 1505100.0,
+      "src": "TWSE 月訊 0005000112.pdf"
     }
   ]
 }
