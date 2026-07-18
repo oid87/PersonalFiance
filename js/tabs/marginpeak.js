@@ -215,7 +215,7 @@ function render() {
   const tipBg   = PALETTE.bg;
   const tipBdr  = PALETTE.border;
   const textClr = PALETTE.text2;
-  const spxClr  = tc('#e6edf3', '#1f2937');
+  const spxClr  = PALETTE.text;
   const qqqClr  = '#58a6ff';
   const yoyClr  = '#f85149';
 

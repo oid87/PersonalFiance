@@ -203,7 +203,7 @@ function renderYoyChart() {
 
   const series = [
     { name: "指數 index_yoy", type: "line", yAxisIndex: 0, data: indexYoy, symbol: "none",
-      lineStyle: { width: 1.6, color: tc("#e6edf3", "#1f2937") }, itemStyle: { color: tc("#e6edf3", "#1f2937") } },
+      lineStyle: { width: 1.6, color: PALETTE.text }, itemStyle: { color: PALETTE.text } },
     { name: "融資 margin_yoy", type: "line", yAxisIndex: 0, data: marginYoy, symbol: "none",
       lineStyle: { width: 1.6, color: "#f85149" }, itemStyle: { color: "#f85149" } },
     { name: "M2 年增率", type: "line", yAxisIndex: 0, data: m2Yoy, symbol: "none",

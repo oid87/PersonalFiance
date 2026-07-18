@@ -91,7 +91,7 @@ export function render() {
   const tipBg   = PALETTE.bg;
   const tipBdr  = PALETTE.border;
   const textClr = PALETTE.text2;
-  const spxClr  = tc('#e6edf3', '#1f2937');
+  const spxClr  = PALETTE.text;
   const yoyClr  = '#f85149';
 
   const status = document.getElementById('marginheat-status');
@@ -200,7 +200,7 @@ function renderForced() {
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
   const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
   const textClr = PALETTE.text2;
-  const spxClr = tc('#e6edf3', '#1f2937');
+  const spxClr = PALETTE.text;
   const debtClr = '#e3b341';
 
   // 卡片:近 18 個月 S&P500 波段高點 → 指數 vs 融資餘額自高點降幅

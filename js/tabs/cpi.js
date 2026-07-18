@@ -286,6 +286,7 @@ function renderHeatmap() {
   const tipBg   = PALETTE.bg;
   const tipBdr  = PALETTE.border;
   const textClr = PALETTE.text2;
+  // check_reuse: keep — 這是 diverging 熱力圖色階的中點(inRange:[GREEN,neutral,RED]),是資料編碼色不是格線色;換 PALETTE.grid 是語意類別錯置
   const neutral = tc("#21262d", "#f0f2f5");
   const cellBdr = PALETTE.cellBorder;
 

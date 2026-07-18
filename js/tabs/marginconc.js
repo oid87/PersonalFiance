@@ -115,7 +115,7 @@ function render() {
   const tipBg   = PALETTE.bg;
   const tipBdr  = PALETTE.border;
   const textClr = PALETTE.text2;
-  const twiiClr = tc('#e6edf3', '#1f2937');
+  const twiiClr = PALETTE.text;
   const pctClr  = '#f85149';
 
   const status = document.getElementById('marginconc-status');
