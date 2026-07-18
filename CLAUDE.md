@@ -43,6 +43,56 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 
 詳細程序與 ECharts 眉角（axisValue 毫秒、雙 grid 同步、itemStyle.color）見 `.claude/skills/add-tab/`；新增資料源用 `.claude/skills/fetch-script/`。
 
+<!-- JS_UTILS_CHEATSHEET_START -->
+## js/utils 函式速查表(自動產生,勿手動編輯;來源:`../Financial_work/gen_cheatsheet.py`)
+
+### theme.js(5)
+- theme.isLight() — 
+- theme.tc(dark, light) — 
+- theme.mob() — 
+- theme.PALETTE — Collapses the most common literal tc("#dark","#light") pairs repeated
+- theme.echartsBase(overrides = {}) — 
+
+### dates.js(10)
+- dates.tsToLocalDate(ts) — ECharts time-axis parses "YYYY-MM-DD" as local midnight, not UTC
+- dates.presetStart(preset) — 
+- dates.currentWindow() — 
+- dates.filterRange(rows) — 
+- dates.dateAddDays(dateStr, n) — 
+- dates.closestOnOrAfter(key, dateStr) — 
+- dates.minBetween(key, t0, t1) — 
+- dates.lookupLE(arr, date) — Binary search: last entry where arr[i][0] <= date
+- dates.toWeekly(dailyData) — 
+- dates.toWeeklyHLC(dailyHLC) — 
+
+### math.js(17)
+- math.percentileRank(val, sortedAsc) — Binary-search rank of `val` within an ascending-sorted array
+- math.percentile(sortedAsc, p) — Inverse of percentileRank: value at fraction `p` (0–1) of an
+- math.mean(arr) — std uses ddof (delta degrees of freedom): divides by (n - ddof)
+- math.std(arr, ddof = 0) — 
+- math.zscore(arr, ddof = 0) — 
+- math.computeMA(data, period) — 
+- math.toArithReturns(data) — 
+- math.pearsonCorr(x, y) — 
+- math.computeM2YoY(m2data) — 
+- math.computeLinearRegression(data) — 
+- math.computeRSI(data, period = 14) — 
+- math.computeKD(hlcData, period = 9) — 
+- math.computeTDSetup(closeData) — 
+- math.computeDDZones(dailyData, lookbackDays = 60, threshold = 0.10) — 
+- math.computeBounceSignals(qqqData, fgData, ma200Data) — Bounce signal: QQQ < MA200 & F&G < 15 → 2%+ bounce within 14 days
+- math.computeMACD(closes, fast = 12, slow = 26, signal = 9) — MACD: DIF = EMA(fast) - EMA(slow); DEA = EMA(DIF, signal); HIST = DIF - DEA
+- math.computeChannelBands(weeklyAll) — 
+
+### data.js(5)
+- data.fetchJSON(url) — Generic fetch, not tied to the SERIES registry (unlike loadSeries below)
+- data.isDataFresh(data) — 
+- data.loadSeries(s) — 
+- data.ensureLoaded(key) — 
+- data.loadEarnings() — 
+
+<!-- JS_UTILS_CHEATSHEET_END -->
+
 ## 部署
 
 Vercel（personal-fiance-nine.vercel.app）連 GitHub `main`，push 即自動部署。**所有 `data/*.json` 必須 commit 進 repo**，前端才 fetch 得到。
