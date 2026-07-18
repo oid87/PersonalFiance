@@ -1,5 +1,90 @@
 // Pure math/statistics helpers — no state, no DOM.
 
+// ── percentileRank ───────────────────────────────────────────────────────
+// Binary-search rank of `val` within an ascending-sorted array. Returns the
+// raw fraction (0–1) — count(x < val) / len. Callers own their own scale
+// and empty-array fallback; see divergence note below.
+//
+// Canonical sites compared (2026-07, binary-search "count of x < val" method):
+//   - js/tabs/bullbear.js:34-42   percentileRank(val, sorted) → (lo/len)*10,  empty→5
+//   - js/tabs/marginheat.js:276-284 percentileOf(val, sortedAsc) → (lo/len)*100, empty→null
+// Both are the *same* algorithm at different scale (x10 vs x100) with a
+// different empty-array fallback (5 vs null). This util intentionally does
+// NOT pick either scale or fallback — it returns the bare fraction and
+// `null` for an empty array; the caller multiplies by 10/100/etc. and/or
+// substitutes its own fallback.
+// Also equal (same "count of x < v" value, computed via linear filter
+// instead of binary search, scale=100) at:
+//   - js/tabs/usdliq.js:35-39 percentileRank(arr, v) → (below/len)*100 (args order flipped: arr, v)
+export function percentileRank(val, sortedAsc) {
+  if (!sortedAsc.length) return null;
+  let lo = 0, hi = sortedAsc.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (sortedAsc[mid] < val) lo = mid + 1; else hi = mid;
+  }
+  return lo / sortedAsc.length;
+}
+
+// ── percentile ───────────────────────────────────────────────────────────
+// Inverse of percentileRank: value at fraction `p` (0–1) of an
+// ascending-sorted array, numpy-default (type-7) linear interpolation.
+//
+// Matches (same formula, p already in 0–1 fraction) at:
+//   - js/tabs/cpi.js:46-52    percentile(arr, p)     — also filters/sorts internally
+//   - js/tabs/levvol.js:61-67 percentile(sorted, p)   — exact same formula, pre-sorted input
+// Scale divergence (p in 0–100, not 0–1):
+//   - js/tabs/marginmap.js:156-162 percentile(sortedArr, p) — idx=(p/100)*(n-1);
+//     equal to this util via `percentile(s, p/100) === marginmapInline(s, p)`.
+// NOT equal — different algorithm (floor-based nearest-rank, no interpolation),
+// flagged as specialized rather than silently unified:
+//   - js/tabs/vixskew.js:481-486 percentile(sorted, p) — idx=floor(p*(n-1)), no lerp
+//   - js/tabs/vxnvix.js:21-25    percentile(sorted, p) — identical floor-based body
+// Arithmetic form matches the majority of the canonical sites above
+// (cpi.js / marginmap.js: `lo + (hi-lo)*frac`), which is bit-identical to
+// them. levvol.js uses the algebraically-equal but differently-ordered
+// `lo*(1-frac) + hi*frac` — same value up to floating-point rounding
+// (non-associativity), not bit-identical at every fractional index; see
+// test file for the tolerance-based check against that one site.
+export function percentile(sortedAsc, p) {
+  const n = sortedAsc.length;
+  if (n === 0) return null;
+  const idx = p * (n - 1);
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return sortedAsc[lo];
+  const frac = idx - lo;
+  return sortedAsc[lo] + (sortedAsc[hi] - sortedAsc[lo]) * frac;
+}
+
+// ── mean / std / zscore ──────────────────────────────────────────────────
+// std uses ddof (delta degrees of freedom): divides by (n - ddof).
+// ddof=0 (population, default) matches:
+//   - js/tabs/levvol.js:37-42     std(arr)         — divides by n
+//   - js/tabs/position.js:107-108 inline mean/sd    — divides by vals.length
+// ddof=1 (sample) is used by js/tabs/kelly.js:49-72 rollingMuSigma2 — but
+// that function is a *rolling, annualized* (*252) variant, not a plain
+// mean/std over a static array. It is explicitly OUT of P0 scope (see spec);
+// this util's ddof=1 path is verified only against numpy-style hand-computed
+// expected values, not against kelly.js's rolling logic.
+export function mean(arr) {
+  return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+}
+
+export function std(arr, ddof = 0) {
+  const n = arr.length;
+  if (n === 0 || n - ddof <= 0) return null;
+  const m = mean(arr);
+  const v = arr.reduce((s, x) => s + (x - m) * (x - m), 0) / (n - ddof);
+  return Math.sqrt(v);
+}
+
+export function zscore(arr, ddof = 0) {
+  const m = mean(arr);
+  const s = std(arr, ddof);
+  if (m == null || !s) return arr.map(() => null);
+  return arr.map(x => (x - m) / s);
+}
+
 export function computeMA(data, period) {
   const out = [];
   for (let i = period - 1; i < data.length; i++) {
