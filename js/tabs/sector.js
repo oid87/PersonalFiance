@@ -1,5 +1,5 @@
 import { SECTOR_ETFS, SECTOR_LABEL, sectorLoaded } from '../state.js';
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 // ── State ──────────────────────────────────────────────────────────────
 let market        = "us";
@@ -208,7 +208,7 @@ function computeMA(data, win) {
 }
 
 function retColor(pct) {
-  if (pct == null) return tc("#30363d","#d0d7de");
+  if (pct == null) return PALETTE.border;
   const t = Math.min(1, Math.abs(pct) / 20);
   if (pct >= 0) {
     const r = Math.round(30 + (1-t)*215), g = Math.round(100 + (1-t)*145), b = Math.round(30 + (1-t)*215);
@@ -371,8 +371,8 @@ function showLineChart(key) {
 function renderTreemap(returns) {
   if (!treemapChart) return;
   const ks = curSortedKeys;
-  const tipBg = tc("#161b22","#ffffff"), tipBdr = tc("#30363d","#d0d7de");
-  const tipText = tc("#e6edf3","#1f2328");
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const tipText = PALETTE.text;
 
   const treeData = ks.map(k => {
     const ret = returns[k]?.[sortCol];
@@ -381,9 +381,9 @@ function renderTreemap(returns) {
       value: weight(k),
       _key: k,
       _ret: ret,
-      itemStyle: { color: retColor(ret), borderColor: tc("#0d1117","#ffffff"), borderWidth: 2 },
+      itemStyle: { color: retColor(ret), borderColor: PALETTE.cellBorder, borderWidth: 2 },
       label: {
-        color: tc("#e6edf3","#1f2328"), fontSize: weight(k) > 8 ? 13 : 11, fontWeight: 600,
+        color: PALETTE.text, fontSize: weight(k) > 8 ? 13 : 11, fontWeight: 600,
       },
     };
   });
@@ -397,7 +397,7 @@ function renderTreemap(returns) {
         const clr = ret != null ? (ret >= 0 ? "#3fb950" : "#f78166") : "";
         return `<b>${label(p.data?._key)}</b>${market==="us" ? " · " + p.data?._key : ""}<br/>`
           + `${sortCol}: <b style="color:${clr}">${ret != null ? (ret>=0?"+":"") + ret.toFixed(2)+"%" : "—"}</b><br/>`
-          + `<span style="font-size:11px;color:${tc("#8b949e","#57606a")}">佔比 ≈${p.data?.value}%</span>`;
+          + `<span style="font-size:11px;color:${PALETTE.muted}">佔比 ≈${p.data?.value}%</span>`;
       },
     },
     series: [{
@@ -419,8 +419,8 @@ function renderTreemap(returns) {
 function renderHeatmap(returns) {
   if (!heatmapChart) return;
   const ks = curSortedKeys;
-  const tipBg = tc("#161b22","#ffffff"), tipBdr = tc("#30363d","#d0d7de");
-  const tipText = tc("#e6edf3","#1f2328"), axisClr = tc("#8b949e","#57606a");
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const tipText = PALETTE.text, axisClr = PALETTE.muted;
 
   const heatData = [];
   for (let pi = 0; pi < PERIODS.length; pi++) {
@@ -500,7 +500,7 @@ function renderSparklines() {
   const ks = curSortedKeys;
   const isMob = mob();
   const leftPad = isMob ? 40 : 56;
-  wrap.style.cssText = `display:flex;padding:4px 16px 0 ${leftPad}px;gap:1px;border-top:1px solid ${tc("#30363d","#d0d7de")}`;
+  wrap.style.cssText = `display:flex;padding:4px 16px 0 ${leftPad}px;gap:1px;border-top:1px solid ${PALETTE.border}`;
   if (isMob) wrap.style.minWidth = "600px";
   wrap.innerHTML = "";
 
@@ -527,7 +527,7 @@ function renderSparklines() {
       if (!cvs) continue;
       const data = series(ksValid[i]).slice(-63);
       const ret = calcReturn(series(ksValid[i]), "3M");
-      const color = ret == null ? tc("#8b949e","#57606a") : ret >= 0 ? "#3fb950" : "#f78166";
+      const color = ret == null ? PALETTE.muted : ret >= 0 ? "#3fb950" : "#f78166";
       drawSparkline(cvs, data, color);
     }
   });

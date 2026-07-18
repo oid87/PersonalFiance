@@ -8,7 +8,7 @@
 //   trailing — SPY 用 SP500_PE.json(multpl, 1871起) / 0050 用 TWSE / 其餘用 ETF trailingPE 每日累積
 
 import { loaded } from '../state.js';
-import { isLight, tc } from '../utils/theme.js';
+import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { ensureLoaded } from '../utils/data.js';
 
 // ── Per-ticker config ──────────────────────────────────────────────
@@ -155,11 +155,11 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
   const showBiz = t.key === "TWII" && bizRows && bizRows.length > 0;
   peRealFrom = realFrom || { fwd: "0000", trl: "0000" };
 
-  const axisClr = tc("#8b949e", "#57606a");
-  const gridClr = tc("#21262d", "#e1e4e8");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const axisClr = PALETTE.muted;
+  const gridClr = PALETTE.grid;
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   // 24-month rolling averages (computed on full data so window is correct at any zoom)
   const fwdAvgFull = fwdFull.length ? rollingAvg(fwdFull, 24) : [];

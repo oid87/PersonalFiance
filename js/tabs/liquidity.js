@@ -10,7 +10,7 @@
 //   ⚠️ 融資絕對金額各國單位/定義不同不可比，本圖只用 YoY%/超額（比率）跨國比較；
 //   當月未滿月讀數會隨月底重取樣持續變動。
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 let excessChart = null;
 let yoyChart = null;
@@ -128,11 +128,11 @@ function renderExcessChart() {
     label: { show: true, formatter: "⚠️", position: "top", fontSize: 13 },
   }));
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg = tc("#161b22", "#ffffff");
-  const tipBdr = tc("#30363d", "#d0d7de");
-  const tipText = tc("#e6edf3", "#1f2328");
+  const tipBg = PALETTE.bg;
+  const tipBdr = PALETTE.border;
+  const tipText = PALETTE.text;
 
   excessChart.setOption({
     backgroundColor: "transparent",
@@ -173,7 +173,7 @@ function renderExcessChart() {
     dataZoom: [
       { type: "inside" },
       { type: "slider", height: 14, bottom: 4, fillerColor: "rgba(88,166,255,0.12)",
-        borderColor: tc("#30363d", "#d0d7de") },
+        borderColor: PALETTE.border },
     ],
   }, { notMerge: true });
 }
@@ -190,11 +190,11 @@ function renderYoyChart() {
   const m2Yoy = f.map(r => [r.date, r.m2_yoy]);
   const m1Yoy = f.map(r => [r.date, r[m1Field]]);
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg = tc("#161b22", "#ffffff");
-  const tipBdr = tc("#30363d", "#d0d7de");
-  const tipText = tc("#e6edf3", "#1f2328");
+  const tipBg = PALETTE.bg;
+  const tipBdr = PALETTE.border;
+  const tipText = PALETTE.text;
 
   const legendData = ["指數 index_yoy", "融資 margin_yoy", "M2 年增率", M1_LABEL[market]];
   const isTwForeign = market === "tw" && showForeign;
@@ -259,7 +259,7 @@ function renderYoyChart() {
     dataZoom: [
       { type: "inside" },
       { type: "slider", height: 14, bottom: 4, fillerColor: "rgba(88,166,255,0.12)",
-        borderColor: tc("#30363d", "#d0d7de") },
+        borderColor: PALETTE.border },
     ],
   }, { notMerge: true });
 }

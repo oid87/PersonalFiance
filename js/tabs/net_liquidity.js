@@ -2,7 +2,7 @@
 //   net_liq 主線（粗）+ 可選 walcl/tga/rrp 三細項 toggle
 //   資料：data/net_liquidity.json（fetch_net_liquidity.py 抓 FRED CSV，免 key）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const SUB_LINES = [
   { key: "walcl", name: "Fed 總資產 (WALCL)", color: "#58a6ff" },
@@ -62,7 +62,7 @@ function setText(id, txt, color) {
 function updateCards() {
   const last = rows[rows.length - 1];
 
-  setText("netliq-cur-val", fmtT(last.net_liq), tc("#e6edf3", "#1f2328"));
+  setText("netliq-cur-val", fmtT(last.net_liq), PALETTE.text);
   setText("netliq-cur-sub", `${last.date} · WALCL−TGA−RRP`, "var(--muted)");
   setText("netliq-cur-signal", "淨流動性水位", NET_COLOR);
 
@@ -89,11 +89,11 @@ function updateCards() {
 export function render() {
   if (!chart || !rows?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 

@@ -9,7 +9,7 @@
 //       US10Y.json / US2Y.json(殖利率,2000+) / SP500.json / umich.json(recession)
 //       bdc_nav.json(BDC P/NAV,3yr)
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const SP_COLOR  = "#f778ba";
 const HY_COLOR  = "#f85149";
@@ -99,7 +99,7 @@ function updateCards() {
     else if (hy >= 6)  { sig = "高壓力 · 衰退預警";      clr = "#f0883e"; }
     else if (hy >= 4)  { sig = "偏高 · 市場警覺";        clr = "#e3b341"; }
     else               { sig = "正常水位";                clr = "#3fb950"; }
-    setText("crd-hy-val",    hy.toFixed(2) + "%", tc("#e6edf3", "#1f2328"));
+    setText("crd-hy-val",    hy.toFixed(2) + "%", PALETTE.text);
     setText("crd-hy-sub",    `IG ${lastS.ig.toFixed(2)}%｜${lastS.date}`, "var(--muted)");
     setText("crd-hy-signal", sig, clr);
   }
@@ -124,7 +124,7 @@ function updateCards() {
     if (cc >= 5)       { sig = "偏高 · 消費者壓力大";   clr = "#f85149"; }
     else if (cc >= 3)  { sig = "正常偏高 · 需留意";      clr = "#e3b341"; }
     else               { sig = "健康水位";                clr = "#3fb950"; }
-    setText("crd-del-val",    cc.toFixed(2) + "%", tc("#e6edf3", "#1f2328"));
+    setText("crd-del-val",    cc.toFixed(2) + "%", PALETTE.text);
     setText("crd-del-sub",    `不動產 ${lastD.real_estate.toFixed(2)}%｜${lastD.date}`, "var(--muted)");
     setText("crd-del-signal", sig, clr);
   }
@@ -137,7 +137,7 @@ function updateCards() {
     else if (a4 >= 0.85){ sig = "輕微折價 · 市場存疑";    clr = "#e3b341"; }
     else if (a4 >= 0.75){ sig = "明顯折價 · 私信壓力";    clr = "#f0883e"; }
     else                { sig = "深度折價 · 流動性危機訊號"; clr = "#f85149"; }
-    setText("crd-bdc-val",    a4.toFixed(3) + "x", tc("#e6edf3", "#1f2328"));
+    setText("crd-bdc-val",    a4.toFixed(3) + "x", PALETTE.text);
     setText("crd-bdc-sub",    `ARCC OBDC BXSL FSK 等權重（不含MAIN）｜${lastB.date}`, "var(--muted)");
     setText("crd-bdc-signal", sig, clr);
   }
@@ -147,11 +147,11 @@ export function render() {
   if (!creditChart || !yieldData) return;
   updateCards();
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const cutoff  = rangeStart(cRange);
 
   // Grid 0: yield curve (full history)

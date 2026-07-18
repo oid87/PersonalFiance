@@ -3,7 +3,7 @@
 //   支撐/壓力用「成交量價格分佈（VPVR）」代理持股成本分佈——QQQ是指數ETF，沒有真實籌碼成本資料
 //   無未來函數風險（純現況快照工具），但 swing pivot 用 fractal(k=5)，最後 5 根不算 confirmed pivot（右側資料不足）
 
-import { isLight, tc } from '../utils/theme.js';
+import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeMA } from '../utils/math.js';
 
 const VPVR_BINS = 40;
@@ -315,7 +315,7 @@ function updateBadges(res) {
     return `${label} ${v.toFixed(2)}（${Number(pct) > 0 ? '+' : ''}${pct}%）`;
   };
   setText('struct-sr-val', `${fmtLevel('支撐', res.vpvr.support)}　|　${fmtLevel('壓力', res.vpvr.resistance)}`,
-    tc('#e6edf3', '#1f2328'));
+    PALETTE.text);
   setText('struct-sr-sub', `POC ${res.vpvr.poc.toFixed(2)}｜現價 ${price.toFixed(2)}`, 'var(--muted)');
 
   const status = document.getElementById('struct-status');
@@ -343,11 +343,11 @@ function updateBadges(res) {
 
 // ── 主圖渲染 ──────────────────────────────────────────────────────────
 function renderMainChart(res) {
-  const axisClr = tc('#8b949e', '#57606a');
-  const gridClr = tc('#21262d', '#e1e4e8');
-  const tipBg = tc('#161b22', '#ffffff');
-  const tipBdr = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const axisClr = PALETTE.muted;
+  const gridClr = PALETTE.grid;
+  const tipBg = PALETTE.bg;
+  const tipBdr = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   const dates = res.displayBars.map(b => b.date);
   const closes = res.displayBars.map(b => b.close);
@@ -486,11 +486,11 @@ function renderMainChart(res) {
 
 // ── VPVR 側圖渲染（水平長條：y=價格bin、x=成交量） ──────────────────────
 function renderVpvrChart(res) {
-  const axisClr = tc('#8b949e', '#57606a');
-  const tipBg = tc('#161b22', '#ffffff');
-  const tipBdr = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
-  const barBase = tc('#30363d', '#d0d7de');
+  const axisClr = PALETTE.muted;
+  const tipBg = PALETTE.bg;
+  const tipBdr = PALETTE.border;
+  const textClr = PALETTE.text2;
+  const barBase = PALETTE.border;
 
   const vc = res.vpvr;
   const hvnSet = new Set(vc.hvnIdx);

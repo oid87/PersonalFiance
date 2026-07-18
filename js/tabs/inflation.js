@@ -3,7 +3,7 @@
 //   日頻折線 + MA20/MA50 + 可疊 SPY（對數右軸）
 //   資料：data/inflation_exp.json（fetch_inflation_exp.py 抓 FRED CSV，免 key）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const LINES = [
   { key: "be5y",    name: "5Y Breakeven",  color: "#58a6ff" },
@@ -85,7 +85,7 @@ function updateCards() {
     else if (be5 > 2.0) { sig = "正常區間 · 錨定穩";  clr = "#3fb950"; }
     else if (be5 > 1.5) { sig = "偏低 · 通縮隱憂";   clr = "#58a6ff"; }
     else                { sig = "通縮預期 · 極端訊號"; clr = "#d2a8ff"; }
-    setText("inf-5y-val", be5.toFixed(2) + "%", tc("#e6edf3", "#1f2328"));
+    setText("inf-5y-val", be5.toFixed(2) + "%", PALETTE.text);
     setText("inf-5y-sub", `${last.date} · TIPS 5Y Breakeven`, "var(--muted)");
     setText("inf-5y-signal", sig, clr);
   }
@@ -115,11 +115,11 @@ function updateCards() {
 export function render() {
   if (!chart || !rows?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 

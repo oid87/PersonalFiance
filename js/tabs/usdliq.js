@@ -6,7 +6,7 @@
 //   ⚠️ daily 陣列最後一筆常態性部分缺值（IORB 當天就有、SOFR/ON RRP 隔日才公布）；
 //      「最新值」一律 = 該欄最後一筆非 null 的值，不是陣列最後一筆。
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 // ── 格式化 helpers ───────────────────────────────────────────────────
 function fmtB(v, dp = 1) {
@@ -283,11 +283,11 @@ const BAND_NAME = 'SOFR區間(1%–99%)';
 
 function renderCorridor() {
   if (!chartCorridor || !daily?.length) return;
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg = tc('#161b22', '#ffffff');
-  const tipBdr = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg = PALETTE.bg;
+  const tipBdr = PALETTE.border;
+  const textClr = PALETTE.text2;
   const isMob = mob();
 
   const cut = cutoffDate(range);
@@ -367,11 +367,11 @@ const LOG_FLOOR = 0.001;
 
 function renderBuffer() {
   if (!chartBuffer) return;
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg = tc('#161b22', '#ffffff');
-  const tipBdr = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg = PALETTE.bg;
+  const tipBdr = PALETTE.border;
+  const textClr = PALETTE.text2;
   const isMob = mob();
 
   const cut = cutoffDate(range);
@@ -490,11 +490,11 @@ const BILL_COLORS = ['#58a6ff', '#3fb950', '#e3b341', '#f0883e', '#d2a8ff', '#f8
 
 function renderSupply() {
   if (!chartSupply) return;
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg = tc('#161b22', '#ffffff');
-  const tipBdr = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg = PALETTE.bg;
+  const tipBdr = PALETTE.border;
+  const textClr = PALETTE.text2;
   const isMob = mob();
 
   const cut = cutoffDate(range);

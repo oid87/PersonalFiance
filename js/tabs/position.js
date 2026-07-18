@@ -8,7 +8,7 @@
 // 年線乖離＝過熱輔助；務必用「年線之上＝多頭」當狀態濾網（空頭沿著下緣走，碰下緣非買點）。
 
 import { loaded, loadedHLC, loadedVol } from '../state.js';
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { ensureLoaded } from '../utils/data.js';
 
 const MOM_PERIODS = [{ key: "1M", n: 21 }, { key: "3M", n: 63 }, { key: "6M", n: 126 }, { key: "12M", n: 252 }];
@@ -152,7 +152,7 @@ function updateCards(rows, dist) {
   else if (pctB > 0)      { zSig = "接近下緣 · 偏弱";          zClr = "#f0883e"; }
   else                    { zSig = bull ? `跌破${p}日布林下緣 · 超賣（多頭買點候選）` : `跌破下緣 · 空頭沿帶（非買點）`;
                             zClr = bull ? "#3fb950" : "#f85149"; }
-  setText("pos-zone-pct", pctB == null ? "—" : pctB.toFixed(0), tc("#e6edf3", "#1f2328"));
+  setText("pos-zone-pct", pctB == null ? "—" : pctB.toFixed(0), PALETTE.text);
   setText("pos-zone-sub", `${MA_NAME[p]} ±2σ｜上 ${up2.toFixed(1)} / 下 ${lo2.toFixed(1)}`, "var(--muted)");
   setText("pos-zone-signal", zSig, zClr);
 
@@ -215,7 +215,7 @@ function updateCards(rows, dist) {
   let aSig, aClr;
   if (atr == null) { aSig = "—"; aClr = "var(--muted)"; }
   else {
-    setText("pos-atr-pct", (atr / last.close * 100).toFixed(2), tc("#e6edf3", "#1f2328"));
+    setText("pos-atr-pct", (atr / last.close * 100).toFixed(2), PALETTE.text);
     const stop15 = last.close - 1.5 * atr, stop3 = last.close - 3 * atr;
     setText("pos-atr-sub", `ATR ${atr.toFixed(2)}｜停損參考：1.5×ATR ${stop15.toFixed(1)} ／ 3×ATR ${stop3.toFixed(1)}`, "var(--muted)");
     const atrPctOfPrice = atr / last.close * 100;
@@ -233,7 +233,7 @@ function updateCards(rows, dist) {
   } else {
     const toHigh = (hh - last.close) / last.close * 100;
     const toLow  = (last.close - ll) / last.close * 100;
-    setText("pos-hl-pct", (-toHigh).toFixed(1), tc("#e6edf3", "#1f2328"));
+    setText("pos-hl-pct", (-toHigh).toFixed(1), PALETTE.text);
     setText("pos-hl-sub", `壓力(高) ${hh.toFixed(1)} 距 ${toHigh.toFixed(1)}%｜支撐(低) ${ll.toFixed(1)} 距 ${toLow.toFixed(1)}%`, "var(--muted)");
     let hSig, hClr;
     if      (toHigh <= 1) { hSig = "貼近52週高點 · 壓力區"; hClr = "#f85149"; }
@@ -247,11 +247,11 @@ function updateCards(rows, dist) {
 function render(rows) {
   if (!posChart) return;
   const t = cfg(), p = posPeriod;
-  const axisClr = tc("#8b949e", "#57606a");
-  const gridClr = tc("#21262d", "#e1e4e8");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const axisClr = PALETTE.muted;
+  const gridClr = PALETTE.grid;
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   const dist = biasDist(rows, p);          // full-history bias stats (stable reference)
   updateCards(rows, dist);

@@ -1,4 +1,4 @@
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 
 let sentChart       = null;
@@ -124,8 +124,8 @@ function renderSentimentChart() {
   const spySeries  = rows.map(r => [r.date, sentData._spy[r.date] ?? null]).filter(r => r[1] != null);
   const fgSeries   = rows.map(r => [r.date, sentData._fg[r.date]  ?? null]).filter(r => r[1] != null);
 
-  const tipBg = tc("#161b22","#ffffff"), tipBdr = tc("#30363d","#d0d7de");
-  const tipTx = tc("#e6edf3","#1f2328"), axCl = tc("#8b949e","#57606a");
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const tipTx = PALETTE.text, axCl = PALETTE.muted;
   const gridCl = tc("rgba(48,54,61,0.5)","rgba(208,215,222,0.4)");
 
   sentChart.setOption({
@@ -184,7 +184,7 @@ function renderSentimentChart() {
     dataZoom:[
       {type:"inside",xAxisIndex:0},
       {type:"slider",xAxisIndex:0,height:18,bottom:4,
-       fillerColor:"rgba(88,166,255,0.1)",borderColor:tc("#30363d","#d0d7de")},
+       fillerColor:"rgba(88,166,255,0.1)",borderColor:PALETTE.border},
     ],
   });
 }

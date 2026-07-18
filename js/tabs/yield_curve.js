@@ -1,7 +1,7 @@
 // 殖利率曲線 tab — US Treasury 利差倒掛（T10Y2Y / T10Y3M）+ 各段殖利率
 //   資料：data/yield_curve.json（fetch_yield_curve.py 抓 FRED CSV，免 key）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const SPREAD_LINES = [
   { key: "t10y2y", name: "10Y−2Y 利差", color: "#58a6ff" },
@@ -82,11 +82,11 @@ function updateCards() {
 export function render() {
   if (!chart || !rows?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 

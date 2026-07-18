@@ -2,7 +2,7 @@
 //   實質殖利率 = 名目殖利率 − 通膨預期，正值代表貨幣政策實質限制性（偏緊）
 //   資料：data/real_rates.json（fetch_real_rates.py 抓 FRED CSV，免 key）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const LINES = [
   { key: "dfii5",  name: "5Y 實質殖利率",  color: "#58a6ff" },
@@ -74,11 +74,11 @@ function updateCards() {
 export function render() {
   if (!chart || !rows?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 

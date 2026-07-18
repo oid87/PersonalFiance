@@ -4,7 +4,7 @@
 // Data: self-contained data/leverage.json (total-return underlyings + real 2x/3x ETF
 // NAV). The decay engine chains DAILY returns — real fund return post-inception,
 // synthetic (K×underlyingRet − dailyCost) before — so synthetic→real splices smoothly.
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 let levChart = null;
 let BUNDLE = null;
@@ -197,8 +197,8 @@ function setBanner(h) {
 
 // ── ECharts builders ──────────────────────────────────────────────────────
 function lineOption({ series, xType, markInitial }) {
-  const axisClr = tc('#8b949e', '#57606a'), splitClr = tc('rgba(255,255,255,.06)', 'rgba(0,0,0,.07)');
-  const tipBg = tc('#161b22', '#ffffff'), tipBd = tc('#30363d', '#d0d7de'), tipTx = tc('#e6edf3', '#1f2328');
+  const axisClr = PALETTE.muted, splitClr = tc('rgba(255,255,255,.06)', 'rgba(0,0,0,.07)');
+  const tipBg = PALETTE.bg, tipBd = PALETTE.border, tipTx = PALETTE.text;
   const s = series.map((x, idx) => {
     const data = logScale ? x.data.map(p => [p[0], p[1] > 0 ? p[1] : null]) : x.data;
     const o = {
@@ -386,8 +386,8 @@ function drawMCHist(finals, med, oneMed) {
     const x = lo + w * (i + 0.5);
     return { value: [+x.toFixed(3), c], itemStyle: { color: x >= 0 ? pos : neg } };
   });
-  const axisClr = tc('#8b949e', '#57606a'), splitClr = tc('rgba(255,255,255,.06)', 'rgba(0,0,0,.07)');
-  const tipBg = tc('#161b22', '#ffffff'), tipBd = tc('#30363d', '#d0d7de'), tipTx = tc('#e6edf3', '#1f2328');
+  const axisClr = PALETTE.muted, splitClr = tc('rgba(255,255,255,.06)', 'rgba(0,0,0,.07)');
+  const tipBg = PALETTE.bg, tipBd = PALETTE.border, tipTx = PALETTE.text;
   const mLine = (x, color, txt) => ({ xAxis: x, lineStyle: { color, type: 'dashed', width: 1.4 }, label: { formatter: txt, color, fontSize: 10, position: 'insideEndTop' } });
   levChart.setOption({
     backgroundColor: 'transparent',
@@ -407,7 +407,7 @@ function drawMCHist(finals, med, oneMed) {
     },
     series: [{
       type: 'bar', data, barCategoryGap: '8%',
-      markLine: { silent: true, symbol: 'none', data: [mLine(0, axisClr, '0%'), mLine(+med.toFixed(3), '#f0883e', '中位'), mLine(+oneMed.toFixed(3), tc('#8b949e', '#57606a'), '標的中位')] },
+      markLine: { silent: true, symbol: 'none', data: [mLine(0, axisClr, '0%'), mLine(+med.toFixed(3), '#f0883e', '中位'), mLine(+oneMed.toFixed(3), PALETTE.muted, '標的中位')] },
     }],
     animation: false,
   }, { notMerge: true });

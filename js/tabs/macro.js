@@ -1,5 +1,5 @@
 import { macroLoaded } from '../state.js';
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 import { computeM2YoY } from '../utils/math.js';
 
@@ -79,11 +79,11 @@ export function renderMacroTab() {
     { xAxis: e },
   ]);
 
-  const axisClr = tc("#8b949e", "#57606a");
-  const gridClr = tc("#21262d", "#e1e4e8");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const tipText = tc("#e6edf3", "#1f2328");
+  const axisClr = PALETTE.muted;
+  const gridClr = PALETTE.grid;
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const tipText = PALETTE.text;
   const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
 
   // Build dynamic right-axis overlays
@@ -202,11 +202,11 @@ function renderBizChart() {
     `<span style="color:${zone.c};font-weight:600">${zone.name}</span> ${last[1]} 分 ` +
     `· ${last[0].slice(0, 7)} · 資料來源：NDC data.gov.tw`;
 
-  const axisClr = tc("#8b949e", "#57606a");
-  const gridClr = tc("#21262d", "#e1e4e8");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const tipText = tc("#e6edf3", "#1f2328");
+  const axisClr = PALETTE.muted;
+  const gridClr = PALETTE.grid;
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const tipText = PALETTE.text;
 
   bizChart.setOption({
     backgroundColor: "transparent",

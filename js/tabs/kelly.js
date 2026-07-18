@@ -20,7 +20,7 @@
 //   不要為了湊數字改動本檔公式或憑空修改 data/QQQ.json——落差是資料內容（還原息 vs 未還原息）
 //   差異，不是計算邏輯錯誤；是否要換成還原息資料源是主 session 的決策點，非本檔案範圍。
 
-import { isLight, tc } from '../utils/theme.js';
+import { isLight, tc, PALETTE } from '../utils/theme.js';
 
 const RF = 0.04;
 const WINDOWS = [63, 126, 252];
@@ -147,10 +147,10 @@ function updateBadges(res) {
   setText('kelly-l252-val', l252 ? l252.val.toFixed(2) : 'N/A', l252 && l252.val < 1 ? '#f85149' : '#e3b341');
   setText('kelly-l252-sub', l252 ? `半凱利 ${(l252.val / 2).toFixed(2)}｜${res.dates[l252.idx]}` : '—', 'var(--muted)');
 
-  setText('kelly-l126-val', l126 ? l126.val.toFixed(2) : 'N/A', tc('#e6edf3', '#1f2328'));
+  setText('kelly-l126-val', l126 ? l126.val.toFixed(2) : 'N/A', PALETTE.text);
   setText('kelly-l126-sub', l126 ? res.dates[l126.idx] : '—', 'var(--muted)');
 
-  setText('kelly-l63-val', l63 ? l63.val.toFixed(2) : 'N/A', tc('#e6edf3', '#1f2328'));
+  setText('kelly-l63-val', l63 ? l63.val.toFixed(2) : 'N/A', PALETTE.text);
   setText('kelly-l63-sub', l63 ? res.dates[l63.idx] : '—', 'var(--muted)');
 
   setText('kelly-dev-val', devV ? `${devV.val >= 0 ? '+' : ''}${devV.val.toFixed(2)}%` : 'N/A',
@@ -168,11 +168,11 @@ function updateBadges(res) {
 // ── 主圖渲染（上：200MA乖離%／下：L*，共用 x 軸） ─────────────────────
 function render(res) {
   if (!chart) return;
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg = tc('#161b22', '#ffffff');
-  const tipBdr = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg = PALETTE.bg;
+  const tipBdr = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   const dates = res.dates;
   const grid = [

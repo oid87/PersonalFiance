@@ -6,7 +6,7 @@
 // ⚠ 越高＝壓力越大（非反向情緒；跟「台股情緒」tab 方向相反）。缺 credit/funding 兩維。
 // 定位環境理解 / 風險溫度計，非交易訊號。
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const DIMS = [
   { key: "fx",      name: "匯率波動",  color: "#e3b341" },
@@ -71,7 +71,7 @@ function updateCards() {
   const last = rows[rows.length - 1];
   // 1. composite level
   const z = zone(last.composite);
-  setText("ts-level-val", last.composite.toFixed(0), tc("#e6edf3", "#1f2328"));
+  setText("ts-level-val", last.composite.toFixed(0), PALETTE.text);
   setText("ts-level-sub", `${last.date}｜0=最平靜 100=最緊張`, "var(--muted)");
   setText("ts-level-signal", z.sig, z.clr);
 
@@ -98,11 +98,11 @@ function updateCards() {
 
 export function render() {
   if (!tsChart || !rows) return;
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 
@@ -166,7 +166,7 @@ export function render() {
     ],
   };
 
-  const compColor = tc("#e6edf3", "#1f2328");
+  const compColor = PALETTE.text;
   const maSeries = PERIODS.map(p => ({
     name: MA_NAME[p], type: "line", xAxisIndex: 0, yAxisIndex: 0, data: maData[p],
     symbol: "none", smooth: false, z: 3, itemStyle: { color: MA_COLOR[p] },

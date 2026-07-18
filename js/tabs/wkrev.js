@@ -6,7 +6,7 @@
 // 防前視：訊號在第 i 週收盤確立，前瞻報酬一律從第 i+1 週收盤起算；
 // partial（末端未走完）週排除於所有統計（BIR/TD9/KD/RSI/confluence/勝率表）之外，但仍可畫在圖上。
 
-import { isLight, tc } from '../utils/theme.js';
+import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeRSI } from '../utils/math.js';
 
 const TICKERS = [
@@ -218,11 +218,11 @@ function renderTable(rows) {
 function render(weeks, sig) {
   if (!chart) return;
   const t = TICKERS.find(x => x.key === ticker);
-  const axisClr = tc("#8b949e", "#57606a");
-  const gridClr = tc("#21262d", "#e1e4e8");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const axisClr = PALETTE.muted;
+  const gridClr = PALETTE.grid;
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   const dates = weeks.map(w => w.weekStart);
   const candle = weeks.map(w => [w.open, w.close, w.low, w.high]);

@@ -3,7 +3,7 @@
 //      故與其他 tab「不留未來日期」慣例刻意不同(官網只給最近 1-2 期,靠 CI 逐日累積歷史)
 //   資料：data/infl_nowcast.json（fetch_infl_nowcast.py 解析 Cleveland Fed HTML table,免 key）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 // 最新月的四個 YoY 預估 + 2% Fed 目標參考
 const YOY = [
@@ -58,11 +58,11 @@ export function render() {
   if (!chart) return;
   const m = latestMonth();
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 

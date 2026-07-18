@@ -2,7 +2,7 @@
 //   SOFR 明顯高於 IORB（利差 spike > 0）= 隔夜擔保資金吃緊（對照 2019-09 回購危機）
 //   資料：data/money_market.json（fetch_money_market.py 抓 FRED CSV，免 key）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const LINES = [
   { key: "sofr", name: "SOFR", color: "#58a6ff" },
@@ -77,11 +77,11 @@ function updateCards() {
 export function render() {
   if (!chart || !rows?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 

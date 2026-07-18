@@ -2,7 +2,7 @@
 //   三者幣別單位不同(USD/EUR/JPY),不可直接相加 → 各自 rebase 才能比較擴縮速度
 //   資料：data/central_banks.json（fetch_central_banks.py 抓 FRED WALCL/ECBASSETSW/JPNASSETS,免 key）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const LINES = [
   { key: "fed", name: "Fed（WALCL）",     color: "#58a6ff" },
@@ -67,11 +67,11 @@ function updateCards(view) {
 export function render() {
   if (!chart || !rows?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   const cut  = cutoffDate(range);
   const view = rows.filter(r => r.date >= cut);

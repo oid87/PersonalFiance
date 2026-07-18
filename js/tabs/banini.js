@@ -2,7 +2,7 @@
 // 追蹤 FB 網紅「股海冥燈 巴逆逆(8zz)」貼文做反指標分析（去識別化快照，2024-04~2026-04）。
 // self_result 是本頁自算的方向判定，非原作者公式（原作者未公開其成功率計算方法）。
 // 資料 data/banini_reverse_indicator.json，靜態快照，非逐日累積時序。
-import { isLight, tc } from '../utils/theme.js';
+import { isLight, tc, PALETTE } from '../utils/theme.js';
 
 let chartTimeline = null;
 let chartBreakdown = null;
@@ -81,16 +81,16 @@ function renderTimelineChart() {
   chartTimeline.setOption({
     animation: false,
     grid: { left: 44, right: 16, top: 30, bottom: 28 },
-    title: { text: "貼文/預測活躍度（每月筆數）", left: 0, top: 0, textStyle: { fontSize: 13, color: tc("#8b949e", "#57606a") } },
+    title: { text: "貼文/預測活躍度（每月筆數）", left: 0, top: 0, textStyle: { fontSize: 13, color: PALETTE.muted } },
     tooltip: { trigger: "axis" },
     xAxis: {
       type: "category",
       data: rows.map(r => r.month),
-      axisLabel: { color: tc("#8b949e", "#57606a") },
-      axisLine: { lineStyle: { color: tc("#30363d", "#d0d7de") } },
+      axisLabel: { color: PALETTE.muted },
+      axisLine: { lineStyle: { color: PALETTE.border } },
     },
     yAxis: {
-      axisLabel: { color: tc("#8b949e", "#57606a") },
+      axisLabel: { color: PALETTE.muted },
       splitLine: { lineStyle: { color: tc("#21262d", "#eaeef2") } },
     },
     series: [{
@@ -112,11 +112,11 @@ function renderBreakdownChart() {
     animation: false,
     tooltip: { trigger: "item" },
     legend: [
-      { top: 0, left: "0%", data: Object.keys(byType), textStyle: { color: tc("#8b949e", "#57606a"), fontSize: 11 } },
+      { top: 0, left: "0%", data: Object.keys(byType), textStyle: { color: PALETTE.muted, fontSize: 11 } },
     ],
     title: [
-      { text: "標的類型分布", left: "8%", top: "6%", textStyle: { fontSize: 12, color: tc("#8b949e", "#57606a") } },
-      { text: "多／空分布", left: "62%", top: "6%", textStyle: { fontSize: 12, color: tc("#8b949e", "#57606a") } },
+      { text: "標的類型分布", left: "8%", top: "6%", textStyle: { fontSize: 12, color: PALETTE.muted } },
+      { text: "多／空分布", left: "62%", top: "6%", textStyle: { fontSize: 12, color: PALETTE.muted } },
     ],
     series: [
       {
@@ -126,7 +126,7 @@ function renderBreakdownChart() {
         data: Object.entries(byType).map(([name, value], i) => ({
           name, value, itemStyle: { color: typeColors[i % typeColors.length] },
         })),
-        label: { color: tc("#8b949e", "#57606a"), fontSize: 11 },
+        label: { color: PALETTE.muted, fontSize: 11 },
       },
       {
         type: "pie",
@@ -136,7 +136,7 @@ function renderBreakdownChart() {
           name, value,
           itemStyle: { color: name === "多" ? "#e24b4a" : "#3fb950" },
         })),
-        label: { color: tc("#8b949e", "#57606a"), fontSize: 11 },
+        label: { color: PALETTE.muted, fontSize: 11 },
       },
     ],
   });

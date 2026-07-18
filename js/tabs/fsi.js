@@ -6,7 +6,7 @@
 // MA 全前端 rolling 計算。0＝各變量在歷史均值；>0 風險升高、<0 穩定。
 // 定位「環境理解 / 風險溫度計」非交易訊號。
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const COMPS = [
   { key: "credit",  name: "信用",         color: "#f85149" },
@@ -81,7 +81,7 @@ function updateCards() {
   else if (last.fsi >= 0)  { lSig = "壓力高於常態";          lClr = "#f0883e"; }
   else if (last.fsi >= -2) { lSig = "低於常態 · 大致穩定";   lClr = "#3fb950"; }
   else                     { lSig = "明顯低於常態 · 寬鬆";   lClr = "#3fb950"; }
-  setText("fsi-level-val", (last.fsi >= 0 ? "+" : "") + last.fsi.toFixed(2), tc("#e6edf3", "#1f2328"));
+  setText("fsi-level-val", (last.fsi >= 0 ? "+" : "") + last.fsi.toFixed(2), PALETTE.text);
   setText("fsi-level-sub", `${last.date}｜0＝歷史均值`, "var(--muted)");
   setText("fsi-level-signal", lSig, lClr);
 
@@ -109,11 +109,11 @@ function updateCards() {
 // ── render ───────────────────────────────────────────────────────────
 export function render() {
   if (!fsiChart || !rows) return;
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 
@@ -196,7 +196,7 @@ export function render() {
     emphasis: { focus: "series" },
   }));
 
-  const fsiColor = tc("#e6edf3", "#1f2328");
+  const fsiColor = PALETTE.text;
   const series = [
     { name: "FSI 總分", type: "line", xAxisIndex: 0, yAxisIndex: 0, data: fsiLine,
       symbol: "none", smooth: false, z: 5, itemStyle: { color: fsiColor },
