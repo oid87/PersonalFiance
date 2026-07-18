@@ -2424,6 +2424,99 @@
     </div>
   </section>
 
+  <!-- ── VXN−VIX 波動率價差 tab ─────────────────────────────────────── -->
+  <section id="tab-vxnvix" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="vxnvix-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-vxnvix-range="1Y">1Y</span>
+        <span class="chip active" data-vxnvix-range="3Y">3Y</span>
+        <span class="chip" data-vxnvix-range="5Y">5Y</span>
+        <span class="chip" data-vxnvix-range="10Y">10Y</span>
+        <span class="chip" data-vxnvix-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="vxnvix-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">VXN−VIX 價差（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="vxnvix-spread-val">—</span></div>
+        <div class="bc-count" id="vxnvix-spread-sub">—</div>
+        <div class="bc-signal" id="vxnvix-spread-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">歷史百分位排名</div>
+        <div class="bc-main"><span class="bc-pct" id="vxnvix-rank-val">—</span></div>
+        <div class="bc-count" id="vxnvix-rank-sub">—</div>
+        <div class="bc-signal" id="vxnvix-rank-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">90th / 95th 門檻</div>
+        <div class="bc-main"><span class="bc-pct" id="vxnvix-thresh-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="vxnvix-thresh-sub">—</div>
+        <div class="bc-signal" id="vxnvix-thresh-signal">—</div>
+      </div>
+    </div>
+    <div id="vxnvix-chart" style="height:560px"></div>
+    <div class="status" id="vxnvix-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> VXN−VIX 波動率價差怎麼看？</div>
+      <div class="info-panel-body">
+        <p>VXN 是 Nasdaq-100 的隱含波動率指數（CBOE），VIX 是 S&amp;P 500 的隱含波動率指數。兩者價差（VXN − VIX）反映市場對 Nasdaq 相對大盤的「額外」波動預期溢價。價差擴大代表市場預期科技/成長股相對大盤會有更劇烈的波動（不論漲跌方向）；價差收斂則代表兩者波動預期趨於一致。</p>
+        <table class="info-table">
+          <thead><tr><th>門檻</th><th>含義</th></tr></thead>
+          <tbody>
+            <tr><td>≥ 90th 百分位</td><td>Nasdaq 相對波動溢價偏高，處於歷史相對少見的區間</td></tr>
+            <tr><td>≥ 95th 百分位</td><td>Nasdaq 相對波動溢價極端偏高</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)"><b>重要：</b>圖上 90th/95th 門檻線是用「全樣本」（2001年至今）固定分位數計算，<b>不是</b>該時間點當下即時的滾動分位數——它只是用來標示「現在的價差在整段歷史分布中大約落在什麼位置」的參考線，不是逐日更新的訊號。資料：CBOE 官方每日收盤 VXN/VIX（免費，無 key）。純描述性資訊，非投資建議。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── QQQ/SPY 長期相對強度 tab ───────────────────────────────────── -->
+  <section id="tab-relstrength" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="relstrength-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-relstrength-range="1Y">1Y</span>
+        <span class="chip" data-relstrength-range="3Y">3Y</span>
+        <span class="chip" data-relstrength-range="5Y">5Y</span>
+        <span class="chip" data-relstrength-range="10Y">10Y</span>
+        <span class="chip active" data-relstrength-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="relstrength-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">QQQ/SPY 比值（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="relstrength-current-val">—</span></div>
+        <div class="bc-count" id="relstrength-current-sub">—</div>
+        <div class="bc-signal" id="relstrength-current-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">dot-com 峰值（2000上半年）</div>
+        <div class="bc-main"><span class="bc-pct" id="relstrength-peak-val">—</span></div>
+        <div class="bc-count" id="relstrength-peak-sub">—</div>
+        <div class="bc-signal" id="relstrength-peak-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">泡沫破裂低點（2002下半年）</div>
+        <div class="bc-main"><span class="bc-pct" id="relstrength-trough-val">—</span></div>
+        <div class="bc-count" id="relstrength-trough-sub">—</div>
+        <div class="bc-signal" id="relstrength-trough-signal">—</div>
+      </div>
+    </div>
+    <div id="relstrength-chart" style="height:560px"></div>
+    <div class="status" id="relstrength-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> QQQ/SPY 長期相對強度怎麼看？</div>
+      <div class="info-panel-body">
+        <p>這是 QQQ（Nasdaq-100 ETF）與 SPY（S&amp;P 500 ETF）收盤價的比值時序，代表 Nasdaq／科技成長股相對於大盤的長期相對強度。比值上升＝Nasdaq 跑贏大盤，比值下降＝Nasdaq 跑輸大盤。圖表使用 log scale y軸，因為比值歷史區間橫跨約 0.25x～1x 以上，線性軸會失真。</p>
+        <p><b>已知限制：</b>QQQ ETF 直到 1999 年 3 月才成立，本地資料僅從 <b>2000-01-03</b> 起算，<b>無法涵蓋更早期間</b>（1995～1999 的 dot-com 起漲段）。圖上僅能看到 2000 年之後的相對強度變化。</p>
+        <p><b>方法論：</b>比值為<b>未還原息</b>價格比（不含股息），此為刻意選擇，方法論比照原始靈感來源（SpotGamma 的 NDX/SPX 比較圖，同樣排除股息）。</p>
+        <p style="margin-top:8px;color:var(--muted)">資料：本地 QQQ.json / SPY.json 每日收盤價對齊計算（免費，無 key）。純描述性資訊，非投資建議。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 實質利率 tab ──────────────────────────────────────────────── -->
   <section id="tab-real_rates" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">

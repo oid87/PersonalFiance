@@ -43,6 +43,8 @@ import * as toolsTab         from './tabs/tools.js';
 import * as netLiqTab        from './tabs/net_liquidity.js';
 import * as yieldCurveTab    from './tabs/yield_curve.js';
 import * as vixTermTab       from './tabs/vix_term.js';
+import * as vxnvixTab        from './tabs/vxnvix.js';
+import * as relstrengthTab   from './tabs/relstrength.js';
 import * as realRatesTab     from './tabs/real_rates.js';
 import * as moneyMktTab      from './tabs/money_market.js';
 import * as putcallTab       from './tabs/putcall.js';
@@ -92,6 +94,8 @@ registerAll([
   { id: 'net_liquidity', module: netLiqTab        },
   { id: 'yield_curve',   module: yieldCurveTab    },
   { id: 'vix_term',      module: vixTermTab       },
+  { id: 'vxnvix',        module: vxnvixTab        },
+  { id: 'relstrength',   module: relstrengthTab   },
   { id: 'real_rates',    module: realRatesTab     },
   { id: 'money_market',  module: moneyMktTab      },
   { id: 'putcall',       module: putcallTab       },
@@ -125,6 +129,7 @@ const CATEGORIES = [
       { id: 'nfci',      label: '金融狀況' },
       { id: 'twstress',  label: '台股壓力' },
       { id: 'vixskew',   label: 'VIX-SKEW' },
+      { id: 'vxnvix',    label: 'VXN-VIX價差' },
       { id: 'inflation', label: '通膨預期' },
       { id: 'credit',    label: '信用' },
       { id: 'net_liquidity', label: '淨流動性' },
@@ -146,6 +151,7 @@ const CATEGORIES = [
       { id: 'valuation', label: '估值' },
       { id: 'position',  label: '位階' },
       { id: 'struct',    label: '結構判讀' },
+      { id: 'relstrength', label: 'NDX相對強度' },
       { id: 'marginmap', label: '融資斷頭地圖' },
       { id: 'kelly',     label: '凱利上限' },
       { id: 'twcycle',   label: '景氣燈號' },
