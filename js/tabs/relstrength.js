@@ -5,6 +5,7 @@
 //             ratio 為未還原息價格比（不含股息），方法論比照原始靈感來源（SpotGamma NDX/SPX 比較圖，同樣排除股息）。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { cutoffDate } from '../utils/dates.js';
 
 const RATIO_COLOR = "#58a6ff";
 
@@ -18,14 +19,6 @@ async function loadAll() {
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const j = await r.json();
   payload = j;
-}
-
-function cutoffDate(key) {
-  if (key === "MAX") return "0000-00-00";
-  const d = new Date();
-  const yrs = { "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10 }[key] ?? 3;
-  d.setFullYear(d.getFullYear() - yrs);
-  return d.toISOString().slice(0, 10);
 }
 
 // ── cards ─────────────────────────────────────────────────────────────

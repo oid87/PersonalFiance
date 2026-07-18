@@ -21,6 +21,21 @@ export function presetStart(preset) {
   return d.toISOString().slice(0, 10);
 }
 
+// 「今天往回 N 年」的 range cutoff,9 個 macro tab(inflation / money_market /
+// net_liquidity / putcall / real_rates / relstrength / vix_term / vxnvix /
+// yield_curve)原本各自逐字複製這一份。**逐字搬過來,不要「順手」擴充 key 集合或
+// 換 MAX 哨兵** —— 呼叫端是拿回傳值做字串比較(row.date >= cut),`"0000-00-00"`
+// 就是靠「小於任何真日期」達成「全部通過」,換成 null 或別的哨兵會改行為。
+// ⚠️ 與 presetStart 是**不同**的東西:presetStart 的 key 集合是 6M/1Y/1Y6M/3.5Y/
+// 5Y/10Y/20Y 且未命中回 null;這裡未命中回 3 年。別把兩者合併。
+export function cutoffDate(key) {
+  if (key === "MAX") return "0000-00-00";
+  const d = new Date();
+  const yrs = { "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10 }[key] ?? 3;
+  d.setFullYear(d.getFullYear() - yrs);
+  return d.toISOString().slice(0, 10);
+}
+
 export function currentWindow() {
   if (state.customFrom) return { from: state.customFrom, to: state.customTo || new Date().toISOString().slice(0,10) };
   return { from: presetStart(state.rangePreset), to: null };

@@ -3,6 +3,7 @@
 //   資料：data/money_market.json（fetch_money_market.py 抓 FRED CSV，免 key）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { cutoffDate } from '../utils/dates.js';
 
 const LINES = [
   { key: "sofr", name: "SOFR", color: "#58a6ff" },
@@ -20,14 +21,6 @@ async function loadAll() {
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const j = await r.json();
   rows = (j?.data ?? []).filter(x => x.sofr != null || x.iorb != null || x.effr != null || x.sofr_iorb != null).map(x => ({ ...x }));
-}
-
-function cutoffDate(key) {
-  if (key === "MAX") return "0000-00-00";
-  const d = new Date();
-  const yrs = { "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10 }[key] ?? 3;
-  d.setFullYear(d.getFullYear() - yrs);
-  return d.toISOString().slice(0, 10);
 }
 
 // ── cards ─────────────────────────────────────────────────────────────

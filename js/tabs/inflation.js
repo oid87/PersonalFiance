@@ -4,6 +4,7 @@
 //   資料：data/inflation_exp.json（fetch_inflation_exp.py 抓 FRED CSV，免 key）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { cutoffDate } from '../utils/dates.js';
 
 const LINES = [
   { key: "be5y",    name: "5Y Breakeven",  color: "#58a6ff" },
@@ -53,14 +54,6 @@ function computeMA(rs) {
       if (cnt === p) rs[i][`ma${p}`] = sum / p;
     }
   }
-}
-
-function cutoffDate(key) {
-  if (key === "MAX") return "0000-00-00";
-  const d = new Date();
-  const yrs = { "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10 }[key] ?? 3;
-  d.setFullYear(d.getFullYear() - yrs);
-  return d.toISOString().slice(0, 10);
 }
 
 // ── cards ─────────────────────────────────────────────────────────────
