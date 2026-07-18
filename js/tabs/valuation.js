@@ -9,6 +9,7 @@
 
 import { loaded } from '../state.js';
 import { isLight, tc, PALETTE } from '../utils/theme.js';
+import { tsToLocalDate } from '../utils/dates.js';
 import { ensureLoaded } from '../utils/data.js';
 
 // ── Per-ticker config ──────────────────────────────────────────────
@@ -297,7 +298,7 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
       backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: textClr, fontSize: 12 },
       formatter(params) {
         const date = params[0]?.axisValue ?? "";
-        const ds = typeof date === "number" ? new Date(date).toISOString().slice(0, 10) : date;
+        const ds = typeof date === "number" ? tsToLocalDate(date) : date;
         let html = `<div style="font-weight:600;margin-bottom:4px">${ds}</div>`;
         const seen = new Set();
         for (const p of params) {

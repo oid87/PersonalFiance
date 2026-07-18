@@ -10,6 +10,7 @@
 //       bdc_nav.json(BDC P/NAV,3yr)
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { tsToLocalDate } from '../utils/dates.js';
 
 const SP_COLOR  = "#f778ba";
 const HY_COLOR  = "#f85149";
@@ -73,7 +74,7 @@ async function loadAll() {
 function dateLabel(firstParam) {
   const ts = firstParam?.axisValueLabel ?? firstParam?.axisValue;
   if (ts == null) return "";
-  return typeof ts === "string" ? ts.slice(0, 10) : new Date(ts).toISOString().slice(0, 10);
+  return typeof ts === "string" ? ts.slice(0, 10) : tsToLocalDate(ts);
 }
 
 function rangeStart(key) {

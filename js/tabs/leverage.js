@@ -5,6 +5,7 @@
 // NAV). The decay engine chains DAILY returns — real fund return post-inception,
 // synthetic (K×underlyingRet − dailyCost) before — so synthetic→real splices smoothly.
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { tsToLocalDate } from '../utils/dates.js';
 
 let levChart = null;
 let BUNDLE = null;
@@ -223,7 +224,7 @@ function lineOption({ series, xType, markInitial }) {
         if (!params.length) return '';
         const ax = params[0].axisValue;
         const head = xType === 'time'
-          ? (typeof ax === 'number' ? new Date(ax).toISOString().slice(0, 10) : ax)
+          ? (typeof ax === 'number' ? tsToLocalDate(ax) : ax)
           : `第 ${Math.round(ax).toLocaleString()} 天`;
         let str = `<b>${head}</b>`;
         for (const p of params) {

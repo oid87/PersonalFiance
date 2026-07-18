@@ -16,6 +16,7 @@
 // ⚠️ 無市場 consensus 預期資料(免費源撈不到),故不計算 CPI surprise,只呈現公布日當日反應。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { tsToLocalDate } from '../utils/dates.js';
 
 const RED = "#f85149", ORANGE = "#f0883e", YELLOW = "#e3b341",
       BLUE = "#58a6ff", GREEN = "#3fb950", PURPLE = "#d2a8ff";
@@ -82,7 +83,7 @@ function latestNonNull(rows, key) {
 function dateLabel(firstParam) {
   const ts = firstParam?.axisValueLabel ?? firstParam?.axisValue;
   if (ts == null) return "";
-  return typeof ts === "string" ? ts.slice(0, 10) : new Date(ts).toISOString().slice(0, 10);
+  return typeof ts === "string" ? ts.slice(0, 10) : tsToLocalDate(ts);
 }
 
 // ── 1. 頂部 readout ─────────────────────────────────────────────────
