@@ -77,6 +77,7 @@ function renderTaixChart(light) {
     ['2027-05-15', 53000],
   ];
 
+  // check_reuse: keep — tc('#768390','#636e7b') 不在 PALETTE 七組
   const axisClr = tc('#768390', '#636e7b');
   const gridClr = tc('rgba(0,0,0,0.05)', 'rgba(255,255,255,0.06)');
   const tipBg   = PALETTE.bg;
@@ -191,6 +192,7 @@ function cutoffDate() {
   const d = new Date();
   const y = { '2Y': -2, '4Y': -4 }[wRange] ?? -4;
   d.setFullYear(d.getFullYear() + y);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   return d.toISOString().slice(0, 10);
 }
 
@@ -202,6 +204,7 @@ function render(light) {
   chart = echarts.init(el, light ? null : 'dark');
 
   const from = cutoffDate();
+  // check_reuse: keep — tc('#768390','#636e7b') 不在 PALETTE 七組
   const axisClr = tc('#768390', '#636e7b');
   const gridClr = tc('rgba(0,0,0,0.04)', 'rgba(255,255,255,0.05)');
 

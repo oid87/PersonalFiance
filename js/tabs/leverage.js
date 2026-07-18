@@ -280,6 +280,7 @@ function renderBacktest() {
       `此段以 <b>${r.underName}</b> 的 ${r.K}x 每日重置合成（年化成本 ${(r.annualCost * 100).toFixed(1)}%）；` +
       `${realStart ? realStart + ' 起採真實基金淨值。' : ''}合成段為近似，僅供理解風險量級。`);
   } else setBanner('');
+  // check_reuse: keep — 漲跌語意色,不屬 PALETTE 七組
   const levColor = r.K >= 3 ? '#f85149' : '#f0883e', oneColor = tc('#8b949e', '#9aa3ad');
   lineOption({
     xType: 'time',
@@ -312,6 +313,7 @@ function renderSingle() {
   lineOption({
     xType: 'value',
     series: [
+      // check_reuse: keep — 刻意的次級灰 tc('#8b949e','#9aa3ad'),淺色端與 PALETTE.muted 差很多
       { name: '標的 (1x)', color: tc('#8b949e', '#9aa3ad'), data: lv.map((v, i) => [i, +(base * v).toFixed(0)]) },
       { name: `${sg.K}x 槓桿`, color: levColor, data: lev.map((v, i) => [i, +(base * v).toFixed(0)]) },
     ],
@@ -338,6 +340,7 @@ function renderCrash() {
   lineOption({
     xType: 'value',
     series: [
+      // check_reuse: keep — 刻意的次級灰 tc('#8b949e','#9aa3ad'),淺色端與 PALETTE.muted 差很多
       { name: '標的 (1x)', color: tc('#8b949e', '#9aa3ad'), data: lv.map((v, i) => [i, +(base * v).toFixed(0)]) },
       { name: `${cr.K}x 槓桿`, color: levColor, data: lev.map((v, i) => [i, +(base * v).toFixed(0)]) },
     ],
@@ -382,6 +385,7 @@ function renderMC() {
 function drawMCHist(finals, med, oneMed) {
   const lo = -1, hi = 3, bins = 60, w = (hi - lo) / bins, counts = new Array(bins).fill(0);
   for (const v of finals) counts[Math.floor((Math.min(Math.max(v, lo), hi - 1e-9) - lo) / w)]++;
+  // check_reuse: keep — 漲跌語意色,不屬 PALETTE 七組
   const pos = tc('#3fb950', '#1a7f37'), neg = '#f78166';
   const data = counts.map((c, i) => {
     const x = lo + w * (i + 0.5);

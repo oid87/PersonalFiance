@@ -31,6 +31,7 @@ const COMP_META = [
 
 // ── percentile rank ────────────────────────────────────────────────────────
 
+// check_reuse: keep — 空陣列回 5 不是 null,與 math.percentileRank 契約不同
 function percentileRank(val, sorted) {
   if (!sorted.length) return 5;
   let lo = 0, hi = sorted.length;
@@ -303,6 +304,7 @@ function renderChart() {
   const from = rangePreset === "MAX" ? null : (() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - parseInt(rangePreset));
+    // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
     return d.toISOString().slice(0, 10);
   })();
 

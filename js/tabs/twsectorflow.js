@@ -40,6 +40,7 @@ async function loadAll() {
 function cutDate1Y() {
   const d = new Date();
   d.setFullYear(d.getFullYear() - 1);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   return d.toISOString().slice(0, 10);
 }
 

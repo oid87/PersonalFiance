@@ -35,6 +35,7 @@ function ckWeekStart(dateStr) {
   const d = new Date(dateStr + "T12:00:00Z");
   const day = d.getUTCDay();
   d.setUTCDate(d.getUTCDate() - (day === 0 ? 6 : day - 1));
+  // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
   return d.toISOString().slice(0, 10);
 }
 

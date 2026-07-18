@@ -32,6 +32,7 @@ function _interpFpe(arr) {
     const t2 = new Date(arr[i+1].date + "T00:00:00Z").getTime(), v2 = arr[i+1].fpe;
     const gap = Math.round((t2 - t1) / 86400000);
     for (let j = 0; j < gap; j++) {
+      // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
       out.push([new Date(t1 + j * 86400000).toISOString().slice(0,10), +(v1 + (v2-v1)*(j/gap)).toFixed(3)]);
     }
   }
@@ -710,6 +711,7 @@ dateFrom?.addEventListener("change", onDateChange);
 dateTo?.addEventListener("change", onDateChange);
 
 if (dateTo) {
+  // check_reuse: keep — new Date() 取今天的日期字串,共用層無對應 helper
   dateTo.value = new Date().toISOString().slice(0, 10);
   dateTo.max   = dateTo.value;
 }

@@ -91,6 +91,7 @@ function rollingAvg(data, monthsBack) {
     sum += data[i][1];
     const cutoff = new Date(data[i][0] + "T00:00:00Z");
     cutoff.setMonth(cutoff.getMonth() - monthsBack);
+    // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
     const cutStr = cutoff.toISOString().slice(0, 10);
     while (j <= i && data[j][0] < cutStr) { sum -= data[j][1]; j++; }
     result.push([data[i][0], +((sum / (i - j + 1)).toFixed(3))]);
@@ -113,6 +114,7 @@ function buildSeries(rows, field) {
     const gap = Math.round((t2 - t1) / 86400000);
     if (gap <= 1) { out.push([pts[i].date, v1]); continue; }
     for (let j = 0; j < gap; j++) {
+      // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
       const d = new Date(t1 + j * 86400000).toISOString().slice(0, 10);
       out.push([d, +(v1 + (v2 - v1) * (j / gap)).toFixed(3)]);
     }
@@ -129,6 +131,7 @@ function rangeStartDate(key, minDate) {
      "5Y": () => d.setFullYear(d.getFullYear() - 5),
     "10Y": () => d.setFullYear(d.getFullYear() - 10),
     "20Y": () => d.setFullYear(d.getFullYear() - 20) })[key]?.();
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   return d.toISOString().slice(0, 10);
 }
 

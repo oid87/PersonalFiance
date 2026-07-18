@@ -180,6 +180,7 @@ function renderChartA() {
   const tipBdr  = PALETTE.border;
   const textClr = PALETTE.text2;
   const reconClr = '#58a6ff';
+  // check_reuse: keep — 特化灰(標示 2022-12 前無官方對照的重建值),不屬 PALETTE 七組
   const reconPreClr = tc('#6e7681', '#8c959f'); // 灰:2022-12 前無官方對照的重建值
   const actualClr = '#f0883e';
 

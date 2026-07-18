@@ -58,6 +58,7 @@ function fromDate() {
   if (rangePreset === "2011") return fgArr?.[0]?.[0] || null;
   const d = new Date();
   d.setFullYear(d.getFullYear() - parseInt(rangePreset));
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   return d.toISOString().slice(0, 10);
 }
 
@@ -105,6 +106,7 @@ function renderChart() {
       if (i > 0) {
         const prev = new Date(aRows[i - 1][0]), cur = new Date(d);
         if ((cur - prev) / 86400000 > 21) {
+          // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
           const mid = new Date((prev.getTime() + cur.getTime()) / 2).toISOString().slice(0, 10);
           out.push([mid, null]);
         }
