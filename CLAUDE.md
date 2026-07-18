@@ -53,9 +53,10 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 - theme.PALETTE — Collapses the most common literal tc("#dark","#light") pairs repeated
 - theme.echartsBase(overrides = {}) — 
 
-### dates.js(10)
+### dates.js(11)
 - dates.tsToLocalDate(ts) — ECharts time-axis parses "YYYY-MM-DD" as local midnight, not UTC
 - dates.presetStart(preset) — 
+- dates.cutoffDate(key) — 「今天往回 N 年」的 range cutoff(key: 1Y/3Y/5Y/10Y/MAX,未命中回 3 年)。
 - dates.currentWindow() — 
 - dates.filterRange(rows) — 
 - dates.dateAddDays(dateStr, n) — 
