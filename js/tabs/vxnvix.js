@@ -3,6 +3,7 @@
 //   資料：data/vxnvix.json（scripts/prep_vxnvix.py 由本地 VIX.json/VXN.json 對齊產生，免 key）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { cutoffDate } from '../utils/dates.js';
 
 const SPREAD_COLOR = "#58a6ff";
 
@@ -22,14 +23,6 @@ function percentile(sorted, p) {
   if (!sorted.length) return null;
   const idx = Math.min(sorted.length - 1, Math.max(0, Math.floor(p * (sorted.length - 1))));
   return sorted[idx];
-}
-
-function cutoffDate(key) {
-  if (key === "MAX") return "0000-00-00";
-  const d = new Date();
-  const yrs = { "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10 }[key] ?? 3;
-  d.setFullYear(d.getFullYear() - yrs);
-  return d.toISOString().slice(0, 10);
 }
 
 // ── cards ─────────────────────────────────────────────────────────────

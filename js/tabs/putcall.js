@@ -4,6 +4,7 @@
 //   schema 為巢狀 by-series：{ total:[{date,pc}], equity:[{date,pc}] }
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { cutoffDate } from '../utils/dates.js';
 
 const LINES = [
   { key: "total_pc",  name: "Total P/C",  color: "#58a6ff" },
@@ -24,14 +25,6 @@ async function loadAll() {
   for (const x of (j?.total ?? []))  { const o = map.get(x.date) || { date: x.date }; o.total_pc  = x.pc; map.set(x.date, o); }
   for (const x of (j?.equity ?? [])) { const o = map.get(x.date) || { date: x.date }; o.equity_pc = x.pc; map.set(x.date, o); }
   rows = [...map.values()].sort((a, b) => a.date < b.date ? -1 : 1);
-}
-
-function cutoffDate(key) {
-  if (key === "MAX") return "0000-00-00";
-  const d = new Date();
-  const yrs = { "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10 }[key] ?? 3;
-  d.setFullYear(d.getFullYear() - yrs);
-  return d.toISOString().slice(0, 10);
 }
 
 function setText(id, txt, color) {

@@ -3,6 +3,7 @@
 //   資料：data/real_rates.json（fetch_real_rates.py 抓 FRED CSV，免 key）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { cutoffDate } from '../utils/dates.js';
 
 const LINES = [
   { key: "dfii5",  name: "5Y 實質殖利率",  color: "#58a6ff" },
@@ -20,14 +21,6 @@ async function loadAll() {
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const j = await r.json();
   rows = (j?.data ?? []).filter(x => x.dfii5 != null || x.dfii10 != null || x.dfii30 != null).map(x => ({ ...x }));
-}
-
-function cutoffDate(key) {
-  if (key === "MAX") return "0000-00-00";
-  const d = new Date();
-  const yrs = { "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10 }[key] ?? 3;
-  d.setFullYear(d.getFullYear() - yrs);
-  return d.toISOString().slice(0, 10);
 }
 
 // ── cards ─────────────────────────────────────────────────────────────
