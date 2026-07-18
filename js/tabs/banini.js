@@ -91,7 +91,7 @@ function renderTimelineChart() {
     },
     yAxis: {
       axisLabel: { color: PALETTE.muted },
-      splitLine: { lineStyle: { color: tc("#21262d", "#eaeef2") } },
+      splitLine: { lineStyle: { color: PALETTE.grid } },
     },
     series: [{
       type: "bar",

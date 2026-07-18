@@ -106,7 +106,7 @@ function renderChart() {
     yAxis: {
       min: 9, max: 45, interval: 8,
       axisLabel: { color: PALETTE.muted },
-      splitLine: { lineStyle: { color: tc("#21262d", "#eaeef2") } },
+      splitLine: { lineStyle: { color: PALETTE.grid } },
     },
     // 依分數區間給線段上色（五燈色）
     visualMap: {
