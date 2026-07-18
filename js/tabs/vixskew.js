@@ -94,6 +94,7 @@ function rangeStart(key) {
   const y = { "3Y": 3, "5Y": 5, "10Y": 10, "20Y": 20 }[key] ?? 5;
   const d = new Date();
   d.setFullYear(d.getFullYear() - y);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   return d.toISOString().slice(0, 10);
 }
 

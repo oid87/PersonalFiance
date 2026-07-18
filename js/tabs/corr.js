@@ -22,6 +22,7 @@ export async function renderCorrTab() {
   else if (corrPeriod === "1Y") d.setFullYear(d.getFullYear() - 1);
   else if (corrPeriod === "2Y") d.setFullYear(d.getFullYear() - 2);
   else if (corrPeriod === "5Y") d.setFullYear(d.getFullYear() - 5);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   const fromDate = d.toISOString().slice(0, 10);
 
   // F&G is a 0–100 sentiment oscillator, not a price series — arithmetic

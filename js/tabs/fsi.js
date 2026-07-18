@@ -45,6 +45,7 @@ async function loadAll() {
   sp = (spJson?.data ?? []).map(r => [r.date, r.close]);
 }
 
+// check_reuse: keep — 就地 mutate 物件陣列、一次跑一整組 period 並綁死欄位名,與 canonical math.computeMA(data, period) 是不同概念
 function computeMA(rs) {
   const n = rs.length;
   for (const p of PERIODS) {
@@ -62,6 +63,7 @@ function rangeCutoff(key) {
   const d = new Date();
   ({ "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10 }[key] || 10) &&
     d.setFullYear(d.getFullYear() - ({ "1Y": 1, "3Y": 3, "5Y": 5, "10Y": 10 }[key] || 10));
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   return d.toISOString().slice(0, 10);
 }
 

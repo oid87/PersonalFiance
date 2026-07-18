@@ -140,6 +140,7 @@ function getPentaData() {
   else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "5Y")   d.setFullYear(d.getFullYear() - 5);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   const fromDate = d.toISOString().slice(0, 10);
   const filtered = raw.filter(r => r[0] >= fromDate);
   return pentaWeekly ? toWeekly(filtered) : filtered;
@@ -153,6 +154,7 @@ function getPentaFgData() {
   else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "5Y")   d.setFullYear(d.getFullYear() - 5);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   const fromDate = d.toISOString().slice(0, 10);
   return fg.filter(r => r[0] >= fromDate);
 }
@@ -165,6 +167,7 @@ function getPentaVixData() {
   else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "5Y")   d.setFullYear(d.getFullYear() - 5);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   const fromDate = d.toISOString().slice(0, 10);
   return vix.filter(r => r[0] >= fromDate);
 }
@@ -180,6 +183,7 @@ function _interpFpe(fpeArr) {
     const gap = Math.round((t2 - t1) / 86400000);
     if (gap <= 1) { out.push([d1, v1]); continue; }
     for (let j = 0; j < gap; j++) {
+      // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
       const date = new Date(t1 + j * 86400000).toISOString().slice(0, 10);
       out.push([date, +(v1 + (v2 - v1) * j / gap).toFixed(3)]);
     }
@@ -198,6 +202,7 @@ function getPentaFpeData() {
   else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "5Y")   d.setFullYear(d.getFullYear() - 5);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   const fromDate = d.toISOString().slice(0, 10);
   return interp.filter(r => r[0] >= fromDate);
 }
@@ -237,6 +242,7 @@ function renderChannelMode() {
   else if (pentaPeriod === "1.5Y") { d.setFullYear(d.getFullYear() - 1); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "3.5Y") { d.setFullYear(d.getFullYear() - 3); d.setMonth(d.getMonth() - 6); }
   else if (pentaPeriod === "5Y")   d.setFullYear(d.getFullYear() - 5);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   const fromDate = d.toISOString().slice(0, 10);
 
   const priceW   = weekly.filter(r => r[0] >= fromDate);

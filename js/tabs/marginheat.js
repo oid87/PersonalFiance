@@ -273,6 +273,7 @@ function renderForced() {
 }
 
 // ── 百分位 rank（binary search，同 bullbear.js percentileRank 手法）──────
+// check_reuse: keep — 內聯 *100,直接換會讓 null 案例變成 null*100=0(無聲行為改變),非 drop-in
 function percentileOf(val, sortedAsc) {
   if (!sortedAsc.length) return null;
   let lo = 0, hi = sortedAsc.length;

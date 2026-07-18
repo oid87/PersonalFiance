@@ -34,6 +34,7 @@ function toWeeklyOHLC(daily) {
     const diff = day === 0 ? -6 : 1 - day;
     const mon = new Date(d);
     mon.setUTCDate(d.getUTCDate() + diff);
+    // check_reuse: keep — toWeeklyOHLC 是第三種變體(回 OHLCV 物件帶 weekStart/weekEndDate),非 dates.toWeekly([date,close]) 也非 toWeeklyHLC([date,h,l,c])
     const key = mon.toISOString().slice(0, 10);
     let w = byWeek.get(key);
     if (!w) {

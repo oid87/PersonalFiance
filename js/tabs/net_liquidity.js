@@ -30,6 +30,7 @@ function findNDaysAgo(days) {
   if (!rows?.length) return null;
   const target = new Date(rows[rows.length - 1].date);
   target.setDate(target.getDate() - days);
+  // check_reuse: keep — 相對某錨點日往回推 N 天,不是 preset range cutoff,dates.presetStart 無對應語意
   const targetStr = target.toISOString().slice(0, 10);
   let best = null;
   for (const rrow of rows) {

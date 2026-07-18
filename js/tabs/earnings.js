@@ -12,6 +12,7 @@ export async function renderEarningsCalendar() {
     await loadEarnings();
   }
 
+  // check_reuse: keep — new Date() 取今天的日期字串,共用層無對應 helper
   const today = new Date().toISOString().slice(0, 10);
   // Build date → { earn: [], conf: [] } lookup
   const byDate = {};

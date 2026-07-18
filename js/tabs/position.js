@@ -119,6 +119,7 @@ function rangeCutoff(key) {
   ({ "1Y": () => d.setFullYear(d.getFullYear() - 1),
      "3Y": () => d.setFullYear(d.getFullYear() - 3),
      "5Y": () => d.setFullYear(d.getFullYear() - 5) })[key]?.();
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   return d.toISOString().slice(0, 10);
 }
 

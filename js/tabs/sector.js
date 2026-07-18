@@ -196,6 +196,7 @@ function calcReturn(data, period) {
   return base > 0 ? (latest / base - 1) * 100 : null;
 }
 
+// check_reuse: keep — 帶 .toFixed(2) 捨入,與 math.computeMA 不等價
 function computeMA(data, win) {
   const out = [];
   for (let i = 0; i < data.length; i++) {

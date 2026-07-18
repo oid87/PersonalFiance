@@ -25,6 +25,7 @@ function filterMacroRange(rows) {
   else if (macroRangePreset === "5Y")  d.setFullYear(d.getFullYear() - 5);
   else if (macroRangePreset === "10Y") d.setFullYear(d.getFullYear() - 10);
   else if (macroRangePreset === "20Y") d.setFullYear(d.getFullYear() - 20);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   const from = d.toISOString().slice(0, 10);
   return rows.filter(r => r[0] >= from);
 }
@@ -192,6 +193,7 @@ function renderBizChart() {
     const y = { "1Y": -1, "3Y": -3, "5Y": -5, "10Y": -10, "20Y": -20 }[macroRangePreset] ?? -10;
     d.setFullYear(d.getFullYear() + y);
   }
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   const from = macroRangePreset === "MAX" ? "1900-01-01" : d.toISOString().slice(0, 10);
   const bizData = macroLoaded["BIZ"].filter(r => r[0] >= from).map(r => [r[0], r[1]]);
 

@@ -93,6 +93,7 @@ function cutoffDate(key) {
   const d = new Date();
   const yrs = { '3Y': 3, '5Y': 5, '10Y': 10 }[key] ?? 10;
   d.setFullYear(d.getFullYear() - yrs);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   return d.toISOString().slice(0, 10);
 }
 
@@ -340,7 +341,9 @@ function renderSectorRank() {
   const maxAbs = Math.max(...rows.map(r => Math.abs(r.flow)), 1e-9);
   const textClr  = PALETTE.text2;
   const trackBg  = tc('rgba(255,255,255,0.05)', 'rgba(0,0,0,0.05)');
+  // check_reuse: keep — 漲跌語意色(紅=淨流入),不屬 PALETTE 七組的中性色語意
   const posColor = tc('#f85149', '#cf222e');  // 紅＝淨流入
+  // check_reuse: keep — 漲跌語意色(綠=淨流出),不屬 PALETTE 七組的中性色語意
   const negColor = tc('#3fb950', '#1a7f37');  // 綠＝淨流出
   const labelW = mob() ? 92 : 168;
   const valW   = mob() ? 56 : 68;

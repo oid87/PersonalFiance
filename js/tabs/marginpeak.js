@@ -27,6 +27,7 @@ let marginMode = 'yoy'; // 紅線意義：'yoy' = Margin Debt YoY%；'abs' = 融
 // 這裡對齊同一邏輯：月底 = 該月最後一天。
 function monthEnd(dateStr) {
   const y = +dateStr.slice(0, 4), m = +dateStr.slice(5, 7);
+  // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
   return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
 }
 function daysBetween(a, b) {

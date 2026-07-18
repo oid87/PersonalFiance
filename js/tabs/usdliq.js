@@ -32,6 +32,7 @@ function minDate(arr) {
   const xs = arr.filter(Boolean);
   return xs.length ? xs.sort()[0] : null;
 }
+// check_reuse: keep — 不同演算法(filter(x<v).length 線性掃)且引數順序相反、回傳已 ×100
 function percentileRank(arr, v) {
   if (!arr.length || v == null) return null;
   const below = arr.filter(x => x < v).length;
@@ -40,6 +41,7 @@ function percentileRank(arr, v) {
 function last3yCutoff(anchorDate) {
   const d = new Date(anchorDate);
   d.setFullYear(d.getFullYear() - 3);
+  // check_reuse: keep — 相對某錨點日往回推 N 天,不是 preset range cutoff,dates.presetStart 無對應語意
   return d.toISOString().slice(0, 10);
 }
 function unionDates(...sources) {
@@ -98,6 +100,7 @@ function cutoffDate(key) {
   const d = new Date();
   const yrs = { '1Y': 1, '3Y': 3 }[key] ?? 3;
   d.setFullYear(d.getFullYear() - yrs);
+  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
   return d.toISOString().slice(0, 10);
 }
 
@@ -197,7 +200,9 @@ function computeLayers() {
     const anchor = new Date(anchorDate);
     const c90 = new Date(anchor); c90.setDate(c90.getDate() - 90);
     const c180 = new Date(anchor); c180.setDate(c180.getDate() - 180);
+    // check_reuse: keep — 相對某錨點日往回推 N 天,不是 preset range cutoff,dates.presetStart 無對應語意
     const c90s = c90.toISOString().slice(0, 10);
+    // check_reuse: keep — 相對某錨點日往回推 N 天,不是 preset range cutoff,dates.presetStart 無對應語意
     const c180s = c180.toISOString().slice(0, 10);
     const recent = auctions.filter(a => a.date >= c90s && a.btc != null).map(a => a.btc);
     const prior = auctions.filter(a => a.date >= c180s && a.date < c90s && a.btc != null).map(a => a.btc);

@@ -40,6 +40,7 @@ async function loadAll() {
   spData = spJson?.data ? new Map(spJson.data.map(r => [r.date, r.close])) : null;
 }
 
+// check_reuse: keep — 就地 mutate 物件陣列、一次跑一整組 period 並綁死欄位名,與 canonical math.computeMA(data, period) 是不同概念
 function computeMA(rs) {
   const n = rs.length;
   for (const p of MA_PERIODS) {
