@@ -355,6 +355,7 @@ async function refresh() {
     let price;
     if (t.priceFile) {                       // index served from its own file (not in SERIES)
       const rows = await loadFile(t.priceFile);
+      // check_reuse: keep — loadSeries 是寫進全域 loaded[s.key] 不回傳,本站處理的是不在 SERIES 的獨立檔無 key;且 r.close ?? r.value 與 loadSeries 的 !==undefined 在 close===null 時行為不同
       price = rows.map(r => [r.date, r.close ?? r.value]);
     } else {
       await ensureLoaded(t.priceKey);
