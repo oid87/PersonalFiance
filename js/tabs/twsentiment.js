@@ -1,6 +1,6 @@
 // 台股情緒 tab — 台股恐懼貪婪指數 (P/C + 散戶多空 + 趨勢 + 融資 合成) + 加權指數參照
 // + 原始元件面板：選擇權 P/C ratio / 台指期散戶多空+外資 / 大盤融資餘額。
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 
 let chart = null, gauge = null, mcChart = null, basisChart = null, chipsChart = null, forcedChart = null;
@@ -174,8 +174,8 @@ function renderForced() {
 
   const xmin = from || mgn[0][0];
   const xmax = [twS.at(-1)[0], mgn.at(-1)[0]].sort().at(-1);
-  const tipBg = tc("#161b22", "#ffffff"), tipBdr = tc("#30363d", "#d0d7de");
-  const tipTx = tc("#e6edf3", "#1f2328"), axCl = tc("#8b949e", "#57606a");
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const tipTx = PALETTE.text, axCl = PALETTE.muted;
   const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
   const hasMr = mrt.length > 0;
   const xAx = i => ({ type: "time", gridIndex: i, min: xmin, max: xmax,
@@ -236,14 +236,14 @@ function renderForced() {
           colorStops: [{ offset: 0, color: "rgba(126,231,135,0.18)" }, { offset: 1, color: "rgba(126,231,135,0.02)" }] } },
         markPoint: { symbol: "circle", symbolSize: 8, data: (mrLat ? [{
           coord: [mrLat[0], mrLat[1]],
-          itemStyle: { color: C.maint, borderColor: tc("#0d1117", "#ffffff"), borderWidth: 2 },
+          itemStyle: { color: C.maint, borderColor: PALETTE.cellBorder, borderWidth: 2 },
           label: { formatter: `${mrLat[1].toFixed(0)}%`, position: "top", color: C.maint, fontSize: 11, fontWeight: 600 },
         }] : []) } },
     ] : []),
     dataZoom: [
       { type: "inside", xAxisIndex: hasMr ? [0, 1] : [0] },
       { type: "slider", xAxisIndex: hasMr ? [0, 1] : [0], height: 16, bottom: 6,
-        fillerColor: "rgba(88,166,255,0.1)", borderColor: tc("#30363d", "#d0d7de") },
+        fillerColor: "rgba(88,166,255,0.1)", borderColor: PALETTE.border },
     ],
   }, true);
 }
@@ -283,8 +283,8 @@ function renderMktcap() {
     window.addEventListener("resize", () => mcChart && mcChart.resize());
   }
   const series = rows.map(r => [r.date, r.ratio]);
-  const tipBg = tc("#161b22", "#ffffff"), tipBdr = tc("#30363d", "#d0d7de");
-  const tipTx = tc("#e6edf3", "#1f2328"), axCl = tc("#8b949e", "#57606a");
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const tipTx = PALETTE.text, axCl = PALETTE.muted;
   const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
   mcChart.setOption({
     backgroundColor: "transparent", animation: false,
@@ -313,7 +313,7 @@ function renderMktcap() {
       ] },
       markPoint: { symbol: "circle", symbolSize: 9, data: (rows.includes(latest) ? [{
         coord: [latest.date, latest.ratio],
-        itemStyle: { color: C.mcap, borderColor: tc("#0d1117", "#ffffff"), borderWidth: 2 },
+        itemStyle: { color: C.mcap, borderColor: PALETTE.cellBorder, borderWidth: 2 },
         label: { formatter: `${latest.ratio.toFixed(2)} ‰`, position: "top", color: C.mcap, fontSize: 11, fontWeight: 600 },
       }] : []) },
     }],
@@ -352,8 +352,8 @@ function renderBasis() {
   }
   const series = rows.map(r => [r.date, r.basis]);
   const contractMap = Object.fromEntries(rows.map(r => [r.date, r.contract]));
-  const tipBg = tc("#161b22", "#ffffff"), tipBdr = tc("#30363d", "#d0d7de");
-  const tipTx = tc("#e6edf3", "#1f2328"), axCl = tc("#8b949e", "#57606a");
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const tipTx = PALETTE.text, axCl = PALETTE.muted;
   const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
   basisChart.setOption({
     backgroundColor: "transparent", animation: false,
@@ -382,7 +382,7 @@ function renderBasis() {
       ] },
       markPoint: { symbol: "circle", symbolSize: 9, data: (rows.includes(latest) ? [{
         coord: [latest.date, latest.basis],
-        itemStyle: { color: basisColor, borderColor: tc("#0d1117", "#ffffff"), borderWidth: 2 },
+        itemStyle: { color: basisColor, borderColor: PALETTE.cellBorder, borderWidth: 2 },
         label: { formatter: `${latest.basis >= 0 ? "+" : ""}${latest.basis.toFixed(1)}`, position: "top", color: basisColor, fontSize: 11, fontWeight: 600 },
       }] : []) },
     }],
@@ -418,8 +418,8 @@ function renderChips() {
   const xmin = from || allDates.reduce((a, b) => (a < b ? a : b));
   const xmax = allDates.reduce((a, b) => (a > b ? a : b));
 
-  const tipBg = tc("#161b22", "#ffffff"), tipBdr = tc("#30363d", "#d0d7de");
-  const tipTx = tc("#e6edf3", "#1f2328"), axCl = tc("#8b949e", "#57606a");
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const tipTx = PALETTE.text, axCl = PALETTE.muted;
   const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
   const xAx = i => ({ type: "time", gridIndex: i, min: xmin, max: xmax,
     axisLabel: { show: i === 2, color: axCl, fontSize: 11 }, axisLine: { lineStyle: { color: gridCl } }, splitLine: { show: false } });
@@ -464,7 +464,7 @@ function renderChips() {
     ],
     dataZoom: [
       { type: "inside", xAxisIndex: [0, 1, 2] },
-      { type: "slider", xAxisIndex: [0, 1, 2], height: 16, bottom: 6, fillerColor: "rgba(88,166,255,0.1)", borderColor: tc("#30363d", "#d0d7de") },
+      { type: "slider", xAxisIndex: [0, 1, 2], height: 16, bottom: 6, fillerColor: "rgba(88,166,255,0.1)", borderColor: PALETTE.border },
     ],
   }, true);
 }
@@ -523,8 +523,8 @@ function renderChart() {
   const xmin = from || sent.data[0].date;
   const xmax = [twii.at(-1)[0], sent.data.at(-1).date].sort().at(-1);
 
-  const tipBg = tc("#161b22", "#ffffff"), tipBdr = tc("#30363d", "#d0d7de");
-  const tipTx = tc("#e6edf3", "#1f2328"), axCl = tc("#8b949e", "#57606a");
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const tipTx = PALETTE.text, axCl = PALETTE.muted;
   const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
   const xAx = i => ({ type: "time", gridIndex: i, min: xmin, max: xmax,
     axisLabel: { show: i === 3, color: axCl, fontSize: 11 }, axisLine: { lineStyle: { color: gridCl } }, splitLine: { show: false } });
@@ -585,7 +585,7 @@ function renderChart() {
     ],
     dataZoom: [
       { type: "inside", xAxisIndex: [0, 1, 2, 3] },
-      { type: "slider", xAxisIndex: [0, 1, 2, 3], height: 16, bottom: 6, fillerColor: "rgba(88,166,255,0.1)", borderColor: tc("#30363d", "#d0d7de") },
+      { type: "slider", xAxisIndex: [0, 1, 2, 3], height: 16, bottom: 6, fillerColor: "rgba(88,166,255,0.1)", borderColor: PALETTE.border },
     ],
   }, true);
 }

@@ -3,7 +3,7 @@
 //   資料：data/putcall.json（fetch_putcall.py，CBOE 凍結 archive + OCC daily-volume-totals，免 key）
 //   schema 為巢狀 by-series：{ total:[{date,pc}], equity:[{date,pc}] }
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const LINES = [
   { key: "total_pc",  name: "Total P/C",  color: "#58a6ff" },
@@ -79,11 +79,11 @@ function updateCards() {
 export function render() {
   if (!chart || !rows?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 

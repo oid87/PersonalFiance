@@ -1,4 +1,4 @@
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 let breadthChart     = null;
 let breadthData      = null;
@@ -251,11 +251,11 @@ export async function init() {
 
 export function renderBreadthChart() {
   if (!breadthData || !breadthChart) return;
-  const axisClr = tc("#8b949e", "#57606a");
-  const gridClr = tc("#21262d", "#e1e4e8");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const tipText = tc("#e6edf3", "#1f2328");
+  const axisClr = PALETTE.muted;
+  const gridClr = PALETTE.grid;
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const tipText = PALETTE.text;
 
   let rows = breadthData.data;
   if (breadthRange !== "MAX") {

@@ -2,7 +2,7 @@ import {
   SERIES, CUSTOM_COLORS, customSeries, active, maActive,
   loaded, loadedHLC, loadedVol, state,
 } from '../state.js';
-import { tc, mob } from '../utils/theme.js';
+import { tc, mob, PALETTE } from '../utils/theme.js';
 import {
   tsToLocalDate, currentWindow, filterRange,
   dateAddDays, closestOnOrAfter, minBetween, lookupLE,
@@ -277,11 +277,11 @@ export function renderSignalPanel(date) {
 // ── Chart render ───────────────────────────────────────────────
 export function render() {
   const series = [];
-  const axisClr  = tc("#8b949e", "#57606a");
-  const gridClr  = tc("#21262d", "#e1e4e8");
-  const tipBg    = tc("#161b22", "#ffffff");
-  const tipBdr   = tc("#30363d", "#d0d7de");
-  const tipText  = tc("#e6edf3", "#1f2328");
+  const axisClr  = PALETTE.muted;
+  const gridClr  = PALETTE.grid;
+  const tipBg    = PALETTE.bg;
+  const tipBdr   = PALETTE.border;
+  const tipText  = PALETTE.text;
 
   const isMob = mob();
   const yAxisDef = [

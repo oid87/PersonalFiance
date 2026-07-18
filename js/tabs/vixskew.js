@@ -5,7 +5,7 @@
 // 另加兩面板：④ VIX 期限結構（VIX/VIX3M ts_ratio，backwardation=恐慌，2006起）
 //            ⑤ 美股 Total Put/Call Ratio（OCC+CBOE 拼接，2006起）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 let chart   = null;
 let tsChart = null;
@@ -215,11 +215,11 @@ function renderChart() {
   const skMin   = Math.floor((Math.min(...skValid) - 5) / 10) * 10;
   const skMax   = Math.ceil( (Math.max(...skValid) + 5) / 10) * 10;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const tipText = tc("#e6edf3", "#1f2328");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const tipText = PALETTE.text;
   const isMob   = mob();
   const lp = "7%", rp = "9%";
 
@@ -391,11 +391,11 @@ function renderTSChart() {
   }
   if (segStart !== null) backAreas.push([{ xAxis: segStart }, { xAxis: dates[dates.length - 1] }]);
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const tipText = tc("#e6edf3", "#1f2328");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const tipText = PALETTE.text;
   const isMob   = mob();
 
   const opt = {
@@ -500,11 +500,11 @@ function renderPCChart() {
   const pcVals = rows.map(r => r.pc != null ? +r.pc.toFixed(3) : null);
   const ma20   = rollingMean(pcVals, 20);
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const tipText = tc("#e6edf3", "#1f2328");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const tipText = PALETTE.text;
   const isMob   = mob();
 
   const opt = {
@@ -525,7 +525,7 @@ function renderPCChart() {
     },
     series: [
       { name: "P/C 日值", type: "line", data: pcVals, symbol: "none",
-        lineStyle: { color: tc("#30363d", "#d0d7de"), width: 1 } },
+        lineStyle: { color: PALETTE.border, width: 1 } },
       { name: "P/C 20日均", type: "line", data: ma20, symbol: "none",
         lineStyle: { color: "#58a6ff", width: 2 },
         markLine: { silent: true, symbol: "none",
@@ -664,11 +664,11 @@ function renderComplacency() {
       `低SKEW裸奔回測 · ${sigIdx.length} 次訊號 · 現值 SKEW=${curSk.toFixed(1)} 全史第${curPctFull.toFixed(0)}百分位（非低，與病毒圖方向相反）`;
   }
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const tipText = tc("#e6edf3", "#1f2328");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const tipText = PALETTE.text;
 
   const horizonLabel = { 21: "1M", 63: "3M", 126: "6M" };
   const cats = CX_HORIZONS.map(td => horizonLabel[td]);

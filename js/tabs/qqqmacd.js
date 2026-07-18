@@ -10,7 +10,7 @@
 //   QQQ N=56, SPX(SP500) N=91；QQQ 觸及率 2/4/8週 = 62.5%/67.9%/78.6%；
 //   QQQ ≥8%捕捉 8週 ≈26.8%(≈基率)；QQQ 三桶 突破43.4%/震盪43.4%/跌破13.2%。
 
-import { isLight, tc } from '../utils/theme.js';
+import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeMA, computeMACD } from '../utils/math.js';
 
 const TICKERS = [
@@ -235,11 +235,11 @@ function renderTables(res) {
 function render(weeks, dif, dea, ma20, ma50, res) {
   if (!chart) return;
   const t = TICKERS.find(x => x.key === ticker);
-  const axisClr = tc("#8b949e", "#57606a");
-  const gridClr = tc("#21262d", "#e1e4e8");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const axisClr = PALETTE.muted;
+  const gridClr = PALETTE.grid;
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   const dates = weeks.map(w => w.weekStart);
   const candle = weeks.map(w => [w.open, w.close, w.low, w.high]);

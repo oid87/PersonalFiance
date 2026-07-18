@@ -2,7 +2,7 @@
 // 資料：直接 fetch data/TWII.json + QQQ/SPY/SOXX.json（無需新 fetch 腳本）
 // 標準化基準：各指數 2022/10 月內最低收盤 = 100（Wave II 底部）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const TICKERS = [
   { file: 'data/TWII.json', key: 'TWII', label: '台股 TAIEX', color: '#E9A810', width: 2,   ltype: 'solid'  },
@@ -79,9 +79,9 @@ function renderTaixChart(light) {
 
   const axisClr = tc('#768390', '#636e7b');
   const gridClr = tc('rgba(0,0,0,0.05)', 'rgba(255,255,255,0.06)');
-  const tipBg   = tc('#161b22', '#ffffff');
-  const tipBdr  = tc('#30363d', '#d0d7de');
-  const tipText = tc('#e6edf3', '#1f2328');
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const tipText = PALETTE.text;
 
   taixChart.setOption({
     backgroundColor: 'transparent',

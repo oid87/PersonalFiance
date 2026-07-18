@@ -2,7 +2,7 @@
 //   主圖：spread = VXN.close - VIX.close 時序折線 + 90th/95th 全樣本固定分位數門檻線
 //   資料：data/vxnvix.json（scripts/prep_vxnvix.py 由本地 VIX.json/VXN.json 對齊產生，免 key）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const SPREAD_COLOR = "#58a6ff";
 
@@ -52,15 +52,15 @@ function updateCards() {
   else if (cur.spread >= p90) { sig = "偏高（≥90th）"; clr = "#f0883e"; }
   else { sig = "正常區間"; clr = "#3fb950"; }
 
-  setText("vxnvix-spread-val", cur.spread.toFixed(2), tc("#e6edf3", "#1f2328"));
+  setText("vxnvix-spread-val", cur.spread.toFixed(2), PALETTE.text);
   setText("vxnvix-spread-sub", `${cur.date} · VXN − VIX`, "var(--muted)");
   setText("vxnvix-spread-signal", sig, clr);
 
-  setText("vxnvix-rank-val", `${cur.percentile_rank.toFixed(1)}%`, tc("#e6edf3", "#1f2328"));
+  setText("vxnvix-rank-val", `${cur.percentile_rank.toFixed(1)}%`, PALETTE.text);
   setText("vxnvix-rank-sub", "全樣本（2001年至今）百分位排名", "var(--muted)");
   setText("vxnvix-rank-signal", sig, clr);
 
-  setText("vxnvix-thresh-val", `${p90.toFixed(2)} / ${p95.toFixed(2)}`, tc("#e6edf3", "#1f2328"));
+  setText("vxnvix-thresh-val", `${p90.toFixed(2)} / ${p95.toFixed(2)}`, PALETTE.text);
   setText("vxnvix-thresh-sub", "90th / 95th 全樣本固定門檻", "var(--muted)");
   setText("vxnvix-thresh-signal", "非逐日訊號，僅供參考", "var(--muted)");
 }
@@ -69,11 +69,11 @@ function updateCards() {
 export function render() {
   if (!chart || !payload?.data?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const isMob   = mob();
 
   updateCards();

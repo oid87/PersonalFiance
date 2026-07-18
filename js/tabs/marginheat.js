@@ -2,7 +2,7 @@
 //   左軸：S&P500（對數）  右軸：Margin Debt YoY%（紅/綠警戒帶標示過熱/投降區）
 //   資料：data/liquidity.json（margin[]，含 finra_margin_early.json 回補至 1997）+ data/SP500.json
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 let chart = null;
 let forcedChart = null;
@@ -86,11 +86,11 @@ async function ensureTwMargin() {
 export function render() {
   if (!chart || !rows) return;
 
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg   = tc('#161b22', '#ffffff');
-  const tipBdr  = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const spxClr  = tc('#e6edf3', '#1f2937');
   const yoyClr  = '#f85149';
 
@@ -133,7 +133,7 @@ export function render() {
 
   const zeroMarkLine = {
     silent: true, symbol: 'none',
-    lineStyle: { color: tc('#8b949e', '#57606a'), type: 'dashed', width: 1 },
+    lineStyle: { color: PALETTE.muted, type: 'dashed', width: 1 },
     data: [{ yAxis: 0 }],
   };
 
@@ -196,10 +196,10 @@ function renderForced() {
   const host = document.getElementById('marginheat-forced-chart');
   if (!cardEl || !host || !rows || !rows.length) return;
 
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg = tc('#161b22', '#ffffff'), tipBdr = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const textClr = PALETTE.text2;
   const spxClr = tc('#e6edf3', '#1f2937');
   const debtClr = '#e3b341';
 
@@ -336,11 +336,11 @@ function ensureExtraDom() {
 function renderFreeCredit() {
   if (!freecreditChart || !freecreditRows || !freecreditRows.length) return;
 
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg   = tc('#161b22', '#ffffff');
-  const tipBdr  = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const ratioClr = '#e3b341';
 
   const dates = freecreditRows.map(r => r.date);
@@ -446,11 +446,11 @@ async function renderUnwind() {
   const st = computeUnwindState(series, lookback);
   if (!st) { summaryHost.innerHTML = '<span style="color:var(--muted)">資料不足</span>'; return; }
 
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg   = tc('#161b22', '#ffffff');
-  const tipBdr  = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const lineClr = '#58a6ff', peakClr = '#f85149', baseClr = '#3fb950', curClr = '#e3b341';
 
   const dates = st.win.map(r => r.date);

@@ -7,7 +7,7 @@
 // （含資產泡沫堆積期的「過度寬鬆」，這是跟「金融壓力」FSI tab 最大的不同 —— FSI 只在市場失序時
 // 才偏離 0，是同步壓力指標；NFCI 涵蓋整個鬆緊光譜）。定位「環境理解」非交易訊號。
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const COMPS = [
   { key: "risk",     name: "風險",  color: "#f85149" },
@@ -82,7 +82,7 @@ function updateCards() {
   else if (last.nfci >= 0)    { lSig = "略緊 · 高於長期均值";        lClr = "#f0883e"; }
   else if (last.nfci >= -0.5) { lSig = "略鬆 · 低於長期均值";        lClr = "#3fb950"; }
   else                        { lSig = "明顯寬鬆 · 資金環境寬鬆";     lClr = "#3fb950"; }
-  setText("nfci-level-val", (last.nfci >= 0 ? "+" : "") + last.nfci.toFixed(2), tc("#e6edf3", "#1f2328"));
+  setText("nfci-level-val", (last.nfci >= 0 ? "+" : "") + last.nfci.toFixed(2), PALETTE.text);
   setText("nfci-level-sub", `${last.date}｜0＝歷史均值`, "var(--muted)");
   setText("nfci-level-signal", lSig, lClr);
 
@@ -110,11 +110,11 @@ function updateCards() {
 // ── render ───────────────────────────────────────────────────────────
 export function render() {
   if (!nfciChart || !rows) return;
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 
@@ -198,7 +198,7 @@ export function render() {
     emphasis: { focus: "series" },
   }));
 
-  const nfciColor = tc("#e6edf3", "#1f2328");
+  const nfciColor = PALETTE.text;
   const series = [
     { name: "NFCI 總分", type: "line", xAxisIndex: 0, yAxisIndex: 0, data: nfciLine,
       symbol: "none", smooth: false, z: 5, itemStyle: { color: nfciColor },

@@ -1,6 +1,6 @@
 // 景氣燈號 tab — 國發會景氣對策信號（9 項構成項加總 9–45 分 → 五燈），月頻 1984+。
 // 定位：循環位置的「環境理解」，非交易訊號。資料 data/taiwan_business_signal.json。
-import { isLight, tc } from '../utils/theme.js';
+import { isLight, tc, PALETTE } from '../utils/theme.js';
 
 let chart = null;
 let raw = null;                 // taiwan_business_signal.json: {data:[{date,score,light}], latest, updated}
@@ -100,12 +100,12 @@ function renderChart() {
     },
     xAxis: {
       type: "category", data: dates, boundaryGap: false,
-      axisLabel: { color: tc("#8b949e", "#57606a") },
-      axisLine: { lineStyle: { color: tc("#30363d", "#d0d7de") } },
+      axisLabel: { color: PALETTE.muted },
+      axisLine: { lineStyle: { color: PALETTE.border } },
     },
     yAxis: {
       min: 9, max: 45, interval: 8,
-      axisLabel: { color: tc("#8b949e", "#57606a") },
+      axisLabel: { color: PALETTE.muted },
       splitLine: { lineStyle: { color: tc("#21262d", "#eaeef2") } },
     },
     // 依分數區間給線段上色（五燈色）

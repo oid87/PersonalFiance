@@ -11,7 +11,7 @@
 //   清算天數與集中度百分位不受影響,為可信主指標。
 //   候選池是「今日」名單回溯套用到歷史,早期年份集中度可能被低估(倖存者偏誤變體)。
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 let chart = null;
 let state = null; // { dates, pctData, percentileData, twiiData, currentValuePct, currentPercentile, leaderboard, note, asOf, latestDataDate, seriesStart, nSamples }
@@ -110,11 +110,11 @@ function renderTable() {
 function render() {
   if (!chart || !state) return;
 
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg   = tc('#161b22', '#ffffff');
-  const tipBdr  = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const twiiClr = tc('#e6edf3', '#1f2937');
   const pctClr  = '#f85149';
 

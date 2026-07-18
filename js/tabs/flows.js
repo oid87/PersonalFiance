@@ -4,7 +4,7 @@
 //   optional overlays: CNN Fear & Greed (weekly avg) + VIX (weekly close)
 //   資料：data/flows.json + data/fear_greed.json + data/VIX.json
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const TICKERS = [
   { key: 'semi', label: '半導體 (SOXX+SMH)', unit: '$', color: '#1a3a6b', colorDark: '#3987e5' },
@@ -119,7 +119,7 @@ function updateCards(rows) {
   const rank = absVals.filter(x => x <= absLast).length;
   const pct = ((rank / absVals.length) * 100).toFixed(0);
   const extreme = parseInt(pct) >= 95;
-  const eClr = extreme ? '#f85149' : tc('#c9d1d9', '#24292f');
+  const eClr = extreme ? '#f85149' : PALETTE.text2;
   setText('flows-rank-val', `${pct}%`, eClr);
   setText('flows-rank-sub', `|${v.toFixed(1)}B| 在 ${rows.length} 週中的百分位`, 'var(--muted)');
   setText('flows-rank-signal', extreme ? '極端值 — 群體擁擠訊號' : '歷史常態範圍', eClr);
@@ -144,11 +144,11 @@ function render() {
 
   updateCards(rows);
 
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg   = tc('#161b22', '#ffffff');
-  const tipBdr  = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const barClr  = isLight() ? ticker.color : ticker.colorDark;
 
   const dates = rows.map(r => r.date);
@@ -338,7 +338,7 @@ function renderSectorRank() {
   }
 
   const maxAbs = Math.max(...rows.map(r => Math.abs(r.flow)), 1e-9);
-  const textClr  = tc('#c9d1d9', '#24292f');
+  const textClr  = PALETTE.text2;
   const trackBg  = tc('rgba(255,255,255,0.05)', 'rgba(0,0,0,0.05)');
   const posColor = tc('#f85149', '#cf222e');  // 紅＝淨流入
   const negColor = tc('#3fb950', '#1a7f37');  // 綠＝淨流出

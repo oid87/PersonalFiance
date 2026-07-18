@@ -1,5 +1,5 @@
 import { SERIES, PENTA_TICKERS, loaded, loadedHLC } from '../state.js';
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate, toWeekly, toWeeklyHLC } from '../utils/dates.js';
 import { computeLinearRegression, computeChannelBands, computeRSI, computeKD, computeTDSetup } from '../utils/math.js';
 import { loadSeries } from '../utils/data.js';
@@ -247,11 +247,11 @@ function renderChannelMode() {
   const ma125Chw = penta125Active ? computeCustomMA(allDaily, pentaMaPeriod).filter(r => r[0] >= fromDate) : null;
 
   const s        = SERIES.find(x => x.key === pentaActiveTicker);
-  const axisClr  = tc("#8b949e", "#57606a");
-  const gridClr  = tc("#21262d", "#e1e4e8");
-  const tipBg    = tc("#161b22", "#ffffff");
-  const tipBdr   = tc("#30363d", "#d0d7de");
-  const tipText  = tc("#e6edf3", "#1f2328");
+  const axisClr  = PALETTE.muted;
+  const gridClr  = PALETTE.grid;
+  const tipBg    = PALETTE.bg;
+  const tipBdr   = PALETTE.border;
+  const tipText  = PALETTE.text;
   const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
 
   const isMobCh   = mob();
@@ -438,11 +438,11 @@ export function renderPentagram() {
   }
 
   const s        = SERIES.find(x => x.key === pentaActiveTicker);
-  const axisClr  = tc("#8b949e", "#57606a");
-  const gridClr  = tc("#21262d", "#e1e4e8");
-  const tipBg    = tc("#161b22", "#ffffff");
-  const tipBdr   = tc("#30363d", "#d0d7de");
-  const tipText  = tc("#e6edf3", "#1f2328");
+  const axisClr  = PALETTE.muted;
+  const gridClr  = PALETTE.grid;
+  const tipBg    = PALETTE.bg;
+  const tipBdr   = PALETTE.border;
+  const tipText  = PALETTE.text;
   const lineBase = { type: "line", showSymbol: false, emphasis: { focus: "series" } };
 
   const isMobPt   = mob();

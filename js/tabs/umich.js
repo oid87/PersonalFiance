@@ -3,7 +3,7 @@
 //   MA12 / MA24 均線（前端滾動計算）
 //   資料：data/umich.json（fetch_umich.py 抓 FRED UMCSENT + USREC + yfinance SPY）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const CSI_COLOR  = "#e3b341";  // amber — UMCSENT line
 const SPY_COLOR  = "#f778ba";  // pink — SPY
@@ -70,7 +70,7 @@ function updateCards() {
   else if (csi < 85)  { sig = "中性偏弱";                clr = "#e3b341"; }
   else if (csi < 100) { sig = "溫和樂觀";                clr = "#3fb950"; }
   else                { sig = "高度樂觀 · 留意過熱";     clr = "#58a6ff"; }
-  setText("umich-level-val", csi.toFixed(1), tc("#e6edf3", "#1f2328"));
+  setText("umich-level-val", csi.toFixed(1), PALETTE.text);
   setText("umich-level-sub", `${last.date}（基期 1966:Q1=100）`, "var(--muted)");
   setText("umich-level-signal", sig, clr);
 
@@ -102,11 +102,11 @@ function updateCards() {
 export function render() {
   if (!chart || !rows) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 

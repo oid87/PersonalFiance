@@ -4,7 +4,7 @@
 //   已知限制：QQQ 1999-03 才成立，本地資料自 2000-01-03 起，無法涵蓋 1995-1999；
 //             ratio 為未還原息價格比（不含股息），方法論比照原始靈感來源（SpotGamma NDX/SPX 比較圖，同樣排除股息）。
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const RATIO_COLOR = "#58a6ff";
 
@@ -43,7 +43,7 @@ function updateCards() {
   const trough = payload.bust_trough;
   if (!cur || !peak || !trough) return;
 
-  const vsCol = tc("#e6edf3", "#1f2328");
+  const vsCol = PALETTE.text;
   const pctOfPeak = (cur.ratio / peak.ratio) * 100;
 
   setText("relstrength-current-val", cur.ratio.toFixed(4), vsCol);
@@ -63,11 +63,11 @@ function updateCards() {
 export function render() {
   if (!chart || !payload?.data?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const isMob   = mob();
 
   updateCards();

@@ -15,7 +15,7 @@
 //
 // ⚠️ 無市場 consensus 預期資料(免費源撈不到),故不計算 CPI surprise,只呈現公布日當日反應。
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const RED = "#f85149", ORANGE = "#f0883e", YELLOW = "#e3b341",
       BLUE = "#58a6ff", GREEN = "#3fb950", PURPLE = "#d2a8ff";
@@ -132,11 +132,11 @@ function renderContrib(selectedDate) {
   }
   const row = decomp.find(d => d.date === selectedDate) ?? decomp[decomp.length - 1];
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const GREY    = axisClr;
 
   const items = [
@@ -280,12 +280,12 @@ function renderHeatmap() {
   const p5 = percentile(allVals, 0.05), p95 = percentile(allVals, 0.95);
   const bound = Math.max(Math.abs(p5 ?? 0), Math.abs(p95 ?? 0), 0.05);
 
-  const axisClr = tc("#8b949e", "#57606a");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const axisClr = PALETTE.muted;
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const neutral = tc("#21262d", "#f0f2f5");
-  const cellBdr = tc("#0d1117", "#ffffff");
+  const cellBdr = PALETTE.cellBorder;
 
   heatChart.setOption({
     backgroundColor: "transparent", animation: false,
@@ -314,7 +314,7 @@ function renderHeatmap() {
       axisLabel: {
         color: textClr, fontSize: 11,
         formatter: v => (v === "Headline CPI" || v === "Core CPI") ? `{agg|${v}}` : v,
-        rich: { agg: { color: tc("#e6edf3", "#1f2328"), fontWeight: 700 } },
+        rich: { agg: { color: PALETTE.text, fontWeight: 700 } },
       },
       axisLine: { lineStyle: { color: axisClr } },
     },
@@ -373,11 +373,11 @@ function renderBreadth() {
       : `Median/Trimmed Mean CPI 與 Headline 同步至 ${medDate ?? "—"},廣度線已反映最新一期。`;
   }
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   breadthChart.setOption({
     backgroundColor: "transparent", animation: false,
@@ -428,11 +428,11 @@ function renderSticky() {
   const rows = (payload.sticky ?? []).filter(r => r.date >= rangeStart(cpiRange));
   if (!rows.length) { stickyChart.clear(); return; }
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   stickyChart.setOption({
     backgroundColor: "transparent", animation: false,
@@ -506,14 +506,14 @@ function renderMarket() {
   const releaseMarks = releaseDatesInView.map(d => ({
     xAxis: d,
     label: { show: false },
-    lineStyle: { color: tc("#8b949e", "#57606a"), type: "dashed", width: 1, opacity: 0.35 },
+    lineStyle: { color: PALETTE.muted, type: "dashed", width: 1, opacity: 0.35 },
   }));
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   const sub = document.getElementById("cpi-market-subtitle");
   if (sub) sub.textContent =

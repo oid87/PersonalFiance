@@ -9,7 +9,7 @@
 //   基率（1999-04~2025-06 全樣本月中位數，hardcode 不在 JS 重算）：
 //     SPX 1m/3m/6m/12m ≈ 1.2/2.8/5.2/10.8；QQQ ≈ 1.5/4.9/8.7/17.2
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const HORIZONS = { '1m': 21, '3m': 63, '6m': 126, '12m': 252 };
 const BASELINE = {
@@ -209,11 +209,11 @@ function renderTable() {
 function render() {
   if (!chart || !state) return;
 
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg   = tc('#161b22', '#ffffff');
-  const tipBdr  = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const spxClr  = tc('#e6edf3', '#1f2937');
   const qqqClr  = '#58a6ff';
   const yoyClr  = '#f85149';

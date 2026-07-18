@@ -1,5 +1,5 @@
 import { SERIES, CORR_EXTRA, loaded } from '../state.js';
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { loadSeries } from '../utils/data.js';
 import { toArithReturns, pearsonCorr } from '../utils/math.js';
 
@@ -59,10 +59,10 @@ export async function renderCorrTab() {
     }
   }
 
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const tipText = tc("#e6edf3", "#1f2328");
-  const axisClr = tc("#8b949e", "#57606a");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const tipText = PALETTE.text;
+  const axisClr = PALETTE.muted;
 
   corrChart.setOption({
     backgroundColor: "transparent",

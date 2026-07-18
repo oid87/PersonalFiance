@@ -2,7 +2,7 @@
 // 四格對照圖：S&P500 指數(^GSPC) / 市場恐慌(CNN F&G + VIX) / AAII 看多·中立·看空 / 看多−看空
 // + 完整週度歷史對照表。AAII 為週頻，其餘為日頻，依日期向前對齊。
 // S&P 500 用指數(^GSPC, 1987起)而非 SPY ETF(2000起)，以便對齊 AAII 1987 起點。
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate, lookupLE } from '../utils/dates.js';
 
 let aaiiChart   = null;
@@ -124,8 +124,8 @@ function renderChart() {
   const allLast = [spArr.at(-1)[0], fgArr.at(-1)[0], vixArr.at(-1)[0], aaii.data.at(-1).date].sort();
   const xmax = allLast.at(-1);
 
-  const tipBg = tc("#161b22", "#ffffff"), tipBdr = tc("#30363d", "#d0d7de");
-  const tipTx = tc("#e6edf3", "#1f2328"), axCl = tc("#8b949e", "#57606a");
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const tipTx = PALETTE.text, axCl = PALETTE.muted;
   const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
 
   const xAxisCommon = i => ({
@@ -207,7 +207,7 @@ function renderChart() {
     dataZoom: [
       { type: "inside", xAxisIndex: [0, 1, 2, 3] },
       { type: "slider", xAxisIndex: [0, 1, 2, 3], height: 16, bottom: 6,
-        fillerColor: "rgba(88,166,255,0.1)", borderColor: tc("#30363d", "#d0d7de") },
+        fillerColor: "rgba(88,166,255,0.1)", borderColor: PALETTE.border },
     ],
   }, true);
 }

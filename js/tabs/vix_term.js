@@ -2,7 +2,7 @@
 //   上格：四條天期線；下格：ts_ratio + 1.0 參考線（backwardation 門檻）
 //   資料：data/vix_term.json（fetch_vix_term.py 抓 CBOE 官方每日收盤，免 key）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 const LINES = [
   { key: "vix9d", name: "VIX9D",  color: "#8b949e" },
@@ -70,7 +70,7 @@ function updateCards() {
     else if (v > 20) { sig = "偏緊張";   clr = "#f0883e"; }
     else if (v > 15) { sig = "正常區間"; clr = "#3fb950"; }
     else              { sig = "低波動 · 極度平靜"; clr = "#58a6ff"; }
-    setText("vixterm-vix-val", v.toFixed(2), tc("#e6edf3", "#1f2328"));
+    setText("vixterm-vix-val", v.toFixed(2), PALETTE.text);
     setText("vixterm-vix-sub", `${vixRow.date} · CBOE VIX（30日）`, "var(--muted)");
     setText("vixterm-vix-signal", sig, clr);
   }
@@ -80,11 +80,11 @@ function updateCards() {
 export function render() {
   if (!chart || !rows?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const isMob   = mob();
 
   updateCards();

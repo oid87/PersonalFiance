@@ -1,7 +1,7 @@
 // 牛熊指標 tab — 窮人版 BofA Bull & Bear Indicator
 // 7 components, each percentile-ranked to 0–10, equal-weight composite.
 // Data: bullbear.json (NAAIM/COT/FRED) + breadth.json + SP500_PE.json + SP500.json
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate, lookupLE } from '../utils/dates.js';
 
 let gaugeChart = null, mainChart = null;
@@ -312,8 +312,8 @@ function renderChart() {
   const spFiltered = from ? spArr.filter(r => r[0] >= from) : spArr;
   const spSampled = downsample(spFiltered, 600);
 
-  const tipBg = tc("#161b22","#ffffff"), tipBdr = tc("#30363d","#d0d7de");
-  const tipTx = tc("#e6edf3","#1f2328"), axCl = tc("#8b949e","#57606a");
+  const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
+  const tipTx = PALETTE.text, axCl = PALETTE.muted;
   const gridCl = tc("rgba(48,54,61,0.5)","rgba(208,215,222,0.4)");
 
   mainChart.setOption({

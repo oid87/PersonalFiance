@@ -15,7 +15,7 @@
 //   - Vintage 只由每日融資買進建倉,2020-01-02 以前既有存量的建倉價位未知,不追蹤。
 //   - 僅涵蓋上市(TWSE MI_MARGN),不含上櫃;$-weighted 大盤 aggregate,非逐檔/逐投資人。
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 
 let chartA = null, chartB = null, chartC = null;
 let state = null;
@@ -174,11 +174,11 @@ function findExtremeDate(hist, lo, hi) {
 
 function renderChartA() {
   if (!chartA || !state) return;
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg   = tc('#161b22', '#ffffff');
-  const tipBdr  = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const reconClr = '#58a6ff';
   const reconPreClr = tc('#6e7681', '#8c959f'); // 灰:2022-12 前無官方對照的重建值
   const actualClr = '#f0883e';
@@ -287,11 +287,11 @@ function renderChartA() {
 // ── Panel B: 融資成本位階分布(釘住某日時改吃該日快照,追加需求 2b) ──
 function renderChartB() {
   if (!chartB || !state) return;
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg   = tc('#161b22', '#ffffff');
-  const tipBdr  = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const barClr  = '#58a6ff';
 
   const pinned = !!(pinnedDate && dailyMap && dailyMap.has(pinnedDate));
@@ -373,11 +373,11 @@ function renderChartB() {
 // ── Panel C: 斷頭階梯(前瞻;釘住某日時改吃該日 casc,追加需求 2) ──────
 function renderChartC() {
   if (!chartC || !state) return;
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
-  const tipBg   = tc('#161b22', '#ffffff');
-  const tipBdr  = tc('#30363d', '#d0d7de');
-  const textClr = tc('#c9d1d9', '#24292f');
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
   const lineClr = '#f85149';
 
   const pinned = !!(pinnedDate && dailyMap && dailyMap.has(pinnedDate));
