@@ -20,8 +20,13 @@
 //      🚨 這條線是紅線：任何改動都不可讓 ffill 後的日頻值流入 evaluateGroup/
 //      computeBaseline/dedupeSignals，否則一週的值會被當 5 個獨立交易日事件，
 //      樣本數與基率全部失真（見對拍腳本 mismatches 必須仍為 0）。
-//   ③ 時間範圍 1Y/2Y/3Y/全部——只用 chart.dispatchAction({type:"dataZoom",...})
-//      調整顯示視窗，不重跑 computeForTickerPure，統計表恆為全樣本。
+//   ③ 時間範圍 1Y/2Y/3Y/全部——用 chart.dispatchAction({type:"dataZoom",...}) 調整顯示
+//      視窗，不重跑 computeForTickerPure，統計表恆為全樣本。⚠️ 2026-07-19 修正：價格
+//      軸（與 VIX 軸）的 min/max 必須依「目前選取範圍」重算，不能固定用全樣本極值——
+//      NAAIM 樣本橫跨 20 年，全樣本極值差可達 90 倍（如 SOXX 7.79~655），縮到 1 年視窗
+//      時價格線會被壓扁貼在軸的一端，看起來像一條死平線，等於看不出任何水位變化
+//      （CLAUDE.md 圖表鐵則：人眼覺得圖不對就是有問題，不是美感偏好）。故切換範圍時
+//      除了 dataZoom 也要重呼叫 render() 用可視窗內的 min/max 重算軸範圍。
 //
 // 計算與 python lab.py 對齊的三個關鍵點（逐項對照 naaim_exposure_study.py）：
 //   1. 滾動百分位 = pandas `s.rolling(window,min_periods).rank(pct=True)*100`，
@@ -410,8 +415,14 @@ function render(key, result) {
   for (let i = 0; i < price.dates.length; i++) {
     if (price.dates[i] >= naaimStart) priceRows.push([price.dates[i], pxLog(price.closes[i])]);
   }
-  const priceVals = priceRows.map(r => pxUnlog(r[1]));  // 還原成價格再算 min/max
-  const priceMin = Math.min(...priceVals), priceMax = Math.max(...priceVals);
+  // 軸範圍只用「目前選取範圍的可視窗」內的資料算，不是全樣本——見檔頭 2026-07-19
+  // 修正說明。visibleWindowStart 在檔案後段定義（function 宣告會 hoist，此處呼叫合法）。
+  const latestPriceDate = priceRows.length ? priceRows[priceRows.length - 1][0] : naaimStart;
+  const winStart = visibleWindowStart(naaimStart, latestPriceDate, rangeKey);
+  const priceRowsInWindow = priceRows.filter(r => r[0] >= winStart);
+  const priceValsAll = priceRows.map(r => pxUnlog(r[1]));  // 還原成價格；全樣本，範圍為空時的 fallback
+  const priceValsWin = priceRowsInWindow.length ? priceRowsInWindow.map(r => pxUnlog(r[1])) : priceValsAll;
+  const priceMin = Math.min(...priceValsWin), priceMax = Math.max(...priceValsWin);
 
   // 功能②：forward-fill 成交易日階梯，x 用跟 priceRows 同一份日期陣列，保證每個
   // 交易日 hover 都能同時對到價格與 NAAIM 兩條線（見 ffillPctRankDaily 註解）。
@@ -429,7 +440,11 @@ function render(key, result) {
   // VIX 自己一條軸（不與 F&G 共用左軸的 0~100 百分位域，也不與價格對數軸共用）——
   // VIX 是原始波動率點數（近年多在 10~40，危機期可達 80+），跟百分位/價格是不同單位，
   // 共軸會讓讀者誤把它當同一把尺讀；獨立軸 + 專屬顏色最不容易誤讀。
-  const vixVals = vixRows.map(r => r[1]);
+  // 同理：VIX 軸也依可視窗重算（20 年全樣本的 VIX 範圍約 9~80+，1 年視窗內若剛好是
+  // 平靜期會被全樣本極值壓成平線）；視窗內若沒有 VIX 資料才退回全樣本 min/max。
+  const vixRowsInWindow = vixRows.filter(r => r[0] >= winStart);
+  const vixValsAll = vixRows.map(r => r[1]);
+  const vixVals = vixRowsInWindow.length ? vixRowsInWindow.map(r => r[1]) : vixValsAll;
   const vixLo = vixVals.length ? Math.min(...vixVals) : 0;
   const vixHi = vixVals.length ? Math.max(...vixVals) : 100;
   const vixPad = (vixHi - vixLo) * 0.1 || 1;
@@ -585,6 +600,17 @@ function yearsBeforeAnchor(anchorDate, n) {
   return d.toISOString().slice(0, 10);
 }
 
+// 目前選取範圍的可視窗起點：ALL 用 NAAIM 樣本起點，否則錨定「該標的資料最後一天」
+// 往回推 N 年（與 applyRangeZoom 用同一套 anchor，兩者必須一致，不然軸範圍跟
+// dataZoom 顯示的區間會對不上）。render() 用它來把價格/VIX 軸縮到可視窗內。
+function visibleWindowStart(naaimStart, latest, key) {
+  if (key === "ALL") return naaimStart;
+  const n = { "1Y": 1, "2Y": 2, "3Y": 3 }[key];
+  if (n == null) return naaimStart;
+  const cand = yearsBeforeAnchor(latest, n);
+  return cand > naaimStart ? cand : naaimStart;
+}
+
 function applyRangeZoom() {
   if (!chart) return;
   const price = priceCache[ticker];
@@ -652,7 +678,9 @@ function buildControls() {
     );
   }
 
-  // 功能③：時間範圍 chips。只改 dataZoom 顯示視窗，不重跑 refresh()/不重算統計。
+  // 功能③：時間範圍 chips。不重跑 computeForTicker/不重算統計表（仍為全樣本），
+  // 但要重呼叫 render()——價格/VIX 軸的 min/max 依可視窗重算（見檔頭 2026-07-19
+  // 修正說明），資料本身沿用 resultCache，不重算，所以這裡是便宜的重繪。
   const rangeHost = document.getElementById("naaim-range-picker");
   if (rangeHost && !rangeHost.dataset.built) {
     rangeHost.dataset.built = "1";
@@ -661,7 +689,8 @@ function buildControls() {
       if (!t) return;
       rangeKey = t.dataset.naaimRange;
       rangeHost.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      applyRangeZoom();
+      if (resultCache[ticker]) render(ticker, resultCache[ticker]);
+      applyRangeZoom();  // render() 是 notMerge:true 會重置 dataZoom，範圍要在其後重套
     });
   }
 
