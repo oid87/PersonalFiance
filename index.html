@@ -1027,6 +1027,40 @@
     </div>
   </section>
 
+  <!-- ── 經理人曝險 tab（NAAIM 曝險滾動百分位 vs SPY/QQQ/SOXX 後續報酬/波動）── -->
+  <section id="tab-naaim" class="tab-section" hidden>
+    <div class="controls">
+      <div id="naaim-ticker-picker" style="display:flex;gap:4px"></div>
+    </div>
+
+    <div id="naaim-chart" style="width:100%;height:460px"></div>
+    <div id="naaim-status" class="status">切換至此 tab 自動載入…</div>
+
+    <div style="padding:12px 24px 4px;font-size:12px;color:var(--muted)">
+      門檻 × horizon 統計表：每格為「訊號組 − 基率」的報酬差 / 波動差（pp）。基率母體＝滾動百分位非
+      NaN 的 NAAIM 週，用同一套 t0 對齊方式計算，非全部交易日。
+    </div>
+    <div id="naaim-table" style="padding:4px 24px 12px;overflow-x:auto"></div>
+
+    <div style="margin:0 24px 16px;padding:12px 16px;background:var(--panel);border:1px solid var(--border);border-radius:8px">
+      <div style="font-weight:600;margin-bottom:8px">判讀：NAAIM 是反應性指標，不是預測性指標</div>
+      <p style="font-size:13px;line-height:1.75;color:var(--text)">
+        扣掉基率後，<b>報酬面 edge≈0</b>——高/低曝險組的報酬差在正負之間反覆變號，沒有穩定方向。
+        但<b>波動面方向高度一致且與直覺相反</b>：在 SPY/QQQ 的驗證中，48 格波動差全部同向——
+        經理人<b>滿倉（高曝險）後續已實現波動反而更低</b>（平均約 −3.73pp），
+        <b>減碼（低曝險）後續反而更高</b>（平均約 +10.75pp）。
+        合理解讀是經理人在市場已經平靜時加碼、已經動盪時減碼——NAAIM 描述的是「當下環境」，
+        不是「未來會怎樣」的預測訊號。
+      </p>
+      <p style="margin-top:8px;padding:8px 10px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px;font-size:12px;color:var(--muted)">
+        ⚠️ 兩個 caveat：① SPY/QQQ/SOXX 皆為<b>未還原息</b>收盤價（無股息再投入調整），長 horizon
+        報酬會系統性略低估。② 低曝險極端組（≤10/≤5）去重後事件數常 &lt;20（見上表「樣本不足」標記），
+        可能被 2008 金融海嘯、2020 疫情崩盤、2022 熊市三段行情主導，該組波動數字（最高可達
+        +26pp）反映的是少數極端事件而非穩定規律。本頁為探索性研究視覺化，不做交易訊號化。
+      </p>
+    </div>
+  </section>
+
   <!-- ── 波浪理論 tab ────────────────────────────────────────────── -->
   <section id="tab-wave" class="tab-section" hidden>
     <div class="controls">

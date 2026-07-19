@@ -19,6 +19,7 @@ import * as twSentTab    from './tabs/twsentiment.js';
 import * as positionTab  from './tabs/position.js';
 import * as liquidityTab from './tabs/liquidity.js';
 import * as bullbearTab  from './tabs/bullbear.js';
+import * as naaimTab     from './tabs/naaim.js';
 import * as waveTab      from './tabs/wave.js';
 import * as twCycleTab   from './tabs/twcycle.js';
 import * as vixSkewTab   from './tabs/vixskew.js';
@@ -70,6 +71,7 @@ registerAll([
   { id: 'position',  module: positionTab  },
   { id: 'liquidity', module: liquidityTab },
   { id: 'bullbear',  module: bullbearTab  },
+  { id: 'naaim',     module: naaimTab     },
   { id: 'wave',      module: waveTab      },
   { id: 'twcycle',   module: twCycleTab   },
   { id: 'vixskew',   module: vixSkewTab   },
@@ -114,6 +116,7 @@ const CATEGORIES = [
       { id: 'aaii',      label: '散戶情緒' },
       { id: 'twsent',    label: '台股情緒' },
       { id: 'bullbear',  label: '牛熊' },
+      { id: 'naaim',     label: '經理人曝險' },
       { id: 'umich',     label: '消費者信心' },
       { id: 'flows',    label: '資金脈衝' },
       { id: 'banini',   label: '反指標(8zz)' },
