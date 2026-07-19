@@ -1031,16 +1031,29 @@
   <section id="tab-naaim" class="tab-section" hidden>
     <div class="controls">
       <div id="naaim-ticker-picker" style="display:flex;gap:4px"></div>
+      <div id="naaim-range-picker" style="display:flex;gap:4px;margin-left:12px">
+        <span class="chip" data-naaim-range="1Y">1Y</span>
+        <span class="chip" data-naaim-range="2Y">2Y</span>
+        <span class="chip" data-naaim-range="3Y">3Y</span>
+        <span class="chip active" data-naaim-range="ALL">全部</span>
+      </div>
+      <span id="naaim-table-toggle" class="chip active" style="margin-left:auto" data-tooltip="顯示/隱藏統計表">統計表</span>
     </div>
 
     <div id="naaim-chart" style="width:100%;height:460px"></div>
     <div id="naaim-status" class="status">切換至此 tab 自動載入…</div>
-
-    <div style="padding:12px 24px 4px;font-size:12px;color:var(--muted)">
-      門檻 × horizon 統計表：每格為「訊號組 − 基率」的報酬差 / 波動差（pp）。基率母體＝滾動百分位非
-      NaN 的 NAAIM 週，用同一套 t0 對齊方式計算，非全部交易日。
+    <div style="padding:2px 24px 0;font-size:11px;color:var(--muted)">
+      F&amp;G／VIX 疊圖預設關閉，點圖表上方 legend 的「F&amp;G恐慌貪婪指數(2011起)」／「VIX收盤價」開啟。
+      時間範圍切換只改圖表顯示視窗，下方統計表恆為全樣本計算，不隨範圍縮放。
     </div>
-    <div id="naaim-table" style="padding:4px 24px 12px;overflow-x:auto"></div>
+
+    <div id="naaim-table-wrap">
+      <div style="padding:12px 24px 4px;font-size:12px;color:var(--muted)">
+        門檻 × horizon 統計表：每格為「訊號組 − 基率」的報酬差 / 波動差（pp）。基率母體＝滾動百分位非
+        NaN 的 NAAIM 週，用同一套 t0 對齊方式計算，非全部交易日。（本表恆為全樣本，不隨上方時間範圍切換而變動）
+      </div>
+      <div id="naaim-table" style="padding:4px 24px 12px;overflow-x:auto"></div>
+    </div>
 
     <div style="margin:0 24px 16px;padding:12px 16px;background:var(--panel);border:1px solid var(--border);border-radius:8px">
       <div style="font-weight:600;margin-bottom:8px">判讀：NAAIM 是反應性指標，不是預測性指標</div>

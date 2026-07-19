@@ -9,7 +9,19 @@
 //   合理解讀：NAAIM 是反應性指標（描述當下環境），不是預測性指標。
 //
 // 資料：data/bullbear.json 的 "naaim" key（週頻）+ data/SPY.json / QQQ.json / SOXX.json
-// （皆未還原息日線）。全部前端 fetch 既有檔案，不新增資料管線。
+// （皆未還原息日線）+ data/fear_greed.json（F&G，2011-01起日頻）+ data/VIX.json
+// （VIX，2000起日頻）。全部前端 fetch 既有檔案，不新增資料管線。
+//
+// 2026-07-19 擴充三項純顯示功能（不動任何計算邏輯，逐項見下）：
+//   ① F&G/VIX 疊加線（legend 開關，預設關閉）——F&G 只從 2011-01 起有資料，早於此的
+//      NAAIM 樣本（2006-07起）沒有對應 F&G，series name 直接標注涵蓋起點，不補值。
+//   ② NAAIM 百分位 forward-fill 成交易日階梯，只給圖表/tooltip 用；統計表/去重/
+//      基率計算一律吃 computeForTickerPure() 回傳的原始週頻 pctRank ——
+//      🚨 這條線是紅線：任何改動都不可讓 ffill 後的日頻值流入 evaluateGroup/
+//      computeBaseline/dedupeSignals，否則一週的值會被當 5 個獨立交易日事件，
+//      樣本數與基率全部失真（見對拍腳本 mismatches 必須仍為 0）。
+//   ③ 時間範圍 1Y/2Y/3Y/全部——只用 chart.dispatchAction({type:"dataZoom",...})
+//      調整顯示視窗，不重跑 computeForTickerPure，統計表恆為全樣本。
 //
 // 計算與 python lab.py 對齊的三個關鍵點（逐項對照 naaim_exposure_study.py）：
 //   1. 滾動百分位 = pandas `s.rolling(window,min_periods).rank(pct=True)*100`，
@@ -37,6 +49,12 @@ const TICKERS = [
   { key: "SOXX", label: "SOXX", file: "data/SOXX.json", color: "#22d3ee" },
 ];
 
+// ── 疊加線設定（F&G/VIX，功能①）─────────────────────────────────────
+const FG_NAME  = "F&G恐慌貪婪指數(2011起)";
+const VIX_NAME = "VIX收盤價";
+const FG_COLOR  = "#d2a8ff";
+const VIX_COLOR = "#ffa657";
+
 // ── 研究參數（逐項對齊 Financial_work/naaim_exposure_study.py）────────
 const NAAIM_WINDOW      = 156;  // 週
 const NAAIM_MIN_PERIODS = 104;  // 週
@@ -53,6 +71,10 @@ let naaimDates = null;   // string[]，升冪
 let naaimVals  = null;   // number[]，對齊 naaimDates
 const priceCache  = {};  // tickerKey -> { dates, closes, dateIdx: Map }
 const resultCache = {};  // tickerKey -> computeForTickerPure() 回傳值
+let fgData  = null;      // { dates, vals } 2011-01起日頻
+let vixData = null;      // { dates, closes } 2000起日頻
+let showTable = true;
+let rangeKey  = "ALL";   // "1Y" | "2Y" | "3Y" | "ALL"
 
 // ── 純計算函式（無 DOM/fetch 依賴，供 tab 本身與 node 對拍腳本共用）───
 
@@ -117,6 +139,37 @@ export function dedupeSignals(datesAsc, gapDays) {
     if (lastMs === null || (ms - lastMs) / 86400000 >= gapDays) {
       out.push(d);
       lastMs = ms;
+    }
+  }
+  return out;
+}
+
+// forward-fill 週頻 NAAIM 百分位成交易日階梯（功能②，純顯示用）。
+// 🚨 只准餵給 render() 畫線/tooltip，不可流入任何統計計算——去重/基率/報酬差都要
+// 用原始週頻 naaimDates/pctRank（見檔頭紅線註解與 computeForTickerPure）。
+// 填值起點 = t0（findEntryDate 對齊點，NAAIM 日期+2天緩衝後第一個交易日），不是調查日
+// 當天，理由同 t0 本身的理由：調查日當天市場還不知道這個數字，從調查日就開始填是未來函數。
+// priceDatesAsc 必須跟呼叫端拿去畫價格線的日期陣列同一份（逐筆同 x），這樣 ECharts
+// axis-trigger tooltip 才能保證每個交易日都能同時對到價格與 NAAIM 兩條線的值，
+// 不會出現「非調查日 hover 只看到價格沒有 NAAIM」的原始 bug。
+// 回傳陣列與 priceDatesAsc 等長，每格 null（尚無可用值，即該值可被得知之前）或
+// { pct, naaimDate, isOriginal }：isOriginal=true 表示這天剛好就是該值的 t0
+// （非沿用），naaimDate 是該值所屬的原始 NAAIM 調查週日期（供 tooltip 標「沿用 MM-DD」）。
+export function ffillPctRankDaily(priceDatesAsc, naaimDatesAsc, pctRank, entryMap) {
+  const steps = [];
+  for (let i = 0; i < naaimDatesAsc.length; i++) {
+    const t0 = entryMap.get(naaimDatesAsc[i]);
+    if (t0 == null || pctRank[i] == null) continue;
+    steps.push({ t0, pct: pctRank[i], naaimDate: naaimDatesAsc[i] });
+  }
+  steps.sort((a, b) => (a.t0 < b.t0 ? -1 : a.t0 > b.t0 ? 1 : 0));
+  const out = new Array(priceDatesAsc.length).fill(null);
+  let si = -1;
+  for (let i = 0; i < priceDatesAsc.length; i++) {
+    const d = priceDatesAsc[i];
+    while (si + 1 < steps.length && steps[si + 1].t0 <= d) si++;
+    if (si >= 0) {
+      out[i] = { pct: steps[si].pct, naaimDate: steps[si].naaimDate, isOriginal: d === steps[si].t0 };
     }
   }
   return out;
@@ -262,6 +315,26 @@ async function loadPrice(key) {
   return entry;
 }
 
+async function loadFG() {
+  if (fgData) return fgData;
+  const r = await fetch("data/fear_greed.json", { cache: "no-cache" });
+  if (!r.ok) throw new Error(`fear_greed.json: HTTP ${r.status}`);
+  const j = await r.json();
+  const rows = (j.data || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  fgData = { dates: rows.map(x => x.date), vals: rows.map(x => +x.value) };
+  return fgData;
+}
+
+async function loadVIX() {
+  if (vixData) return vixData;
+  const r = await fetch("data/VIX.json", { cache: "no-cache" });
+  if (!r.ok) throw new Error(`VIX.json: HTTP ${r.status}`);
+  const j = await r.json();
+  const rows = (j.data || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  vixData = { dates: rows.map(x => x.date), closes: rows.map(x => +x.close) };
+  return vixData;
+}
+
 async function computeForTicker(key) {
   if (resultCache[key]) return resultCache[key];
   await loadNaaim();
@@ -340,7 +413,28 @@ function render(key, result) {
   const priceVals = priceRows.map(r => pxUnlog(r[1]));  // 還原成價格再算 min/max
   const priceMin = Math.min(...priceVals), priceMax = Math.max(...priceVals);
 
-  const pctSeries = naaimDates.map((d, i) => [d, result.pctRank[i]]);
+  // 功能②：forward-fill 成交易日階梯，x 用跟 priceRows 同一份日期陣列，保證每個
+  // 交易日 hover 都能同時對到價格與 NAAIM 兩條線（見 ffillPctRankDaily 註解）。
+  // 純顯示用，不流入任何統計計算。
+  const priceDatesTrimmed = priceRows.map(r => r[0]);
+  const pctFill = ffillPctRankDaily(priceDatesTrimmed, naaimDates, result.pctRank, result.entryMap);
+  const pctSeries = priceDatesTrimmed.map((d, i) => {
+    const f = pctFill[i];
+    return f ? [d, f.pct, f.isOriginal ? 1 : 0, f.naaimDate] : [d, null];
+  });
+
+  // 功能①：F&G/VIX 疊加線資料（限縮到 naaimStart 起，與價格線同一個顯示視窗）。
+  const fgRows  = fgData  ? fgData.dates.map((d, i) => [d, fgData.vals[i]]).filter(r => r[0] >= naaimStart) : [];
+  const vixRows = vixData ? vixData.dates.map((d, i) => [d, vixData.closes[i]]).filter(r => r[0] >= naaimStart) : [];
+  // VIX 自己一條軸（不與 F&G 共用左軸的 0~100 百分位域，也不與價格對數軸共用）——
+  // VIX 是原始波動率點數（近年多在 10~40，危機期可達 80+），跟百分位/價格是不同單位，
+  // 共軸會讓讀者誤把它當同一把尺讀；獨立軸 + 專屬顏色最不容易誤讀。
+  const vixVals = vixRows.map(r => r[1]);
+  const vixLo = vixVals.length ? Math.min(...vixVals) : 0;
+  const vixHi = vixVals.length ? Math.max(...vixVals) : 100;
+  const vixPad = (vixHi - vixLo) * 0.1 || 1;
+  const vixAxisMin = Math.max(0, Math.floor(vixLo - vixPad));
+  const vixAxisMax = Math.ceil(vixHi + vixPad);
 
   const markerRows = result.high80Deduped
     .map(d => result.entryMap.get(d))
@@ -361,17 +455,32 @@ function render(key, result) {
         for (const p of params) {
           const v = Array.isArray(p.value) ? p.value[1] : p.value;
           if (v == null) continue;
-          if (p.seriesName.includes("百分位")) html += `<div>${p.marker}${p.seriesName}: <b>${v.toFixed(1)}</b></div>`;
-          else if (p.seriesName.includes(t.label)) html += `<div>${p.marker}${p.seriesName}: <b>${pxUnlog(v).toFixed(2)}</b></div>`;  // y 存 log10，還原
+          if (p.seriesName.includes("百分位")) {
+            // value = [date, pct, isOriginal(1/0), naaimDate]（見 ffillPctRankDaily）。
+            // isOriginal=0 代表這天不是調查日本身、是沿用上一次公布值的階梯延伸。
+            const isOriginal = Array.isArray(p.value) && p.value[2] === 1;
+            const naaimDate  = Array.isArray(p.value) ? p.value[3] : null;
+            const tag = !isOriginal && naaimDate ? `（沿用 ${naaimDate.slice(5)} 公布值）` : "";
+            html += `<div>${p.marker}${p.seriesName}: <b>${v.toFixed(1)}</b>${tag}</div>`;
+          } else if (p.seriesName.includes(t.label)) {
+            html += `<div>${p.marker}${p.seriesName}: <b>${pxUnlog(v).toFixed(2)}</b></div>`;  // y 存 log10，還原
+          } else if (p.seriesName === FG_NAME) {
+            html += `<div>${p.marker}${p.seriesName}: <b>${v.toFixed(0)}</b></div>`;
+          } else if (p.seriesName === VIX_NAME) {
+            html += `<div>${p.marker}${p.seriesName}: <b>${v.toFixed(2)}</b></div>`;
+          }
         }
         return html;
       },
     },
     legend: {
-      data: ["NAAIM 滾動百分位(156週)", `${t.label} 收盤價(未還原息)`, "高曝險(≥80,去重後)事件"],
+      data: ["NAAIM 滾動百分位(156週)", `${t.label} 收盤價(未還原息)`, "高曝險(≥80,去重後)事件", FG_NAME, VIX_NAME],
+      // F&G/VIX 預設關閉（功能①要求）——本圖主線是 NAAIM 百分位與價格，四條線全開
+      // 會糊成一片（CLAUDE.md 圖表鐵則②），點 legend 上的名字即可開關。
+      selected: { [FG_NAME]: false, [VIX_NAME]: false },
       top: 4, textStyle: { color: textClr, fontSize: 11 },
     },
-    grid: { left: mob() ? 44 : 56, right: mob() ? 48 : 64, top: 48, bottom: mob() ? 60 : 48 },
+    grid: { left: mob() ? 44 : 56, right: mob() ? 56 : 128, top: 64, bottom: mob() ? 60 : 48 },
     xAxis: {
       type: "time", min: naaimStart,
       axisLine: { lineStyle: { color: axisClr } }, axisTick: { show: false },
@@ -405,6 +514,17 @@ function render(key, result) {
                      } },
         axisLine: { lineStyle: { color: t.color } }, splitLine: { show: false },
       },
+      {
+        // VIX 專屬第三軸（功能①）。預設 show:false 跟隨 legend.selected[VIX_NAME] 的
+        // 預設關閉狀態；legendselectchanged 監聽（見 bindLegendHandler）動態同步顯示，
+        // 避免使用者關掉 VIX 線後右側還留一條沒有線對應的空軸。
+        type: "value", name: "VIX", position: "right",
+        offset: mob() ? 0 : 56, show: false,
+        min: vixAxisMin, max: vixAxisMax,
+        nameTextStyle: { color: VIX_COLOR, fontSize: 10 },
+        axisLabel: { color: VIX_COLOR, fontSize: 10 },
+        axisLine: { lineStyle: { color: VIX_COLOR } }, splitLine: { show: false },
+      },
     ],
     dataZoom: [{ type: "inside", filterMode: "none" }, { type: "slider", height: 16, bottom: 4 }],
     series: [
@@ -435,8 +555,59 @@ function render(key, result) {
         yAxisIndex: 1, symbolSize: 9, z: 4,
         itemStyle: { color: "#f85149", borderColor: PALETTE.bg, borderWidth: 1 },
       },
+      {
+        // F&G 與 NAAIM 百分位同域(0~100)，共用左軸(yAxisIndex 0)；2011-01 前無資料，
+        // connectNulls:false 讓它斷線而非補值或連到 0（功能①的涵蓋缺口要求）。
+        name: FG_NAME, type: "line", data: fgRows,
+        yAxisIndex: 0, symbol: "none", connectNulls: false, z: 2,
+        lineStyle: { color: FG_COLOR, width: 1.1, opacity: 0.85 },
+      },
+      {
+        name: VIX_NAME, type: "line", data: vixRows,
+        yAxisIndex: 2, symbol: "none", connectNulls: false, z: 2,
+        lineStyle: { color: VIX_COLOR, width: 1.1, opacity: 0.85 },
+      },
     ],
   }, { notMerge: true });
+}
+
+// 功能③：時間範圍 1Y/2Y/3Y/全部。尾端固定用「該標的資料最新日」往回推 N 年，
+// 不是固定年份也不是瀏覽器 new Date()（資料可能落後今天，anchor 要用資料本身的
+// 最後一天，跟圖表右緣一致）。只動 dataZoom 顯示視窗，不重算任何統計。
+// dates.presetStart 是「往回 N 年」但錨在瀏覽器 new Date()（今天），這裡要求錨在
+// 「該標的資料最後一天」（資料可能落後今天），兩者語意不同不能互換；與 findEntryDate
+// 同款 UTC 錨定曆日加法（見該函式註解），非 tsToLocalDate 的場景（後者是 ECharts
+// axisValue timestamp 還原顯示字串，不是曆日往回推運算）。
+function yearsBeforeAnchor(anchorDate, n) {
+  const d = new Date(anchorDate + "T00:00:00Z");
+  d.setUTCFullYear(d.getUTCFullYear() - n);
+  // check_reuse: keep — UTC 錨定曆日往回推 N 年，錨點是資料最後一天非 new Date()，與 dates.presetStart/cutoffDate 語意不同
+  return d.toISOString().slice(0, 10);
+}
+
+function applyRangeZoom() {
+  if (!chart) return;
+  const price = priceCache[ticker];
+  if (!price || !price.dates.length) return;
+  const latest = price.dates[price.dates.length - 1];
+  if (rangeKey === "ALL") {
+    chart.dispatchAction({ type: "dataZoom", start: 0, end: 100 });
+    return;
+  }
+  const n = { "1Y": 1, "2Y": 2, "3Y": 3 }[rangeKey];
+  if (n == null) return;
+  chart.dispatchAction({ type: "dataZoom", startValue: yearsBeforeAnchor(latest, n), endValue: latest });
+}
+
+// legendselectchanged 只綁一次（每次 echarts.init 後）；render() 用 notMerge:true
+// 整份换 option，個別 setOption merge 呼叫不會被下一次 render 疊加成重複監聽。
+function bindLegendHandler() {
+  if (!chart) return;
+  chart.off("legendselectchanged");
+  chart.on("legendselectchanged", (params) => {
+    // 動態同步 VIX 第三軸的顯示/隱藏，避免關掉 VIX 線後右側留一條沒有線對應的空軸。
+    chart.setOption({ yAxis: [{}, {}, { show: !!params.selected[VIX_NAME] }] });
+  });
 }
 
 function renderStatus(key, result) {
@@ -453,10 +624,11 @@ function renderStatus(key, result) {
 async function refresh() {
   const status = document.getElementById("naaim-status");
   try {
-    const result = await computeForTicker(ticker);
+    const [result] = await Promise.all([computeForTicker(ticker), loadFG(), loadVIX()]);
     render(ticker, result);
     renderTable(result);
     renderStatus(ticker, result);
+    applyRangeZoom();  // render() 的 notMerge:true 每次都會把 dataZoom 重置回全區間，切標的/主題後要重套目前選的範圍
   } catch (e) {
     if (status) status.textContent = `載入失敗：${e.message}`;
     console.error("[naaim] refresh failed", e);
@@ -465,26 +637,52 @@ async function refresh() {
 
 function buildControls() {
   const host = document.getElementById("naaim-ticker-picker");
-  if (!host || host.dataset.built) return;
-  host.innerHTML = TICKERS.map(t =>
-    `<span class="chip${t.key === ticker ? " active" : ""}" data-naaim-ticker="${t.key}">${t.label}</span>`
-  ).join("");
-  host.dataset.built = "1";
-  host.querySelectorAll(".chip").forEach(chip =>
-    chip.addEventListener("click", () => {
-      host.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
-      ticker = chip.dataset.naaimTicker;
-      refresh();
-    })
-  );
+  if (host && !host.dataset.built) {
+    host.innerHTML = TICKERS.map(t =>
+      `<span class="chip${t.key === ticker ? " active" : ""}" data-naaim-ticker="${t.key}">${t.label}</span>`
+    ).join("");
+    host.dataset.built = "1";
+    host.querySelectorAll(".chip").forEach(chip =>
+      chip.addEventListener("click", () => {
+        host.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        ticker = chip.dataset.naaimTicker;
+        refresh();
+      })
+    );
+  }
+
+  // 功能③：時間範圍 chips。只改 dataZoom 顯示視窗，不重跑 refresh()/不重算統計。
+  const rangeHost = document.getElementById("naaim-range-picker");
+  if (rangeHost && !rangeHost.dataset.built) {
+    rangeHost.dataset.built = "1";
+    rangeHost.addEventListener("click", (e) => {
+      const t = e.target.closest(".chip[data-naaim-range]");
+      if (!t) return;
+      rangeKey = t.dataset.naaimRange;
+      rangeHost.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
+      applyRangeZoom();
+    });
+  }
+
+  // 功能①末段：統計表顯示/隱藏開關。只切 display，不重算。
+  const tableToggle = document.getElementById("naaim-table-toggle");
+  if (tableToggle && !tableToggle.dataset.built) {
+    tableToggle.dataset.built = "1";
+    tableToggle.addEventListener("click", () => {
+      showTable = !showTable;
+      tableToggle.classList.toggle("active", showTable);
+      const wrap = document.getElementById("naaim-table-wrap");
+      if (wrap) wrap.style.display = showTable ? "" : "none";
+    });
+  }
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────
 export async function init() {
   const host = document.getElementById("naaim-chart");
   if (!host) return;
-  if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
+  if (!chart) { chart = echarts.init(host, isLight() ? null : "dark"); bindLegendHandler(); }
   buildControls();
   await refresh();
 }
@@ -493,7 +691,12 @@ export function onThemeChange(light) {
   if (!chart) return;
   chart.dispose();
   chart = echarts.init(document.getElementById("naaim-chart"), light ? null : "dark");
-  if (resultCache[ticker]) { render(ticker, resultCache[ticker]); renderTable(resultCache[ticker]); }
+  bindLegendHandler();
+  if (resultCache[ticker]) {
+    render(ticker, resultCache[ticker]);
+    renderTable(resultCache[ticker]);
+    applyRangeZoom();
+  }
 }
 
 export function resize() { chart?.resize(); }
