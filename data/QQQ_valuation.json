@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-20",
+  "updated": "2026-07-21",
   "note": "Nasdaq-100 估值。fpe=forward（每日動態抓 QQQ 前10大持股權重 × 各股 NTM 加權算術平均，排除 PE>60x；NTM=(m/12)×當FY EPS+(12-m)/12×次FY EPS，追蹤 MacroMicro NASDAQ-100 Forward PE）；tpe=trailing（QQQ ETF 實際 trailingPE）。歷史段（src=seed）為估計值。",
   "data": [
     {
@@ -533,6 +533,12 @@
       "src": "calc-live",
       "fpe": 24.35,
       "tpe": 30.89
+    },
+    {
+      "date": "2026-07-21",
+      "src": "calc-live",
+      "fpe": 24.84,
+      "tpe": 31.46
     }
   ]
 }
