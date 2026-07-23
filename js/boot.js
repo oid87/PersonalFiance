@@ -227,7 +227,9 @@ document.querySelectorAll(".cat-btn").forEach(btn =>
 
 (async () => {
   const status = document.getElementById("status");
-  if (localStorage.getItem("theme") === "dark") applyTheme(false);
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme === "light") applyTheme(true);
+  else if (savedTheme === "dark") applyTheme(false);
   try {
     await Promise.all(SERIES.filter(s => active.has(s.key)).map(loadSeries));
     trendTab.renderSeriesPicker();
