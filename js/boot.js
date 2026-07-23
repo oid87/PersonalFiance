@@ -54,6 +54,8 @@ import * as centralBanksTab  from './tabs/central_banks.js';
 import * as inflNowcastTab   from './tabs/infl_nowcast.js';
 import * as cpiTab           from './tabs/cpi.js';
 import * as usdliqTab        from './tabs/usdliq.js';
+import * as levvolTab         from './tabs/levvol.js';
+import * as taifexForeignOiTab from './tabs/taifex_foreign_oi.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -67,12 +69,14 @@ registerAll([
   { id: 'earnings',  module: earningsTab  },
   { id: 'valuation', module: valuationTab },
   { id: 'leverage',  module: leverageTab  },
+  { id: 'levvol',    module: levvolTab    },
   { id: 'aaii',      module: aaiiTab      },
   { id: 'twsent',    module: twSentTab    },
   { id: 'position',  module: positionTab  },
   { id: 'liquidity', module: liquidityTab },
   { id: 'bullbear',  module: bullbearTab  },
   { id: 'naaim',     module: naaimTab     },
+  { id: 'taifex_foreign_oi', module: taifexForeignOiTab },
   { id: 'wave',      module: waveTab      },
   { id: 'twcycle',   module: twCycleTab   },
   { id: 'vixskew',   module: vixSkewTab   },
@@ -119,6 +123,7 @@ const CATEGORIES = [
       { id: 'twsent',    label: '台股情緒' },
       { id: 'bullbear',  label: '牛熊' },
       { id: 'naaim',     label: '經理人曝險' },
+      { id: 'taifex_foreign_oi', label: '外資未平倉' },
       { id: 'umich',     label: '消費者信心' },
       { id: 'flows',    label: '資金脈衝' },
       { id: 'banini',   label: '反指標(8zz)' },
@@ -173,6 +178,7 @@ const CATEGORIES = [
       { id: 'earnings', label: '財報日' },
       { id: 'wave',     label: '波浪理論' },
       { id: 'leverage', label: '槓桿模擬' },
+      { id: 'levvol',   label: '波動率倍數' },
       { id: 'wkrev',    label: '週K反轉' },
       { id: 'qqqmacd',  label: 'MACD死叉' },
       { id: 'marginpeak', label: '融資峰值' },

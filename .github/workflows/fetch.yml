@@ -261,6 +261,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_taiwan_pcratio.py
 
+      - name: Fetch TAIFEX foreign investor TXF net open interest
+        continue-on-error: true
+        run: python scripts/fetch_taifex_foreign_oi.py
+
       - name: Fetch Taiwan futures institutional / retail positioning (FinMind, 台股情緒)
         continue-on-error: true
         env:
