@@ -134,6 +134,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_nfci.py
 
+      - name: Fetch STLFSI4 + KCFSI (FRED, weekly+monthly financial stress indices)
+        continue-on-error: true
+        run: python scripts/fetch_stlfsi_kcfsi.py
+
       - name: Fetch UMich Consumer Sentiment + NBER recessions + SPY monthly (FRED, free)
         continue-on-error: true
         run: python scripts/fetch_umich.py
