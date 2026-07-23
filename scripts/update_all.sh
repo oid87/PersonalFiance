@@ -62,6 +62,7 @@ $PYTHON fetch_vix_skew.py      || true
 $PYTHON fetch_putcall.py       || true
 $PYTHON fetch_fsi.py           || true
 $PYTHON fetch_nfci.py          || true
+$PYTHON fetch_stlfsi_kcfsi.py  || true
 $PYTHON fetch_usdtwd.py        || true
 $PYTHON compute_taiwan_stress.py || true
 $PYTHON fetch_umich.py         || true
