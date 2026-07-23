@@ -1801,6 +1801,64 @@
     </div>
   </section>
 
+  <!-- ── 壓力總覽 tab (NFCI/STLFSI4/KCFSI × SPY/QQQ/SOXX) ────────────── -->
+  <section id="tab-stressdash" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="stressdash-ticker-toggle" style="display:flex;gap:4px">
+        <span class="chip active" data-stressdash-ticker="SPY">SPY</span>
+        <span class="chip" data-stressdash-ticker="QQQ">QQQ</span>
+        <span class="chip" data-stressdash-ticker="SOXX">SOXX</span>
+      </div>
+      <div id="stressdash-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-stressdash-range="1Y">1Y</span>
+        <span class="chip active" data-stressdash-range="3Y">3Y</span>
+        <span class="chip" data-stressdash-range="5Y">5Y</span>
+        <span class="chip" data-stressdash-range="10Y">10Y</span>
+        <span class="chip" data-stressdash-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="stressdash-top">
+      <div class="breadth-card">
+        <div class="bc-label">NFCI 現值</div>
+        <div class="bc-main"><span class="bc-pct" id="stressdash-nfci-val">—</span></div>
+        <div class="bc-count" id="stressdash-nfci-sub">—</div>
+        <div class="bc-signal" id="stressdash-nfci-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">STLFSI4 現值</div>
+        <div class="bc-main"><span class="bc-pct" id="stressdash-stlfsi-val">—</span></div>
+        <div class="bc-count" id="stressdash-stlfsi-sub">—</div>
+        <div class="bc-signal" id="stressdash-stlfsi-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">KCFSI 現值</div>
+        <div class="bc-main"><span class="bc-pct" id="stressdash-kcfsi-val">—</span></div>
+        <div class="bc-count" id="stressdash-kcfsi-sub">—</div>
+        <div class="bc-signal" id="stressdash-kcfsi-signal">—</div>
+      </div>
+    </div>
+    <div id="stressdash-chart" style="height:580px"></div>
+    <div class="status" id="stressdash-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div id="stressdash-table" style="padding:0 24px;margin-top:12px"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> NFCI / STLFSI4 / KCFSI 怎麼看？</div>
+      <div class="info-panel-body">
+        <p>這個 tab 把三個獨立編製的<b>金融壓力/狀況指數</b>疊在一起，各自來自不同的聯準銀行研究部門，衡量口徑略有差異但方向一致：</p>
+        <table class="info-table">
+          <thead><tr><th>指數</th><th>編製單位</th><th>頻率</th><th>涵蓋範圍</th></tr></thead>
+          <tbody>
+            <tr><td style="color:#d2a8ff">NFCI</td><td>Chicago Fed</td><td>週（週五）</td><td>1971+，涵蓋整個鬆緊光譜（含過度寬鬆的泡沫期）</td></tr>
+            <tr><td style="color:#e3b341">STLFSI4</td><td>St. Louis Fed</td><td>週（週五）</td><td>1993+，18 項金融指標合成</td></tr>
+            <tr><td style="color:#2dd4bf">KCFSI</td><td>Kansas City Fed</td><td>月（月初）</td><td>1990+，11 項金融指標合成</td></tr>
+          </tbody>
+        </table>
+        <p><b>0 = 歷史均值</b>；<b>正值 = 壓力/緊縮升高</b>（高於歷史平均的緊縮或失序程度），<b>負值 = 寬鬆/低於平均</b>。三者建構方式不同（NFCI 105 項指標、STLFSI4 18 項、KCFSI 11 項），數值不能直接相加比較，但方向性走勢可互相印證——同時轉正通常代表壓力訊號較可靠，方向不一致則要留意是否為個別指數的雜訊。</p>
+        <p>上圖是選定標的（SPY/QQQ/SOXX）的週K蠟燭疊 NFCI（副軸，正/負區間各有底色帶標示），下圖是三指數各自原始頻率的走勢對照（KCFSI 月頻，圖上會比週頻的兩條稀疏，屬於資料原生頻率的正常現象，不是缺值錯誤）。均線（NFCI MA20/50、STLFSI4/KCFSI MA20）預設收合，點圖例可展開。</p>
+        <p style="margin-top:8px;color:var(--muted)">資料：FRED NFCI/ANFCI/NFCIRISK/NFCICREDIT/NFCILEVERAGE（Chicago Fed）+ FRED STLFSI4（St. Louis Fed）+ FRED KCFSI（Kansas City Fed），皆免費、無 key。定位「環境理解」，非交易訊號。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 台股金融壓力 tab ──────────────────────────────────────────── -->
   <section id="tab-twstress" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
