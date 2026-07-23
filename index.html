@@ -713,6 +713,21 @@
   </section>
 
   <!-- ── 波動率倍數 tab ────────────────────────────────────────── -->
+  <section id="tab-levvol" class="tab-section" hidden>
+    <div class="controls">
+      <select id="levvol-pair" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px"></select>
+    </div>
+    <div id="levvol-chart" style="height:480px"></div>
+    <div id="levvol-table" style="margin-top:12px"></div>
+    <div class="status" id="levvol-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 波動率倍數怎麼看？</div>
+      <div class="info-panel-body">
+        <p>驗證「槓桿 ETF 已實現波動率 ≈ 理論倍數 × 標的波動率」在不同觀察窗口（5/21/63/126/252 日）是否穩定。比值長期貼近理論槓桿倍數（如 3x ETF ≈ 3.0）代表波動率本身沒有被槓桿機制放大或縮小，耗損只來自報酬路徑（每日重置複利），不是波動率本身失真。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 位階 tab ────────────────────────────────────────────────── -->
   <section id="tab-position" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
@@ -1071,6 +1086,46 @@
         可能被 2008 金融海嘯、2020 疫情崩盤、2022 熊市三段行情主導，該組波動數字（最高可達
         +26pp）反映的是少數極端事件而非穩定規律。本頁為探索性研究視覺化，不做交易訊號化。
       </p>
+    </div>
+  </section>
+
+  <!-- ── 台指期外資未平倉 tab ─────────────────────────────────────── -->
+  <section id="tab-taifex_foreign_oi" class="tab-section" hidden>
+    <div class="controls">
+      <div id="taifex-range-picker" style="display:flex;gap:4px;margin-left:auto">
+        <span class="chip" data-taifex-range="3M">3M</span>
+        <span class="chip" data-taifex-range="6M">6M</span>
+        <span class="chip" data-taifex-range="1Y">1Y</span>
+        <span class="chip active" data-taifex-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="taifex-top" style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
+      <div class="breadth-card">
+        <div class="bc-label">外資淨未平倉（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="taifex-net-val">—</span></div>
+        <div class="bc-count" id="taifex-net-sub">—</div>
+        <div class="bc-signal" id="taifex-net-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">部位方向</div>
+        <div class="bc-main"><span class="bc-pct" id="taifex-dir-val">—</span></div>
+        <div class="bc-count" id="taifex-dir-sub">—</div>
+        <div class="bc-signal" id="taifex-dir-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">近一週變化</div>
+        <div class="bc-main"><span class="bc-pct" id="taifex-chg-val">—</span></div>
+        <div class="bc-count" id="taifex-chg-sub">—</div>
+        <div class="bc-signal" id="taifex-chg-signal">—</div>
+      </div>
+    </div>
+    <div id="taifex-chart" style="height:480px"></div>
+    <div class="status" id="taifex-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 台指期外資未平倉怎麼看？</div>
+      <div class="info-panel-body">
+        <p>台指期（TXF）三大法人未平倉淨額中，外資（及陸資）淨多/淨空是市場最常引用的外資部位方向指標。正值＝外資淨多單、負值＝外資淨空單，反映外資對台股後市的期貨部位傾向；本身是同步/落後的籌碼觀察，非預測訊號。</p>
+      </div>
     </div>
   </section>
 
