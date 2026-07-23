@@ -1,0 +1,543 @@
+{
+  "source": "TAIFEX 三大法人-區分各期貨契約-依日期 (futContractsDateExcel), commodityId=TXF, 外資(及陸資)",
+  "note": "incremental refresh from 2026-01-27, existing history preserved",
+  "updated": "2026-07-12",
+  "data": [
+    {
+      "date": "2025-07-14",
+      "tx_foreign_net_oi": -59873
+    },
+    {
+      "date": "2025-07-15",
+      "tx_foreign_net_oi": -55352
+    },
+    {
+      "date": "2025-07-16",
+      "tx_foreign_net_oi": -53396
+    },
+    {
+      "date": "2025-07-17",
+      "tx_foreign_net_oi": -52217
+    },
+    {
+      "date": "2025-07-18",
+      "tx_foreign_net_oi": -48010
+    },
+    {
+      "date": "2025-07-21",
+      "tx_foreign_net_oi": -46556
+    },
+    {
+      "date": "2025-07-22",
+      "tx_foreign_net_oi": -44594
+    },
+    {
+      "date": "2025-07-23",
+      "tx_foreign_net_oi": -47841
+    },
+    {
+      "date": "2025-07-24",
+      "tx_foreign_net_oi": -47930
+    },
+    {
+      "date": "2025-07-25",
+      "tx_foreign_net_oi": -47417
+    },
+    {
+      "date": "2025-07-28",
+      "tx_foreign_net_oi": -44979
+    },
+    {
+      "date": "2025-07-29",
+      "tx_foreign_net_oi": -40876
+    },
+    {
+      "date": "2025-07-30",
+      "tx_foreign_net_oi": -37831
+    },
+    {
+      "date": "2025-07-31",
+      "tx_foreign_net_oi": -33644
+    },
+    {
+      "date": "2025-08-01",
+      "tx_foreign_net_oi": -39537
+    },
+    {
+      "date": "2025-08-04",
+      "tx_foreign_net_oi": -39080
+    },
+    {
+      "date": "2025-08-05",
+      "tx_foreign_net_oi": -35329
+    },
+    {
+      "date": "2025-08-06",
+      "tx_foreign_net_oi": -36380
+    },
+    {
+      "date": "2025-08-07",
+      "tx_foreign_net_oi": -34789
+    },
+    {
+      "date": "2025-08-08",
+      "tx_foreign_net_oi": -37590
+    },
+    {
+      "date": "2025-08-11",
+      "tx_foreign_net_oi": -35575
+    },
+    {
+      "date": "2025-08-12",
+      "tx_foreign_net_oi": -35302
+    },
+    {
+      "date": "2025-08-13",
+      "tx_foreign_net_oi": -33570
+    },
+    {
+      "date": "2025-08-14",
+      "tx_foreign_net_oi": -34379
+    },
+    {
+      "date": "2025-08-15",
+      "tx_foreign_net_oi": -34207
+    },
+    {
+      "date": "2025-08-18",
+      "tx_foreign_net_oi": -29626
+    },
+    {
+      "date": "2025-08-19",
+      "tx_foreign_net_oi": -32633
+    },
+    {
+      "date": "2025-08-20",
+      "tx_foreign_net_oi": -35143
+    },
+    {
+      "date": "2025-08-21",
+      "tx_foreign_net_oi": -30387
+    },
+    {
+      "date": "2025-08-22",
+      "tx_foreign_net_oi": -26735
+    },
+    {
+      "date": "2025-08-25",
+      "tx_foreign_net_oi": -25609
+    },
+    {
+      "date": "2025-10-13",
+      "tx_foreign_net_oi": -33061
+    },
+    {
+      "date": "2025-10-14",
+      "tx_foreign_net_oi": -27444
+    },
+    {
+      "date": "2025-10-15",
+      "tx_foreign_net_oi": -21671
+    },
+    {
+      "date": "2025-10-16",
+      "tx_foreign_net_oi": -22035
+    },
+    {
+      "date": "2025-10-17",
+      "tx_foreign_net_oi": -25586
+    },
+    {
+      "date": "2025-10-20",
+      "tx_foreign_net_oi": -25251
+    },
+    {
+      "date": "2025-10-21",
+      "tx_foreign_net_oi": -23282
+    },
+    {
+      "date": "2025-10-22",
+      "tx_foreign_net_oi": -26095
+    },
+    {
+      "date": "2025-10-23",
+      "tx_foreign_net_oi": -24307
+    },
+    {
+      "date": "2025-10-27",
+      "tx_foreign_net_oi": -24211
+    },
+    {
+      "date": "2025-10-28",
+      "tx_foreign_net_oi": -27454
+    },
+    {
+      "date": "2025-10-29",
+      "tx_foreign_net_oi": -24421
+    },
+    {
+      "date": "2025-10-30",
+      "tx_foreign_net_oi": -24746
+    },
+    {
+      "date": "2025-10-31",
+      "tx_foreign_net_oi": -22936
+    },
+    {
+      "date": "2025-11-03",
+      "tx_foreign_net_oi": -27880
+    },
+    {
+      "date": "2025-11-04",
+      "tx_foreign_net_oi": -27842
+    },
+    {
+      "date": "2025-11-05",
+      "tx_foreign_net_oi": -32088
+    },
+    {
+      "date": "2025-11-06",
+      "tx_foreign_net_oi": -29917
+    },
+    {
+      "date": "2025-11-07",
+      "tx_foreign_net_oi": -30820
+    },
+    {
+      "date": "2025-11-10",
+      "tx_foreign_net_oi": -30589
+    },
+    {
+      "date": "2025-11-11",
+      "tx_foreign_net_oi": -31530
+    },
+    {
+      "date": "2025-11-12",
+      "tx_foreign_net_oi": -29964
+    },
+    {
+      "date": "2025-11-13",
+      "tx_foreign_net_oi": -31514
+    },
+    {
+      "date": "2025-11-14",
+      "tx_foreign_net_oi": -34595
+    },
+    {
+      "date": "2025-11-17",
+      "tx_foreign_net_oi": -31526
+    },
+    {
+      "date": "2025-11-18",
+      "tx_foreign_net_oi": -35047
+    },
+    {
+      "date": "2025-11-19",
+      "tx_foreign_net_oi": -31047
+    },
+    {
+      "date": "2025-11-20",
+      "tx_foreign_net_oi": -24167
+    },
+    {
+      "date": "2025-11-21",
+      "tx_foreign_net_oi": -33208
+    },
+    {
+      "date": "2025-11-24",
+      "tx_foreign_net_oi": -31186
+    },
+    {
+      "date": "2025-11-25",
+      "tx_foreign_net_oi": -29704
+    },
+    {
+      "date": "2026-01-13",
+      "tx_foreign_net_oi": -30117
+    },
+    {
+      "date": "2026-01-14",
+      "tx_foreign_net_oi": -33957
+    },
+    {
+      "date": "2026-01-15",
+      "tx_foreign_net_oi": -35130
+    },
+    {
+      "date": "2026-01-16",
+      "tx_foreign_net_oi": -33249
+    },
+    {
+      "date": "2026-01-19",
+      "tx_foreign_net_oi": -33726
+    },
+    {
+      "date": "2026-01-20",
+      "tx_foreign_net_oi": -32675
+    },
+    {
+      "date": "2026-01-21",
+      "tx_foreign_net_oi": -24473
+    },
+    {
+      "date": "2026-01-22",
+      "tx_foreign_net_oi": -24293
+    },
+    {
+      "date": "2026-01-23",
+      "tx_foreign_net_oi": -22666
+    },
+    {
+      "date": "2026-01-26",
+      "tx_foreign_net_oi": -26527
+    },
+    {
+      "date": "2026-01-27",
+      "tx_foreign_net_oi": -25318
+    },
+    {
+      "date": "2026-01-28",
+      "tx_foreign_net_oi": -27932
+    },
+    {
+      "date": "2026-01-29",
+      "tx_foreign_net_oi": -32702
+    },
+    {
+      "date": "2026-01-30",
+      "tx_foreign_net_oi": -32670
+    },
+    {
+      "date": "2026-02-02",
+      "tx_foreign_net_oi": -27673
+    },
+    {
+      "date": "2026-02-03",
+      "tx_foreign_net_oi": -26496
+    },
+    {
+      "date": "2026-02-04",
+      "tx_foreign_net_oi": -25699
+    },
+    {
+      "date": "2026-02-05",
+      "tx_foreign_net_oi": -26743
+    },
+    {
+      "date": "2026-02-06",
+      "tx_foreign_net_oi": -25102
+    },
+    {
+      "date": "2026-03-09",
+      "tx_foreign_net_oi": -40462
+    },
+    {
+      "date": "2026-03-10",
+      "tx_foreign_net_oi": -36856
+    },
+    {
+      "date": "2026-03-11",
+      "tx_foreign_net_oi": -40958
+    },
+    {
+      "date": "2026-03-12",
+      "tx_foreign_net_oi": -43064
+    },
+    {
+      "date": "2026-03-13",
+      "tx_foreign_net_oi": -40347
+    },
+    {
+      "date": "2026-03-16",
+      "tx_foreign_net_oi": -38512
+    },
+    {
+      "date": "2026-03-17",
+      "tx_foreign_net_oi": -36158
+    },
+    {
+      "date": "2026-03-18",
+      "tx_foreign_net_oi": -34549
+    },
+    {
+      "date": "2026-03-19",
+      "tx_foreign_net_oi": -40825
+    },
+    {
+      "date": "2026-03-20",
+      "tx_foreign_net_oi": -36366
+    },
+    {
+      "date": "2026-03-23",
+      "tx_foreign_net_oi": -37717
+    },
+    {
+      "date": "2026-03-24",
+      "tx_foreign_net_oi": -34108
+    },
+    {
+      "date": "2026-03-25",
+      "tx_foreign_net_oi": -35947
+    },
+    {
+      "date": "2026-03-26",
+      "tx_foreign_net_oi": -37065
+    },
+    {
+      "date": "2026-03-27",
+      "tx_foreign_net_oi": -39919
+    },
+    {
+      "date": "2026-03-30",
+      "tx_foreign_net_oi": -37282
+    },
+    {
+      "date": "2026-03-31",
+      "tx_foreign_net_oi": -37214
+    },
+    {
+      "date": "2026-04-01",
+      "tx_foreign_net_oi": -31373
+    },
+    {
+      "date": "2026-04-02",
+      "tx_foreign_net_oi": -34855
+    },
+    {
+      "date": "2026-05-22",
+      "tx_foreign_net_oi": -46483
+    },
+    {
+      "date": "2026-05-25",
+      "tx_foreign_net_oi": -51458
+    },
+    {
+      "date": "2026-05-26",
+      "tx_foreign_net_oi": -54391
+    },
+    {
+      "date": "2026-05-27",
+      "tx_foreign_net_oi": -56302
+    },
+    {
+      "date": "2026-05-28",
+      "tx_foreign_net_oi": -58196
+    },
+    {
+      "date": "2026-05-29",
+      "tx_foreign_net_oi": -60650
+    },
+    {
+      "date": "2026-06-01",
+      "tx_foreign_net_oi": -64673
+    },
+    {
+      "date": "2026-06-02",
+      "tx_foreign_net_oi": -67018
+    },
+    {
+      "date": "2026-06-03",
+      "tx_foreign_net_oi": -66772
+    },
+    {
+      "date": "2026-06-04",
+      "tx_foreign_net_oi": -69476
+    },
+    {
+      "date": "2026-06-05",
+      "tx_foreign_net_oi": -69146
+    },
+    {
+      "date": "2026-06-08",
+      "tx_foreign_net_oi": -65501
+    },
+    {
+      "date": "2026-06-09",
+      "tx_foreign_net_oi": -61871
+    },
+    {
+      "date": "2026-06-10",
+      "tx_foreign_net_oi": -61949
+    },
+    {
+      "date": "2026-06-11",
+      "tx_foreign_net_oi": -63168
+    },
+    {
+      "date": "2026-06-12",
+      "tx_foreign_net_oi": -65039
+    },
+    {
+      "date": "2026-06-15",
+      "tx_foreign_net_oi": -66734
+    },
+    {
+      "date": "2026-06-16",
+      "tx_foreign_net_oi": -69847
+    },
+    {
+      "date": "2026-06-17",
+      "tx_foreign_net_oi": -67394
+    },
+    {
+      "date": "2026-06-18",
+      "tx_foreign_net_oi": -68337
+    },
+    {
+      "date": "2026-06-22",
+      "tx_foreign_net_oi": -70290
+    },
+    {
+      "date": "2026-06-23",
+      "tx_foreign_net_oi": -76502
+    },
+    {
+      "date": "2026-06-24",
+      "tx_foreign_net_oi": -83605
+    },
+    {
+      "date": "2026-06-25",
+      "tx_foreign_net_oi": -81051
+    },
+    {
+      "date": "2026-06-26",
+      "tx_foreign_net_oi": -76391
+    },
+    {
+      "date": "2026-06-29",
+      "tx_foreign_net_oi": -76627
+    },
+    {
+      "date": "2026-06-30",
+      "tx_foreign_net_oi": -83063
+    },
+    {
+      "date": "2026-07-01",
+      "tx_foreign_net_oi": -84168
+    },
+    {
+      "date": "2026-07-02",
+      "tx_foreign_net_oi": -84487
+    },
+    {
+      "date": "2026-07-03",
+      "tx_foreign_net_oi": -81052
+    },
+    {
+      "date": "2026-07-06",
+      "tx_foreign_net_oi": -80087
+    },
+    {
+      "date": "2026-07-07",
+      "tx_foreign_net_oi": -80042
+    },
+    {
+      "date": "2026-07-08",
+      "tx_foreign_net_oi": -81268
+    },
+    {
+      "date": "2026-07-09",
+      "tx_foreign_net_oi": -80730
+    }
+  ]
+}
