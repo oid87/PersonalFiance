@@ -42,6 +42,7 @@ import * as baniniTab        from './tabs/banini.js';
 import * as qqqmacdTab       from './tabs/qqqmacd.js';
 import * as structTab        from './tabs/struct.js';
 import * as kellyTab         from './tabs/kelly.js';
+import * as madevTab         from './tabs/madev.js';
 import * as toolsTab         from './tabs/tools.js';
 import * as netLiqTab        from './tabs/net_liquidity.js';
 import * as yieldCurveTab    from './tabs/yield_curve.js';
@@ -100,6 +101,7 @@ registerAll([
   { id: 'qqqmacd',       module: qqqmacdTab       },
   { id: 'struct',        module: structTab        },
   { id: 'kelly',         module: kellyTab         },
+  { id: 'madev',         module: madevTab         },
   { id: 'tools',         module: toolsTab         },
   { id: 'net_liquidity', module: netLiqTab        },
   { id: 'yield_curve',   module: yieldCurveTab    },
@@ -168,6 +170,7 @@ const CATEGORIES = [
       { id: 'relstrength', label: 'NDX相對強度' },
       { id: 'marginmap', label: '融資斷頭地圖' },
       { id: 'kelly',     label: '凱利上限' },
+      { id: 'madev',     label: '乖離率' },
       { id: 'twcycle',   label: '景氣燈號' },
       { id: 'tools',     label: '工具箱' },
     ]
