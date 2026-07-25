@@ -47,6 +47,7 @@ import * as toolsTab         from './tabs/tools.js';
 import * as netLiqTab        from './tabs/net_liquidity.js';
 import * as yieldCurveTab    from './tabs/yield_curve.js';
 import * as vixTermTab       from './tabs/vix_term.js';
+import * as vvixregimeTab    from './tabs/vvixregime.js';
 import * as vxnvixTab        from './tabs/vxnvix.js';
 import * as relstrengthTab   from './tabs/relstrength.js';
 import * as realRatesTab     from './tabs/real_rates.js';
@@ -106,6 +107,7 @@ registerAll([
   { id: 'net_liquidity', module: netLiqTab        },
   { id: 'yield_curve',   module: yieldCurveTab    },
   { id: 'vix_term',      module: vixTermTab       },
+  { id: 'vvixregime',    module: vvixregimeTab    },
   { id: 'vxnvix',        module: vxnvixTab        },
   { id: 'relstrength',   module: relstrengthTab   },
   { id: 'real_rates',    module: realRatesTab     },
@@ -189,6 +191,7 @@ const CATEGORIES = [
       { id: 'qqqmacd',  label: 'MACD死叉' },
       { id: 'marginpeak', label: '融資峰值' },
       { id: 'marginconc', label: '融資集中度' },
+      { id: 'vvixregime', label: 'VVIX波動象限' },
     ]
   },
 ];
