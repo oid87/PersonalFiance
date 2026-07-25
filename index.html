@@ -925,6 +925,85 @@
     </div>
   </section>
 
+  <!-- ── 乖離率 tab（任意 MA + 正/負乖離門檻，區間高亮） ──────────── -->
+  <section id="tab-madev" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="madev-ticker-picker" style="display:flex;gap:4px">
+        <span class="chip active" data-madev-ticker="QQQ">QQQ</span>
+        <span class="chip" data-madev-ticker="VOO">VOO</span>
+        <span class="chip" data-madev-ticker="SOXX">SOXX</span>
+        <span class="chip" data-madev-ticker="0050.TW">0050</span>
+      </div>
+      <span style="font-size:12px;color:var(--muted);margin-left:10px">MA</span>
+      <input id="madev-ma" type="number" min="2" max="1000" step="1" value="200"
+             style="width:64px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px">
+      <div id="madev-ma-preset" style="display:flex;gap:4px">
+        <span class="chip" data-madev-ma="20">20</span>
+        <span class="chip" data-madev-ma="50">50</span>
+        <span class="chip" data-madev-ma="100">100</span>
+        <span class="chip active" data-madev-ma="200">200</span>
+      </div>
+      <span style="font-size:12px;color:var(--muted);margin-left:10px">正乖離 ≥</span>
+      <input id="madev-pos" type="number" step="0.5" value="15"
+             style="width:64px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px">
+      <span style="font-size:12px;color:var(--muted)">%</span>
+      <span style="font-size:12px;color:var(--muted);margin-left:10px">負乖離 ≤</span>
+      <input id="madev-neg" type="number" step="0.5" value="-15"
+             style="width:64px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px">
+      <span style="font-size:12px;color:var(--muted)">%</span>
+      <span id="madev-show-ma" class="chip active" data-tooltip="上格是否疊 MA 線">MA 線</span>
+      <div id="madev-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-madev-range="1Y">1Y</span>
+        <span class="chip" data-madev-range="3Y">3Y</span>
+        <span class="chip active" data-madev-range="5Y">5Y</span>
+        <span class="chip" data-madev-range="10Y">10Y</span>
+        <span class="chip" data-madev-range="MAX">MAX</span>
+      </div>
+    </div>
+
+    <div id="madev-top" style="display:flex;gap:14px;padding:16px 24px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">目前乖離率</div>
+        <div class="bc-main"><span class="bc-pct" id="madev-now-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="madev-now-sub">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">正乖離區間（區間內）</div>
+        <div class="bc-main"><span class="bc-pct" id="madev-pos-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="madev-pos-sub">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">負乖離區間（區間內）</div>
+        <div class="bc-main"><span class="bc-pct" id="madev-neg-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="madev-neg-sub">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">乖離率分佈（區間內）</div>
+        <div class="bc-main"><span class="bc-pct" id="madev-dist-val" style="font-size:15px">—</span></div>
+        <div class="bc-count" id="madev-dist-sub">—</div>
+      </div>
+    </div>
+
+    <div id="madev-chart" style="width:100%;height:640px"></div>
+    <div class="status" id="madev-status" style="padding:8px 24px">切換至此 tab 自動載入…</div>
+
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 怎麼看這頁</div>
+      <div class="info-panel-body">
+        <p>乖離率 =（收盤 ÷ MA − 1）× 100%。上格是收盤價與 MA 線，下格是乖離率；<b>紅底</b>為乖離
+          ≥ 正門檻的連續區間、<b>綠底</b>為 ≤ 負門檻的連續區間，兩格同步標示，可直接對照當時的價格位置。</p>
+        <p style="margin-top:8px">MA 週期與正/負門檻都可自行輸入（MA 也有 20/50/100/200 快捷）。統計卡片
+          只計算「目前顯示區間」內的資料，換時間範圍數字會跟著變。</p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #e3b341;background:rgba(227,179,65,.08);border-radius:4px">
+          ⚠️ MA 一律用<b>全歷史</b>計算後再依時間範圍裁切顯示，所以切到 1Y 也不會有 200MA 暖身缺口。
+          乖離率無未來函數（rolling 右對齊）。價格為 <code>data/*.json</code> 的<b>未還原息</b>收盤價，
+          與還原息版本的乖離率會有小幅系統性差異（同 kelly tab 的已知落差）。</p>
+        <p style="margin-top:8px">用法提醒：高正乖離代表短線漲過頭、均值回歸壓力大，但<b>本身不是賣出訊號</b>——
+          強勢段可以長期掛在高乖離不回頭。當「位階尺」用，不要當觸發器。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 流動性 tab ──────────────────────────────────────────────── -->
   <section id="tab-liquidity" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
