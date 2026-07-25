@@ -62,6 +62,7 @@ TICKERS: dict[str, tuple[str, str]] = {
     "AMZN":    ("AMZN",    "1997-05-15"),
     "META":    ("META",    "2012-05-18"),
     "TSLA":    ("TSLA",    "2010-06-29"),
+    "^VVIX":   ("VVIX",    "2007-01-01"),  # VIX of VIX (volatility uncertainty) — vvixregime tab
     # Taiwan weighted index — used in 估值/位階/台股壓力
     "^TWII":   ("TWII",    "1997-07-02"),
 }

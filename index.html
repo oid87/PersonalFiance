@@ -2534,6 +2534,61 @@
     </div>
   </section>
 
+  <!-- ── VVIX波動象限 tab ─────────────────────────────────────────── -->
+  <section id="tab-vvixregime" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="vvixregime-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-vvixregime-range="1Y">1Y</span>
+        <span class="chip active" data-vvixregime-range="3Y">3Y</span>
+        <span class="chip" data-vvixregime-range="5Y">5Y</span>
+        <span class="chip" data-vvixregime-range="10Y">10Y</span>
+        <span class="chip" data-vvixregime-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="vvixregime-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">目前 Regime</div>
+        <div class="bc-main"><span class="bc-pct" id="vvixregime-cur-val" style="font-size:20px">—</span></div>
+        <div class="bc-count" id="vvixregime-cur-sub">—</div>
+        <div class="bc-signal" id="vvixregime-cur-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">VVIX（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="vvixregime-vvix-val">—</span></div>
+        <div class="bc-count" id="vvixregime-vvix-sub">—</div>
+        <div class="bc-signal" id="vvixregime-vvix-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">VIX / ts_ratio（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="vvixregime-vixts-val" style="font-size:18px">—</span></div>
+        <div class="bc-count" id="vvixregime-vixts-sub">—</div>
+        <div class="bc-signal" id="vvixregime-vixts-signal">—</div>
+      </div>
+    </div>
+    <div id="vvixregime-chart" style="height:560px"></div>
+    <div class="status" id="vvixregime-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> VVIX波動象限怎麼看？</div>
+      <div class="info-panel-body">
+        <p>查證 X（@3PeaksTrading）三維波動率四象限宣稱：用 <b>VIX 水位</b>（恐慌程度）× <b>VIX 期限結構 ts_ratio=VIX/VIX3M</b>（contango/backwardation）× <b>VVIX</b>（VIX 的波動率，反映對「VIX 本身會不會暴衝」的避險需求）三維交叉分類市場狀態。已用 QQQ 當對應指數機械回測驗證：<b>方向性成立</b>——VVIX 背離 regime 的遠期已實現波動率與回撤，確實比平靜 regime 更高更深。</p>
+        <table class="info-table">
+          <thead><tr><th>Regime</th><th>門檻</th><th>Episode 數（去重後）</th></tr></thead>
+          <tbody>
+            <tr><td>regime1（平靜）</td><td>VIX&lt;18 且 ts_ratio&lt;1 且 VVIX&lt;90</td><td>173</td></tr>
+            <tr><td>regime2（VVIX背離，謹慎）</td><td>VIX&lt;18 且 ts_ratio&lt;1 且 VVIX&gt;100</td><td>134</td></tr>
+            <tr><td>regime3（極端恐慌）</td><td>VIX&gt;35 且 ts_ratio≥1 且 VVIX&gt;100</td><td>21</td></tr>
+          </tbody>
+        </table>
+        <p style="margin-top:8px;color:var(--muted)">核心對照（N=10交易日遠期）：regime2 已實現波動率 mean 16.62% vs regime1 14.16%；regime2 entry-to-trough 回撤 mean −2.16% vs regime1 −1.80%——N=5/10/20 三個窗口方向一致。regime3（N=10）遠期報酬 mean +1.40%、勝率71.4%（n=21，樣本偏少僅供參考，傾向支持恐慌後均值回歸）。</p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+          ⚠️ regime3 的 VVIX&gt;100 門檻是本次查證的<b>延伸假設</b>，非原推文明確數字（原推文只寫「High VVIX」，未給具體門檻）；regime1/regime2 的門檻數字則直接引用原推文。本回測<b>未驗證</b>原推文「75–80%勝率」這個具體數字——那是選擇權策略 P&amp;L，本回測只用 QQQ 現貨代理指標測方向性。</p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+          ⚠️ 有效回測窗 2009-09-18～2026-07-24（受 ts_ratio 資料起點限制）；regime3 樣本數僅 21 個 episode，統計顯著性有限。本 tab 定位「環境理解」輔助判讀，<b>不是</b>交易觸發訊號。</p>
+        <p style="margin-top:8px;color:var(--muted)">資料：CBOE VIX/VIX3M（data/vix_term.json）、yfinance ^VVIX（data/VVIX.json）、QQQ 日 OHLCV（data/QQQ.json），三者以 QQQ 交易日對齊（inner join，同 python dropna()）。研究來源：Financial_work/vvix_term_regime_backtest.py（verifier PASS）。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 工具箱 tab（教育速查 + 純前端互動計算機，無外部資料源） ──── -->
   <section id="tab-tools" class="tab-section" hidden>
     <div class="controls">
