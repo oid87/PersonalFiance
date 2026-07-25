@@ -25,6 +25,7 @@ import * as twCycleTab   from './tabs/twcycle.js';
 import * as vixSkewTab   from './tabs/vixskew.js';
 import * as fsiTab        from './tabs/fsi.js';
 import * as nfciTab       from './tabs/nfci.js';
+import * as emfsiTab      from './tabs/emfsi.js';
 import * as stressdashTab from './tabs/stressdash.js';
 import * as twStressTab   from './tabs/twstress.js';
 import * as umichTab      from './tabs/umich.js';
@@ -82,6 +83,7 @@ registerAll([
   { id: 'vixskew',   module: vixSkewTab   },
   { id: 'fsi',       module: fsiTab       },
   { id: 'nfci',      module: nfciTab      },
+  { id: 'emfsi',     module: emfsiTab     },
   { id: 'stressdash', module: stressdashTab },
   { id: 'twstress',  module: twStressTab  },
   { id: 'umich',     module: umichTab     },
@@ -137,6 +139,7 @@ const CATEGORIES = [
       { id: 'breadth',   label: '市場廣度' },
       { id: 'fsi',       label: '金融壓力' },
       { id: 'nfci',      label: '金融狀況' },
+      { id: 'emfsi',     label: '新興市場壓力' },
       { id: 'stressdash', label: '壓力總覽' },
       { id: 'twstress',  label: '台股壓力' },
       { id: 'vixskew',   label: 'VIX-SKEW' },

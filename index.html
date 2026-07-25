@@ -1856,6 +1856,54 @@
     </div>
   </section>
 
+  <!-- ── 新興市場壓力 tab (OFR FSI Emerging markets 倒置 × 台股加權) ─── -->
+  <section id="tab-emfsi" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="emfsi-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-emfsi-range="6M">6M</span>
+        <span class="chip" data-emfsi-range="1Y">1Y</span>
+        <span class="chip active" data-emfsi-range="2Y">2Y</span>
+        <span class="chip" data-emfsi-range="3Y">3Y</span>
+        <span class="chip" data-emfsi-range="5Y">5Y</span>
+        <span class="chip" data-emfsi-range="10Y">10Y</span>
+        <span class="chip" data-emfsi-range="MAX">All</span>
+      </div>
+    </div>
+    <div id="emfsi-top">
+      <div class="breadth-card">
+        <div class="bc-label">EM FSI 現值（原始值，非倒置）</div>
+        <div class="bc-main"><span class="bc-pct" id="emfsi-level-val">—</span></div>
+        <div class="bc-count" id="emfsi-level-sub">—</div>
+        <div class="bc-signal" id="emfsi-level-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">vs 週 MA50（倒置後序列）</div>
+        <div class="bc-main"><span class="bc-pct" id="emfsi-ma50-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="emfsi-ma50-sub">—</div>
+        <div class="bc-signal" id="emfsi-ma50-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">資料最新日期</div>
+        <div class="bc-main"><span class="bc-pct" id="emfsi-date-val" style="font-size:22px">—</span></div>
+        <div class="bc-count" id="emfsi-date-sub">—</div>
+        <div class="bc-signal" id="emfsi-date-signal">—</div>
+      </div>
+    </div>
+    <div id="emfsi-chart" style="height:580px"></div>
+    <div class="status" id="emfsi-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 新興市場壓力 × 台股加權 怎麼看？</div>
+      <div class="info-panel-body">
+        <p>上圖是 OFR 金融壓力指數（FSI）的 <b>新興市場（Emerging markets）分項</b>，<b>倒置（×-1）</b>後疊上 20/50/200 <b>週</b>均線；下圖是<b>台股加權指數</b>疊同樣的週均線，兩圖 x 軸對齊，方便對照新興市場壓力面向與台股走勢的關係。倒置是因為原始分項「數值越大＝壓力越大」，×-1 後「線越高」在視覺上更直覺地對應「壓力越低」。</p>
+        <p>資料先各自轉成<b>週頻</b>（取該週最後一個交易日的值，對齊到該週週日）再取兩者<b>交集</b>——FSI 與台股加權的休市日曆不同（美國假日 vs 台灣休市日），直接照日期比對會處處對不上。</p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+          ⚠️ <b>誠實揭露</b>：OFR FSI 的「地區」拆解（美國/其他先進經濟體/新興市場）跟「五大類」拆解（信用/股票估值/安全資產/資金/波動性）是<b>兩套獨立的正交分解</b>，地區三項加總<b>不會</b>精確等於總分（實測最大差距約 0.108），不是四捨五入誤差。本 tab 只取「新興市場」單一分項單獨看，不做地區堆疊圖、也不宣稱地區可加總。
+        </p>
+        <p style="margin-top:8px;color:var(--muted)">資料：financialresearch.gov OFR FSI（每日、免費、無 key，更新約延遲 2 個交易日）+ 台股加權指數 <code>^TWII</code>（fetch_stocks.py，1997 年起日頻，已在 CI）。定位「環境理解」，非交易訊號。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 壓力總覽 tab (NFCI/STLFSI4/KCFSI × SPY/QQQ/SOXX) ────────────── -->
   <section id="tab-stressdash" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
