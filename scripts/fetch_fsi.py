@@ -14,7 +14,11 @@ Source CSV columns:
 
 Output (data/fsi.json), idempotent merge by date (new overwrites old):
   {source, note, updated,
-   data: [{date, fsi, credit, equity, safe, funding, vol}]}   # daily, total + 5 categories
+   data: [{date, fsi, credit, equity, safe, funding, vol, us, adv, em}]}
+  # daily, total + 5 categories + 3 regional contributions (US / other advanced / emerging).
+  # The 3 regions are a SEPARATE orthogonal decomposition from the 5 categories — they do
+  # NOT sum to the headline `fsi` (max observed gap ~0.108, not rounding). Do not treat the
+  # regional columns as an additive breakdown or plot them as a stacked area.
 """
 from __future__ import annotations
 
@@ -35,9 +39,8 @@ OUT = DATA_DIR / "fsi.json"
 FSI_URL = "https://www.financialresearch.gov/financial-stress-index/data/fsi.csv"
 UA = {"User-Agent": "PersonalFiance/1.0"}
 
-# CSV header → output key. Only the headline + the five category contributions;
-# regional breakdown (US / advanced / emerging) is left out — the tab decomposes
-# by category to match MacroMicro's 五大細項.
+# CSV header → output key. Headline + the five category contributions (sum to headline,
+# to rounding — MacroMicro's 五大細項).
 COLS = OrderedDict([
     ("OFR FSI", "fsi"),
     ("Credit", "credit"),
@@ -47,20 +50,36 @@ COLS = OrderedDict([
     ("Volatility", "vol"),
 ])
 
+# Regional breakdown — a SEPARATE orthogonal decomposition, NOT part of the 5-category
+# sum above. Kept as its own mapping so a missing/renamed region column fails loudly
+# (see the fieldnames check in fetch_rows) without touching the category sanity check.
+REGION_COLS = OrderedDict([
+    ("United States", "us"),
+    ("Other advanced economies", "adv"),
+    ("Emerging markets", "em"),
+])
+
 
 def fetch_rows() -> "OrderedDict[str, dict]":
-    """Return {date: {date, fsi, credit, equity, safe, funding, vol}} keyed by date."""
+    """Return {date: {date, fsi, credit, equity, safe, funding, vol, us, adv, em}} keyed by date."""
     resp = requests.get(FSI_URL, timeout=30, headers=UA)
     resp.raise_for_status()
-    by_date: "OrderedDict[str, dict]" = OrderedDict()
     reader = csv.DictReader(io.StringIO(resp.text))
+    fieldnames = reader.fieldnames or []
+    # Regional columns are new (2026-07-25 addition) and OFR could rename/drop them without
+    # notice; fail loudly instead of silently dropping the region fields for every row.
+    missing = [src for src in REGION_COLS if src not in fieldnames]
+    if missing:
+        raise RuntimeError(f"OFR FSI CSV missing expected region columns {missing} (header={fieldnames})")
+
+    by_date: "OrderedDict[str, dict]" = OrderedDict()
     for row in reader:
         d = (row.get("Date") or "").strip()
         if len(d) != 10:
             continue
         rec = {"date": d}
         ok = True
-        for src, key in COLS.items():
+        for src, key in list(COLS.items()) + list(REGION_COLS.items()):
             v = (row.get(src) or "").strip()
             if v in ("", "."):
                 ok = False
@@ -114,11 +133,23 @@ def main() -> None:
     if abs(recon - last["fsi"]) > 0.05:
         print(f"  ⚠ category sum {recon:+.3f} ≠ headline {last['fsi']:+.3f} — CHECK OFR COLUMNS")
 
+    # info only (NOT a sanity gate): the 3 regions are a different decomposition from the
+    # 5 categories and do not sum to the headline (observed gap up to ~0.108, not rounding).
+    recon_region = last["us"] + last["adv"] + last["em"]
+    diff_region = recon_region - last["fsi"]
+    print(f"  [OFR FSI] regional sum {recon_region:+.3f} vs headline {last['fsi']:+.3f} "
+          f"(diff {diff_region:+.3f} — expected, regions are a separate non-additive decomposition)")
+
     payload = {
         "source": "OFR Financial Stress Index (financialresearch.gov)",
         "note": ("Daily. Total OFR FSI plus its five category contributions "
                  "(credit / equity valuation / safe assets / funding / volatility), "
-                 "which sum to the headline. 0 = historical average; >0 elevated stress."),
+                 "which sum to the headline (to rounding, max diff ~0.002). Also includes "
+                 "three regional contributions (us / adv / em — United States / other advanced "
+                 "economies / emerging markets): this is a SEPARATE orthogonal decomposition "
+                 "and does NOT sum to the headline (max observed diff ~0.108, not rounding) — "
+                 "do not treat it as an additive breakdown. 0 = historical average; "
+                 ">0 elevated stress."),
         "updated": date.today().isoformat(),
         "data": data,
     }
