@@ -287,15 +287,19 @@ export function render() {
   const isMob = mob();
   const yAxisDef = [
     { id: "price", name: "USD Price", position: "left",
+      min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1),
       axisLine: { lineStyle: { color: axisClr } },
       splitLine: { lineStyle: { color: gridClr } } },
     { id: "vix",  name: "VIX",  position: "right",
+      min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1),
       axisLine: { lineStyle: { color: "#f0883e" } }, splitLine: { show: false } },
     { id: "fg",   name: "F&G",  position: "right", offset: isMob ? 35 : 55, min: 0, max: 100,
       axisLine: { lineStyle: { color: "#e3b341" } }, splitLine: { show: false } },
     { id: "tw",   name: "TWD",  position: "left",  offset: isMob ? 45 : 70,
+      min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1),
       axisLine: { lineStyle: { color: "#3fb950" } }, splitLine: { show: false } },
     { id: "btc",  name: "BTC",  position: "right", offset: isMob ? 65 : 110,
+      min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1),
       axisLine: { lineStyle: { color: "#f7931a" } }, splitLine: { show: false } },
   ];
 
