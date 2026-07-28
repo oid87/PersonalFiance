@@ -1,6 +1,6 @@
 // ── Frozen constants ────────────────────────────────────────────
 export const SERIES = Object.freeze([
-  { key: "VOO",   file: "data/VOO.json",        color: "#58a6ff", yAxis: 0, default: true  },
+  { key: "VOO",   file: "data/VOO.json",        color: "#58a6ff", yAxis: 0, default: false },
   { key: "QQQ",   file: "data/QQQ.json",         color: "#f778ba", yAxis: 0, default: true  },
   { key: "SPY",   file: "data/SPY.json",          color: "#a371f7", yAxis: 0, default: false },
   { key: "0050",  file: "data/0050.TW.json",      color: "#3fb950", yAxis: 3, default: false },
