@@ -35,6 +35,9 @@ MINDEX = "https://www.twse.com.tw/exchangeReport/MI_INDEX"
 FLOOR = os.environ.get("MARGIN_RATIO_FLOOR", "2010-01-01")  # TWSE JSON reliably available from here
 MAX_DAYS = int(os.environ.get("MARGIN_RATIO_MAX_DAYS", "30"))
 SLEEP = float(os.environ.get("MARGIN_RATIO_SLEEP", "0.8"))
+COVERAGE_MIN = float(os.environ.get("MARGIN_RATIO_COVERAGE_MIN", "0.95"))
+RATIO_MIN = float(os.environ.get("MARGIN_RATIO_MIN", "100"))
+RATIO_MAX = float(os.environ.get("MARGIN_RATIO_MAX", "350"))
 
 
 def num(s):
@@ -103,10 +106,20 @@ def fetch_day(d_iso):
         return None
 
     matched = [c for c in lots if c in closes and closes[c]]
-    if len(matched) < 0.5 * len(lots):  # coverage guard — partial price table → skip
+    # coverage guard — a partial MI_INDEX price table silently drops 擔保品 from the
+    # numerator (or, when TWSE 當日原始資料異常, inflates it). 0.5 was far too loose:
+    # 2023-04-20 matched 934/1112 檔 (84%) yet produced ratio=360%.
+    if len(matched) < COVERAGE_MIN * len(lots):
+        print(f"  ! {d_iso} coverage {len(matched)}/{len(lots)} < {COVERAGE_MIN:.0%} — skip")
         return None
     collateral = sum(lots[c] * closes[c] * 1000.0 for c in matched)
-    return (round(collateral / den * 100, 2), round(collateral / 1e8, 1),
+    ratio = collateral / den * 100
+    # sanity guard — 融資維持率 has never plausibly left this band; anything outside is
+    # a TWSE data glitch (分子分母跨日錯位 / 殘缺表), not a market event.
+    if not (RATIO_MIN <= ratio <= RATIO_MAX):
+        print(f"  ! {d_iso} ratio {ratio:.2f}% outside [{RATIO_MIN}, {RATIO_MAX}] — skip")
+        return None
+    return (round(ratio, 2), round(collateral / 1e8, 1),
             round(den / 1e8, 1), len(matched))
 
 
