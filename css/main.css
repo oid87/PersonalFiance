@@ -782,3 +782,64 @@
       .tools-field { flex: 1 1 auto; }
       .tools-calc-grid { grid-template-columns: 1fr; }
     }
+
+    /* ── 台股籌碼 tab（2x2 四宮格）──────────────────────────────── */
+    .twchips-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      padding: 12px 24px;
+    }
+    .twchips-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      min-width: 0;
+    }
+    .twchips-panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .twchips-panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.4;
+    }
+    .twchips-stat { text-align: right; white-space: nowrap; }
+    .twchips-stat-2row { display: flex; flex-direction: column; gap: 2px; }
+    .twchips-mini-label { font-size: 10px; color: var(--muted); margin-right: 4px; }
+    .twchips-val { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .twchips-diff { font-size: 11px; margin-left: 6px; font-variant-numeric: tabular-nums; }
+    .twchips-chart-el { height: 260px; width: 100%; }
+    .twchips-empty {
+      height: 260px; display: flex; align-items: center; justify-content: center;
+      color: var(--muted); font-size: 13px;
+    }
+    /* 修正：class 的 display:flex 特異度會蓋過 [hidden] 的預設 display:none，
+       導致 JS 設 el.hidden=true 後仍顯示。補這條讓 hidden 屬性真的生效。 */
+    .twchips-empty[hidden] { display: none; }
+    /* 第五格：佔滿整列寬，獨立 grid 容器（twchips-grid 固定 2 欄，塞不進不等寬的第五格） */
+    #twchips-grid-full { padding: 0 24px 12px; }
+    .twchips-panel-full { min-width: 0; }
+    .twchips-stat-inline {
+      display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap;
+    }
+    .twchips-product-picker { display: flex; gap: 4px; }
+    .twchips-product-picker .chip { padding: 4px 11px; font-size: 12px; }
+    .twchips-retail-nums { display: flex; gap: 16px; flex-wrap: wrap; text-align: right; }
+    .twchips-chart-tall { height: 380px; }
+    @media (max-width: 900px) {
+      .twchips-grid { grid-template-columns: 1fr; padding: 10px 14px; }
+      .twchips-chart-el, .twchips-empty { height: 220px; }
+      .twchips-panel-head { flex-direction: column; align-items: flex-start; }
+      .twchips-stat, .twchips-stat-2row { text-align: left; }
+      #twchips-grid-full { padding: 0 14px 10px; }
+      .twchips-stat-inline { align-items: flex-start; }
+      .twchips-retail-nums { text-align: left; }
+      .twchips-chart-tall { height: 320px; }
+    }
