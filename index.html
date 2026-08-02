@@ -1208,6 +1208,85 @@
     </div>
   </section>
 
+  <!-- ── 台股籌碼 tab ────────────────────────────────────────────── -->
+  <section id="tab-twchips" class="tab-section" hidden>
+    <div class="controls">
+      <div id="twchips-range-picker" style="display:flex;gap:4px;margin-left:auto">
+        <span class="chip" data-twchips-range="1Y">1Y</span>
+        <span class="chip active" data-twchips-range="3Y">3Y</span>
+        <span class="chip" data-twchips-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="twchips-grid" class="twchips-grid">
+      <div class="twchips-panel">
+        <div class="twchips-panel-head">
+          <span class="twchips-panel-title">臺股期貨・三大法人未平倉淨口數（口）</span>
+          <div class="twchips-stat">
+            <div><span class="twchips-val" id="twchips-fut-val">—</span><span class="twchips-diff" id="twchips-fut-diff">—</span></div>
+            <div class="twchips-stat-sub">(外資)</div>
+          </div>
+        </div>
+        <div id="twchips-fut-chart" class="twchips-chart-el"></div>
+      </div>
+      <div class="twchips-panel">
+        <div class="twchips-panel-head">
+          <span class="twchips-panel-title">台指期近月收盤（點）</span>
+          <div class="twchips-stat">
+            <div><span class="twchips-val" id="twchips-basis-val">—</span><span class="twchips-diff" id="twchips-basis-diff">—</span></div>
+          </div>
+        </div>
+        <div id="twchips-basis-chart" class="twchips-chart-el"></div>
+      </div>
+      <div class="twchips-panel">
+        <div class="twchips-panel-head">
+          <span class="twchips-panel-title">台指選擇權・外資未平倉淨口數（口）</span>
+          <div class="twchips-stat twchips-stat-2row">
+            <div><span class="twchips-mini-label">CALL</span><span class="twchips-val" id="twchips-opt-call-val">—</span><span class="twchips-diff" id="twchips-opt-call-diff">—</span></div>
+            <div><span class="twchips-mini-label">PUT</span><span class="twchips-val" id="twchips-opt-put-val">—</span><span class="twchips-diff" id="twchips-opt-put-diff">—</span></div>
+          </div>
+        </div>
+        <div id="twchips-opt-chart" class="twchips-chart-el"></div>
+        <div id="twchips-opt-empty" class="twchips-empty" hidden>資料尚未產生</div>
+      </div>
+      <div class="twchips-panel">
+        <div class="twchips-panel-head">
+          <span class="twchips-panel-title">上市融資餘額（億元）</span>
+          <div class="twchips-stat">
+            <div><span class="twchips-val" id="twchips-margin-val">—</span><span class="twchips-diff" id="twchips-margin-diff">—</span></div>
+          </div>
+        </div>
+        <div id="twchips-margin-chart" class="twchips-chart-el"></div>
+      </div>
+    </div>
+    <div id="twchips-grid-full">
+      <div class="twchips-panel twchips-panel-full">
+        <div class="twchips-panel-head">
+          <span class="twchips-panel-title">散戶多空比・期指</span>
+          <div class="twchips-stat-inline">
+            <div id="twchips-retail-product-picker" class="twchips-product-picker">
+              <span class="chip active" data-twchips-product="tmf">微台 TMF</span>
+              <span class="chip" data-twchips-product="mtx">小台 MTX</span>
+            </div>
+            <div class="twchips-retail-nums">
+              <div><span class="twchips-mini-label">多空比</span><span class="twchips-val" id="twchips-retail-ratio-val">—</span><span class="twchips-diff" id="twchips-retail-ratio-diff">—</span></div>
+              <div><span class="twchips-mini-label">收盤</span><span class="twchips-val" id="twchips-retail-close-val">—</span></div>
+              <div><span class="twchips-mini-label">量</span><span class="twchips-val" id="twchips-retail-vol-val">—</span></div>
+            </div>
+          </div>
+        </div>
+        <div id="twchips-retail-chart" class="twchips-chart-el twchips-chart-tall"></div>
+      </div>
+    </div>
+    <div class="status" id="twchips-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 台股籌碼五宮格怎麼看？</div>
+      <div class="info-panel-body">
+        <p>上排四張圖：台指期三大法人未平倉（外資／投信／自營商淨口數）、台指期近月收盤、台指選擇權外資未平倉淨口數（CALL／PUT）、上市融資餘額。都是台股籌碼面的同步觀察指標，非預測訊號。台指選擇權外資未平倉一格若顯示「資料尚未產生」，代表對應資料檔尚未產出，其餘四格不受影響。</p>
+        <p style="margin-top:6px">第五張「散戶多空比・期指」可切換微型臺指期貨（TMF，2024-07-29 才上市）／小型臺指期貨（MTX，全期皆有資料），上格疊圖散戶多空比（%，左軸）與近月收盤（點，右軸，較淡作對照），下格是當日成交量；多空比為正代表散戶淨多。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 波浪理論 tab ────────────────────────────────────────────── -->
   <section id="tab-wave" class="tab-section" hidden>
     <div class="controls">

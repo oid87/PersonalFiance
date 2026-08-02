@@ -265,11 +265,19 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_taifex_foreign_oi.py
 
+      - name: Fetch TAIFEX options institutional CALL/PUT net open interest
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_opt_inst.py
+
       - name: Fetch Taiwan futures institutional / retail positioning (FinMind, 台股情緒)
         continue-on-error: true
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python scripts/fetch_taiwan_fut_inst.py
+
+      - name: Fetch Taiwan MTX/TMF retail long-short ratio (TAIFEX, 小台/微台散戶多空比)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_retail_ls.py
 
       - name: Fetch Taiwan index-futures basis (台指期近月正逆價差)
         continue-on-error: true
