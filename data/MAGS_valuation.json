@@ -1,5 +1,5 @@
 {
-  "updated": "2026-07-31",
+  "updated": "2026-08-03",
   "note": "Magnificent 7（MAGS）本益比，七巨頭等權平均（AAPL/MSFT/GOOGL/AMZN/NVDA/META/TSLA）。fpe=forward、tpe=trailing；排除離群值（forward>60x、trailing>80x，主要為 TSLA）。MAGS ETF 本身 yfinance 不提供 PE，故由成分股計算。歷史值為估計。",
   "data": [
     {
@@ -277,6 +277,12 @@
       "src": "calc",
       "fpe": 22.41,
       "tpe": 25.44
+    },
+    {
+      "date": "2026-08-03",
+      "src": "calc",
+      "fpe": 23.08,
+      "tpe": 26.25
     }
   ]
 }
