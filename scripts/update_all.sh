@@ -34,6 +34,7 @@ $PYTHON fetch_taiwan_margin_total.py || true
 $PYTHON fetch_tdcc_holders.py  || true
 $PYTHON fetch_tw_daytrading.py || true
 $PYTHON fetch_taiwan_margin_ratio.py || true
+$PYTHON fetch_tpex_margin.py   || true
 $PYTHON fetch_taiwan_investors.py || true
 $PYTHON fetch_taiwan_mktcap_anchor.py || true
 $PYTHON compute_taiwan_margin_mktcap.py || true
@@ -82,6 +83,7 @@ $PYTHON fetch_money_market.py  || true
 $PYTHON fetch_central_banks.py || true
 $PYTHON fetch_infl_nowcast.py  || true
 $PYTHON fetch_cpi.py           || true
+$PYTHON fetch_margin_cost.py   || true
 
 # 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"

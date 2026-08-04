@@ -3313,6 +3313,47 @@
     </div>
   </section>
 
+  <!-- ── 美國融資成本 tab ──────────────────────────────────────────── -->
+  <section id="tab-margincost" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span style="color:var(--text);font-weight:600;font-size:13px">融資成本走廊 + FINRA 融資餘額（日頻 vs 月頻，頻率不同）</span>
+      <div id="mc-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-mc-range="1Y">1Y</span>
+        <span class="chip active" data-mc-range="3Y">3Y</span>
+        <span class="chip" data-mc-range="5Y">5Y</span>
+        <span class="chip" data-mc-range="10Y">10Y</span>
+        <span class="chip" data-mc-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="mc-chart" style="width:100%;height:560px"></div>
+    <div class="status" id="mc-status">切換至此 tab 自動載入…</div>
+
+    <!-- 回撤 vs 融資成本對照 -->
+    <div style="padding:10px 16px 2px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border)">
+      <span style="color:var(--text);font-weight:600;font-size:13px">市場低點 vs 融資成本（回撤分箱 × FFR 中位數，已拆下跌中／修復中）</span>
+      <div id="mc-dd-index-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip active" data-mc-dd-index="SP500">^GSPC</span>
+        <span class="chip" data-mc-dd-index="QQQ">QQQ</span>
+        <span class="chip" data-mc-dd-index="SOXX">SOXX</span>
+        <span class="chip" data-mc-dd-index="VOO">VOO</span>
+      </div>
+    </div>
+    <div style="padding:0 16px 8px;font-size:12px;color:var(--muted)">⚠️ 深回撤分箱（-20~-30%／&lt;-30%）的「FFR 中位數」很大部分是被<b style="color:var(--text)">少數幾段低利率復甦年</b>（如 2003-2005、2009-2010）撐出來的，不是「崩盤下跌當下」的成本 —— 請看下方每個分箱拆開的<span style="color:#f85149">下跌中</span> / <span style="color:#58a6ff">修復中</span>中位數與年份分布，不要把單一中位數讀成「市場跌深時借錢比較便宜」。</div>
+    <div id="mc-dd-chart" style="width:100%;height:340px"></div>
+    <div id="mc-dd-table" style="padding:4px 16px 12px"></div>
+    <div class="status" id="mc-dd-status">—</div>
+
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 怎麼看這頁？</div>
+      <div class="info-panel-body">
+        <p>上圖：<b>SOFR</b>（擔保隔夜融資利率，券商 margin rate 主流基準）／<b>EFFR</b>（有效聯邦資金利率）／<b>IORB</b>（準備金餘額利率）／<b>FFR</b>（DFF，長期融資成本代理，1954 起，其餘三者只到 2000–2021 才有資料），右軸疊 <b>FINRA 融資餘額</b>（美國券商融資餘額，兆美元）。下圖：<b>SOFR−IORB 利差</b>（bp，正值代表附買回市場壓力），若有 SOFR99 資料則疊一條尾端壓力線。</p>
+        <p style="padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">⚠️ <b>成本為日頻、FINRA 融資餘額為月頻且落後約兩週公布</b> —— 兩者疊在同一張圖只是方便對照時間軸，讀圖時別把月頻的階梯狀誤讀成日頻波動。</p>
+        <p style="padding:8px 12px;border-left:3px solid #8b949e;background:rgba(139,148,158,.08);border-radius:4px">⚠️ <b>回撤分箱是同期相關，不是因果，也不是可交易訊號</b>。同一個分箱的天數，多半橫跨好幾段不同時期的行情（例如 -20~-30% 分箱可能同時包含 2004-2005 這種「還沒收復舊高點但已在漲」的復甦年，跟真正下跌中的月份）——直接看單一中位數會把「復甦期低利率」誤讀成「崩盤時借錢便宜」。因此每個分箱都拆成<b>下跌中</b>（收盤比 20 個交易日前的回撤更深）與<b>修復中</b>（更淺）兩組各自的 n 與中位數，並列出年份分布（前 6 大）供你核對中位數是被哪幾年決定的。「波段事件數」改用<b>回撤波段</b>定義：從某個歷史高點起算、到指數收復該高點為止算 1 段，波段中只要觸及過該分箱就計 1 次（不受期間內在分箱邊界來回穿越的天數影響），並列出每段的起訖年月。n &lt; 60 天的分箱會標示「樣本不足」。回撤一律用<b>截至當日為止的歷史最高點（expanding max）</b>計算，不使用全期最大值，避免未來函數。</p>
+        <p style="margin-top:8px;color:var(--muted)">資料：FRED SOFR/EFFR/IORB/SOFR99/DFF（免 key）+ FINRA Margin Statistics（重用 data/liquidity.json，未另抓）+ data/SP500.json／QQQ.json／SOXX.json／VOO.json（收盤價，未另抓）。</p>
+      </div>
+    </div>
+  </section>
+
   <nav class="cat-bar">
     <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
     <button class="cat-btn" data-cat="liquidity">💧　流動性</button>

@@ -199,6 +199,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_cpi.py
 
+      - name: Fetch US margin-cost benchmark rates (FRED SOFR/EFFR/IORB/SOFR99/DFF, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_margin_cost.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 
@@ -304,6 +308,10 @@ jobs:
       - name: Build Taiwan margin cost-basis / forced-liquidation map (TWSE MI_MARGN flow, 融資斷頭地圖)
         continue-on-error: true
         run: python scripts/fetch_margin_costmap.py
+
+      - name: Fetch TPEx (上櫃) margin balance / market cap (TPEx www, 分母缺源見腳本 docstring)
+        continue-on-error: true
+        run: python scripts/fetch_tpex_margin.py
 
       - name: Fetch TDCC leveraged-ETF holder counts (集保股權分散, 00631L/00675L/0050)
         continue-on-error: true
