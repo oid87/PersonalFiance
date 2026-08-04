@@ -57,6 +57,7 @@ import * as centralBanksTab  from './tabs/central_banks.js';
 import * as inflNowcastTab   from './tabs/infl_nowcast.js';
 import * as cpiTab           from './tabs/cpi.js';
 import * as usdliqTab        from './tabs/usdliq.js';
+import * as marginCostTab    from './tabs/margincost.js';
 import * as levvolTab         from './tabs/levvol.js';
 import * as taifexForeignOiTab from './tabs/taifex_foreign_oi.js';
 import * as twChipsTab       from './tabs/twchips.js';
@@ -119,6 +120,7 @@ registerAll([
   { id: 'infl_nowcast',  module: inflNowcastTab   },
   { id: 'cpi',           module: cpiTab           },
   { id: 'usdliq',        module: usdliqTab        },
+  { id: 'margincost',    module: marginCostTab    },
 ]);
 
 setupResizeHandler();
@@ -155,6 +157,7 @@ const CATEGORIES = [
       { id: 'credit',    label: '信用' },
       { id: 'net_liquidity', label: '淨流動性' },
       { id: 'usdliq',        label: '美元流動性' },
+      { id: 'margincost',    label: '美國融資成本' },
       { id: 'yield_curve',   label: '殖利率曲線' },
       { id: 'vix_term',      label: 'VIX期限結構' },
       { id: 'real_rates',    label: '實質利率' },
