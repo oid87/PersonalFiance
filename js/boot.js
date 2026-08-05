@@ -61,6 +61,7 @@ import * as marginCostTab    from './tabs/margincost.js';
 import * as levvolTab         from './tabs/levvol.js';
 import * as taifexForeignOiTab from './tabs/taifex_foreign_oi.js';
 import * as twChipsTab       from './tabs/twchips.js';
+import * as roc4Tab          from './tabs/roc4.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -121,6 +122,7 @@ registerAll([
   { id: 'cpi',           module: cpiTab           },
   { id: 'usdliq',        module: usdliqTab        },
   { id: 'margincost',    module: marginCostTab    },
+  { id: 'roc4',          module: roc4Tab          },
 ]);
 
 setupResizeHandler();
@@ -198,6 +200,7 @@ const CATEGORIES = [
       { id: 'marginpeak', label: '融資峰值' },
       { id: 'marginconc', label: '融資集中度' },
       { id: 'vvixregime', label: 'VVIX波動象限' },
+      { id: 'roc4',       label: 'ROC4急漲急跌' },
     ]
   },
 ];
