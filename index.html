@@ -2613,6 +2613,40 @@
     </div>
   </section>
 
+  <!-- ── ROC4急漲急跌 tab ─────────────────────────────────────────── -->
+  <section id="tab-roc4" class="tab-section" hidden>
+    <div class="controls" id="roc4-controls" style="flex-wrap:wrap;gap:8px;align-items:center">
+      <span class="chip active" id="roc4-up">上穿 +門檻</span>
+      <span class="chip active" id="roc4-dn">下穿 −門檻</span>
+      <span class="chip active" id="roc4-first">只標事件首日</span>
+      <label style="display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px">
+        門檻 ± <input type="number" id="roc4-thr" value="5" step="0.5" min="0.5"
+          style="width:64px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 6px"> %
+      </label>
+      <div style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-roc4-range="1Y">1Y</span>
+        <span class="chip" data-roc4-range="3Y">3Y</span>
+        <span class="chip" data-roc4-range="5Y">5Y</span>
+        <span class="chip active" data-roc4-range="10Y">10Y</span>
+        <span class="chip" data-roc4-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="roc4-chart" style="width:100%;height:560px"></div>
+    <div class="status" id="roc4-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div id="roc4-tables" style="padding:8px 24px"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> ROC4 怎麼看？</div>
+      <div class="info-panel-body">
+        <p>ROC(4) = Close[t] / Close[t−4] − 1，以<b>交易日</b>計（非日曆日）。四天內漲跌超過門檻＝一次<b>急漲／急殺</b>；上圖垂直虛線標事件日（綠＝上穿、紅＝下穿），下圖長條為 ROC4 本身、超標染色。</p>
+        <p style="margin-top:8px">「只標事件首日」把連續同向超標的日子合併成一次事件；關掉會看到 2020-03、2025-04 這種急殺整片糊成一團。<b>統計表一律用去重後首日</b>，不受這個勾選影響。</p>
+        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+          ⚠️ 事件之間<b>高度重疊、並非獨立樣本</b>——急殺常在同一波段連續出現，平均報酬與勝率容易被單一波段（2008、2020-03、2025-04）主導。門檻拉高時樣本數迅速掉到個位數，數字僅供環境判讀，<b>不是</b>交易訊號，不構成投資建議。
+        </p>
+        <p style="margin-top:8px;color:var(--muted)">資料：直接讀 data/QQQ.json（2000 起原始收盤，未還原股息），前端即時計算，無另開 fetch 腳本。防前視：事件於第 i 日收盤確立，T+h 報酬取 i+h 收盤；i+h 超出資料末端者排除、不補值（故表中 n 會小於事件數）。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── VVIX波動象限 tab ─────────────────────────────────────────── -->
   <section id="tab-vvixregime" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">
