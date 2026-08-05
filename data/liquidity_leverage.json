@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-04",
+  "updated": "2026-08-05",
   "source": "TW: FinMind-derived data/taiwan_margin_total.json + data/TWII.json + data/taiwan_money_supply.json(皆既有,未新抓)。US: data/liquidity.json(FINRA margin debit) + data/SPY.json(皆既有) + FRED M1SL/M2SL。JP: JPX 官網信用取引現在高 xls(即時) + yfinance ^N225(即時) + FRED MYAGM1/2JPM189S。",
   "note": "融資餘額絕對金額各國單位/定義不同不可跨國比較(台=億元、美=USD millions、日=百万円)；本 json 只提供 YoY%/excess(比率),可跨國比較「相對強度」但不做精確數值加減。所有計算皆 trailing(pct_change(12)/diff/rolling/expanding 只用截至當下資料),無未來函數。當月資料未滿月時,margin_yoy/index_yoy/excess 讀數會隨月底重取樣持續變動。",
   "tw": {
@@ -1905,9 +1905,9 @@
       },
       {
         "date": "2026-08-01",
-        "index_yoy": 78.9315,
-        "margin_yoy": 96.2261,
-        "excess": 17.2946,
+        "index_yoy": 84.0937,
+        "margin_yoy": 98.6544,
+        "excess": 14.5607,
         "action_point": false,
         "m1b_yoy": null,
         "m2_yoy": null
@@ -7147,6 +7147,15 @@
         "index_yoy": 73.0473,
         "margin_yoy": 82.7706,
         "excess": 9.7234,
+        "action_point": false,
+        "m1_yoy": null,
+        "m2_yoy": null
+      },
+      {
+        "date": "2026-07-01",
+        "index_yoy": 56.7137,
+        "margin_yoy": 62.0462,
+        "excess": 5.3325,
         "action_point": false,
         "m1_yoy": null,
         "m2_yoy": null
