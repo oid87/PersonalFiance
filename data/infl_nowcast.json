@@ -21,7 +21,7 @@
       "core_cpi_mom": 0.21,
       "pce_mom": 0.19,
       "core_pce_mom": 0.27,
-      "updated": "2026-08-06",
+      "updated": "2026-08-07",
       "cpi_yoy": 3.42,
       "core_cpi_yoy": 2.52,
       "pce_yoy": 3.69,
@@ -33,7 +33,7 @@
       "core_cpi_mom": 0.2,
       "pce_mom": 0.36,
       "core_pce_mom": 0.27,
-      "updated": "2026-08-06",
+      "updated": "2026-08-07",
       "cpi_yoy": 3.45,
       "core_cpi_yoy": 2.43,
       "pce_yoy": 3.79,
@@ -49,11 +49,11 @@
     },
     {
       "quarter": "2026-Q3",
-      "cpi": 1.04,
+      "cpi": 1.13,
       "core_cpi": 1.9,
-      "pce": 2.37,
+      "pce": 2.43,
       "core_pce": 3.01,
-      "updated": "2026-08-06"
+      "updated": "2026-08-07"
     }
   ]
 }
