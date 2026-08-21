@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-20",
+  "updated": "2026-08-21",
   "note": "S&P 500 估值。fpe=forward（前20大持股加權，排除 PE>50x；歷史為 FactSet/Yardeni 估計）；tpe=trailing（SPY ETF）。圖表 trailing 線另疊 multpl.com 長期歷史（SP500_PE.json）。",
   "data": [
     {
@@ -380,6 +380,12 @@
       "src": "calc",
       "fpe": 22.66,
       "tpe": 25.69
+    },
+    {
+      "date": "2026-08-21",
+      "src": "calc",
+      "fpe": 22.69,
+      "tpe": 25.79
     }
   ]
 }
