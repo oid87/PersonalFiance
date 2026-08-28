@@ -1738,8 +1738,8 @@
         "margin_yoy": 23.1058,
         "excess": -8.3978,
         "action_point": false,
-        "m1b_yoy": 4.06,
-        "m2_yoy": 5.39
+        "m1b_yoy": null,
+        "m2_yoy": null
       },
       {
         "date": "2025-02-01",
@@ -1891,8 +1891,8 @@
         "margin_yoy": 170.2948,
         "excess": 63.0434,
         "action_point": false,
-        "m1b_yoy": 8.16,
-        "m2_yoy": 8.05
+        "m1b_yoy": 8.14,
+        "m2_yoy": 8.04
       },
       {
         "date": "2026-07-01",
@@ -1900,14 +1900,14 @@
         "margin_yoy": 119.3758,
         "excess": 36.2189,
         "action_point": true,
-        "m1b_yoy": null,
-        "m2_yoy": null
+        "m1b_yoy": 6.12,
+        "m2_yoy": 6.58
       },
       {
         "date": "2026-08-01",
         "index_yoy": 91.1908,
-        "margin_yoy": 113.4411,
-        "excess": 22.2503,
+        "margin_yoy": 116.2086,
+        "excess": 25.0178,
         "action_point": false,
         "m1b_yoy": null,
         "m2_yoy": null
