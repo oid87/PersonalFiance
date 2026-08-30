@@ -1,0 +1,1427 @@
+{
+  "source": "FINRA margin debt balance, 經第三方轉載 https://www.thetrading.tools/data/indicators/margin-debt.csv (原始資料來源 FINRA margin statistics, finra.org 因 Cloudflare 反爬蟲無法直接抓取,改用此轉載源)",
+  "note": "margin_balance 單位 USD millions(百萬美元),月頻,資料回溯至1997-01-01。指數對照用既有 data/SP500.json 或 data/SPY.json,本檔不含指數資料。⚠️ 資料來源是第三方轉載站,非 FINRA 官方直連,若該站失效需另尋來源。",
+  "updated": "2026-08-29",
+  "data": [
+    {
+      "date": "1997-01-01",
+      "margin_balance": 103337
+    },
+    {
+      "date": "1997-02-01",
+      "margin_balance": 103886
+    },
+    {
+      "date": "1997-03-01",
+      "margin_balance": 104835
+    },
+    {
+      "date": "1997-04-01",
+      "margin_balance": 102842
+    },
+    {
+      "date": "1997-05-01",
+      "margin_balance": 111097
+    },
+    {
+      "date": "1997-06-01",
+      "margin_balance": 118843
+    },
+    {
+      "date": "1997-07-01",
+      "margin_balance": 121090
+    },
+    {
+      "date": "1997-08-01",
+      "margin_balance": 124404
+    },
+    {
+      "date": "1997-09-01",
+      "margin_balance": 131962
+    },
+    {
+      "date": "1997-10-01",
+      "margin_balance": 134491
+    },
+    {
+      "date": "1997-11-01",
+      "margin_balance": 132741
+    },
+    {
+      "date": "1997-12-01",
+      "margin_balance": 131560
+    },
+    {
+      "date": "1998-01-01",
+      "margin_balance": 132912
+    },
+    {
+      "date": "1998-02-01",
+      "margin_balance": 141328
+    },
+    {
+      "date": "1998-03-01",
+      "margin_balance": 146536
+    },
+    {
+      "date": "1998-04-01",
+      "margin_balance": 146589
+    },
+    {
+      "date": "1998-05-01",
+      "margin_balance": 150293
+    },
+    {
+      "date": "1998-06-01",
+      "margin_balance": 154357
+    },
+    {
+      "date": "1998-07-01",
+      "margin_balance": 160980
+    },
+    {
+      "date": "1998-08-01",
+      "margin_balance": 155879
+    },
+    {
+      "date": "1998-09-01",
+      "margin_balance": 144541
+    },
+    {
+      "date": "1998-10-01",
+      "margin_balance": 138399
+    },
+    {
+      "date": "1998-11-01",
+      "margin_balance": 148697
+    },
+    {
+      "date": "1998-12-01",
+      "margin_balance": 148674
+    },
+    {
+      "date": "1999-01-01",
+      "margin_balance": 162322
+    },
+    {
+      "date": "1999-02-01",
+      "margin_balance": 162909
+    },
+    {
+      "date": "1999-03-01",
+      "margin_balance": 166212
+    },
+    {
+      "date": "1999-04-01",
+      "margin_balance": 184329
+    },
+    {
+      "date": "1999-05-01",
+      "margin_balance": 189950
+    },
+    {
+      "date": "1999-06-01",
+      "margin_balance": 187695
+    },
+    {
+      "date": "1999-07-01",
+      "margin_balance": 189503
+    },
+    {
+      "date": "1999-08-01",
+      "margin_balance": 187616
+    },
+    {
+      "date": "1999-09-01",
+      "margin_balance": 189741
+    },
+    {
+      "date": "1999-10-01",
+      "margin_balance": 194259
+    },
+    {
+      "date": "1999-11-01",
+      "margin_balance": 218304
+    },
+    {
+      "date": "1999-12-01",
+      "margin_balance": 241967
+    },
+    {
+      "date": "2000-01-01",
+      "margin_balance": 260409
+    },
+    {
+      "date": "2000-02-01",
+      "margin_balance": 284206
+    },
+    {
+      "date": "2000-03-01",
+      "margin_balance": 299933
+    },
+    {
+      "date": "2000-04-01",
+      "margin_balance": 268716
+    },
+    {
+      "date": "2000-05-01",
+      "margin_balance": 256862
+    },
+    {
+      "date": "2000-06-01",
+      "margin_balance": 264471
+    },
+    {
+      "date": "2000-07-01",
+      "margin_balance": 263729
+    },
+    {
+      "date": "2000-08-01",
+      "margin_balance": 265166
+    },
+    {
+      "date": "2000-09-01",
+      "margin_balance": 270208
+    },
+    {
+      "date": "2000-10-01",
+      "margin_balance": 250965
+    },
+    {
+      "date": "2000-11-01",
+      "margin_balance": 237913
+    },
+    {
+      "date": "2000-12-01",
+      "margin_balance": 210385
+    },
+    {
+      "date": "2001-01-01",
+      "margin_balance": 208687
+    },
+    {
+      "date": "2001-02-01",
+      "margin_balance": 198887
+    },
+    {
+      "date": "2001-03-01",
+      "margin_balance": 174797
+    },
+    {
+      "date": "2001-04-01",
+      "margin_balance": 176096
+    },
+    {
+      "date": "2001-05-01",
+      "margin_balance": 183041
+    },
+    {
+      "date": "2001-06-01",
+      "margin_balance": 179585
+    },
+    {
+      "date": "2001-07-01",
+      "margin_balance": 173680
+    },
+    {
+      "date": "2001-08-01",
+      "margin_balance": 169316
+    },
+    {
+      "date": "2001-09-01",
+      "margin_balance": 157931
+    },
+    {
+      "date": "2001-10-01",
+      "margin_balance": 152367
+    },
+    {
+      "date": "2001-11-01",
+      "margin_balance": 159440
+    },
+    {
+      "date": "2001-12-01",
+      "margin_balance": 160473
+    },
+    {
+      "date": "2002-01-01",
+      "margin_balance": 160906
+    },
+    {
+      "date": "2002-02-01",
+      "margin_balance": 154931
+    },
+    {
+      "date": "2002-03-01",
+      "margin_balance": 160089
+    },
+    {
+      "date": "2002-04-01",
+      "margin_balance": 159072
+    },
+    {
+      "date": "2002-05-01",
+      "margin_balance": 157802
+    },
+    {
+      "date": "2002-06-01",
+      "margin_balance": 153972
+    },
+    {
+      "date": "2002-07-01",
+      "margin_balance": 143905
+    },
+    {
+      "date": "2002-08-01",
+      "margin_balance": 139146
+    },
+    {
+      "date": "2002-09-01",
+      "margin_balance": 136107
+    },
+    {
+      "date": "2002-10-01",
+      "margin_balance": 138647
+    },
+    {
+      "date": "2002-11-01",
+      "margin_balance": 139472
+    },
+    {
+      "date": "2002-12-01",
+      "margin_balance": 139451
+    },
+    {
+      "date": "2003-01-01",
+      "margin_balance": 141391
+    },
+    {
+      "date": "2003-02-01",
+      "margin_balance": 140516
+    },
+    {
+      "date": "2003-03-01",
+      "margin_balance": 144267
+    },
+    {
+      "date": "2003-04-01",
+      "margin_balance": 143237
+    },
+    {
+      "date": "2003-05-01",
+      "margin_balance": 153725
+    },
+    {
+      "date": "2003-06-01",
+      "margin_balance": 168281
+    },
+    {
+      "date": "2003-07-01",
+      "margin_balance": 174427
+    },
+    {
+      "date": "2003-08-01",
+      "margin_balance": 167200
+    },
+    {
+      "date": "2003-09-01",
+      "margin_balance": 171194
+    },
+    {
+      "date": "2003-10-01",
+      "margin_balance": 175428
+    },
+    {
+      "date": "2003-11-01",
+      "margin_balance": 182587
+    },
+    {
+      "date": "2003-12-01",
+      "margin_balance": 181459
+    },
+    {
+      "date": "2004-01-01",
+      "margin_balance": 189429
+    },
+    {
+      "date": "2004-02-01",
+      "margin_balance": 190448
+    },
+    {
+      "date": "2004-03-01",
+      "margin_balance": 191451
+    },
+    {
+      "date": "2004-04-01",
+      "margin_balance": 198778
+    },
+    {
+      "date": "2004-05-01",
+      "margin_balance": 193843
+    },
+    {
+      "date": "2004-06-01",
+      "margin_balance": 193993
+    },
+    {
+      "date": "2004-07-01",
+      "margin_balance": 187844
+    },
+    {
+      "date": "2004-08-01",
+      "margin_balance": 187828
+    },
+    {
+      "date": "2004-09-01",
+      "margin_balance": 193668
+    },
+    {
+      "date": "2004-10-01",
+      "margin_balance": 197999
+    },
+    {
+      "date": "2004-11-01",
+      "margin_balance": 211012
+    },
+    {
+      "date": "2004-12-01",
+      "margin_balance": 217573
+    },
+    {
+      "date": "2005-01-01",
+      "margin_balance": 220122
+    },
+    {
+      "date": "2005-02-01",
+      "margin_balance": 223155
+    },
+    {
+      "date": "2005-03-01",
+      "margin_balance": 226876
+    },
+    {
+      "date": "2005-04-01",
+      "margin_balance": 217447
+    },
+    {
+      "date": "2005-05-01",
+      "margin_balance": 219404
+    },
+    {
+      "date": "2005-06-01",
+      "margin_balance": 224153
+    },
+    {
+      "date": "2005-07-01",
+      "margin_balance": 233585
+    },
+    {
+      "date": "2005-08-01",
+      "margin_balance": 231400
+    },
+    {
+      "date": "2005-09-01",
+      "margin_balance": 244669
+    },
+    {
+      "date": "2005-10-01",
+      "margin_balance": 239868
+    },
+    {
+      "date": "2005-11-01",
+      "margin_balance": 242904
+    },
+    {
+      "date": "2005-12-01",
+      "margin_balance": 244098
+    },
+    {
+      "date": "2006-01-01",
+      "margin_balance": 255795
+    },
+    {
+      "date": "2006-02-01",
+      "margin_balance": 249609
+    },
+    {
+      "date": "2006-03-01",
+      "margin_balance": 259370
+    },
+    {
+      "date": "2006-04-01",
+      "margin_balance": 265164
+    },
+    {
+      "date": "2006-05-01",
+      "margin_balance": 255608
+    },
+    {
+      "date": "2006-06-01",
+      "margin_balance": 251495
+    },
+    {
+      "date": "2006-07-01",
+      "margin_balance": 256016
+    },
+    {
+      "date": "2006-08-01",
+      "margin_balance": 249368
+    },
+    {
+      "date": "2006-09-01",
+      "margin_balance": 261769
+    },
+    {
+      "date": "2006-10-01",
+      "margin_balance": 267710
+    },
+    {
+      "date": "2006-11-01",
+      "margin_balance": 294899
+    },
+    {
+      "date": "2006-12-01",
+      "margin_balance": 303288
+    },
+    {
+      "date": "2007-01-01",
+      "margin_balance": 311506
+    },
+    {
+      "date": "2007-02-01",
+      "margin_balance": 321171
+    },
+    {
+      "date": "2007-03-01",
+      "margin_balance": 317737
+    },
+    {
+      "date": "2007-04-01",
+      "margin_balance": 342084
+    },
+    {
+      "date": "2007-05-01",
+      "margin_balance": 382312
+    },
+    {
+      "date": "2007-06-01",
+      "margin_balance": 408444
+    },
+    {
+      "date": "2007-07-01",
+      "margin_balance": 416403
+    },
+    {
+      "date": "2007-08-01",
+      "margin_balance": 362475
+    },
+    {
+      "date": "2007-09-01",
+      "margin_balance": 359104
+    },
+    {
+      "date": "2007-10-01",
+      "margin_balance": 376979
+    },
+    {
+      "date": "2007-11-01",
+      "margin_balance": 379593
+    },
+    {
+      "date": "2007-12-01",
+      "margin_balance": 355292
+    },
+    {
+      "date": "2008-01-01",
+      "margin_balance": 365592
+    },
+    {
+      "date": "2008-02-01",
+      "margin_balance": 377088
+    },
+    {
+      "date": "2008-03-01",
+      "margin_balance": 349419
+    },
+    {
+      "date": "2008-04-01",
+      "margin_balance": 332303
+    },
+    {
+      "date": "2008-05-01",
+      "margin_balance": 341610
+    },
+    {
+      "date": "2008-06-01",
+      "margin_balance": 346892
+    },
+    {
+      "date": "2008-07-01",
+      "margin_balance": 343297
+    },
+    {
+      "date": "2008-08-01",
+      "margin_balance": 324814
+    },
+    {
+      "date": "2008-09-01",
+      "margin_balance": 345745
+    },
+    {
+      "date": "2008-10-01",
+      "margin_balance": 277568
+    },
+    {
+      "date": "2008-11-01",
+      "margin_balance": 227334
+    },
+    {
+      "date": "2008-12-01",
+      "margin_balance": 210185
+    },
+    {
+      "date": "2009-01-01",
+      "margin_balance": 205007
+    },
+    {
+      "date": "2009-02-01",
+      "margin_balance": 199655
+    },
+    {
+      "date": "2009-03-01",
+      "margin_balance": 203967
+    },
+    {
+      "date": "2009-04-01",
+      "margin_balance": 208010
+    },
+    {
+      "date": "2009-05-01",
+      "margin_balance": 214401
+    },
+    {
+      "date": "2009-06-01",
+      "margin_balance": 217140
+    },
+    {
+      "date": "2009-07-01",
+      "margin_balance": 228734
+    },
+    {
+      "date": "2009-08-01",
+      "margin_balance": 236251
+    },
+    {
+      "date": "2009-09-01",
+      "margin_balance": 254107
+    },
+    {
+      "date": "2009-10-01",
+      "margin_balance": 265404
+    },
+    {
+      "date": "2009-11-01",
+      "margin_balance": 250988
+    },
+    {
+      "date": "2009-12-01",
+      "margin_balance": 262399
+    },
+    {
+      "date": "2010-01-01",
+      "margin_balance": 266455
+    },
+    {
+      "date": "2010-02-01",
+      "margin_balance": 263657
+    },
+    {
+      "date": "2010-03-01",
+      "margin_balance": 277798
+    },
+    {
+      "date": "2010-04-01",
+      "margin_balance": 295550
+    },
+    {
+      "date": "2010-05-01",
+      "margin_balance": 268566
+    },
+    {
+      "date": "2010-06-01",
+      "margin_balance": 263202
+    },
+    {
+      "date": "2010-07-01",
+      "margin_balance": 267468
+    },
+    {
+      "date": "2010-08-01",
+      "margin_balance": 268371
+    },
+    {
+      "date": "2010-09-01",
+      "margin_balance": 288540
+    },
+    {
+      "date": "2010-10-01",
+      "margin_balance": 303428
+    },
+    {
+      "date": "2010-11-01",
+      "margin_balance": 309340
+    },
+    {
+      "date": "2010-12-01",
+      "margin_balance": 313678
+    },
+    {
+      "date": "2011-01-01",
+      "margin_balance": 326868
+    },
+    {
+      "date": "2011-02-01",
+      "margin_balance": 348979
+    },
+    {
+      "date": "2011-03-01",
+      "margin_balance": 355413
+    },
+    {
+      "date": "2011-04-01",
+      "margin_balance": 360883
+    },
+    {
+      "date": "2011-05-01",
+      "margin_balance": 355736
+    },
+    {
+      "date": "2011-06-01",
+      "margin_balance": 345273
+    },
+    {
+      "date": "2011-07-01",
+      "margin_balance": 344572
+    },
+    {
+      "date": "2011-08-01",
+      "margin_balance": 308866
+    },
+    {
+      "date": "2011-09-01",
+      "margin_balance": 298277
+    },
+    {
+      "date": "2011-10-01",
+      "margin_balance": 317028
+    },
+    {
+      "date": "2011-11-01",
+      "margin_balance": 303930
+    },
+    {
+      "date": "2011-12-01",
+      "margin_balance": 301616
+    },
+    {
+      "date": "2012-01-01",
+      "margin_balance": 309844
+    },
+    {
+      "date": "2012-02-01",
+      "margin_balance": 323021
+    },
+    {
+      "date": "2012-03-01",
+      "margin_balance": 330815
+    },
+    {
+      "date": "2012-04-01",
+      "margin_balance": 335154
+    },
+    {
+      "date": "2012-05-01",
+      "margin_balance": 315147
+    },
+    {
+      "date": "2012-06-01",
+      "margin_balance": 320952
+    },
+    {
+      "date": "2012-07-01",
+      "margin_balance": 313525
+    },
+    {
+      "date": "2012-08-01",
+      "margin_balance": 320395
+    },
+    {
+      "date": "2012-09-01",
+      "margin_balance": 339159
+    },
+    {
+      "date": "2012-10-01",
+      "margin_balance": 342325
+    },
+    {
+      "date": "2012-11-01",
+      "margin_balance": 351441
+    },
+    {
+      "date": "2012-12-01",
+      "margin_balance": 355009
+    },
+    {
+      "date": "2013-01-01",
+      "margin_balance": 388123
+    },
+    {
+      "date": "2013-02-01",
+      "margin_balance": 390351
+    },
+    {
+      "date": "2013-03-01",
+      "margin_balance": 403933
+    },
+    {
+      "date": "2013-04-01",
+      "margin_balance": 408677
+    },
+    {
+      "date": "2013-05-01",
+      "margin_balance": 401606
+    },
+    {
+      "date": "2013-06-01",
+      "margin_balance": 407681
+    },
+    {
+      "date": "2013-07-01",
+      "margin_balance": 412101
+    },
+    {
+      "date": "2013-08-01",
+      "margin_balance": 414442
+    },
+    {
+      "date": "2013-09-01",
+      "margin_balance": 432852
+    },
+    {
+      "date": "2013-10-01",
+      "margin_balance": 445022
+    },
+    {
+      "date": "2013-11-01",
+      "margin_balance": 456378
+    },
+    {
+      "date": "2013-12-01",
+      "margin_balance": 478502
+    },
+    {
+      "date": "2014-01-01",
+      "margin_balance": 487549
+    },
+    {
+      "date": "2014-02-01",
+      "margin_balance": 502093
+    },
+    {
+      "date": "2014-03-01",
+      "margin_balance": 487932
+    },
+    {
+      "date": "2014-04-01",
+      "margin_balance": 475195
+    },
+    {
+      "date": "2014-05-01",
+      "margin_balance": 475362
+    },
+    {
+      "date": "2014-06-01",
+      "margin_balance": 502270
+    },
+    {
+      "date": "2014-07-01",
+      "margin_balance": 498671
+    },
+    {
+      "date": "2014-08-01",
+      "margin_balance": 501000
+    },
+    {
+      "date": "2014-09-01",
+      "margin_balance": 503901
+    },
+    {
+      "date": "2014-10-01",
+      "margin_balance": 492888
+    },
+    {
+      "date": "2014-11-01",
+      "margin_balance": 496341
+    },
+    {
+      "date": "2014-12-01",
+      "margin_balance": 495756
+    },
+    {
+      "date": "2015-01-01",
+      "margin_balance": 485872
+    },
+    {
+      "date": "2015-02-01",
+      "margin_balance": 504923
+    },
+    {
+      "date": "2015-03-01",
+      "margin_balance": 518055
+    },
+    {
+      "date": "2015-04-01",
+      "margin_balance": 549964
+    },
+    {
+      "date": "2015-05-01",
+      "margin_balance": 541671
+    },
+    {
+      "date": "2015-06-01",
+      "margin_balance": 547957
+    },
+    {
+      "date": "2015-07-01",
+      "margin_balance": 530744
+    },
+    {
+      "date": "2015-08-01",
+      "margin_balance": 515960
+    },
+    {
+      "date": "2015-09-01",
+      "margin_balance": 497279
+    },
+    {
+      "date": "2015-10-01",
+      "margin_balance": 513941
+    },
+    {
+      "date": "2015-11-01",
+      "margin_balance": 515410
+    },
+    {
+      "date": "2015-12-01",
+      "margin_balance": 503444
+    },
+    {
+      "date": "2016-01-01",
+      "margin_balance": 487200
+    },
+    {
+      "date": "2016-02-01",
+      "margin_balance": 474156
+    },
+    {
+      "date": "2016-03-01",
+      "margin_balance": 483909
+    },
+    {
+      "date": "2016-04-01",
+      "margin_balance": 495178
+    },
+    {
+      "date": "2016-05-01",
+      "margin_balance": 489867
+    },
+    {
+      "date": "2016-06-01",
+      "margin_balance": 487636
+    },
+    {
+      "date": "2016-07-01",
+      "margin_balance": 513221
+    },
+    {
+      "date": "2016-08-01",
+      "margin_balance": 510157
+    },
+    {
+      "date": "2016-09-01",
+      "margin_balance": 540615
+    },
+    {
+      "date": "2016-10-01",
+      "margin_balance": 523760
+    },
+    {
+      "date": "2016-11-01",
+      "margin_balance": 539972
+    },
+    {
+      "date": "2016-12-01",
+      "margin_balance": 529372
+    },
+    {
+      "date": "2017-01-01",
+      "margin_balance": 553557
+    },
+    {
+      "date": "2017-02-01",
+      "margin_balance": 568637
+    },
+    {
+      "date": "2017-03-01",
+      "margin_balance": 577674
+    },
+    {
+      "date": "2017-04-01",
+      "margin_balance": 590797
+    },
+    {
+      "date": "2017-05-01",
+      "margin_balance": 582764
+    },
+    {
+      "date": "2017-06-01",
+      "margin_balance": 584258
+    },
+    {
+      "date": "2017-07-01",
+      "margin_balance": 594414
+    },
+    {
+      "date": "2017-08-01",
+      "margin_balance": 596567
+    },
+    {
+      "date": "2017-09-01",
+      "margin_balance": 606334
+    },
+    {
+      "date": "2017-10-01",
+      "margin_balance": 607838
+    },
+    {
+      "date": "2017-11-01",
+      "margin_balance": 627422
+    },
+    {
+      "date": "2017-12-01",
+      "margin_balance": 642798
+    },
+    {
+      "date": "2018-01-01",
+      "margin_balance": 665716
+    },
+    {
+      "date": "2018-02-01",
+      "margin_balance": 645064
+    },
+    {
+      "date": "2018-03-01",
+      "margin_balance": 645235
+    },
+    {
+      "date": "2018-04-01",
+      "margin_balance": 652303
+    },
+    {
+      "date": "2018-05-01",
+      "margin_balance": 668940
+    },
+    {
+      "date": "2018-06-01",
+      "margin_balance": 646931
+    },
+    {
+      "date": "2018-07-01",
+      "margin_balance": 652790
+    },
+    {
+      "date": "2018-08-01",
+      "margin_balance": 652395
+    },
+    {
+      "date": "2018-09-01",
+      "margin_balance": 648126
+    },
+    {
+      "date": "2018-10-01",
+      "margin_balance": 607645
+    },
+    {
+      "date": "2018-11-01",
+      "margin_balance": 592593
+    },
+    {
+      "date": "2018-12-01",
+      "margin_balance": 554285
+    },
+    {
+      "date": "2019-01-01",
+      "margin_balance": 568433
+    },
+    {
+      "date": "2019-02-01",
+      "margin_balance": 581205
+    },
+    {
+      "date": "2019-03-01",
+      "margin_balance": 574013
+    },
+    {
+      "date": "2019-04-01",
+      "margin_balance": 588721
+    },
+    {
+      "date": "2019-05-01",
+      "margin_balance": 568751
+    },
+    {
+      "date": "2019-06-01",
+      "margin_balance": 596304
+    },
+    {
+      "date": "2019-07-01",
+      "margin_balance": 602139
+    },
+    {
+      "date": "2019-08-01",
+      "margin_balance": 564894
+    },
+    {
+      "date": "2019-09-01",
+      "margin_balance": 555910
+    },
+    {
+      "date": "2019-10-01",
+      "margin_balance": 554604
+    },
+    {
+      "date": "2019-11-01",
+      "margin_balance": 563482
+    },
+    {
+      "date": "2019-12-01",
+      "margin_balance": 579221
+    },
+    {
+      "date": "2020-01-01",
+      "margin_balance": 561812
+    },
+    {
+      "date": "2020-02-01",
+      "margin_balance": 545127
+    },
+    {
+      "date": "2020-03-01",
+      "margin_balance": 479291
+    },
+    {
+      "date": "2020-04-01",
+      "margin_balance": 524696
+    },
+    {
+      "date": "2020-05-01",
+      "margin_balance": 552543
+    },
+    {
+      "date": "2020-06-01",
+      "margin_balance": 584676
+    },
+    {
+      "date": "2020-07-01",
+      "margin_balance": 613830
+    },
+    {
+      "date": "2020-08-01",
+      "margin_balance": 645547
+    },
+    {
+      "date": "2020-09-01",
+      "margin_balance": 654324
+    },
+    {
+      "date": "2020-10-01",
+      "margin_balance": 659313
+    },
+    {
+      "date": "2020-11-01",
+      "margin_balance": 722118
+    },
+    {
+      "date": "2020-12-01",
+      "margin_balance": 778037
+    },
+    {
+      "date": "2021-01-01",
+      "margin_balance": 798605
+    },
+    {
+      "date": "2021-02-01",
+      "margin_balance": 813680
+    },
+    {
+      "date": "2021-03-01",
+      "margin_balance": 822551
+    },
+    {
+      "date": "2021-04-01",
+      "margin_balance": 847186
+    },
+    {
+      "date": "2021-05-01",
+      "margin_balance": 861626
+    },
+    {
+      "date": "2021-06-01",
+      "margin_balance": 882103
+    },
+    {
+      "date": "2021-07-01",
+      "margin_balance": 844324
+    },
+    {
+      "date": "2021-08-01",
+      "margin_balance": 911545
+    },
+    {
+      "date": "2021-09-01",
+      "margin_balance": 903117
+    },
+    {
+      "date": "2021-10-01",
+      "margin_balance": 935862
+    },
+    {
+      "date": "2021-11-01",
+      "margin_balance": 918598
+    },
+    {
+      "date": "2021-12-01",
+      "margin_balance": 910021
+    },
+    {
+      "date": "2022-01-01",
+      "margin_balance": 829637
+    },
+    {
+      "date": "2022-02-01",
+      "margin_balance": 835255
+    },
+    {
+      "date": "2022-03-01",
+      "margin_balance": 799660
+    },
+    {
+      "date": "2022-04-01",
+      "margin_balance": 772940
+    },
+    {
+      "date": "2022-05-01",
+      "margin_balance": 752944
+    },
+    {
+      "date": "2022-06-01",
+      "margin_balance": 683445
+    },
+    {
+      "date": "2022-07-01",
+      "margin_balance": 696781
+    },
+    {
+      "date": "2022-08-01",
+      "margin_balance": 687787
+    },
+    {
+      "date": "2022-09-01",
+      "margin_balance": 664009
+    },
+    {
+      "date": "2022-10-01",
+      "margin_balance": 649618
+    },
+    {
+      "date": "2022-11-01",
+      "margin_balance": 643783
+    },
+    {
+      "date": "2022-12-01",
+      "margin_balance": 606659
+    },
+    {
+      "date": "2023-01-01",
+      "margin_balance": 641228
+    },
+    {
+      "date": "2023-02-01",
+      "margin_balance": 624379
+    },
+    {
+      "date": "2023-03-01",
+      "margin_balance": 645429
+    },
+    {
+      "date": "2023-04-01",
+      "margin_balance": 631949
+    },
+    {
+      "date": "2023-05-01",
+      "margin_balance": 644170
+    },
+    {
+      "date": "2023-06-01",
+      "margin_balance": 681228
+    },
+    {
+      "date": "2023-07-01",
+      "margin_balance": 709834
+    },
+    {
+      "date": "2023-08-01",
+      "margin_balance": 689185
+    },
+    {
+      "date": "2023-09-01",
+      "margin_balance": 680846
+    },
+    {
+      "date": "2023-10-01",
+      "margin_balance": 635276
+    },
+    {
+      "date": "2023-11-01",
+      "margin_balance": 660887
+    },
+    {
+      "date": "2023-12-01",
+      "margin_balance": 700774
+    },
+    {
+      "date": "2024-01-01",
+      "margin_balance": 701975
+    },
+    {
+      "date": "2024-02-01",
+      "margin_balance": 742963
+    },
+    {
+      "date": "2024-03-01",
+      "margin_balance": 784136
+    },
+    {
+      "date": "2024-04-01",
+      "margin_balance": 775464
+    },
+    {
+      "date": "2024-05-01",
+      "margin_balance": 809431
+    },
+    {
+      "date": "2024-06-01",
+      "margin_balance": 809322
+    },
+    {
+      "date": "2024-07-01",
+      "margin_balance": 810835
+    },
+    {
+      "date": "2024-08-01",
+      "margin_balance": 797162
+    },
+    {
+      "date": "2024-09-01",
+      "margin_balance": 813211
+    },
+    {
+      "date": "2024-10-01",
+      "margin_balance": 815369
+    },
+    {
+      "date": "2024-11-01",
+      "margin_balance": 890852
+    },
+    {
+      "date": "2024-12-01",
+      "margin_balance": 899168
+    },
+    {
+      "date": "2025-01-01",
+      "margin_balance": 937253
+    },
+    {
+      "date": "2025-02-01",
+      "margin_balance": 918144
+    },
+    {
+      "date": "2025-03-01",
+      "margin_balance": 880316
+    },
+    {
+      "date": "2025-04-01",
+      "margin_balance": 850558
+    },
+    {
+      "date": "2025-05-01",
+      "margin_balance": 920960
+    },
+    {
+      "date": "2025-06-01",
+      "margin_balance": 1007961
+    },
+    {
+      "date": "2025-07-01",
+      "margin_balance": 1022548
+    },
+    {
+      "date": "2025-08-01",
+      "margin_balance": 1059723
+    },
+    {
+      "date": "2025-09-01",
+      "margin_balance": 1126494
+    },
+    {
+      "date": "2025-10-01",
+      "margin_balance": 1183654
+    },
+    {
+      "date": "2025-11-01",
+      "margin_balance": 1214321
+    },
+    {
+      "date": "2025-12-01",
+      "margin_balance": 1225597
+    },
+    {
+      "date": "2026-01-01",
+      "margin_balance": 1279042
+    },
+    {
+      "date": "2026-02-01",
+      "margin_balance": 1253192
+    },
+    {
+      "date": "2026-03-01",
+      "margin_balance": 1220922
+    },
+    {
+      "date": "2026-04-01",
+      "margin_balance": 1304281
+    },
+    {
+      "date": "2026-05-01",
+      "margin_balance": 1415557
+    },
+    {
+      "date": "2026-06-01",
+      "margin_balance": 1502072
+    },
+    {
+      "date": "2026-07-01",
+      "margin_balance": 1417225
+    }
+  ]
+}

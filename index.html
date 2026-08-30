@@ -3388,6 +3388,57 @@
     </div>
   </section>
 
+  <!-- ── 全球融資餘額 tab ──────────────────────────────────────────── -->
+  <section id="tab-marginglobal" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span style="color:var(--text);font-weight:600;font-size:13px">全球主要股市融資餘額</span>
+      <div id="mg-range-picker" style="margin-left:auto;display:flex;gap:4px;align-items:center">
+        <span class="chip" data-mg-range="6M">6M</span>
+        <span class="chip" data-mg-range="1Y">1Y</span>
+        <span class="chip active" data-mg-range="3Y">3Y</span>
+        <span class="chip" data-mg-range="5Y">5Y</span>
+        <span class="chip" data-mg-range="10Y">10Y</span>
+        <span class="chip" data-mg-range="MAX">MAX</span>
+        <span class="chip active" id="mg-vwac-toggle">估計平均成本</span>
+        <span class="chip" id="mg-anchor-clear" style="display:none">✕ 清除錨點</span>
+      </div>
+    </div>
+    <div id="mg-altindex-picker" style="display:none;padding:4px 16px;gap:4px;align-items:center;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:11px;margin-right:4px">美股指數比較(可切換集中度代理):</span>
+      <span class="chip active" data-mg-altindex="sp500">S&amp;P500</span>
+      <span class="chip" data-mg-altindex="qqq">QQQ</span>
+      <span class="chip" data-mg-altindex="mags">MAGS(七巨頭)</span>
+    </div>
+    <div id="mg-table" style="padding:8px 16px"></div>
+    <div id="mg-chart" style="width:100%;height:480px"></div>
+    <div class="status" id="mg-drag-status" style="min-height:18px"></div>
+    <div id="mg-pct-chart" style="width:100%;height:240px;display:none"></div>
+    <div class="status" id="mg-pct-status"></div>
+    <div class="status" id="mg-status">切換至此 tab 自動載入…</div>
+    <div class="status" id="mg-vwac-status"></div>
+
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 怎麼看這頁？</div>
+      <div class="info-panel-body">
+        <p>上表列出 6 個市場最新融資餘額，點任一列切換下方雙軸圖：左軸=融資餘額(bar)，右軸=對應大盤指數(line)。點圖上任一資料點可設定「錨點」，下方會出現該點之後融資餘額%變動 vs 指數%變動的比較圖，以及兩者差值(槓桿堆積訊號)。⚠️ <b>台股上櫃</b>因官方無公開「融資金額」總計來源，只能用融資<b>張數</b>當代理指標，不是金額，不可跟其他市場直接比較單位。⚠️ 各市場資料頻率不同(台股/中國/韓國日頻，日本週頻，美國月頻)，疊圖只是方便對照時間軸。⚠️ 中國融資餘額為上交所+深交所加總，目前僅回溯近 3 年(非全歷史)。指數資料(日本/韓國/中國)受 yfinance 資料源限制，最早只回溯到 2000 年附近，早於此的融資餘額資料會找不到對應指數。</p>
+        <p>⚠️ <b>美國市場</b>可切換右軸指數為 S&amp;P500／QQQ(那斯達克100)／MAGS(七巨頭ETF)，讓你用集中度更高的代理指數對照融資餘額，避免大盤指數把少數巨頭部位的真實情況稀釋掉。</p>
+        <p>⚠️ <b>「估計平均融資成本(VWAC近似)」是簡化估算，不是真實逐戶平均成本</b>：只用每日融資餘額的「淨增額」當新增融資的權重滾動加權平均，沒有像台股 <code>marginmap.js</code> 那樣拆解逐日買賣、也沒有 LIFO 式的部位衰減假設，數字僅供參考量級。淨減少(還款)時假設不改變平均成本，這是簡化假設，不是查證事實。資料集第一筆的初始成本直接用「當下指數價位」帶入，資料起點之前既有的存量(vintage)無法追蹤(概念比照 marginmap.js 對 2020-01-02 以前既有存量的相同揭露)。且這仍是<b>市場整體加總</b>的估算，不代表任何個別投資人或個股層級的實際部位——美股 QQQ/MAGS 代理指數切換只解決「大盤指數低估集中部位真實情況」的問題，VWAC 模型本身仍以整體市場融資餘額計算，並未解決個股/個別部位層級的盲點。</p>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 各國融資斷頭規則(維持率/追繳/強制平倉)</div>
+      <div class="info-panel-body">
+        <p><b>⚠️ 以下規則因市場/券商而異，且會隨時間修法調整，僅供理解機制參考，不構成投資建議，正式操作請以券商公告與當地法規為準。</b></p>
+        <p><b>台灣(上市/上櫃)</b>：融資成數(一般股)6成 → 起始維持率 = 1/60% ≈ <b>166.67%</b>。維持率 = 擔保品市值 ÷ 融資金額。低於 <b>130%</b> 即發出追繳令，須於通知後 2 個營業日內補繳差額，逾期未補則證券商可強制處分(斷頭賣出擔保品)。</p>
+        <p><b>美國</b>：Regulation T 規定初始保證金 <b>50%</b>(最多 2 倍槓桿)。FINRA Rule 4210 規定全國最低維持保證金 <b>25%</b>(公式=權益÷市值)，各券商常自訂更高(如 30%~40%)。跌破門檻即產生 margin call，⚠️ 券商可不經通知逕行賣出部位，不保證有補繳緩衝期(部分券商給約 T+3，屬各家自訂政策非法規保障)。⚠️ <b>公式分母跟台灣不同</b>：美股是「權益/市值」、台灣是「擔保品市值/融資金額」，兩者門檻數字不可直接套用比較(美股 25% 約略換算成台灣式≈133%)。來源：FINRA Rule 4210、Regulation T(12 CFR 220)。</p>
+        <p><b>日本</b>：委託保証金率法定最低 <b>30%</b>(JSDA自主規制)。維持率業界慣例 <b>20%</b>(各券商可自訂更高)。跌破門檻發出「追証」通知，補繳期限依券商而異(常見1~2個營業日內，如松井證券為翌(翌)營業日11:30前)，逾期未補則強制反對売買(強制決済)。⚠️ 20%/30% 為業界慣例整理，非逐字引用JSDA條文原文。來源：SMBC日興證券/松井證券/SBI證券/樂天證券官網說明。</p>
+        <p><b>中國(滬深)</b>：維持擔保比例 = (現金+信用證券市值+其他擔保物) ÷ (融資融券負債+利息費用)。⚠️ <b>2019年8月深滬交易所已修法刪除「130%統一最低門檻」的強制規定</b>，改為「各券商與客戶自行約定」，目前 <b>130%只是業界普遍沿用的參考慣例值</b>，並非現行法定統一標準。跌破約定門檻須於約定期限內補繳，逾期未補則強制平倉，期限由各券商自訂。來源：深圳證券交易所《融資融券交易實施細則》(2023年修訂版)第4.9~4.14條。</p>
+        <p><b>韓國</b>：初始保證金率各券商自訂(常見40%~60%，最常見45%)。擔保維持比率業界慣例 <b>140%</b>(非KOFIA/KRX統一法定值，各券商依保證金率高低分級自訂，範圍約120%~170%)。計算=擔保評估總額(現金+擔保證券市值)÷融資金額。跌破門檻約 D+1 需補繳，逾期約 D+2~D+3 強制處分賣出(반대매매)。來源：KOFIA신용거래융자핵심설명서範本、韓國投資證券/未來資產證券/KB證券等官方핵심설명서。</p>
+      </div>
+    </div>
+  </section>
+
   <nav class="cat-bar">
     <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
     <button class="cat-btn" data-cat="liquidity">💧　流動性</button>
