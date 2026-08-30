@@ -203,6 +203,25 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_margin_cost.py
 
+      # 全球融資餘額儀表板:中/日/美/韓 4 個非台股市場,不需要 FINMIND_TOKEN,跟台股無關,
+      # 放在 us job(兩個 job 都跑 fetch_stocks.py,對應的 ^TWOII/^N225/^KS11/SSE/SZSE
+      # 指數 ticker 已經在 fetch_stocks.py 裡,這裡只補融資餘額本體)。
+      - name: Fetch China (SSE+SZSE) margin financing balance (akshare)
+        continue-on-error: true
+        run: python scripts/fetch_margin_cn.py
+
+      - name: Fetch Japan margin trading balance (JPX weekly xls)
+        continue-on-error: true
+        run: python scripts/fetch_margin_jp.py
+
+      - name: Fetch US margin debt balance (FINRA via third-party mirror, Cloudflare-blocked at source)
+        continue-on-error: true
+        run: python scripts/fetch_margin_us.py
+
+      - name: Fetch Korea margin financing balance (KOFIA FreeSIS API)
+        continue-on-error: true
+        run: python scripts/fetch_margin_kr.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 
