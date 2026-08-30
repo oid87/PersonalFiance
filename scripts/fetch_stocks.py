@@ -65,6 +65,11 @@ TICKERS: dict[str, tuple[str, str]] = {
     "^VVIX":   ("VVIX",    "2007-01-01"),  # VIX of VIX (volatility uncertainty) — vvixregime tab
     # Taiwan weighted index — used in 估值/位階/台股壓力
     "^TWII":   ("TWII",    "1997-07-02"),
+    "^TWOII":  ("TWOII",   "2013-03-05"),  # Taiwan OTC(櫃買)weighted index — 融資餘額儀表板用
+    "^N225":     ("N225",     "1965-01-05"),  # Nikkei 225 — 日本融資餘額儀表板用
+    "^KS11":     ("KS11",     "1996-12-11"),  # KOSPI — 韓國融資餘額儀表板用
+    "000001.SS": ("SSE",      "1997-07-02"),  # 上證指數 — 中國融資餘額儀表板用
+    "399001.SZ": ("SZSE",     "1997-08-22"),  # 深證成指 — 中國融資餘額儀表板用
 }
 
 # Known yfinance vendor data artifacts: the price feed splices two

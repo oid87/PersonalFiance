@@ -62,6 +62,7 @@ import * as levvolTab         from './tabs/levvol.js';
 import * as taifexForeignOiTab from './tabs/taifex_foreign_oi.js';
 import * as twChipsTab       from './tabs/twchips.js';
 import * as roc4Tab          from './tabs/roc4.js';
+import * as marginGlobalTab  from './tabs/marginglobal.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -123,6 +124,7 @@ registerAll([
   { id: 'usdliq',        module: usdliqTab        },
   { id: 'margincost',    module: marginCostTab    },
   { id: 'roc4',          module: roc4Tab          },
+  { id: 'marginglobal',  module: marginGlobalTab  },
 ]);
 
 setupResizeHandler();
@@ -160,6 +162,7 @@ const CATEGORIES = [
       { id: 'net_liquidity', label: '淨流動性' },
       { id: 'usdliq',        label: '美元流動性' },
       { id: 'margincost',    label: '美國融資成本' },
+      { id: 'marginglobal',  label: '全球融資餘額' },
       { id: 'yield_curve',   label: '殖利率曲線' },
       { id: 'vix_term',      label: 'VIX期限結構' },
       { id: 'real_rates',    label: '實質利率' },
