@@ -1,7 +1,7 @@
 {
   "source": "TAIFEX 三大法人-區分各期貨契約-依日期 (futContractsDateExcel), commodityId=TXF, 外資(及陸資)",
-  "note": "incremental refresh from 2026-08-21, existing history preserved",
-  "updated": "2026-09-01",
+  "note": "incremental refresh from 2026-08-22, existing history preserved",
+  "updated": "2026-09-02",
   "data": [
     {
       "date": "2025-07-14",
@@ -686,6 +686,10 @@
     {
       "date": "2026-09-01",
       "tx_foreign_net_oi": -78706
+    },
+    {
+      "date": "2026-09-02",
+      "tx_foreign_net_oi": -85329
     }
   ]
 }

@@ -1914,9 +1914,9 @@
       },
       {
         "date": "2026-09-01",
-        "index_yoy": 81.827,
-        "margin_yoy": 109.8973,
-        "excess": 28.0702,
+        "index_yoy": 78.7907,
+        "margin_yoy": 112.6421,
+        "excess": 33.8514,
         "action_point": false,
         "m1b_yoy": null,
         "m2_yoy": null
@@ -7175,6 +7175,15 @@
         "margin_yoy": 62.0462,
         "excess": 5.3325,
         "action_point": false,
+        "m1_yoy": null,
+        "m2_yoy": null
+      },
+      {
+        "date": "2026-08-01",
+        "index_yoy": 55.2301,
+        "margin_yoy": 57.4256,
+        "excess": 2.1955,
+        "action_point": true,
         "m1_yoy": null,
         "m2_yoy": null
       }
