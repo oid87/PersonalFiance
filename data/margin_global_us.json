@@ -1,7 +1,7 @@
 {
   "source": "FINRA margin debt balance, 經第三方轉載 https://www.thetrading.tools/data/indicators/margin-debt.csv (原始資料來源 FINRA margin statistics, finra.org 因 Cloudflare 反爬蟲無法直接抓取,改用此轉載源)",
   "note": "margin_balance 單位 USD millions(百萬美元),月頻,資料回溯至1997-01-01。指數對照用既有 data/SP500.json 或 data/SPY.json,本檔不含指數資料。⚠️ 資料來源是第三方轉載站,非 FINRA 官方直連,若該站失效需另尋來源。",
-  "updated": "2026-09-02",
+  "updated": "2026-09-03",
   "data": [
     {
       "date": "1997-01-01",
