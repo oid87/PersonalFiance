@@ -63,6 +63,7 @@ import * as taifexForeignOiTab from './tabs/taifex_foreign_oi.js';
 import * as twChipsTab       from './tabs/twchips.js';
 import * as roc4Tab          from './tabs/roc4.js';
 import * as marginGlobalTab  from './tabs/marginglobal.js';
+import * as fwdpeTab         from './tabs/fwdpe.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -125,6 +126,7 @@ registerAll([
   { id: 'margincost',    module: marginCostTab    },
   { id: 'roc4',          module: roc4Tab          },
   { id: 'marginglobal',  module: marginGlobalTab  },
+  { id: 'fwdpe',         module: fwdpeTab         },
 ]);
 
 setupResizeHandler();
@@ -178,6 +180,7 @@ const CATEGORIES = [
       { id: 'pentagram', label: '五線譜' },
       { id: 'macro',     label: '宏觀' },
       { id: 'valuation', label: '估值' },
+      { id: 'fwdpe',     label: 'Forward P/E 自建' },
       { id: 'position',  label: '位階' },
       { id: 'struct',    label: '結構判讀' },
       { id: 'relstrength', label: 'NDX相對強度' },

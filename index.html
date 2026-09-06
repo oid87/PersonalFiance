@@ -342,6 +342,31 @@
     </div>
   </section>
 
+  <!-- ── Forward P/E 自建 tab ─────────────────────────────────────── -->
+  <section id="tab-fwdpe" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <span id="fwdpe-voo-toggle" class="chip active" data-tooltip="顯示/隱藏 VOO">VOO</span>
+      <span id="fwdpe-qqq-toggle" class="chip active" data-tooltip="顯示/隱藏 QQQ">QQQ</span>
+      <span id="fwdpe-fy2-toggle" class="chip" data-tooltip="顯示/隱藏 FY2 線（預設隱藏）">顯示 FY2 線</span>
+    </div>
+    <div id="fwdpe-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">VOO Forward P/E</div>
+        <div class="bc-main"><span class="bc-pct" id="fwdpe-voo-val">—</span></div>
+        <div class="bc-count" id="fwdpe-voo-sub">—</div>
+        <div class="bc-signal" id="fwdpe-voo-signal">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label">QQQ Forward P/E</div>
+        <div class="bc-main"><span class="bc-pct" id="fwdpe-qqq-val">—</span></div>
+        <div class="bc-count" id="fwdpe-qqq-sub">—</div>
+        <div class="bc-signal" id="fwdpe-qqq-signal">—</div>
+      </div>
+    </div>
+    <div id="fwdpe-chart" style="height:520px"></div>
+    <div class="status" id="fwdpe-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+  </section>
+
   <!-- ── 情緒 tab ──────────────────────────────────────────────────── -->
   <section id="tab-sentiment" class="tab-section" hidden>
     <div class="controls">
