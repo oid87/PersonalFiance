@@ -39,13 +39,16 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_forward_pe.py --ticker VOO --rows 0
 
-      # QQQ 序列暫緩：尚無同日第三方 forward-NTM 基準可驗證，見 docs/forward_pe.md
-      # 「已知限制」一節。VOO 已用 FactSet Earnings Insight 驗證過方法論正確
-      # （+0.43% 誤差），QQQ 目前只有內部交叉檢查（slickcharts vs Nasdaq 市值權重，
-      # 差 1.13%），不是外部驗證，故先不寫入 data/。
-      # - name: Fetch QQQ forward P/E
-      #   continue-on-error: true
-      #   run: python scripts/fetch_forward_pe.py --ticker QQQ --rows 0
+      # QQQ 已於 2026-09-06 開始寫入序列。兩輪查證已窮盡免費來源，QQQ（NASDAQ-100）
+      # 目前沒有可用的同日第三方 forward-NTM 基準（Invesco/worldperatio/Morningstar
+      # 皆 trailing 口徑，iShares CNDX fact sheet 口徑自相矛盾，WSJ 已查明是日曆年
+      # 口徑，其餘來源被擋或無 P/E 欄位），見 docs/forward_pe.md「已知限制」一節。
+      # 目前僅有內部交叉檢查（slickcharts 指數權重 vs Nasdaq 市值權重，差 1.13%）
+      # 與 FX/holdings 交叉比對，不是外部驗證——這是已知記錄在文件裡的限制，
+      # 不再是暫緩寫入的理由。
+      - name: Fetch QQQ forward P/E
+        continue-on-error: true
+        run: python scripts/fetch_forward_pe.py --ticker QQQ --rows 0
 
       - name: Commit updates
         run: |

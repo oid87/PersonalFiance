@@ -427,26 +427,56 @@ VOO 首跑 504 檔中 2 檔沒有 forward EPS：`FISV`（Fiserv，yfinance 有�
 
 ## 已知限制
 
-**QQQ 序列尚未開始**（2026-09-06）——這輪只寫入 VOO 的第一個資料點
-（`data/forward_pe_voo.jsonl`），`data/forward_pe_qqq.jsonl`／`data/chart_qqq.json`
-都還不存在，`.github/workflows/forward_pe.yml` 的 QQQ step 已註解掉（VOO step 仍在
-跑）。
+**QQQ 沒有外部驗證**（2026-09-06 拍板：兩輪查證已窮盡免費來源，QQQ 序列現在開始
+寫入，把「無外部驗證」當已知限制記錄下來，不再暫緩）。`data/forward_pe_qqq.jsonl`／
+`data/chart_qqq.json` 從本次執行起開始累積，`.github/workflows/forward_pe.yml` 的
+QQQ step 已恢復可執行。
 
-原因：找不到同一天的第三方 forward-NTM 基準可驗證 QQQ。試過的免費來源都不合用：
+### 兩輪查證窮盡的免費來源，逐條記錄不可用的原因
 
-- WSJ 的 RIXF（NASDAQ-100）已查明是日曆年口徑（見上面「WSJ 21.22 是日曆年 CY2026
-  口徑」一節對 VOO 的驗證方式同樣適用於推論 QQQ），非 NTM。
-- FactSet Earnings Insight 免費公開的一手數字只涵蓋 S&P 500，沒有 NASDAQ-100 版本。
-- 其餘 NASDAQ-100 / QQQ forward P/E 來源，不是 trailing 口徑、就是口徑未標明，或
-  端點被 403/406 擋（見上面「Holdings 來源」與模組 docstring 記錄的踩坑）。
+QQQ（NASDAQ-100）找不到同一天、同口徑（forward NTM）的第三方基準可驗證，試過的
+來源都不合用：
 
-目前僅有的間接證據：QQQ 序列跟 VOO 用**同一支程式、同一套 EPS 來源與公式**
-（`fetch_forward_pe.py` 的 `compute()`），且有 QQQ 專屬的內部交叉檢查（slickcharts
-NDX 指數權重 vs Nasdaq 官方市值權重，2026-09-06 dry-run 相對差 1.13%，遠在 5% 容許
-內，見上面「雙 basis dry-run 驗證」）。但**這不是外部驗證**——交叉檢查只證明「兩個
-權重來源算出來的數字彼此一致」，不證明「數字本身對不對」。QQQ 要等到找到可信的同日
-第三方 NTM 基準才會恢復寫入；恢復時只需取消 `.github/workflows/forward_pe.yml` 裡
-那個 step 的註解，`git add` 路徑不用改。
+- **Invesco 官方 fact sheet**：34.45（as-of 2026-06-30）是 **trailing** 口徑，不是
+  forward。
+- **worldperatio**：29.21 同樣是 **trailing** 口徑。
+- **Morningstar Style Measures**：22.06。依其官方方法論，ETF 一律用 harmonic
+  weighted average 計算，且 forward 版本另外命名為 "Price/Prospective Earnings"——
+  Style Measures 這個數字判讀為 **trailing**，不可拿來當 forward NTM 基準。
+- **iShares CNDX（Nasdaq-100 UCITS）fact sheet**：38.88x，但口徑標籤與數值互相矛盾、
+  方法論失真，判定不可用（另見下面「一個佐證」——這個數字反而佐證了規則 #1）。
+- **Siblis Research**：25.17，as-of 2026-06-30，太舊（超過一季），不採用。
+- **WSJ（RIXF）**：25.25，已查明是**日曆年 CY2026 口徑**，不是 NTM（見上面「WSJ
+  21.22 是日曆年 CY2026 口徑」一節，同樣的驗證方式適用於推論 QQQ）。
+- **GuruFocus / MacroMicro / Trendonify / finbox / Schwab / Zacks / Fidelity**：
+  存取全部被擋（付費牆或反爬蟲）。
+- **justETF**：頁面沒有 P/E 欄位。
+- **Nasdaq 官方指數站**：沒有公開的 NDX P/E 儀表板。
+- **FactSet Earnings Insight**：免費公開的一手數字只涵蓋 S&P 500，沒有 NASDAQ-100
+  版本。
+
+### 現有的是內部驗證，不是外部驗證
+
+目前僅有的證據全部來自本專案內部的交叉比對，不構成外部驗證：
+
+- **Holdings 交叉檢查**：slickcharts 的 NDX 指數權重 vs Nasdaq 官方市值權重，
+  2026-09-06 dry-run 相對差 1.13%，遠在 5% 容許內（見上面「雙 basis dry-run 驗證」）。
+- **FX 換算對帳**：換算後的 `earnings_estimate` 值對 `info.forwardEps`——ASML 60.09
+  vs 60.13、PDD 12.41 vs 12.39，兩檔都貼近，確認換算方向正確。
+- **公式與 EPS 來源與 VOO 同一份程式**（`fetch_forward_pe.py` 的 `compute()`），而
+  VOO 已用 FactSet Earnings Insight 驗證過方法論正確（+0.43% 誤差，見上面「FactSet
+  外部驗證」一節）。
+
+這些只證明「內部的兩個來源／換算彼此一致」，不證明「QQQ 的數字本身對不對」——跟
+真正的第三方外部驗證不是同一件事。
+
+### 一個佐證
+
+本專案算出的 QQQ 加權**算術**平均對照值是 36.04，跟 iShares CNDX 的 38.88x 同量級，
+兩者都遠離本專案的 aggregate（調和平均）值 23.06。iShares 自己的文件寫明其計算
+用**算術**平均且**剔除負值**——這等於外部確認了「換成算術平均會把數字噴高到
+30+ 這個量級」，反向支持規則 #1（不用算術平均）。這不是 forward P/E 的外部驗證，
+只是對「加權法選擇造成的量級差異」的旁證。
 
 ## price_asof 防護（2026-09-06 加）
 

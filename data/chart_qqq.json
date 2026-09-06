@@ -1,0 +1,55 @@
+{
+  "labels": [
+    "2026-09-06"
+  ],
+  "datasets": [
+    {
+      "label": "QQQ Forward P/E (blended NTM)",
+      "data": [
+        23.06
+      ],
+      "spanGaps": false
+    },
+    {
+      "label": "QQQ Forward P/E (FY2)",
+      "data": [
+        21.38
+      ],
+      "spanGaps": false
+    },
+    {
+      "label": "5y avg",
+      "data": [
+        null
+      ],
+      "borderDash": [
+        6,
+        4
+      ]
+    },
+    {
+      "label": "10y avg",
+      "data": [
+        null
+      ],
+      "borderDash": [
+        2,
+        3
+      ]
+    }
+  ],
+  "meta": {
+    "ticker": "QQQ",
+    "primary_basis": "ntm",
+    "eps_basis_ntm": "blended_ntm：w×FY1 + (1-w)×FY2，w = clamp((fy1_end－today).days/365, 0, 1)",
+    "eps_basis_fy2": "fy2_only：yfinance earnings_estimate '+1y'（缺則 fallback info.forwardEps）",
+    "eps_source": "yfinance.earnings_estimate(0y,+1y) + info.nextFiscalYearEnd",
+    "price_asof_note": "date 是腳本執行日；股價/EPS 實際反映的交易日記錄在每筆entry 的 price_asof（通常是執行日的前一個交易日收盤，遇連假/週末會差更多天，兩者各自記錄、不假設固定關係）。",
+    "holdings_source": "slickcharts.com/nasdaq100 (NDX index weights)",
+    "series_start": "2026-09-06",
+    "points": 1,
+    "avg_5y_available_after": 1260,
+    "avg_10y_available_after": 2520,
+    "note": "Invesco holdings 端點被擋，改用 NDX 指數權重（QQQ 完全複製）。"
+  }
+}
