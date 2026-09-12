@@ -71,6 +71,7 @@ function fmtPrice(v) {
 let valChart  = null;
 let valTicker = "SPY";
 let valRange  = "5Y";
+let compareMode = false;   // true = SOXX vs SPY 同圖比較模式，與 valTicker 單選互斥
 const fileCache = {};   // path -> data array
 
 // ── Data loading ───────────────────────────────────────────────────
@@ -347,7 +348,100 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
   valChart.setOption(option, { notMerge: true });
 }
 
+// ── Compare mode: SOXX vs SPY forward PE, same axis ──────────────────
+function renderCompare(soxxFull, spyFull, soxxCfg, spyCfg) {
+  if (!valChart) return;
+
+  const axisClr = PALETTE.muted;
+  const gridClr = PALETTE.grid;
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
+
+  const spanArrs = [soxxFull, spyFull].filter(a => a && a.length);
+  const minDate = spanArrs.length ? spanArrs.map(a => a[0][0]).sort()[0] : undefined;
+  const from = rangeStartDate(valRange, minDate);
+  const to = spanArrs.length ? spanArrs.map(a => a[a.length - 1][0]).sort().at(-1) : undefined;
+
+  const clip = a => (a || []).filter(r => r[0] >= from);
+  const soxxD = clip(soxxFull), spyD = clip(spyFull);
+
+  const statusEl = document.getElementById("val-status");
+  if (statusEl) {
+    const last = a => a.length ? a[a.length - 1][1] : null;
+    const lSoxx = last(soxxD), lSpy = last(spyD);
+    const parts = ["SOXX vs SPY Forward PE 比較"];
+    if (lSoxx != null) parts.push(`${soxxCfg.label} ${lSoxx.toFixed(1)}x`);
+    if (lSpy != null) parts.push(`${spyCfg.label} ${lSpy.toFixed(1)}x`);
+    if (lSoxx != null && lSpy != null) parts.push(`價差 ${(lSoxx - lSpy).toFixed(1)}x`);
+    statusEl.textContent = parts.join(" · ");
+  }
+
+  const grid = [{ left: 64, right: 18, top: "6%", height: "82%" }];
+  const xAxis = [{
+    gridIndex: 0, type: "time", min: from, max: to,
+    axisLabel: { color: axisClr, fontSize: 11 },
+    axisLine: { lineStyle: { color: axisClr } }, splitLine: { lineStyle: { color: gridClr } },
+  }];
+  const yAxis = [{
+    gridIndex: 0, name: "Forward P/E", nameTextStyle: { color: axisClr, fontSize: 11 },
+    axisLabel: { color: axisClr, fontSize: 11, formatter: v => `${v}x` },
+    axisLine: { lineStyle: { color: axisClr } }, splitLine: { lineStyle: { color: gridClr } },
+    min: v => Math.max(0, Math.floor(v.min - 1)), max: v => Math.ceil(v.max + 1),
+  }];
+
+  const series = [
+    { name: soxxCfg.label, type: "line", xAxisIndex: 0, yAxisIndex: 0, data: soxxD,
+      lineStyle: { color: soxxCfg.color, width: 1.8 }, itemStyle: { color: soxxCfg.color }, symbol: "none", z: 3 },
+    { name: spyCfg.label, type: "line", xAxisIndex: 0, yAxisIndex: 0, data: spyD,
+      lineStyle: { color: spyCfg.color, width: 1.8 }, itemStyle: { color: spyCfg.color }, symbol: "none", z: 3 },
+  ];
+
+  const option = {
+    backgroundColor: "transparent", animation: false,
+    tooltip: {
+      trigger: "axis", axisPointer: { type: "cross" },
+      backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: textClr, fontSize: 12 },
+      formatter(params) {
+        const date = params[0]?.axisValue ?? "";
+        const ds = typeof date === "number" ? tsToLocalDate(date) : date;
+        let html = `<div style="font-weight:600;margin-bottom:4px">${ds}</div>`;
+        for (const p of params) {
+          const val = Array.isArray(p.value) ? p.value[1] : p.value;
+          if (val == null) continue;
+          html += `<div>${p.marker}${p.seriesName}: <b>${(+val).toFixed(2)}x</b></div>`;
+        }
+        return html;
+      },
+    },
+    grid, xAxis, yAxis,
+    dataZoom: [{ type: "inside", xAxisIndex: [0], filterMode: "none" }],
+    legend: { data: [soxxCfg.label, spyCfg.label], top: "bottom", textStyle: { color: textClr, fontSize: 11 }, inactiveColor: axisClr },
+    series,
+  };
+
+  valChart.setOption(option, { notMerge: true });
+}
+
+async function refreshCompare() {
+  const soxxCfg = VAL_TICKERS.find(t => t.key === "SOXX");
+  const spyCfg  = VAL_TICKERS.find(t => t.key === "SPY");
+  const statusEl = document.getElementById("val-status");
+  try {
+    const [soxxRows, spyRows] = await Promise.all([
+      loadFile(soxxCfg.fwd.file),
+      loadFile(spyCfg.fwd.file),
+    ]);
+    const soxxSeries = buildSeries(soxxRows, soxxCfg.fwd.field);
+    const spySeries  = buildSeries(spyRows, spyCfg.fwd.field);
+    renderCompare(soxxSeries, spySeries, soxxCfg, spyCfg);
+  } catch (e) {
+    if (statusEl) statusEl.textContent = `載入失敗：${e.message}`;
+  }
+}
+
 async function refresh() {
+  if (compareMode) { await refreshCompare(); return; }
   const t = cfg();
   const statusEl = document.getElementById("val-status");
   const showBiz = t.key === "TWII";
@@ -391,21 +485,30 @@ export function onThemeChange() { if (valChart) refresh(); }
 export function resize() { valChart?.resize(); }
 
 export function setRange(key) { valRange = key; refresh(); }
-export function setTicker(key) { valTicker = key; refresh(); }
+export function setTicker(key) { valTicker = key; compareMode = false; refresh(); }
+export function setCompareMode(on) { compareMode = !!on; refresh(); }
 
-// build the ticker chip row (idempotent)
+// build the ticker chip row (idempotent) — 單一標的 chips + 一個「比較模式」chip，二擇一 active
 function renderTickerPicker() {
   const host = document.getElementById("val-ticker-picker");
   if (!host || host.dataset.built) return;
   host.innerHTML = VAL_TICKERS.map(t =>
-    `<span class="chip${t.key === valTicker ? " active" : ""}" data-val-ticker="${t.key}">${t.label}</span>`
-  ).join("");
+    `<span class="chip${!compareMode && t.key === valTicker ? " active" : ""}" data-val-ticker="${t.key}">${t.label}</span>`
+  ).join("") + `<span class="chip${compareMode ? " active" : ""}" data-val-compare="1">SOXX vs SPY 比較</span>`;
   host.dataset.built = "1";
-  host.querySelectorAll(".chip").forEach(chip =>
+  host.querySelectorAll("[data-val-ticker]").forEach(chip =>
     chip.addEventListener("click", () => {
       host.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
       chip.classList.add("active");
       setTicker(chip.dataset.valTicker);
     })
   );
+  const compareChip = host.querySelector("[data-val-compare]");
+  if (compareChip) {
+    compareChip.addEventListener("click", () => {
+      host.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
+      compareChip.classList.add("active");
+      setCompareMode(true);
+    });
+  }
 }

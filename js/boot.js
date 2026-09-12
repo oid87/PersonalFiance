@@ -64,6 +64,9 @@ import * as twChipsTab       from './tabs/twchips.js';
 import * as roc4Tab          from './tabs/roc4.js';
 import * as marginGlobalTab  from './tabs/marginglobal.js';
 import * as fwdpeTab         from './tabs/fwdpe.js';
+import * as vixSeasonTab     from './tabs/vixseason.js';
+import * as elecSeasonTab    from './tabs/elecseason.js';
+import * as twCrashTab       from './tabs/twcrash.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -127,6 +130,9 @@ registerAll([
   { id: 'roc4',          module: roc4Tab          },
   { id: 'marginglobal',  module: marginGlobalTab  },
   { id: 'fwdpe',         module: fwdpeTab         },
+  { id: 'vixseason',     module: vixSeasonTab     },
+  { id: 'elecseason',    module: elecSeasonTab    },
+  { id: 'twcrash',       module: twCrashTab       },
 ]);
 
 setupResizeHandler();
@@ -167,6 +173,7 @@ const CATEGORIES = [
       { id: 'marginglobal',  label: '全球融資餘額' },
       { id: 'yield_curve',   label: '殖利率曲線' },
       { id: 'vix_term',      label: 'VIX期限結構' },
+      { id: 'vixseason',     label: 'VIX十年季節性' },
       { id: 'real_rates',    label: '實質利率' },
       { id: 'money_market',  label: '貨幣市場' },
       { id: 'central_banks', label: '全球央行資產' },
@@ -179,6 +186,7 @@ const CATEGORIES = [
       { id: 'trend',     label: '趨勢' },
       { id: 'pentagram', label: '五線譜' },
       { id: 'macro',     label: '宏觀' },
+      { id: 'twcrash',   label: '台股歷史股災' },
       { id: 'valuation', label: '估值' },
       { id: 'fwdpe',     label: 'Forward P/E 自建' },
       { id: 'position',  label: '位階' },
@@ -199,6 +207,7 @@ const CATEGORIES = [
       { id: 'cashking',      label: '現金為王' },
       { id: 'earnings', label: '財報日' },
       { id: 'wave',     label: '波浪理論' },
+      { id: 'elecseason', label: '選舉週期季節性' },
       { id: 'leverage', label: '槓桿模擬' },
       { id: 'levvol',   label: '波動率倍數' },
       { id: 'wkrev',    label: '週K反轉' },
