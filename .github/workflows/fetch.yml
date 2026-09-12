@@ -222,6 +222,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_margin_kr.py
 
+      - name: Fetch US GDP/productivity/labor-force decomposition (FRED GDPC1/OPHNFB/CLF16OV, quarterly, free)
+        continue-on-error: true
+        run: python scripts/fetch_gdp_productivity.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 
