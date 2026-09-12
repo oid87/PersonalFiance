@@ -167,6 +167,11 @@
     <div id="biz-chart" style="height:130px"></div>
   </section>
 
+  <section id="tab-twcrash" class="tab-section" hidden>
+    <div id="twcrash-chart" style="width:100%;height:460px"></div>
+    <div id="twcrash-note" style="padding:8px 16px 24px;color:var(--muted);font-size:12px;line-height:1.6"></div>
+  </section>
+
   <!-- ── 產業輪動 tab ────────────────────────────────────────────── -->
   <section id="tab-sector" class="tab-section" hidden>
     <div class="controls">
@@ -1784,6 +1789,18 @@
     </div>
   </section>
 
+  <section id="tab-elecseason" class="tab-section" hidden>
+    <div style="padding:8px 16px 0;color:var(--muted);font-size:12px">子圖 A：9月/11月 vs 其他月份 — 月內累積報酬路徑（固定窗口 2001–2025）</div>
+    <div id="elecseason-chart-a" style="width:100%;height:340px"></div>
+
+    <div style="padding:16px 16px 0;color:var(--muted);font-size:12px">子圖 B：期中選舉年 vs 全樣本 — 各月已實現波動率中位數（Aug ~ 隔年 Feb）</div>
+    <div id="elecseason-chart-b" style="width:100%;height:340px"></div>
+
+    <div style="padding:16px 16px 0;color:var(--muted);font-size:12px">子圖 C：四年總統任期週期 rebase=100 percentile band（25th/50th/75th）+ 當前週期對照</div>
+    <div id="elecseason-chart-c" style="width:100%;height:340px"></div>
+    <div id="elecseason-note-c" style="padding:8px 16px 24px;color:var(--muted);font-size:12px;line-height:1.6"></div>
+  </section>
+
   <section id="tab-twcycle" class="tab-section" hidden>
     <div class="controls">
       <span style="font-size:13px;color:var(--muted)">國發會景氣對策信號 · 9 項構成項加總 9–45 分 → 五燈 · 月頻</span>
@@ -2902,6 +2919,11 @@
         <p style="margin-top:8px;color:var(--muted)">資料：CBOE 官方每日收盤 VIX9D/VIX/VIX3M/VIX6M（免費，無 key）。紅色區塊 = backwardation 期間（ts_ratio &gt; 1）。定位「恐慌程度/市場結構理解」，非交易觸發訊號。</p>
       </div>
     </div>
+  </section>
+
+  <section id="tab-vixseason" class="tab-section" hidden>
+    <div id="vixseason-status" style="padding:8px 16px;color:var(--muted);font-size:12px"></div>
+    <div id="vixseason-chart" style="width:100%;height:440px"></div>
   </section>
 
   <!-- ── VXN−VIX 波動率價差 tab ─────────────────────────────────────── -->

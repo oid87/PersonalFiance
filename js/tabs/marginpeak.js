@@ -10,6 +10,7 @@
 //     SPX 1m/3m/6m/12m ≈ 1.2/2.8/5.2/10.8；QQQ ≈ 1.5/4.9/8.7/17.2
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { percentile, mean } from '../utils/math.js';
 
 const HORIZONS = { '1m': 21, '3m': 63, '6m': 126, '12m': 252 };
 const BASELINE = {
@@ -21,6 +22,11 @@ let chart = null;
 let state = null; // { dates, yoyData, absData, spxData, qqqData, sigA, sigB, medA, medB, curYoy, curDate }
 let idxSel = 'QQQ';   // 顯示哪個指數（SPX / QQQ，一次一個）
 let marginMode = 'yoy'; // 紅線意義：'yoy' = Margin Debt YoY%；'abs' = 融資餘額絕對值($B)
+let viewMode = 'table'; // 'table' = 現有中位數對拍表格＋雙軸圖；'eventstudy' = 融資見頂事件研究 percentile band
+
+// 事件研究視窗長度（交易日）。投影片 x 軸大約到 220+ 天，這裡抓 ~12 個月的交易日數當上限；
+// 資料量不夠支撐更長窗口時，各相對位置樣本數自然遞減（見 buildEventStudy 的 filter(v => v != null)）。
+const EVENT_STUDY_WINDOW_TD = 252;
 
 // ── date helpers ─────────────────────────────────────────────────────
 // margin 日期是 'YYYY-MM-01'；python 用 PeriodIndex('M').to_timestamp('M') 取月底當 anchor，
@@ -161,9 +167,42 @@ async function loadAll() {
     dates, yoyData, absData, spxData, qqqData,
     sigA, sigB,
     sigADates: sigARaw.map(s => s.date),
+    sigBDates: sigBRaw.map(s => s.date),
+    // 事件研究模式用：完整每日序列（非月頻近似），可對齊到真實交易日
+    spxDaily: spxSeries, qqqDaily: qqqSeries,
     medA: groupMedians(sigA), medB: groupMedians(sigB),
     curYoy: last?.yoy ?? null, curDate: last?.date ?? null,
   };
+}
+
+// ── event study（融資 YoY 局部峰值 t=0 → SPX/QQQ rebase=100 percentile band）──
+// 沿用 detectSignalB 的局部峰值事件，錨點對齊邏輯與 computeSignalRow 相同
+// （monthEnd + findAnchorIdx，貼齊 ≤ 月底最近交易日），往後取真實交易日精度
+// （非月頻近似），滿足投影片「Days」x 軸語意。
+function buildEventStudy(idxKey) {
+  const series = idxKey === 'QQQ' ? state.qqqDaily : state.spxDaily;
+  const eventDates = state.sigBDates;
+  const paths = [];
+  for (const d of eventDates) {
+    const anchorIdx = findAnchorIdx(series, monthEnd(d));
+    if (anchorIdx < 0) continue;
+    const base = series[anchorIdx].close;
+    if (!base) continue;
+    const path = new Array(EVENT_STUDY_WINDOW_TD + 1).fill(null);
+    for (let i = 0; i <= EVENT_STUDY_WINDOW_TD; i++) {
+      const p = series[anchorIdx + i];
+      if (p) path[i] = (p.close / base) * 100;
+    }
+    paths.push(path);
+  }
+  const meanArr = [], p25Arr = [], p75Arr = [];
+  for (let i = 0; i <= EVENT_STUDY_WINDOW_TD; i++) {
+    const vals = paths.map(p => p[i]).filter(v => v != null).sort((a, b) => a - b);
+    meanArr.push(vals.length ? +mean(vals).toFixed(2) : null);
+    p25Arr.push(vals.length ? +percentile(vals, 0.25).toFixed(2) : null);
+    p75Arr.push(vals.length ? +percentile(vals, 0.75).toFixed(2) : null);
+  }
+  return { meanArr, p25Arr, p75Arr, n: paths.length };
 }
 
 // ── table ────────────────────────────────────────────────────────────
@@ -209,7 +248,12 @@ function renderTable() {
 // ── chart render ──────────────────────────────────────────────────────
 function render() {
   if (!chart || !state) return;
+  toggleViewDom();
+  if (viewMode === 'eventstudy') renderEventStudyChart();
+  else renderTableChart();
+}
 
+function renderTableChart() {
   const axisClr = PALETTE.muted;
   const gridClr = tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)');
   const tipBg   = PALETTE.bg;
@@ -331,12 +375,100 @@ function render() {
   renderTable();
 }
 
+// ── event study chart（融資見頂事件研究：rebase=100 + 25/75 percentile band）──
+function renderEventStudyChart() {
+  const axisClr = PALETTE.muted;
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
+  const idxClr  = idxSel === 'QQQ' ? '#58a6ff' : PALETTE.text;
+  const bandClr = '#e3b341';
+
+  const { meanArr, p25Arr, p75Arr, n } = buildEventStudy(idxSel);
+  const xData = meanArr.map((_, i) => i);
+
+  const status = document.getElementById('marginpeak-status');
+  if (status) status.textContent =
+    `融資峰值事件研究：${idxSel} 事件後走勢分佈（rebase=100）· 基於 ${state.sigBDates.length} 次局部峰值事件 / ${n} 次可對齊足夠交易日資料`;
+
+  const note = document.getElementById('marginpeak-eventstudy-note');
+  if (note) note.textContent =
+    `以 detectSignalB（融資 YoY 局部峰值，前後6個月最高且 >30%）偵測到的 ${state.sigBDates.length} 次事件為 t=0，` +
+    `對齊各事件月底最近交易日（真實交易日精度，非月頻近似），往後最多 ${EVENT_STUDY_WINDOW_TD} 個交易日的 ${idxSel} 收盤價 rebase 成 100，` +
+    `畫出 Mean／25th／75th percentile 帶狀圖。樣本數隨事件距今天數增加而遞減（近期事件尚未走完整個視窗）。`;
+
+  chart.setOption({
+    backgroundColor: 'transparent', animation: false,
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: textClr, fontSize: 12 },
+      formatter(params) {
+        const d = params[0]?.axisValue ?? '';
+        let html = `<div style="font-weight:600;margin-bottom:4px">第 ${d} 個交易日</div>`;
+        for (const p of params) {
+          if (p.value == null) continue;
+          html += `<div>${p.marker}${p.seriesName}: <b>${(+p.value).toFixed(1)}</b></div>`;
+        }
+        return html;
+      },
+    },
+    legend: {
+      data: ['25th Percentile', 'Mean', '75th Percentile'], top: 2, left: 'center',
+      textStyle: { color: textClr, fontSize: 11 }, inactiveColor: axisClr,
+    },
+    grid: { left: mob() ? 40 : 52, right: mob() ? 16 : 24, top: '14%', bottom: '14%' },
+    xAxis: {
+      type: 'category', data: xData, boundaryGap: false,
+      name: '事件後第 N 個交易日', nameLocation: 'middle', nameGap: 28,
+      nameTextStyle: { color: axisClr, fontSize: 11 },
+      axisLine: { lineStyle: { color: axisClr } }, axisTick: { show: false },
+      axisLabel: { color: axisClr, fontSize: 11 },
+      splitLine: { show: false },
+    },
+    yAxis: {
+      type: 'value', scale: true,
+      name: 'Rebased 指數（事件當下=100）', nameTextStyle: { color: axisClr, fontSize: 10 },
+      axisLabel: { color: axisClr, fontSize: 11 },
+      splitLine: { lineStyle: { color: tc('rgba(48,54,61,0.5)', 'rgba(208,215,222,0.4)') } },
+    },
+    series: [
+      {
+        name: '25th Percentile', type: 'line', data: p25Arr,
+        symbol: 'none', z: 2, connectNulls: true,
+        lineStyle: { color: bandClr, width: 1, type: 'dashed' },
+        areaStyle: { color: 'rgba(227,179,65,0.12)' },
+      },
+      {
+        name: '75th Percentile', type: 'line', data: p75Arr,
+        symbol: 'none', z: 2, connectNulls: true,
+        lineStyle: { color: bandClr, width: 1, type: 'dashed' },
+        areaStyle: { color: 'rgba(227,179,65,0.12)' },
+      },
+      {
+        name: 'Mean', type: 'line', data: meanArr,
+        symbol: 'none', z: 4, connectNulls: true,
+        lineStyle: { color: idxClr, width: 2 },
+      },
+    ],
+  }, { notMerge: true });
+}
+
+// 依 viewMode 切換 DOM 顯示：表格模式顯示對拍表格，事件研究模式顯示樣本數說明文字
+function toggleViewDom() {
+  const tableWrap = document.getElementById('marginpeak-table')?.parentElement;
+  const note = document.getElementById('marginpeak-eventstudy-note');
+  if (tableWrap) tableWrap.style.display = viewMode === 'eventstudy' ? 'none' : '';
+  if (note) note.style.display = viewMode === 'eventstudy' ? '' : 'none';
+}
+
 // ── lifecycle ─────────────────────────────────────────────────────────
 function syncChips() {
   document.getElementById('marginpeak-idx-spx')?.classList.toggle('active', idxSel === 'SPX');
   document.getElementById('marginpeak-idx-qqq')?.classList.toggle('active', idxSel === 'QQQ');
   document.getElementById('marginpeak-mode-yoy')?.classList.toggle('active', marginMode === 'yoy');
   document.getElementById('marginpeak-mode-abs')?.classList.toggle('active', marginMode === 'abs');
+  document.getElementById('marginpeak-view-table')?.classList.toggle('active', viewMode === 'table');
+  document.getElementById('marginpeak-view-eventstudy')?.classList.toggle('active', viewMode === 'eventstudy');
 }
 let wired = false;
 function wireControls() {
@@ -348,12 +480,35 @@ function wireControls() {
   for (const el of document.querySelectorAll('#tab-marginpeak .chip[data-mode]')) {
     el.addEventListener('click', () => { marginMode = el.dataset.mode; syncChips(); render(); });
   }
+  for (const el of document.querySelectorAll('#tab-marginpeak .chip[data-view]')) {
+    el.addEventListener('click', () => { viewMode = el.dataset.view; syncChips(); render(); });
+  }
+}
+
+// index.html 本次不動；「事件研究」檢視模式的切換 chip 與樣本數說明文字用 JS 動態插入既有 DOM。
+let viewUIInjected = false;
+function ensureViewModeUI() {
+  if (viewUIInjected) return;
+  viewUIInjected = true;
+  const controlsRow = document.getElementById('marginpeak-mode-abs')?.parentElement;
+  if (controlsRow) {
+    controlsRow.insertAdjacentHTML('beforeend',
+      `<span style="color:var(--muted);font-size:12px;margin-left:8px">檢視</span>
+       <span id="marginpeak-view-table" class="chip active" data-view="table">表格</span>
+       <span id="marginpeak-view-eventstudy" class="chip" data-view="eventstudy">事件研究</span>`);
+  }
+  const chartHost = document.getElementById('marginpeak-chart');
+  if (chartHost && !document.getElementById('marginpeak-eventstudy-note')) {
+    chartHost.insertAdjacentHTML('afterend',
+      `<div id="marginpeak-eventstudy-note" style="padding:8px 16px;color:var(--muted);font-size:12px;display:none"></div>`);
+  }
 }
 
 export async function activate() {
   const host = document.getElementById('marginpeak-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
+  ensureViewModeUI();
   wireControls();
   syncChips();
   try {
