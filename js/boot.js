@@ -67,6 +67,7 @@ import * as fwdpeTab         from './tabs/fwdpe.js';
 import * as vixSeasonTab     from './tabs/vixseason.js';
 import * as elecSeasonTab    from './tabs/elecseason.js';
 import * as twCrashTab       from './tabs/twcrash.js';
+import * as gdpProductivityDecompTab from './tabs/gdp_productivity_decomp.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -133,6 +134,7 @@ registerAll([
   { id: 'vixseason',     module: vixSeasonTab     },
   { id: 'elecseason',    module: elecSeasonTab    },
   { id: 'twcrash',       module: twCrashTab       },
+  { id: 'gdp_productivity_decomp', module: gdpProductivityDecompTab },
 ]);
 
 setupResizeHandler();
@@ -216,6 +218,7 @@ const CATEGORIES = [
       { id: 'marginconc', label: '融資集中度' },
       { id: 'vvixregime', label: 'VVIX波動象限' },
       { id: 'roc4',       label: 'ROC4急漲急跌' },
+      { id: 'gdp_productivity_decomp', label: '美國GDP拆解' },
     ]
   },
 ];

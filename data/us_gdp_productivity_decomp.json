@@ -1,0 +1,30 @@
+{
+  "updated": "2026-09-13",
+  "note": "美國GDP/生產力/勞動力貢獻度拆解,分四個時期(1950-1980/1980-2007/2007-2019/2020-2026)計算年化成長率(CAGR)。資料源:FRED GDPC1(實質GDP,chained 2012$)、OPHNFB(非農企業部門勞動生產力指數)、CLF16OV(16歲以上民間勞動力,取各季最後一月的值代表該季)。CAGR公式:(期末值/期初值)^(1/年數)-1。用FRED公開數據以簡單CAGR法計算,非高盛原始調整方法論(高盛原圖另含「未被完整衡量的AI投資貢獻」等調整項),量級可能有落差。",
+  "periods": [
+    {
+      "period": "1950-1980",
+      "gdp_cagr": 3.876,
+      "productivity_cagr": 2.326,
+      "labor_force_cagr": 1.84
+    },
+    {
+      "period": "1980-2007",
+      "gdp_cagr": 3.07,
+      "productivity_cagr": 2.057,
+      "labor_force_cagr": 1.354
+    },
+    {
+      "period": "2007-2019",
+      "gdp_cagr": 1.74,
+      "productivity_cagr": 1.459,
+      "labor_force_cagr": 0.521
+    },
+    {
+      "period": "2020-2026",
+      "gdp_cagr": 2.571,
+      "productivity_cagr": 2.212,
+      "labor_force_cagr": 0.658
+    }
+  ]
+}
