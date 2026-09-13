@@ -69,6 +69,7 @@ import * as elecSeasonTab    from './tabs/elecseason.js';
 import * as twCrashTab       from './tabs/twcrash.js';
 import * as gdpProductivityDecompTab from './tabs/gdp_productivity_decomp.js';
 import * as semiVsSpxPeTab   from './tabs/semi_vs_spx_pe.js';
+import * as twJpKrGdpTab     from './tabs/tw_jp_kr_gdp.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -137,6 +138,7 @@ registerAll([
   { id: 'twcrash',       module: twCrashTab       },
   { id: 'gdp_productivity_decomp', module: gdpProductivityDecompTab },
   { id: 'semi_vs_spx_pe',   module: semiVsSpxPeTab   },
+  { id: 'tw_jp_kr_gdp',     module: twJpKrGdpTab     },
 ]);
 
 setupResizeHandler();
@@ -222,6 +224,7 @@ const CATEGORIES = [
       { id: 'roc4',       label: 'ROC4急漲急跌' },
       { id: 'gdp_productivity_decomp', label: '美國GDP拆解' },
       { id: 'semi_vs_spx_pe',   label: '半導體估值' },
+      { id: 'tw_jp_kr_gdp',     label: '台日韓GDP對照' },
     ]
   },
 ];

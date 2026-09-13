@@ -230,6 +230,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_usrec.py
 
+      - name: Fetch Taiwan/Japan/Korea annual GDP growth (DGBAS XML + FRED, yearly, free)
+        continue-on-error: true
+        run: python scripts/fetch_tw_jp_kr_gdp.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 
