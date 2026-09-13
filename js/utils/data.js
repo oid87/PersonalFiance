@@ -1,5 +1,70 @@
 import { loaded, loadedHLC, loadedVol, SERIES, state } from '../state.js';
 
+const REQUEST_TIMEOUT_MS = 15_000;
+
+async function requestJSON(url, label = url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(url, { cache: "no-cache", signal: controller.signal });
+    if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`);
+    try {
+      return await response.json();
+    } catch (err) {
+      throw new Error(`${label}: invalid JSON`, { cause: err });
+    }
+  } catch (err) {
+    if (controller.signal.aborted) {
+      throw new Error(`${label}: request timed out after ${REQUEST_TIMEOUT_MS}ms`, { cause: err });
+    }
+    if (err?.message?.startsWith(`${label}:`)) throw err;
+    throw new Error(`${label}: ${err?.message || err}`, { cause: err });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function isValidDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function parseSeriesRows(s, payload) {
+  if (!Array.isArray(payload?.data) || payload.data.length === 0) {
+    throw new Error(`${s.key}: missing or empty data rows`);
+  }
+
+  const rows = payload.data.map((row, index) => {
+    const value = row?.close !== undefined ? row.close : row?.value;
+    if (!isValidDate(row?.date) || typeof value !== "number" || !Number.isFinite(value)) {
+      throw new Error(`${s.key}: invalid row ${index + 1}`);
+    }
+    return [row.date, value];
+  });
+
+  let hlc;
+  if (payload.data[0]?.high !== undefined) {
+    hlc = payload.data.map((row, index) => {
+      if (![row.high, row.low, row.close].every(v => typeof v === "number" && Number.isFinite(v))) {
+        throw new Error(`${s.key}: invalid HLC row ${index + 1}`);
+      }
+      return [row.date, row.high, row.low, row.close];
+    });
+  }
+
+  let volume;
+  if (payload.data[0]?.volume !== undefined) {
+    volume = payload.data.map((row, index) => {
+      if (typeof row.volume !== "number" || !Number.isFinite(row.volume)) {
+        throw new Error(`${s.key}: invalid volume row ${index + 1}`);
+      }
+      return [row.date, row.volume];
+    });
+  }
+  return { rows, hlc, volume };
+}
+
 // ── fetchJSON ────────────────────────────────────────────────────────────
 // Generic fetch, not tied to the SERIES registry (unlike loadSeries below).
 // Does NOT do field alignment (r.close ?? r.value etc.) — that stays the
@@ -15,9 +80,7 @@ import { loaded, loadedHLC, loadedVol, SERIES, state } from '../state.js';
 // to fetchJSON in P0 and are documented here as divergent, not silently
 // unified.
 export async function fetchJSON(url) {
-  const res = await fetch(url, { cache: "no-cache" });
-  if (!res.ok) throw new Error(`fetchJSON: HTTP ${res.status} (${url})`);
-  const j = await res.json();
+  const j = await requestJSON(url, `fetchJSON (${url})`);
   return j.data || j;
 }
 
@@ -29,34 +92,28 @@ export function isDataFresh(data) {
 }
 
 export async function loadSeries(s) {
+  if (!s?.key || !s?.file) throw new Error("loadSeries: invalid series descriptor");
   if (loaded[s.key] && isDataFresh(loaded[s.key])) return; // cache hit, still fresh
-  delete loaded[s.key]; // evict stale cache before re-fetch
-  const resp = await fetch(s.file, { cache: "no-cache" });
-  if (!resp.ok) throw new Error(`${s.key}: HTTP ${resp.status}`);
-  const j = await resp.json();
-  loaded[s.key] = (j.data || []).map(r => [
-    r.date,
-    r.close !== undefined ? r.close : r.value,
-  ]);
-  if (j.data?.[0]?.high !== undefined) {
-    loadedHLC[s.key] = j.data.map(r => [r.date, r.high, r.low, r.close]);
-  }
-  if (j.data?.[0]?.volume !== undefined) {
-    loadedVol[s.key] = j.data.map(r => [r.date, r.volume ?? 0]);
-  }
+  const payload = await requestJSON(s.file, s.key);
+  const next = parseSeriesRows(s, payload);
+  loaded[s.key] = next.rows;
+  if (next.hlc) loadedHLC[s.key] = next.hlc;
+  else delete loadedHLC[s.key];
+  if (next.volume) loadedVol[s.key] = next.volume;
+  else delete loadedVol[s.key];
   state.sigMaps = null; // invalidate signal lookup cache
 }
 
 export async function ensureLoaded(key) {
   const s = SERIES.find(x => x.key === key);
-  if (s) await loadSeries(s);
+  if (!s) throw new Error(`Unknown series: ${key}`);
+  await loadSeries(s);
 }
 
 export async function loadEarnings() {
   try {
-    const r = await fetch("data/earnings.json", { cache: "no-cache" });
-    if (!r.ok) return;
-    const j = await r.json();
-    state.loadedEarnings = j.data || [];
-  } catch { state.loadedEarnings = []; }
+    const j = await requestJSON("data/earnings.json", "earnings");
+    if (!Array.isArray(j?.data)) throw new Error("earnings: missing event rows");
+    state.loadedEarnings = j.data;
+  } catch { /* Keep the last successful calendar when refresh fails. */ }
 }

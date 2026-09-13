@@ -57,7 +57,7 @@ def fetch_fred_csv(series_id: str) -> list[dict]:
     resp.raise_for_status()
     rows = []
     for row in csv.DictReader(io.StringIO(resp.text)):
-        d = row.get("DATE", "").strip()
+        d = (row.get("observation_date") or row.get("DATE") or "").strip()
         v = row.get(series_id, "").strip()
         if not d or v in (".", ""):
             continue
@@ -238,12 +238,8 @@ def fetch_cot_es(years: int = 5) -> list[dict]:
             raw = zf.read(txt_name).decode("utf-8", errors="replace")
             df = pd.read_csv(io.StringIO(raw))
             df.columns = [c.strip().strip('"') for c in df.columns]
-            # filter for S&P 500 E-Mini futures
-            mask = df["Market_and_Exchange_Names"].str.contains("E-MINI S&P 500", case=False, na=False)
-            es = df[mask].copy()
-            if es.empty:
-                mask = df["Market_and_Exchange_Names"].str.contains("S&P 500", case=False, na=False)
-                es = df[mask].copy()
+            # Exact code prevents Micro E-mini rows from overwriting the ES row.
+            es = df[df["CFTC_Contract_Market_Code"].astype(str).str.strip() == "13874A"].copy()
             for _, r in es.iterrows():
                 d = str(r.get("Report_Date_as_YYYY-MM-DD", "")).strip()
                 if not re.match(r"^\d{4}-\d{2}-\d{2}$", d):

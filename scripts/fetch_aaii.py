@@ -42,11 +42,14 @@ XLS_URL = "https://www.aaii.com/files/surveys/sentiment.xls"
 
 
 def _row(d: str, bull: float, neut: float, bear: float) -> dict:
+    bull = round(bull, 1)
+    neut = round(neut, 1)
+    bear = round(bear, 1)
     return {
         "date": d,
-        "bull": round(bull, 1),
-        "neutral": round(neut, 1),
-        "bear": round(bear, 1),
+        "bull": bull,
+        "neutral": neut,
+        "bear": bear,
         "spread": round(bull - bear, 1),
     }
 
@@ -61,7 +64,8 @@ def load_existing() -> list[dict]:
     if not OUT.exists():
         return []
     try:
-        return json.loads(OUT.read_text()).get("data", [])
+        return [_row(r["date"], r["bull"], r["neutral"], r["bear"])
+                for r in json.loads(OUT.read_text()).get("data", [])]
     except Exception:
         return []
 
@@ -201,7 +205,8 @@ def main() -> None:
     else:
         raise SystemExit("No AAII data from any source and no existing file")
 
-    data = sorted(by_date.values(), key=lambda r: r["date"])
+    data = sorted((_row(r["date"], r["bull"], r["neutral"], r["bear"])
+                   for r in by_date.values()), key=lambda r: r["date"])
     payload = {
         "source": "AAII Investor Sentiment Survey (aaii.com live + official sentiment.xls)",
         "note": "Weekly. bull/neutral/bear are percentages; spread = bull - bear (net bullish).",

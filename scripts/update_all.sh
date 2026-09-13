@@ -58,6 +58,8 @@ $PYTHON fetch_investor_conf.py || true
 $PYTHON fetch_earnings.py      || true
 $PYTHON fetch_sector_holdings.py || true
 $PYTHON compute_sentiment.py   || true
+$PYTHON fetch_cftc_positions.py || true
+$PYTHON fetch_cboe_putcall.py    || true
 $PYTHON fetch_bullbear.py      || true
 $PYTHON fetch_liquidity.py     || true
 $PYTHON fetch_taiwan_money_supply.py || true
