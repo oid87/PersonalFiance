@@ -71,6 +71,7 @@ import * as gdpProductivityDecompTab from './tabs/gdp_productivity_decomp.js';
 import * as semiVsSpxPeTab   from './tabs/semi_vs_spx_pe.js';
 import * as twJpKrGdpTab     from './tabs/tw_jp_kr_gdp.js';
 import * as soxVsTwSemiPeTab from './tabs/sox_vs_tw_semi_pe.js';
+import * as marketstructureTab from './tabs/marketstructure.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -141,6 +142,7 @@ registerAll([
   { id: 'semi_vs_spx_pe',   module: semiVsSpxPeTab   },
   { id: 'tw_jp_kr_gdp',     module: twJpKrGdpTab     },
   { id: 'sox_vs_tw_semi_pe', module: soxVsTwSemiPeTab },
+  { id: 'marketstructure', module: marketstructureTab },
 ]);
 
 setupResizeHandler();
@@ -228,6 +230,7 @@ const CATEGORIES = [
       { id: 'semi_vs_spx_pe',   label: '半導體估值' },
       { id: 'tw_jp_kr_gdp',     label: '台日韓GDP對照' },
       { id: 'sox_vs_tw_semi_pe', label: '半導體估值(全球vs台灣)' },
+      { id: 'marketstructure', label: '市場結構' },
     ]
   },
 ];

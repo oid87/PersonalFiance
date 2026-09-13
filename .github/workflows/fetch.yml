@@ -45,6 +45,14 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_fear_greed.py
 
+      - name: Fetch CFTC index positions
+        continue-on-error: true
+        run: python scripts/fetch_cftc_positions.py
+
+      - name: Fetch Cboe Equity and SPX Put/Call
+        continue-on-error: true
+        run: python scripts/fetch_cboe_putcall.py
+
       - name: Fetch AAII sentiment survey
         continue-on-error: true
         run: python scripts/fetch_aaii.py

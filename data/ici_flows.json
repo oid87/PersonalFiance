@@ -1,0 +1,11 @@
+{
+  "source": "ICI Weekly Estimated Long-Term Mutual Fund Flows",
+  "source_url": "https://www.ici.org/research/stats/flows",
+  "scope": "mutual_funds",
+  "unit": "USD millions",
+  "status": "unavailable",
+  "error": "官方來源目前拒絕自動存取，尚未接入定期更新。",
+  "updated": null,
+  "checked_at": "2026-09-13",
+  "rows": []
+}

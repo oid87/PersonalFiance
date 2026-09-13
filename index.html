@@ -3537,6 +3537,166 @@
     </div>
   </section>
 
+  <!-- ── 美股市場結構 tab ───────────────────────────── -->
+  <section id="tab-marketstructure" class="tab-section" hidden>
+    <style>
+      #tab-marketstructure { color:var(--text); padding-bottom:28px; }
+      #tab-marketstructure .ms-header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:22px 20px 14px; border-bottom:1px solid var(--border); }
+      #tab-marketstructure .ms-header h2 { margin:0; font-size:clamp(24px,3vw,34px); letter-spacing:-.04em; }
+      #tab-marketstructure .ms-header p { margin:7px 0 0; color:var(--muted); font-size:14px; line-height:1.6; }
+      #tab-marketstructure button { font:inherit; }
+      #tab-marketstructure .ms-retry { flex:none; border:1px solid var(--border); border-radius:9px; background:var(--panel); color:var(--text); padding:9px 13px; cursor:pointer; }
+      #tab-marketstructure .ms-retry:hover, #tab-marketstructure .ms-chip:hover { border-color:#58a6ff; }
+      #tab-marketstructure .ms-overall { min-height:24px; padding:9px 20px 0; color:var(--muted); font-size:13px; }
+      #tab-marketstructure .ms-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; padding:12px 20px; }
+      #tab-marketstructure .ms-card { min-width:0; padding:16px; background:var(--panel); border:1px solid var(--border); border-radius:12px; }
+      #tab-marketstructure .ms-card-wide { grid-column:1 / -1; }
+      #tab-marketstructure .ms-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:13px; }
+      #tab-marketstructure .ms-card h3 { margin:0; font-size:16px; }
+      #tab-marketstructure .ms-kicker { display:block; margin-top:4px; color:var(--muted); font-size:12px; line-height:1.45; }
+      #tab-marketstructure .ms-source-status { min-height:20px; color:var(--muted); font-size:12px; line-height:1.45; text-align:right; }
+      #tab-marketstructure .ms-source-status.is-loading { animation:ms-pulse 1.2s ease-in-out infinite; }
+      #tab-marketstructure .ms-source-status.is-stale { color:#d29922; }
+      #tab-marketstructure .ms-source-status.is-error { color:#f85149; }
+      #tab-marketstructure .ms-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+      #tab-marketstructure .ms-metric { min-width:0; padding:11px 12px; border:1px solid var(--border); border-radius:9px; }
+      #tab-marketstructure .ms-metric-label { display:block; min-height:34px; color:var(--muted); font-size:13px; line-height:1.4; }
+      #tab-marketstructure .ms-metric strong { display:block; margin-top:4px; font-size:19px; line-height:1.25; overflow-wrap:anywhere; }
+      #tab-marketstructure .ms-cot-table { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+      #tab-marketstructure .ms-cot-row { padding:12px; border:1px solid var(--border); border-radius:9px; }
+      #tab-marketstructure .ms-cot-row h4 { margin:0 0 8px; font-size:14px; }
+      #tab-marketstructure .ms-cot-values { display:grid; gap:5px; color:var(--muted); font-size:12px; line-height:1.45; }
+      #tab-marketstructure .ms-chart-card { margin:0 20px 12px; padding:16px; background:var(--panel); border:1px solid var(--border); border-radius:12px; }
+      #tab-marketstructure .ms-chart-title { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:6px; }
+      #tab-marketstructure .ms-chart-title h3 { margin:0; font-size:16px; }
+      #tab-marketstructure .ms-chips { display:flex; gap:6px; flex-wrap:wrap; }
+      #tab-marketstructure .ms-chip { border:1px solid var(--border); border-radius:999px; background:transparent; color:var(--muted); padding:6px 10px; cursor:pointer; font-size:13px; }
+      #tab-marketstructure .ms-chip.active { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+      #tab-marketstructure .ms-chart { width:100%; height:330px; }
+      #tab-marketstructure .ms-method { margin:14px 20px 0; padding:15px 16px; border:1px solid var(--border); border-radius:12px; color:var(--muted); font-size:13px; line-height:1.65; }
+      #tab-marketstructure .ms-method summary { color:var(--text); font-weight:650; cursor:pointer; }
+      #tab-marketstructure .ms-method p { margin:10px 0 0; }
+      #tab-marketstructure .ms-method a { color:#58a6ff; }
+      @keyframes ms-pulse { 50% { opacity:.45; } }
+      @media (max-width:700px) {
+        #tab-marketstructure .ms-header { padding:17px 14px 12px; flex-direction:column; }
+        #tab-marketstructure .ms-retry { width:100%; }
+        #tab-marketstructure .ms-overall { padding-left:14px; padding-right:14px; }
+        #tab-marketstructure .ms-grid { grid-template-columns:minmax(0,1fr); padding:10px 14px; }
+        #tab-marketstructure .ms-card-wide { grid-column:auto; }
+        #tab-marketstructure .ms-card-head { display:block; }
+        #tab-marketstructure .ms-source-status { margin-top:7px; text-align:left; }
+        #tab-marketstructure .ms-metrics, #tab-marketstructure .ms-cot-table { grid-template-columns:minmax(0,1fr); }
+        #tab-marketstructure .ms-chart-card { margin:0 14px 10px; padding:13px 10px; }
+        #tab-marketstructure .ms-chart { height:300px; }
+        #tab-marketstructure .ms-method { margin:12px 14px 0; }
+      }
+      @media (prefers-reduced-motion:reduce) { #tab-marketstructure .ms-source-status.is-loading { animation:none; } }
+    </style>
+
+    <header class="ms-header">
+      <div>
+        <h2>美股市場結構</h2>
+        <p>並列檢視期貨部位、選擇權需求、融資餘額與情緒。每個資料區塊獨立更新。</p>
+      </div>
+      <button id="marketstructure-retry" class="ms-retry" type="button">重新整理</button>
+    </header>
+    <div id="marketstructure-overall-status" class="ms-overall" role="status" aria-live="polite">切換至此頁後載入資料…</div>
+
+    <div class="ms-grid">
+      <article class="ms-card ms-card-wide">
+        <div class="ms-card-head">
+          <div><h3>CFTC 槓桿資金部位</h3><span class="ms-kicker">金融期貨部位，單位為口數</span></div>
+          <div id="marketstructure-cftc-status" class="ms-source-status is-loading" role="status">載入中…</div>
+        </div>
+        <div id="marketstructure-cftc-table" class="ms-cot-table" aria-live="polite"></div>
+      </article>
+
+      <article class="ms-card">
+        <div class="ms-card-head">
+          <div><h3>Cboe Put / Call</h3><span class="ms-kicker">股票選擇權與 SPX + SPXW，範圍分開標示</span></div>
+          <div id="marketstructure-cboe-status" class="ms-source-status is-loading" role="status">載入中…</div>
+        </div>
+        <div id="marketstructure-cboe-metrics" class="ms-metrics"></div>
+      </article>
+
+      <article class="ms-card">
+        <div class="ms-card-head">
+          <div><h3>FINRA 融資餘額</h3><span class="ms-kicker">兆美元與同月年增率</span></div>
+          <div id="marketstructure-liquidity-status" class="ms-source-status is-loading" role="status">載入中…</div>
+        </div>
+        <div id="marketstructure-margin-metrics" class="ms-metrics"></div>
+      </article>
+
+      <article class="ms-card">
+        <div class="ms-card-head">
+          <div><h3>AAII 投資人情緒</h3><span class="ms-kicker">看多、中立、看空與多空差</span></div>
+          <div id="marketstructure-aaii-status" class="ms-source-status is-loading" role="status">載入中…</div>
+        </div>
+        <div id="marketstructure-aaii-metrics" class="ms-metrics"></div>
+      </article>
+
+      <article class="ms-card">
+        <div class="ms-card-head">
+          <div><h3>VIX</h3><span class="ms-kicker">Yahoo Finance（^VIX）收盤；指數原始來源 Cboe</span></div>
+          <div id="marketstructure-vix-status" class="ms-source-status is-loading" role="status">載入中…</div>
+        </div>
+        <div id="marketstructure-vix-metrics" class="ms-metrics"></div>
+      </article>
+
+      <article class="ms-card">
+        <div class="ms-card-head">
+          <div><h3>OCC 輔助指標</h3><span class="ms-kicker">與 Cboe 統計口徑分開，不混合成單一數列</span></div>
+          <div id="marketstructure-putcall-status" class="ms-source-status is-loading" role="status">載入中…</div>
+        </div>
+        <div id="marketstructure-occ-metrics" class="ms-metrics"></div>
+      </article>
+
+      <article class="ms-card">
+        <div class="ms-card-head">
+          <div><h3>ICI 共同基金流量</h3><span class="ms-kicker">選用資料；未提供時不進入圖表或推論</span></div>
+          <div id="marketstructure-ici-status" class="ms-source-status is-loading" role="status">載入中…</div>
+        </div>
+        <div id="marketstructure-ici-metrics" class="ms-metrics"></div>
+      </article>
+    </div>
+
+    <article class="ms-chart-card">
+      <div class="ms-chart-title">
+        <h3>CFTC 槓桿資金淨部位歷史</h3>
+        <div class="ms-chips" aria-label="選擇 CFTC 合約">
+          <button class="ms-chip active" type="button" data-ms-cot="sp500">S&amp;P 500</button>
+          <button class="ms-chip" type="button" data-ms-cot="nasdaq100">Nasdaq-100</button>
+          <button class="ms-chip" type="button" data-ms-cot="russell2000">Russell 2000</button>
+        </div>
+      </div>
+      <div id="marketstructure-cot-chart" class="ms-chart" role="img" aria-label="CFTC 槓桿資金淨部位歷史圖"></div>
+    </article>
+
+    <article class="ms-chart-card">
+      <div class="ms-chart-title"><h3>Cboe Put / Call 歷史</h3></div>
+      <div id="marketstructure-options-chart" class="ms-chart" role="img" aria-label="Cboe 股票選擇權與 SPX Put Call 歷史圖"></div>
+    </article>
+
+    <article class="ms-chart-card">
+      <div class="ms-chart-title">
+        <h3>風險與情緒歷史</h3>
+        <div class="ms-chips" aria-label="選擇風險指標">
+          <button class="ms-chip active" type="button" data-ms-risk="vix">VIX</button>
+          <button class="ms-chip" type="button" data-ms-risk="margin">融資餘額</button>
+          <button class="ms-chip" type="button" data-ms-risk="aaii">AAII 多空差</button>
+        </div>
+      </div>
+      <div id="marketstructure-risk-chart" class="ms-chart" role="img" aria-label="可切換的 VIX、融資餘額與 AAII 歷史圖"></div>
+    </article>
+
+    <details class="ms-method">
+      <summary>資料範圍與方法</summary>
+      <p>CFTC 為金融期貨槓桿資金部位；「3 年部位區間位置」以最近 156 筆週資料的最低與最高淨部位做 min-max 換算，資料不足或區間無變化時顯示 —。Cboe 股票選擇權與 SPX + SPXW 比率分開顯示；OCC 僅作不同統計口徑的輔助觀察。FINRA 原始單位為 USD millions，頁面換算為兆美元；年增率只配對去年同月，缺月時顯示 —。VIX 收盤由 Yahoo Finance 的 ^VIX 取得，指數原始來源為 Cboe。本頁不產生擁擠程度或方向性交易結論。</p>
+      <p>資料來源：<a href="https://www.cftc.gov/MarketReports/CommitmentsofTraders/index.htm" target="_blank" rel="noopener noreferrer">CFTC</a>、<a href="https://www.cboe.com/us/options/market_statistics/daily/" target="_blank" rel="noopener noreferrer">Cboe</a>、<a href="https://www.finra.org/investors/learn-to-invest/advanced-investing/margin-statistics" target="_blank" rel="noopener noreferrer">FINRA</a>、<a href="https://www.aaii.com/sentimentsurvey" target="_blank" rel="noopener noreferrer">AAII</a>、<a href="https://www.ici.org/research/stats/flows" target="_blank" rel="noopener noreferrer">ICI</a>。日頻超過 7 日、週頻超過 15 日、FINRA 月頻超過 75 日會標示為資料過期；資料源回報錯誤與觀測日期過期分開呈現。</p>
+    </details>
+  </section>
+
   <nav class="cat-bar">
     <button class="cat-btn" data-cat="sentiment">😨　情緒</button>
     <button class="cat-btn" data-cat="liquidity">💧　流動性</button>

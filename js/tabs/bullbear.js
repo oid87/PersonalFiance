@@ -194,12 +194,13 @@ export async function init() {
 
     renderAll();
     const keyMap = { hy: "hy_spread" };
-    const avail = COMP_META.filter(m => {
+    const available = COMP_META.filter(m => {
       if (m.key === "breadth") return breadthArr?.length;
       if (m.key === "pe") return peArr?.length;
       return bb[keyMap[m.key] || m.key]?.length;
-    }).length;
-    status.textContent = `${avail}/7 個元件 · ${composite.length} 期 · 更新至 ${bb.updated}`;
+    });
+    const missing = COMP_META.filter(m => !available.includes(m)).map(m => m.label);
+    status.textContent = `${available.length}/${COMP_META.length} 個元件 · ${composite.length} 期 · 檔案更新 ${bb.updated}${missing.length ? ` · 暫缺：${missing.join("、")}（未納入計算）` : ""}`;
   } catch (err) {
     status.textContent = `載入失敗：${err.message}`;
   }

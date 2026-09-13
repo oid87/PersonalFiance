@@ -2,7 +2,7 @@ import { SERIES, PENTA_TICKERS, loaded, loadedHLC } from '../state.js';
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate, toWeekly, toWeeklyHLC } from '../utils/dates.js';
 import { computeLinearRegression, computeChannelBands, computeRSI, computeKD, computeTDSetup } from '../utils/math.js';
-import { loadSeries } from '../utils/data.js';
+import { ensureLoaded, loadSeries } from '../utils/data.js';
 
 let pentaChart        = null;
 let pentaActiveTicker = "VOO";
@@ -615,23 +615,34 @@ export function renderPentaTickerPicker() {
     el.onclick = async () => {
       pentaActiveTicker = key;
       renderPentaTickerPicker();
-      if (!loaded[key]) {
-        document.getElementById("penta-status").textContent = "載入中…";
-        await loadSeries(s);
+      try {
+        await activate();
+      } catch (err) {
+        // activate already provides a visible error; selecting the chip retries.
+        console.warn(`[pentagram] ${key} load failed`, err);
       }
-      if (pentaFpeActive) await _ensureFpeData(key);
-      renderPentagram();
     };
     wrap.appendChild(el);
   }
 }
 
-export function activate() {
+export async function activate() {
   const el = document.getElementById("penta-chart");
+  const status = document.getElementById("penta-status");
   if (!pentaChart) {
     pentaChart = echarts.init(el, isLight() ? null : "dark");
   }
-  setTimeout(() => { pentaChart.resize(); renderPentagram(); }, 50);
+  if (status) status.textContent = `載入 ${pentaActiveTicker}…`;
+  try {
+    await ensureLoaded(pentaActiveTicker);
+    if (pentaFpeActive) await _ensureFpeData(pentaActiveTicker);
+    await new Promise(resolve => setTimeout(resolve, 50));
+    pentaChart.resize();
+    renderPentagram();
+  } catch (err) {
+    if (status) status.textContent = `載入失敗：${err.message || err}`;
+    throw err;
+  }
 }
 
 export function onThemeChange(light) {
