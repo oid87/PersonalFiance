@@ -234,6 +234,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_tw_jp_kr_gdp.py
 
+      - name: Fetch Taiwan semiconductor basket forward PE (self-built market-cap-weighted basket, yfinance)
+        continue-on-error: true
+        run: python scripts/fetch_tw_semi_valuation.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 
