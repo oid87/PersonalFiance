@@ -6,6 +6,7 @@
 // synthetic (K×underlyingRet − dailyCost) before — so synthetic→real splices smoothly.
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
+import { fetchJSON } from '../utils/data.js';
 
 let levChart = null;
 let BUNDLE = null;
@@ -525,29 +526,74 @@ function setupEvents() {
   panel.addEventListener('click', onPanelClick);
 }
 
+function validDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return parsed.getUTCFullYear() === year && parsed.getUTCMonth() === month - 1 && parsed.getUTCDate() === day;
+}
+
+function validPriceSeries(rows, minLength) {
+  if (!Array.isArray(rows) || rows.length < minLength) return false;
+  let previousDate = '';
+  return rows.every(row => {
+    const valid = Array.isArray(row) && row.length >= 2 && validDate(row[0]) &&
+      row[0] > previousDate && Number.isFinite(row[1]) && row[1] > 0;
+    if (valid) previousDate = row[0];
+    return valid;
+  });
+}
+
+function validateBundle(bundle) {
+  if (!Array.isArray(bundle?.etfs) || bundle.etfs.length === 0 ||
+      !bundle.underlyings || typeof bundle.underlyings !== 'object' || Array.isArray(bundle.underlyings)) {
+    throw new Error('槓桿資料格式不完整');
+  }
+  if (!bundle.etfs.some(etf => etf?.id === bt.etf)) {
+    throw new Error('槓桿資料缺少預設 ETF');
+  }
+  for (const etf of bundle.etfs) {
+    const underlying = bundle.underlyings[etf?.underlying];
+    const numericFieldsValid = Number.isFinite(etf?.leverage) && etf.leverage > 0 &&
+      Number.isFinite(etf?.expense) && etf.expense >= 0 &&
+      Number.isFinite(etf?.financing) && etf.financing >= 0;
+    if (typeof etf?.id !== 'string' || !etf.id || !validDate(etf.inception) ||
+        !numericFieldsValid || !underlying || !validPriceSeries(underlying.data, 2) ||
+        !validPriceSeries(etf.real, 0)) {
+      throw new Error(`槓桿資料格式不完整：${etf?.id || 'ETF'}`);
+    }
+  }
+  return bundle;
+}
+
 async function loadBundle() {
   if (BUNDLE) return BUNDLE;
-  if (!loadPromise) loadPromise = fetch('data/leverage.json', { cache: 'no-cache' })
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-  BUNDLE = await loadPromise;
-  return BUNDLE;
+  if (!loadPromise) {
+    loadPromise = fetchJSON('data/leverage.json').then(validateBundle);
+  }
+  try {
+    BUNDLE = await loadPromise;
+    return BUNDLE;
+  } finally {
+    loadPromise = null;
+  }
 }
 
 // ── Lifecycle (switcher API) ──────────────────────────────────────────────
-export function activate() {
+export async function activate() {
   if (!levChart) { levChart = echarts.init($('lev-chart'), isLight() ? null : 'dark'); }
   setupEvents();
-  setTimeout(async () => {
-    levChart.resize();
-    renderPanel();
-    if (!BUNDLE && mode === 'backtest') {
-      setStatus('載入槓桿資料中…');
-      try { await loadBundle(); } catch (e) { setStatus('載入失敗：' + e.message); return; }
-    } else if (!BUNDLE) {
-      loadBundle().catch(() => {});
-    }
-    renderMode();
-  }, 50);
+  renderPanel();
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  levChart.resize();
+  setStatus('載入槓桿資料中…');
+  try {
+    await loadBundle();
+  } catch (error) {
+    setStatus('槓桿資料暫時無法取得，請重試');
+    throw new Error('槓桿資料暫時無法取得，請重試', { cause: error });
+  }
+  renderMode();
 }
 export function onThemeChange(light) {
   if (!levChart) return;

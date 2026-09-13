@@ -39,7 +39,7 @@ const tableTabs = new Set(['cashking', 'earnings', 'tools']);
           const el = document.getElementById(`tab-${id}`);
           if (!el || el.hidden || el.getAttribute('aria-busy') === 'true') return false;
           const text = el.innerText;
-          if (/載入中[….]|正在載入|Loading\.\.\./i.test(text)) return false;
+          if (/載入[^\n]{0,30}中[….]|正在載入|Loading\.\.\./i.test(text)) return false;
           return el.querySelector('canvas, svg, table, .earn-grid, [role="alert"]') || text.length > 70;
         }, tab.id, { timeout: 25000 }).catch(e => errors.push({ tab: tab.id, message: `load timeout: ${e.message}` }));
         await page.waitForTimeout(300);
