@@ -87,7 +87,14 @@ def _get_forward_pe(sym: str, retries: int = 3) -> float | None:
     return None
 
 
-def calc_fpe(holdings: dict[str, float]) -> float | None:
+def calc_fpe(holdings: dict[str, float]) -> tuple[float | None, float | None]:
+    """Returns (arithmetic-weighted forward PE, harmonic-weighted forward PE).
+
+    Harmonic mean (= total_weight / Σ(weight/PE), equivalent to a market-cap-
+    weighted "aggregate P/E") added 2026-09-13 alongside the legacy arithmetic
+    mean — see the same change in fetch_soxx_valuation.py for the rationale
+    (arithmetic mean gets skewed by small-weight, high-PE outliers).
+    """
     valid: list[tuple[float, float]] = []
     for sym, weight in holdings.items():
         fpe = _get_forward_pe(sym)
@@ -97,12 +104,16 @@ def calc_fpe(holdings: dict[str, float]) -> float | None:
             print(f"  [{sym}] forwardPE={fpe} — excluded")
 
     if not valid:
-        return None
+        return None, None
 
     total_w = sum(w for _, w in valid)
-    weighted = sum(fpe * w for fpe, w in valid) / total_w
-    print(f"  Weighted forward PE: {weighted:.2f}x  ({len(valid)} stocks, coverage {total_w:.1f}%)")
-    return round(weighted, 2)
+    arith = sum(fpe * w for fpe, w in valid) / total_w
+    harmonic = total_w / sum(w / fpe for fpe, w in valid)
+    print(
+        f"  Weighted forward PE: arithmetic={arith:.2f}x harmonic={harmonic:.2f}x  "
+        f"({len(valid)} stocks, coverage {total_w:.1f}%)"
+    )
+    return round(arith, 2), round(harmonic, 2)
 
 
 def load_existing() -> list[dict]:
@@ -128,7 +139,7 @@ def main() -> None:
         holdings = HOLDINGS_FALLBACK
         src_label = "calc"
 
-    fpe = calc_fpe(holdings)
+    fpe, fpe_harmonic = calc_fpe(holdings)
 
     # Trailing PE straight from the SPY ETF (yfinance exposes it)
     tpe = None
@@ -149,13 +160,17 @@ def main() -> None:
     entry = {"date": today, "src": src_label}
     if fpe is not None:
         entry["fpe"] = fpe
+    if fpe_harmonic is not None:
+        entry["fpe_harmonic"] = fpe_harmonic
     if tpe is not None:
         entry["tpe"] = tpe
     by_date[today] = {**by_date.get(today, {}), **entry}
     merged = sorted(by_date.values(), key=lambda r: r["date"])
 
     note = (
-        "S&P 500 估值。fpe=forward（前20大持股加權，排除 PE>50x；歷史為 FactSet/Yardeni 估計）；"
+        "S&P 500 估值。fpe=forward（前20大持股加權算術平均，排除 PE>50x；歷史為 FactSet/Yardeni 估計）；"
+        "fpe_harmonic=同一籃子的加權調和平均（= total_weight/Σ(weight/PE)，等價市值加權聚合PE，"
+        "只從2026-09-13起提供，之前日期無此欄位）；"
         "tpe=trailing（SPY ETF）。圖表 trailing 線另疊 multpl.com 長期歷史（SP500_PE.json）。"
     )
     payload = {"updated": today, "note": note, "data": merged}

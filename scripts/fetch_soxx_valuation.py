@@ -127,7 +127,18 @@ def _ntm_pe(sym: str, retries: int = 3) -> float | None:
     return None
 
 
-def calc_fpe(holdings: dict[str, float]) -> float | None:
+def calc_fpe(holdings: dict[str, float]) -> tuple[float | None, float | None]:
+    """Returns (arithmetic-weighted NTM PE, harmonic-weighted NTM PE).
+
+    Arithmetic mean is the original/legacy metric (kept for continuity with
+    the existing historical series). It gets skewed high by a handful of
+    small-weight, high-PE outliers (e.g. INTC/MRVL/AMD) — realized 2026-09-13:
+    arithmetic=23.87x vs harmonic=18.88x for the same SOXX basket, the latter
+    much closer to Yardeni's independently published ~16.3x. Harmonic mean
+    (= total_weight / Σ(weight/PE), equivalent to Σ(mv)/Σ(mv/PE) i.e. market-
+    cap-weighted "aggregate P/E") is the more standard index-level metric and
+    is not distorted by outliers the same way — see docs/forward_pe.md rule #1.
+    """
     valid: list[tuple[float, float]] = []
     for sym, weight in holdings.items():
         pe = _ntm_pe(sym)
@@ -137,12 +148,16 @@ def calc_fpe(holdings: dict[str, float]) -> float | None:
             print(f"  [{sym}] NTM PE={pe} — excluded")
 
     if not valid:
-        return None
+        return None, None
 
     total_w = sum(w for _, w in valid)
-    weighted = sum(pe * w for pe, w in valid) / total_w
-    print(f"  NTM forward PE: {weighted:.2f}x  ({len(valid)} stocks, coverage {total_w:.1f}%)")
-    return round(weighted, 2)
+    arith = sum(pe * w for pe, w in valid) / total_w
+    harmonic = total_w / sum(w / pe for pe, w in valid)
+    print(
+        f"  NTM forward PE: arithmetic={arith:.2f}x harmonic={harmonic:.2f}x  "
+        f"({len(valid)} stocks, coverage {total_w:.1f}%)"
+    )
+    return round(arith, 2), round(harmonic, 2)
 
 
 def load_existing() -> list[dict]:
@@ -168,7 +183,7 @@ def main() -> None:
         holdings = HOLDINGS_FALLBACK
         src_label = "calc"
 
-    fpe = calc_fpe(holdings)
+    fpe, fpe_harmonic = calc_fpe(holdings)
 
     # Trailing PE straight from the SOXX ETF (yfinance exposes it)
     tpe = None
@@ -189,6 +204,8 @@ def main() -> None:
     entry = {"date": today, "src": src_label}
     if fpe is not None:
         entry["fpe"] = fpe
+    if fpe_harmonic is not None:
+        entry["fpe_harmonic"] = fpe_harmonic
     if tpe is not None:
         entry["tpe"] = tpe
     by_date[today] = {**by_date.get(today, {}), **entry}
@@ -196,7 +213,9 @@ def main() -> None:
 
     note = (
         "Philadelphia Semiconductor Index (SOXX) 估值。"
-        "fpe=forward（前20大持股 NTM 加權，排除 PE>70x 或負 EPS；NTM=(m/12)×當FY+(12-m)/12×次FY）；"
+        "fpe=forward（前20大持股 NTM 加權算術平均，排除 PE>70x 或負 EPS；NTM=(m/12)×當FY+(12-m)/12×次FY）；"
+        "fpe_harmonic=同一籃子的NTM加權調和平均（= total_weight/Σ(weight/PE)，等價市值加權聚合PE，"
+        "不受少數高PE小權重成分股扭曲，只從2026-09-13起提供，之前日期無此欄位）；"
         "tpe=trailing（SOXX ETF，每日累積）。半導體 PE 週期性強，熊市底部可壓縮至 14x，AI 高峰可達 32x+。"
     )
     payload = {"updated": today, "note": note, "data": merged}

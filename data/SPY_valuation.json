@@ -1,6 +1,6 @@
 {
   "updated": "2026-09-13",
-  "note": "S&P 500 估值。fpe=forward（前20大持股加權，排除 PE>50x；歷史為 FactSet/Yardeni 估計）；tpe=trailing（SPY ETF）。圖表 trailing 線另疊 multpl.com 長期歷史（SP500_PE.json）。",
+  "note": "S&P 500 估值。fpe=forward（前20大持股加權算術平均，排除 PE>50x；歷史為 FactSet/Yardeni 估計）；fpe_harmonic=同一籃子的加權調和平均（= total_weight/Σ(weight/PE)，等價市值加權聚合PE，只從2026-09-13起提供，之前日期無此欄位）；tpe=trailing（SPY ETF）。圖表 trailing 線另疊 multpl.com 長期歷史（SP500_PE.json）。",
   "data": [
     {
       "date": "2007-08-01",
@@ -1742,7 +1742,8 @@
       "date": "2026-09-13",
       "src": "calc",
       "fpe": 22.7,
-      "tpe": 24.69
+      "tpe": 24.69,
+      "fpe_harmonic": 20.88
     }
   ]
 }
