@@ -1085,6 +1085,7 @@
     </div>
     <div id="liquidity-chart" style="width:100%;height:280px"></div>
     <div id="liquidity-yoy-chart" style="width:100%;height:280px;margin-top:8px"></div>
+    <div id="liquidity-us-m2-chart" style="width:100%;height:280px;margin-top:8px"></div>
     <div id="liquidity-status" class="status"></div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 融資超額成長 + 翻頭判準（台/美/日）</div>
@@ -3507,6 +3508,19 @@
         <p>這張圖比較兩條 <b>Forward P/E（前瞻本益比）</b> 曲線：<b>SOXX</b>（費城半導體指數 ETF，代表半導體產業）vs <b>SPY</b>（S&amp;P 500 ETF，代表美股大盤）。半導體是景氣循環股，本益比波動幅度遠大於大盤——熊市底部可壓到 14x 附近，AI/景氣高峰期可衝上 30x 以上；大盤本益比相對平穩。看兩條線的「價差」可以判斷市場現在是把半導體當成「比大盤更貴的成長股」定價，還是「比大盤便宜的景氣循環股」定價，藉此評估半導體目前的估值相對大盤是貴還是便宜。圖上灰底區間標示 NBER 官方認定的美國衰退期，方便對照歷史上估值在衰退前後的變化。</p>
         <p id="semi_vs_spx_pe-latest" style="color:var(--muted);white-space:pre-line">載入中…</p>
         <p style="color:var(--muted)">⚠️ 方法論/資料品質備註：2025年9月以前的區段為回溯測算（hindsight forward P/E，用往後12個月的實際EPS回推，不是當時市場的即時預期值）；之後為即時逐日計算。SOXX資料回補到2004年10月，SPY受限於NVDA等成分股歷史財報資料深度只能回補到2007年8月，兩者起點不同。灰底衰退區間為 FRED USREC（NBER 官方認定），本質是事後回溯公告，非即時訊號。圖上折線用的是加權<b>算術</b>平均（維持與歷史序列一致的計算方式），容易被少數高本益比、小權重的個股拉高；上面那行「現在到底貴不貴」改用加權<b>調和</b>平均，較不受這種扭曲影響，只從2026-09-13起才有,是判斷當下貴賤更準的數字。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SOX vs 台灣半導體籃子估值 tab ───────────────────────────── -->
+  <section id="tab-sox_vs_tw_semi_pe" class="tab-section" hidden>
+    <div id="sox_vs_tw_semi_pe-chart" style="height:520px"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> SOX(全球半導體) vs 台灣半導體籃子 前瞻本益比對照怎麼看？</div>
+      <div class="info-panel-body">
+        <p>這張圖比較兩條 <b>Forward P/E（前瞻本益比）</b> 曲線：<b>SOX</b>（費城半導體指數 SOXX ETF，代表全球半導體產業）vs <b>台灣半導體籃子</b>（自建市值加權籃子，因 FinMind 台股類股指數需付費 Sponsor 方案，free tier 用不到，改用個股組籃近似）。兩條線的差距可以看出「台灣半導體股（以台積電為首）」相對「全球半導體整體」目前是估值較貴還是較便宜——例如台灣半導體若因為地緣政治或先進製程領先地位被市場多給一點溢價，這裡就會反映成台灣那條線相對SOX偏高。</p>
+        <p id="sox_vs_tw_semi_pe-latest" style="color:var(--muted);white-space:pre-line">載入中…</p>
+        <p style="color:var(--muted)">⚠️ 方法論/資料品質備註：<b>台灣半導體籃子組成</b>（2026-09-13查證，市值前10大核心半導體業個股，權重=市值佔比）：台積電2330(~79%)、聯發科2454(~9%)、日月光投控3711(~4%)、聯電2303(~2%)、南亞科2408(~2%)、創意3443(~1%)、群聯8299(~0.6%)、環球晶6488(~0.6%)、瑞昱2379(~0.5%)、京元電子2449(~0.4%)；排除欣興3037/南亞電路板8046等IC載板/PCB廠商（非半導體業本身，即便市值更大）。⚠️ 台積電權重高達~79%，遠高於SOX最大持股NVDA的~20%，代表台灣這條線基本上高度貼近台積電自身的估值水準，不是均衡分散的產業代表——這是台灣半導體市值結構的真實反映，不是方法論瑕疵。<b>兩種平均</b>：圖上實線是加權<b>調和</b>平均（fpe_harmonic，= total_weight/Σ(weight/PE)，不受少數高PE小權重個股扭曲，判斷「現在貴不貴」用這條更準）；虛線是加權<b>算術</b>平均（fpe，歷史上比較容易被離群個股拉高，只作歷史脈絡參考）。<b>資料覆蓋率</b>：目前查證日全數10檔個股皆有 NTM 分析師預估可用，覆蓋率100%；若未來某次抓取覆蓋率低於40%會在頁面顯示並在腳本log標註，屆時該筆讀數應審慎看待。<b>歷史深度</b>：SOX資料回補到2004年10月；台灣半導體籃子是全新資料源，從2026-09-13才開始每日累積,目前只有一天資料,兩條線的可比較時間範圍會隨著資料每天累積而拉長。</p>
       </div>
     </div>
   </section>

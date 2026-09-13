@@ -70,6 +70,7 @@ import * as twCrashTab       from './tabs/twcrash.js';
 import * as gdpProductivityDecompTab from './tabs/gdp_productivity_decomp.js';
 import * as semiVsSpxPeTab   from './tabs/semi_vs_spx_pe.js';
 import * as twJpKrGdpTab     from './tabs/tw_jp_kr_gdp.js';
+import * as soxVsTwSemiPeTab from './tabs/sox_vs_tw_semi_pe.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -139,6 +140,7 @@ registerAll([
   { id: 'gdp_productivity_decomp', module: gdpProductivityDecompTab },
   { id: 'semi_vs_spx_pe',   module: semiVsSpxPeTab   },
   { id: 'tw_jp_kr_gdp',     module: twJpKrGdpTab     },
+  { id: 'sox_vs_tw_semi_pe', module: soxVsTwSemiPeTab },
 ]);
 
 setupResizeHandler();
@@ -225,6 +227,7 @@ const CATEGORIES = [
       { id: 'gdp_productivity_decomp', label: '美國GDP拆解' },
       { id: 'semi_vs_spx_pe',   label: '半導體估值' },
       { id: 'tw_jp_kr_gdp',     label: '台日韓GDP對照' },
+      { id: 'sox_vs_tw_semi_pe', label: '半導體估值(全球vs台灣)' },
     ]
   },
 ];
