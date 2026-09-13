@@ -60,6 +60,15 @@ function latestOf(rows) {
   return pts.length ? pts[pts.length - 1] : null;
 }
 
+// fpe_harmonic 只從 2026-09-13 起才有(見 fetch_soxx/spy_valuation.py),
+// 找最後一筆有這個欄位的記錄,而不是強制用陣列最後一筆(可能還沒跑今日更新)
+function latestHarmonicOf(rows) {
+  const withHarmonic = (rows ?? []).filter(r => r.fpe_harmonic != null);
+  if (!withHarmonic.length) return null;
+  const r = withHarmonic[withHarmonic.length - 1];
+  return [r.date, r.fpe_harmonic];
+}
+
 function buildOption() {
   const soxxPts = toPoints(soxxRows);
   const spyPts = toPoints(spyRows);
@@ -121,9 +130,18 @@ function renderNote() {
     el.textContent = '最新一筆資料讀取失敗。';
     return;
   }
-  el.textContent =
-    `最新一筆 — SOXX 半導體 forward P/E：${soxxLatest[1].toFixed(2)}x（${soxxLatest[0]}）` +
+  const soxxH = latestHarmonicOf(soxxRows);
+  const spyH = latestHarmonicOf(spyRows);
+  let text =
+    `最新一筆(圖上線,加權算術平均) — SOXX 半導體 forward P/E：${soxxLatest[1].toFixed(2)}x（${soxxLatest[0]}）` +
     `　｜　SPY 大盤 forward P/E：${spyLatest[1].toFixed(2)}x（${spyLatest[0]}）`;
+  if (soxxH && spyH) {
+    const cheaper = soxxH[1] < spyH[1] ? '半導體比大盤便宜' : '半導體比大盤貴';
+    text +=
+      `\n現在到底貴不貴,看這行更準(加權調和平均,不受少數高PE小權重個股扭曲) — ` +
+      `SOXX：${soxxH[1].toFixed(2)}x　｜　SPY：${spyH[1].toFixed(2)}x → 目前${cheaper}`;
+  }
+  el.textContent = text;
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
