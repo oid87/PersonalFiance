@@ -89,6 +89,7 @@ $PYTHON fetch_margin_jp.py     || true
 $PYTHON fetch_margin_us.py     || true
 $PYTHON fetch_margin_kr.py     || true
 $PYTHON fetch_gdp_productivity.py || true
+$PYTHON fetch_usrec.py         || true
 
 # 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"

@@ -226,6 +226,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_gdp_productivity.py
 
+      - name: Fetch US recession indicator (FRED USREC, monthly, free)
+        continue-on-error: true
+        run: python scripts/fetch_usrec.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 
