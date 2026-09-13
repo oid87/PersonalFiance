@@ -19,6 +19,7 @@ Run once (or after a data reset):
 """
 from __future__ import annotations
 
+import argparse
 import json
 import time
 from datetime import date, timedelta
@@ -137,7 +138,7 @@ def fetch_monthly_prices(sym: str) -> dict[str, float]:
         return {}
 
 
-def backfill_one(cfg_key: str, cfg: dict) -> None:
+def backfill_one(cfg_key: str, cfg: dict, dry_run: bool = False) -> None:
     holdings: dict[str, float] = cfg["holdings"]
     tpe_cap: float = cfg["tpe_cap"]
     min_cov: float = cfg["min_coverage"]
@@ -231,15 +232,44 @@ def backfill_one(cfg_key: str, cfg: dict) -> None:
     calc_ct = sum(1 for r in merged if r.get("src") in ("calc", "calc-live"))
     print(f"  seed={seed_ct} + backfill={bf_ct} + calc={calc_ct} = {len(merged)} total")
 
+    fpe_records = [r for r in records if "fpe" in r]
+    if fpe_records:
+        span_months = len(all_months) if all_months else 1
+        coverage_pct = round(100.0 * len(fpe_records) / span_months, 1)
+        print(
+            f"  → hindsight FORWARD PE (fpe) 實測深度: {fpe_records[0]['date']} → "
+            f"{fpe_records[-1]['date']} ({len(fpe_records)} 月 / 涵蓋率 ~{coverage_pct}% "
+            f"of {span_months} 可能月數)"
+        )
+    else:
+        print("  → 無任何 hindsight forward PE (fpe) 記錄產出。")
+
+    if dry_run:
+        print(f"  [dry-run] 不寫入 {out_path.name}（僅預覽，未覆寫正式檔案）")
+        return
+
     payload = {"updated": date.today().isoformat(), "note": cfg["note"], "data": merged}
     out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
     print(f"  Wrote {len(merged)} entries → {out_path.name}")
 
 
 def main() -> None:
-    print("Backfilling QQQ / SOXX / SPY PE — quarterly TTM EPS via get_earnings_dates ...")
-    for key, cfg in CONFIGS.items():
-        backfill_one(key, cfg)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--dry-run", action="store_true",
+        help="只印出實測回補深度/涵蓋率，不寫入 data/*.json 正式檔案",
+    )
+    parser.add_argument(
+        "--only", choices=list(CONFIGS.keys()), default=None,
+        help="只跑單一標的（QQQ/SOXX/SPY），預設全部跑",
+    )
+    args = parser.parse_args()
+
+    targets = {args.only: CONFIGS[args.only]} if args.only else CONFIGS
+    mode = "DRY-RUN（不寫檔）" if args.dry_run else "正式寫入"
+    print(f"Backfilling {'/'.join(targets)} PE — quarterly TTM EPS via get_earnings_dates ... [{mode}]")
+    for key, cfg in targets.items():
+        backfill_one(key, cfg, dry_run=args.dry_run)
     print("\nDone.")
 
 

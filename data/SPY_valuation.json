@@ -1,91 +1,1359 @@
 {
-  "updated": "2026-09-12",
+  "updated": "2026-09-13",
   "note": "S&P 500 估值。fpe=forward（前20大持股加權，排除 PE>50x；歷史為 FactSet/Yardeni 估計）；tpe=trailing（SPY ETF）。圖表 trailing 線另疊 multpl.com 長期歷史（SP500_PE.json）。",
   "data": [
     {
-      "date": "2019-12-31",
-      "fpe": 18.5,
-      "src": "seed"
+      "date": "2007-08-01",
+      "tpe": 21.67,
+      "src": "backfill",
+      "fpe": 21.44
     },
     {
-      "date": "2020-03-23",
-      "fpe": 15.0,
-      "src": "seed"
+      "date": "2007-09-01",
+      "tpe": 23.25,
+      "src": "backfill",
+      "fpe": 19.5
+    },
+    {
+      "date": "2007-10-01",
+      "tpe": 25.02,
+      "src": "backfill",
+      "fpe": 19.89
+    },
+    {
+      "date": "2007-11-01",
+      "tpe": 23.91,
+      "src": "backfill",
+      "fpe": 17.73
+    },
+    {
+      "date": "2007-12-01",
+      "tpe": 25.25,
+      "src": "backfill",
+      "fpe": 18.32
+    },
+    {
+      "date": "2008-01-01",
+      "tpe": 18.16,
+      "src": "backfill",
+      "fpe": 18.81
+    },
+    {
+      "date": "2008-02-01",
+      "tpe": 16.1,
+      "src": "backfill",
+      "fpe": 19.64
+    },
+    {
+      "date": "2008-03-01",
+      "tpe": 16.72,
+      "src": "backfill",
+      "fpe": 20.09
+    },
+    {
+      "date": "2008-04-01",
+      "tpe": 18.5,
+      "src": "backfill",
+      "fpe": 22.67
+    },
+    {
+      "date": "2008-05-01",
+      "tpe": 19.69,
+      "src": "backfill",
+      "fpe": 22.15
+    },
+    {
+      "date": "2008-06-01",
+      "tpe": 17.36,
+      "src": "backfill",
+      "fpe": 21.53
+    },
+    {
+      "date": "2008-07-01",
+      "tpe": 19.27,
+      "src": "backfill",
+      "fpe": 20.74
+    },
+    {
+      "date": "2008-08-01",
+      "tpe": 20.23,
+      "src": "backfill",
+      "fpe": 22.27
+    },
+    {
+      "date": "2008-09-01",
+      "tpe": 16.94,
+      "src": "backfill",
+      "fpe": 22.37
+    },
+    {
+      "date": "2008-10-01",
+      "tpe": 14.37,
+      "src": "backfill",
+      "fpe": 14.84
+    },
+    {
+      "date": "2008-11-01",
+      "tpe": 12.0,
+      "src": "backfill",
+      "fpe": 13.88
+    },
+    {
+      "date": "2008-12-01",
+      "tpe": 12.62,
+      "src": "backfill",
+      "fpe": 15.32
+    },
+    {
+      "date": "2009-01-01",
+      "tpe": 13.02,
+      "src": "backfill",
+      "fpe": 11.77
+    },
+    {
+      "date": "2009-02-01",
+      "tpe": 13.49,
+      "src": "backfill",
+      "fpe": 14.23
+    },
+    {
+      "date": "2009-03-01",
+      "tpe": 15.11,
+      "src": "backfill",
+      "fpe": 12.1
+    },
+    {
+      "date": "2009-04-01",
+      "tpe": 16.77,
+      "src": "backfill",
+      "fpe": 12.44
+    },
+    {
+      "date": "2009-05-01",
+      "tpe": 16.98,
+      "src": "backfill",
+      "fpe": 16.98
+    },
+    {
+      "date": "2009-06-01",
+      "tpe": 17.79,
+      "src": "backfill",
+      "fpe": 17.05
+    },
+    {
+      "date": "2009-07-01",
+      "tpe": 18.76,
+      "src": "backfill",
+      "fpe": 17.04
+    },
+    {
+      "date": "2009-08-01",
+      "tpe": 19.04,
+      "src": "backfill",
+      "fpe": 16.76
+    },
+    {
+      "date": "2009-09-01",
+      "tpe": 20.66,
+      "src": "backfill",
+      "fpe": 12.81
+    },
+    {
+      "date": "2009-10-01",
+      "tpe": 15.93,
+      "src": "backfill",
+      "fpe": 11.24
+    },
+    {
+      "date": "2009-11-01",
+      "tpe": 17.04,
+      "src": "backfill",
+      "fpe": 11.89
+    },
+    {
+      "date": "2009-12-01",
+      "tpe": 18.33,
+      "src": "backfill",
+      "fpe": 12.22
+    },
+    {
+      "date": "2010-01-01",
+      "tpe": 14.29,
+      "src": "backfill",
+      "fpe": 11.5
+    },
+    {
+      "date": "2010-02-01",
+      "tpe": 19.31,
+      "src": "backfill",
+      "fpe": 11.42
+    },
+    {
+      "date": "2010-03-01",
+      "tpe": 15.93,
+      "src": "backfill",
+      "fpe": 11.34
+    },
+    {
+      "date": "2010-04-01",
+      "tpe": 15.13,
+      "src": "backfill",
+      "fpe": 10.29
+    },
+    {
+      "date": "2010-05-01",
+      "tpe": 18.28,
+      "src": "backfill",
+      "fpe": 9.29
+    },
+    {
+      "date": "2010-06-01",
+      "tpe": 16.69,
+      "src": "backfill",
+      "fpe": 8.09
+    },
+    {
+      "date": "2010-07-01",
+      "tpe": 16.4,
+      "src": "backfill",
+      "fpe": 8.21
+    },
+    {
+      "date": "2010-08-01",
+      "tpe": 16.1,
+      "src": "backfill",
+      "fpe": 8.62
+    },
+    {
+      "date": "2010-09-01",
+      "tpe": 13.39,
+      "src": "backfill",
+      "fpe": 8.92
+    },
+    {
+      "date": "2010-10-01",
+      "tpe": 11.85,
+      "src": "backfill",
+      "fpe": 8.93
+    },
+    {
+      "date": "2010-11-01",
+      "tpe": 11.73,
+      "src": "backfill",
+      "fpe": 8.65
+    },
+    {
+      "date": "2010-12-01",
+      "tpe": 12.43,
+      "src": "backfill",
+      "fpe": 8.95
+    },
+    {
+      "date": "2011-01-01",
+      "tpe": 12.6,
+      "src": "backfill",
+      "fpe": 9.21
+    },
+    {
+      "date": "2011-02-01",
+      "tpe": 12.63,
+      "src": "backfill",
+      "fpe": 9.65
+    },
+    {
+      "date": "2011-03-01",
+      "tpe": 11.99,
+      "src": "backfill",
+      "fpe": 9.63
+    },
+    {
+      "date": "2011-04-01",
+      "tpe": 11.54,
+      "src": "backfill",
+      "fpe": 9.22
+    },
+    {
+      "date": "2011-05-01",
+      "tpe": 11.37,
+      "src": "backfill",
+      "fpe": 9.11
+    },
+    {
+      "date": "2011-06-01",
+      "tpe": 10.96,
+      "src": "backfill",
+      "fpe": 8.95
+    },
+    {
+      "date": "2011-07-01",
+      "tpe": 10.67,
+      "src": "backfill",
+      "fpe": 9.08
+    },
+    {
+      "date": "2011-08-01",
+      "tpe": 11.3,
+      "src": "backfill",
+      "fpe": 9.13
+    },
+    {
+      "date": "2011-09-01",
+      "tpe": 10.25,
+      "src": "backfill",
+      "fpe": 8.58
+    },
+    {
+      "date": "2011-10-01",
+      "tpe": 10.48,
+      "src": "backfill",
+      "fpe": 8.65
+    },
+    {
+      "date": "2011-11-01",
+      "tpe": 10.3,
+      "src": "backfill",
+      "fpe": 8.56
+    },
+    {
+      "date": "2011-12-01",
+      "tpe": 10.53,
+      "src": "backfill",
+      "fpe": 8.74
+    },
+    {
+      "date": "2012-01-01",
+      "tpe": 10.62,
+      "src": "backfill",
+      "fpe": 8.71
+    },
+    {
+      "date": "2012-02-01",
+      "tpe": 11.48,
+      "src": "backfill",
+      "fpe": 9.4
+    },
+    {
+      "date": "2012-03-01",
+      "tpe": 12.02,
+      "src": "backfill",
+      "fpe": 9.69
+    },
+    {
+      "date": "2012-04-01",
+      "tpe": 10.89,
+      "src": "backfill",
+      "fpe": 9.66
+    },
+    {
+      "date": "2012-05-01",
+      "tpe": 10.25,
+      "src": "backfill",
+      "fpe": 9.34
+    },
+    {
+      "date": "2012-06-01",
+      "tpe": 10.75,
+      "src": "backfill",
+      "fpe": 9.68
+    },
+    {
+      "date": "2012-07-01",
+      "tpe": 10.67,
+      "src": "backfill",
+      "fpe": 9.41
+    },
+    {
+      "date": "2012-08-01",
+      "tpe": 11.19,
+      "src": "backfill",
+      "fpe": 9.0
+    },
+    {
+      "date": "2012-09-01",
+      "tpe": 11.38,
+      "src": "backfill",
+      "fpe": 9.29
+    },
+    {
+      "date": "2012-10-01",
+      "tpe": 10.77,
+      "src": "backfill",
+      "fpe": 9.39
+    },
+    {
+      "date": "2012-11-01",
+      "tpe": 10.83,
+      "src": "backfill",
+      "fpe": 9.76
+    },
+    {
+      "date": "2012-12-01",
+      "tpe": 10.7,
+      "src": "backfill",
+      "fpe": 9.7
+    },
+    {
+      "date": "2013-01-01",
+      "tpe": 11.12,
+      "src": "backfill",
+      "fpe": 10.1
+    },
+    {
+      "date": "2013-02-01",
+      "tpe": 11.32,
+      "src": "backfill",
+      "fpe": 10.15
+    },
+    {
+      "date": "2013-03-01",
+      "tpe": 11.51,
+      "src": "backfill",
+      "fpe": 10.59
+    },
+    {
+      "date": "2013-04-01",
+      "tpe": 11.9,
+      "src": "backfill",
+      "fpe": 11.1
+    },
+    {
+      "date": "2013-05-01",
+      "tpe": 12.46,
+      "src": "backfill",
+      "fpe": 11.59
+    },
+    {
+      "date": "2013-06-01",
+      "tpe": 12.14,
+      "src": "backfill",
+      "fpe": 11.53
+    },
+    {
+      "date": "2013-07-01",
+      "tpe": 12.81,
+      "src": "backfill",
+      "fpe": 12.37
+    },
+    {
+      "date": "2013-08-01",
+      "tpe": 11.72,
+      "src": "backfill",
+      "fpe": 12.08
+    },
+    {
+      "date": "2013-09-01",
+      "tpe": 12.05,
+      "src": "backfill",
+      "fpe": 12.54
+    },
+    {
+      "date": "2013-10-01",
+      "tpe": 12.69,
+      "src": "backfill",
+      "fpe": 12.97
+    },
+    {
+      "date": "2013-11-01",
+      "tpe": 13.31,
+      "src": "backfill",
+      "fpe": 13.68
+    },
+    {
+      "date": "2013-12-01",
+      "tpe": 13.73,
+      "src": "backfill",
+      "fpe": 13.65
+    },
+    {
+      "date": "2014-01-01",
+      "tpe": 13.24,
+      "src": "backfill",
+      "fpe": 12.92
+    },
+    {
+      "date": "2014-02-01",
+      "tpe": 14.02,
+      "src": "backfill",
+      "fpe": 13.85
+    },
+    {
+      "date": "2014-03-01",
+      "tpe": 13.92,
+      "src": "backfill",
+      "fpe": 13.23
+    },
+    {
+      "date": "2014-04-01",
+      "tpe": 14.01,
+      "src": "backfill",
+      "fpe": 13.23
+    },
+    {
+      "date": "2014-05-01",
+      "tpe": 14.59,
+      "src": "backfill",
+      "fpe": 13.41
+    },
+    {
+      "date": "2014-06-01",
+      "tpe": 14.76,
+      "src": "backfill",
+      "fpe": 13.17
+    },
+    {
+      "date": "2014-07-01",
+      "tpe": 14.85,
+      "src": "backfill",
+      "fpe": 12.89
+    },
+    {
+      "date": "2014-08-01",
+      "tpe": 15.56,
+      "src": "backfill",
+      "fpe": 13.74
+    },
+    {
+      "date": "2014-09-01",
+      "tpe": 15.56,
+      "src": "backfill",
+      "fpe": 13.95
+    },
+    {
+      "date": "2014-10-01",
+      "tpe": 16.14,
+      "src": "backfill",
+      "fpe": 14.62
+    },
+    {
+      "date": "2014-11-01",
+      "tpe": 16.78,
+      "src": "backfill",
+      "fpe": 15.23
+    },
+    {
+      "date": "2014-12-01",
+      "tpe": 16.19,
+      "src": "backfill",
+      "fpe": 15.27
+    },
+    {
+      "date": "2015-01-01",
+      "tpe": 15.48,
+      "src": "backfill",
+      "fpe": 14.56
+    },
+    {
+      "date": "2015-02-01",
+      "tpe": 16.67,
+      "src": "backfill",
+      "fpe": 15.55
+    },
+    {
+      "date": "2015-03-01",
+      "tpe": 16.17,
+      "src": "backfill",
+      "fpe": 15.83
+    },
+    {
+      "date": "2015-04-01",
+      "tpe": 16.31,
+      "src": "backfill",
+      "fpe": 15.08
+    },
+    {
+      "date": "2015-05-01",
+      "tpe": 16.54,
+      "src": "backfill",
+      "fpe": 16.79
+    },
+    {
+      "date": "2015-06-01",
+      "tpe": 15.97,
+      "src": "backfill",
+      "fpe": 16.53
+    },
+    {
+      "date": "2015-07-01",
+      "tpe": 16.44,
+      "src": "backfill",
+      "fpe": 20.17
+    },
+    {
+      "date": "2015-08-01",
+      "tpe": 16.04,
+      "src": "backfill",
+      "fpe": 19.97
+    },
+    {
+      "date": "2015-09-01",
+      "tpe": 16.16,
+      "src": "backfill",
+      "fpe": 20.59
+    },
+    {
+      "date": "2015-10-01",
+      "tpe": 17.68,
+      "src": "backfill",
+      "fpe": 22.61
+    },
+    {
+      "date": "2015-11-01",
+      "tpe": 18.31,
+      "src": "backfill",
+      "fpe": 22.58
+    },
+    {
+      "date": "2015-12-01",
+      "tpe": 18.4,
+      "src": "backfill",
+      "fpe": 23.3
+    },
+    {
+      "date": "2016-01-01",
+      "tpe": 17.11,
+      "src": "backfill",
+      "fpe": 21.7
+    },
+    {
+      "date": "2016-02-01",
+      "tpe": 16.83,
+      "src": "backfill",
+      "fpe": 18.62
+    },
+    {
+      "date": "2016-03-01",
+      "tpe": 18.33,
+      "src": "backfill",
+      "fpe": 20.32
+    },
+    {
+      "date": "2016-04-01",
+      "tpe": 17.55,
+      "src": "backfill",
+      "fpe": 19.42
+    },
+    {
+      "date": "2016-05-01",
+      "tpe": 19.3,
+      "src": "backfill",
+      "fpe": 20.29
+    },
+    {
+      "date": "2016-06-01",
+      "tpe": 18.91,
+      "src": "backfill",
+      "fpe": 20.0
+    },
+    {
+      "date": "2016-07-01",
+      "tpe": 23.14,
+      "src": "backfill",
+      "fpe": 21.22
+    },
+    {
+      "date": "2016-08-01",
+      "tpe": 23.66,
+      "src": "backfill",
+      "fpe": 20.08
+    },
+    {
+      "date": "2016-09-01",
+      "tpe": 24.62,
+      "src": "backfill",
+      "fpe": 20.08
+    },
+    {
+      "date": "2016-10-01",
+      "tpe": 24.82,
+      "src": "backfill",
+      "fpe": 20.09
+    },
+    {
+      "date": "2016-11-01",
+      "tpe": 24.25,
+      "src": "backfill",
+      "fpe": 18.8
+    },
+    {
+      "date": "2016-12-01",
+      "tpe": 25.69,
+      "src": "backfill",
+      "fpe": 19.1
+    },
+    {
+      "date": "2017-01-01",
+      "tpe": 25.78,
+      "src": "backfill",
+      "fpe": 19.42
+    },
+    {
+      "date": "2017-02-01",
+      "tpe": 23.68,
+      "src": "backfill",
+      "fpe": 20.09
+    },
+    {
+      "date": "2017-03-01",
+      "tpe": 24.5,
+      "src": "backfill",
+      "fpe": 20.09
+    },
+    {
+      "date": "2017-04-01",
+      "tpe": 24.28,
+      "src": "backfill",
+      "fpe": 19.44
+    },
+    {
+      "date": "2017-05-01",
+      "tpe": 25.58,
+      "src": "backfill",
+      "fpe": 19.45
+    },
+    {
+      "date": "2017-06-01",
+      "tpe": 25.15,
+      "src": "backfill",
+      "fpe": 18.61
+    },
+    {
+      "date": "2017-07-01",
+      "tpe": 25.99,
+      "src": "backfill",
+      "fpe": 18.57
+    },
+    {
+      "date": "2017-08-01",
+      "tpe": 25.21,
+      "src": "backfill",
+      "fpe": 18.87
+    },
+    {
+      "date": "2017-09-01",
+      "tpe": 25.6,
+      "src": "backfill",
+      "fpe": 19.22
+    },
+    {
+      "date": "2017-10-01",
+      "tpe": 26.95,
+      "src": "backfill",
+      "fpe": 18.38
+    },
+    {
+      "date": "2017-11-01",
+      "tpe": 26.26,
+      "src": "backfill",
+      "fpe": 17.01
+    },
+    {
+      "date": "2017-12-01",
+      "tpe": 26.01,
+      "src": "backfill",
+      "fpe": 16.77
+    },
+    {
+      "date": "2018-01-01",
+      "tpe": 27.44,
+      "src": "backfill",
+      "fpe": 17.42
+    },
+    {
+      "date": "2018-02-01",
+      "tpe": 26.33,
+      "src": "backfill",
+      "fpe": 17.98
+    },
+    {
+      "date": "2018-03-01",
+      "tpe": 25.09,
+      "src": "backfill",
+      "fpe": 17.75
+    },
+    {
+      "date": "2018-04-01",
+      "tpe": 24.33,
+      "src": "backfill",
+      "fpe": 18.75
+    },
+    {
+      "date": "2018-05-01",
+      "tpe": 24.69,
+      "src": "backfill",
+      "fpe": 18.97
+    },
+    {
+      "date": "2018-06-01",
+      "tpe": 24.38,
+      "src": "backfill",
+      "fpe": 19.98
+    },
+    {
+      "date": "2018-07-01",
+      "tpe": 24.18,
+      "src": "backfill",
+      "fpe": 20.44
+    },
+    {
+      "date": "2018-08-01",
+      "tpe": 25.48,
+      "src": "backfill",
+      "fpe": 22.13
+    },
+    {
+      "date": "2018-09-01",
+      "tpe": 25.54,
+      "src": "backfill",
+      "fpe": 22.88
+    },
+    {
+      "date": "2018-10-01",
+      "tpe": 21.72,
+      "src": "backfill",
+      "fpe": 21.6
+    },
+    {
+      "date": "2018-11-01",
+      "tpe": 19.75,
+      "src": "backfill",
+      "fpe": 23.01
+    },
+    {
+      "date": "2018-12-01",
+      "tpe": 17.73,
+      "src": "backfill",
+      "fpe": 21.52
+    },
+    {
+      "date": "2019-01-01",
+      "tpe": 18.59,
+      "src": "backfill",
+      "fpe": 22.8
+    },
+    {
+      "date": "2019-02-01",
+      "tpe": 20.02,
+      "src": "backfill",
+      "fpe": 22.66
+    },
+    {
+      "date": "2019-03-01",
+      "tpe": 21.44,
+      "src": "backfill",
+      "fpe": 23.98
+    },
+    {
+      "date": "2019-04-01",
+      "tpe": 22.62,
+      "src": "backfill",
+      "fpe": 24.18
+    },
+    {
+      "date": "2019-05-01",
+      "tpe": 20.96,
+      "src": "backfill",
+      "fpe": 22.83
+    },
+    {
+      "date": "2019-06-01",
+      "tpe": 22.86,
+      "src": "backfill",
+      "fpe": 25.17
+    },
+    {
+      "date": "2019-07-01",
+      "tpe": 23.29,
+      "src": "backfill",
+      "fpe": 22.32
+    },
+    {
+      "date": "2019-08-01",
+      "tpe": 23.97,
+      "src": "backfill",
+      "fpe": 22.58
+    },
+    {
+      "date": "2019-09-01",
+      "tpe": 24.32,
+      "src": "backfill",
+      "fpe": 21.67
+    },
+    {
+      "date": "2019-10-01",
+      "tpe": 25.85,
+      "src": "backfill",
+      "fpe": 22.37
+    },
+    {
+      "date": "2019-11-01",
+      "tpe": 28.0,
+      "src": "backfill",
+      "fpe": 22.75
+    },
+    {
+      "date": "2019-12-01",
+      "tpe": 29.55,
+      "src": "backfill",
+      "fpe": 26.62
+    },
+    {
+      "date": "2020-01-01",
+      "tpe": 29.76,
+      "src": "backfill",
+      "fpe": 26.44
+    },
+    {
+      "date": "2020-02-01",
+      "tpe": 27.1,
+      "src": "backfill",
+      "fpe": 23.74
+    },
+    {
+      "date": "2020-03-01",
+      "tpe": 25.31,
+      "src": "backfill",
+      "fpe": 21.24
+    },
+    {
+      "date": "2020-04-01",
+      "tpe": 28.26,
+      "src": "backfill",
+      "fpe": 22.93
+    },
+    {
+      "date": "2020-05-01",
+      "tpe": 29.45,
+      "src": "backfill",
+      "fpe": 23.58
+    },
+    {
+      "date": "2020-06-01",
+      "tpe": 31.24,
+      "src": "backfill",
+      "fpe": 21.33
+    },
+    {
+      "date": "2020-07-01",
+      "tpe": 28.66,
+      "src": "backfill",
+      "fpe": 23.17
+    },
+    {
+      "date": "2020-08-01",
+      "tpe": 32.31,
+      "src": "backfill",
+      "fpe": 23.87
     },
     {
       "date": "2020-09-01",
-      "fpe": 23.0,
-      "src": "seed"
+      "tpe": 29.83,
+      "src": "backfill",
+      "fpe": 23.81
     },
     {
-      "date": "2021-01-04",
-      "fpe": 22.5,
-      "src": "seed"
+      "date": "2020-10-01",
+      "tpe": 28.07,
+      "src": "backfill",
+      "fpe": 18.64
+    },
+    {
+      "date": "2020-11-01",
+      "tpe": 30.58,
+      "src": "backfill",
+      "fpe": 21.43
+    },
+    {
+      "date": "2020-12-01",
+      "tpe": 36.33,
+      "src": "backfill",
+      "fpe": 22.45
+    },
+    {
+      "date": "2021-01-01",
+      "tpe": 34.75,
+      "src": "backfill",
+      "fpe": 23.65
+    },
+    {
+      "date": "2021-02-01",
+      "tpe": 33.69,
+      "src": "backfill",
+      "fpe": 26.1
+    },
+    {
+      "date": "2021-03-01",
+      "tpe": 34.09,
+      "src": "backfill",
+      "fpe": 23.57
+    },
+    {
+      "date": "2021-04-01",
+      "tpe": 34.11,
+      "src": "backfill",
+      "fpe": 24.59
+    },
+    {
+      "date": "2021-05-01",
+      "tpe": 33.1,
+      "src": "backfill",
+      "fpe": 24.09
+    },
+    {
+      "date": "2021-06-01",
+      "tpe": 30.46,
+      "src": "backfill",
+      "fpe": 23.98
+    },
+    {
+      "date": "2021-07-01",
+      "tpe": 32.61,
+      "src": "backfill",
+      "fpe": 25.36
+    },
+    {
+      "date": "2021-08-01",
+      "tpe": 30.83,
+      "src": "backfill",
+      "fpe": 25.92
+    },
+    {
+      "date": "2021-09-01",
+      "tpe": 31.2,
+      "src": "backfill",
+      "fpe": 23.69
+    },
+    {
+      "date": "2021-10-01",
+      "tpe": 28.0,
+      "src": "backfill",
+      "fpe": 26.27
     },
     {
       "date": "2021-11-01",
-      "fpe": 21.0,
-      "src": "seed"
+      "tpe": 29.05,
+      "src": "backfill",
+      "fpe": 30.02
     },
     {
-      "date": "2022-01-03",
-      "fpe": 21.5,
-      "src": "seed"
+      "date": "2021-12-01",
+      "tpe": 30.45,
+      "src": "backfill",
+      "fpe": 30.14
     },
     {
-      "date": "2022-06-16",
-      "fpe": 15.5,
-      "src": "seed"
+      "date": "2022-01-01",
+      "tpe": 30.27,
+      "src": "backfill",
+      "fpe": 30.79
     },
     {
-      "date": "2022-12-28",
-      "fpe": 16.5,
-      "src": "seed"
+      "date": "2022-02-01",
+      "tpe": 31.57,
+      "src": "backfill",
+      "fpe": 26.31
+    },
+    {
+      "date": "2022-03-01",
+      "tpe": 29.08,
+      "src": "backfill",
+      "fpe": 29.21
+    },
+    {
+      "date": "2022-04-01",
+      "tpe": 26.29,
+      "src": "backfill",
+      "fpe": 27.1
+    },
+    {
+      "date": "2022-05-01",
+      "tpe": 25.27,
+      "src": "backfill",
+      "fpe": 26.43
+    },
+    {
+      "date": "2022-06-01",
+      "tpe": 22.95,
+      "src": "backfill",
+      "fpe": 23.58
+    },
+    {
+      "date": "2022-07-01",
+      "tpe": 25.7,
+      "src": "backfill",
+      "fpe": 25.23
+    },
+    {
+      "date": "2022-08-01",
+      "tpe": 24.31,
+      "src": "backfill",
+      "fpe": 23.16
+    },
+    {
+      "date": "2022-09-01",
+      "tpe": 21.48,
+      "src": "backfill",
+      "fpe": 21.02
+    },
+    {
+      "date": "2022-10-01",
+      "tpe": 22.91,
+      "src": "backfill",
+      "fpe": 22.54
+    },
+    {
+      "date": "2022-11-01",
+      "tpe": 27.15,
+      "src": "backfill",
+      "fpe": 25.42
+    },
+    {
+      "date": "2022-12-01",
+      "tpe": 24.09,
+      "src": "backfill",
+      "fpe": 23.57
+    },
+    {
+      "date": "2023-01-01",
+      "tpe": 27.85,
+      "src": "backfill",
+      "fpe": 23.15
+    },
+    {
+      "date": "2023-02-01",
+      "tpe": 24.42,
+      "src": "backfill",
+      "fpe": 19.05
+    },
+    {
+      "date": "2023-03-01",
+      "tpe": 26.83,
+      "src": "backfill",
+      "fpe": 20.9
+    },
+    {
+      "date": "2023-04-01",
+      "tpe": 27.94,
+      "src": "backfill",
+      "fpe": 21.35
+    },
+    {
+      "date": "2023-05-01",
+      "tpe": 29.01,
+      "src": "backfill",
+      "fpe": 22.39
     },
     {
       "date": "2023-06-01",
-      "fpe": 19.0,
-      "src": "seed"
+      "tpe": 29.2,
+      "src": "backfill",
+      "fpe": 24.26
     },
     {
-      "date": "2024-01-02",
-      "fpe": 20.0,
-      "src": "seed"
+      "date": "2023-07-01",
+      "tpe": 29.28,
+      "src": "backfill",
+      "fpe": 23.46
     },
     {
-      "date": "2024-06-03",
-      "fpe": 21.0,
-      "src": "seed"
+      "date": "2023-08-01",
+      "tpe": 28.64,
+      "src": "backfill",
+      "fpe": 25.14
     },
     {
-      "date": "2024-12-02",
-      "fpe": 22.5,
-      "src": "seed"
+      "date": "2023-09-01",
+      "tpe": 27.26,
+      "src": "backfill",
+      "fpe": 24.77
     },
     {
-      "date": "2025-02-19",
-      "fpe": 22.0,
-      "src": "seed"
+      "date": "2023-10-01",
+      "tpe": 27.41,
+      "src": "backfill",
+      "fpe": 24.69
     },
     {
-      "date": "2025-04-08",
-      "fpe": 18.5,
-      "src": "seed"
+      "date": "2023-11-01",
+      "tpe": 32.24,
+      "src": "backfill",
+      "fpe": 25.55
     },
     {
-      "date": "2025-06-16",
-      "fpe": 21.0,
-      "src": "seed"
+      "date": "2023-12-01",
+      "tpe": 33.51,
+      "src": "backfill",
+      "fpe": 27.37
     },
     {
-      "date": "2026-01-05",
-      "fpe": 21.5,
-      "src": "seed"
+      "date": "2024-01-01",
+      "tpe": 32.0,
+      "src": "backfill",
+      "fpe": 26.13
     },
     {
-      "date": "2026-06-15",
-      "fpe": 21.3,
-      "src": "seed"
+      "date": "2024-02-01",
+      "tpe": 29.18,
+      "src": "backfill",
+      "fpe": 26.0
+    },
+    {
+      "date": "2024-03-01",
+      "tpe": 30.73,
+      "src": "backfill",
+      "fpe": 26.23
+    },
+    {
+      "date": "2024-04-01",
+      "tpe": 29.18,
+      "src": "backfill",
+      "fpe": 24.45
+    },
+    {
+      "date": "2024-05-01",
+      "tpe": 31.06,
+      "src": "backfill",
+      "fpe": 27.74
+    },
+    {
+      "date": "2024-06-01",
+      "tpe": 33.26,
+      "src": "backfill",
+      "fpe": 29.91
+    },
+    {
+      "date": "2024-07-01",
+      "tpe": 30.96,
+      "src": "backfill",
+      "fpe": 30.76
+    },
+    {
+      "date": "2024-08-01",
+      "tpe": 34.6,
+      "src": "backfill",
+      "fpe": 31.07
+    },
+    {
+      "date": "2024-09-01",
+      "tpe": 35.4,
+      "src": "backfill",
+      "fpe": 31.57
+    },
+    {
+      "date": "2024-10-01",
+      "tpe": 35.17,
+      "src": "backfill",
+      "fpe": 30.68
+    },
+    {
+      "date": "2024-11-01",
+      "tpe": 35.59,
+      "src": "backfill",
+      "fpe": 29.61
+    },
+    {
+      "date": "2024-12-01",
+      "tpe": 36.41,
+      "src": "backfill",
+      "fpe": 30.14
+    },
+    {
+      "date": "2025-01-01",
+      "tpe": 35.6,
+      "src": "backfill",
+      "fpe": 30.91
+    },
+    {
+      "date": "2025-02-01",
+      "tpe": 32.4,
+      "src": "backfill",
+      "fpe": 28.41
+    },
+    {
+      "date": "2025-03-01",
+      "tpe": 30.01,
+      "src": "backfill",
+      "fpe": 26.77
+    },
+    {
+      "date": "2025-04-01",
+      "tpe": 29.14,
+      "src": "backfill",
+      "fpe": 26.16
+    },
+    {
+      "date": "2025-05-01",
+      "tpe": 32.4,
+      "src": "backfill",
+      "fpe": 25.62
+    },
+    {
+      "date": "2025-06-01",
+      "tpe": 34.06,
+      "src": "backfill",
+      "fpe": 25.69
+    },
+    {
+      "date": "2025-07-01",
+      "tpe": 35.24,
+      "src": "backfill",
+      "fpe": 24.42
+    },
+    {
+      "date": "2025-08-01",
+      "tpe": 34.73,
+      "src": "backfill",
+      "fpe": 24.68
+    },
+    {
+      "date": "2025-09-01",
+      "tpe": 36.16,
+      "src": "backfill",
+      "fpe": 25.68
+    },
+    {
+      "date": "2025-10-01",
+      "tpe": 36.31,
+      "src": "backfill"
+    },
+    {
+      "date": "2025-11-01",
+      "tpe": 33.99,
+      "src": "backfill"
+    },
+    {
+      "date": "2025-12-01",
+      "tpe": 34.55,
+      "src": "backfill"
+    },
+    {
+      "date": "2026-01-01",
+      "tpe": 33.58,
+      "src": "backfill"
+    },
+    {
+      "date": "2026-02-01",
+      "tpe": 30.8,
+      "src": "backfill"
+    },
+    {
+      "date": "2026-03-01",
+      "tpe": 29.42,
+      "src": "backfill"
+    },
+    {
+      "date": "2026-04-01",
+      "tpe": 31.22,
+      "src": "backfill"
+    },
+    {
+      "date": "2026-05-01",
+      "tpe": 30.63,
+      "src": "backfill"
+    },
+    {
+      "date": "2026-06-01",
+      "tpe": 29.36,
+      "src": "backfill"
     },
     {
       "date": "2026-06-16",
@@ -304,6 +1572,11 @@
       "tpe": 26.87
     },
     {
+      "date": "2026-08-01",
+      "tpe": 28.27,
+      "src": "backfill"
+    },
+    {
       "date": "2026-08-03",
       "src": "calc",
       "fpe": 23.09,
@@ -461,6 +1734,12 @@
     },
     {
       "date": "2026-09-12",
+      "src": "calc",
+      "fpe": 22.7,
+      "tpe": 24.69
+    },
+    {
+      "date": "2026-09-13",
       "src": "calc",
       "fpe": 22.7,
       "tpe": 24.69
