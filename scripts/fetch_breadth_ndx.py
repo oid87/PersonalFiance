@@ -98,15 +98,19 @@ def fetch_prices(tickers: list[str], start: str) -> pd.DataFrame:
 
 def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
     """Vectorized rolling MA breadth + 52w new-highs/lows (Hindenburg-style) computation."""
+    ma20  = price_df.rolling(20,  min_periods=20).mean()
     ma50  = price_df.rolling(50,  min_periods=50).mean()
     ma200 = price_df.rolling(200, min_periods=200).mean()
 
+    valid20  = price_df.notna() & ma20.notna()
     valid50  = price_df.notna() & ma50.notna()
     valid200 = price_df.notna() & ma200.notna()
 
+    above20  = (price_df > ma20).where(valid20,  False).sum(axis=1)
     above50  = (price_df > ma50).where(valid50,  False).sum(axis=1)
     above200 = (price_df > ma200).where(valid200, False).sum(axis=1)
 
+    n20  = valid20.sum(axis=1)
     n50  = valid50.sum(axis=1)
     n200 = valid200.sum(axis=1)
 
@@ -137,6 +141,8 @@ def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
         if v50 < MIN_COVERAGE and ds >= recent_cutoff:
             dropped_lowcov += 1   # laggy tail day; skip so it doesn't spike % on a shrunk denominator
             continue
+        v20  = int(n20[dt])
+        a20  = int(above20[dt]) if v20 > 0 else None
         a50  = int(above50[dt])
         v200 = int(n200[dt])
         a200 = int(above200[dt]) if v200 > 0 else None
@@ -148,6 +154,8 @@ def compute_breadth(price_df: pd.DataFrame) -> list[dict]:
 
         records.append({
             "date":           dt.strftime("%Y-%m-%d"),
+            "above20_count":  a20,
+            "above20_pct":    round(a20 / v20 * 100, 1) if (v20 > 0 and a20 is not None) else None,
             "above50_count":  a50,
             "above50_pct":    round(a50 / v50 * 100, 1),
             "above200_count": a200,
@@ -177,8 +185,8 @@ def main() -> None:
     today    = date.today()
 
     # ── Schema migration: missing new_hi_count → force full backfill ──
-    if existing and ("new_hi_count" not in existing[0] or "bear_count" not in existing[0]):
-        print("Existing data missing new_hi_count/bear_count field — full backfill to recompute schema")
+    if existing and ("new_hi_count" not in existing[0] or "bear_count" not in existing[0] or "above20_count" not in existing[0]):
+        print("Existing data missing new_hi_count/bear_count/above20_count field — full backfill to recompute schema")
         existing = []
 
     # ── Freshness check FIRST — skip Wikipedia + yfinance if not needed ──
@@ -222,6 +230,7 @@ def main() -> None:
         last = merged[-1]
         print(
             f"Latest ({last['date']}): "
+            f"above20={last.get('above20_pct')}%  "
             f"above50={last['above50_pct']}%  "
             f"above200={last.get('above200_pct')}%  "
             f"total={last['total']}"
