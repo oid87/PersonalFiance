@@ -3020,6 +3020,36 @@
     </div>
   </section>
 
+  <!-- ── 七巨頭相對強度 tab ───────────────────────────────────────── -->
+  <section id="tab-mag7spy" class="tab-section" hidden>
+    <div class="controls" style="flex-wrap:wrap;gap:8px">
+      <div id="mag7spy-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <span class="chip" data-mag7spy-range="1Y">1Y</span>
+        <span class="chip" data-mag7spy-range="3Y">3Y</span>
+        <span class="chip active" data-mag7spy-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div id="mag7spy-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="breadth-card">
+        <div class="bc-label">MAGS/SPY 比值（最新）</div>
+        <div class="bc-main"><span class="bc-pct" id="mag7spy-current-val">—</span></div>
+        <div class="bc-count" id="mag7spy-current-sub">—</div>
+        <div class="bc-signal" id="mag7spy-current-signal">—</div>
+      </div>
+    </div>
+    <div id="mag7spy-chart" style="height:560px"></div>
+    <div class="status" id="mag7spy-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 七巨頭相對強度怎麼看？</div>
+      <div class="info-panel-body">
+        <p>這是 MAGS（七巨頭 ETF）與 SPY（S&amp;P 500 ETF）收盤價的比值時序，代表七巨頭相對於大盤的相對強度。比值上升＝七巨頭跑贏大盤，比值下降＝七巨頭跑輸大盤。圖表使用 log scale y軸。</p>
+        <p><b>已知限制：</b>MAGS ETF 直到 <b>2023-04-11</b> 才有資料，<b>無法回溯更早期的七巨頭走勢</b>。</p>
+        <p><b>方法論：</b>比值為<b>未還原息</b>價格比（不含股息），方法論比照 NDX/SPY 相對強度 tab（<code>js/tabs/relstrength.js</code>）。</p>
+        <p style="margin-top:8px;color:var(--muted)"><b>提醒：</b>這條線本身只是相對強弱的敘述性指標，不是預測工具——不要把單一背離事件當成「必然」訊號（base rate 未知）。純描述性資訊，非投資建議。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 實質利率 tab ──────────────────────────────────────────────── -->
   <section id="tab-real_rates" class="tab-section" hidden>
     <div class="controls" style="flex-wrap:wrap;gap:8px">

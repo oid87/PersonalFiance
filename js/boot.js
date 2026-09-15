@@ -50,6 +50,7 @@ import * as vixTermTab       from './tabs/vix_term.js';
 import * as vvixregimeTab    from './tabs/vvixregime.js';
 import * as vxnvixTab        from './tabs/vxnvix.js';
 import * as relstrengthTab   from './tabs/relstrength.js';
+import * as mag7spyTab       from './tabs/mag7spy.js';
 import * as realRatesTab     from './tabs/real_rates.js';
 import * as moneyMktTab      from './tabs/money_market.js';
 import * as putcallTab       from './tabs/putcall.js';
@@ -124,6 +125,7 @@ registerAll([
   { id: 'vvixregime',    module: vvixregimeTab    },
   { id: 'vxnvix',        module: vxnvixTab        },
   { id: 'relstrength',   module: relstrengthTab   },
+  { id: 'mag7spy',       module: mag7spyTab       },
   { id: 'real_rates',    module: realRatesTab     },
   { id: 'money_market',  module: moneyMktTab      },
   { id: 'putcall',       module: putcallTab       },
@@ -202,6 +204,7 @@ const CATEGORIES = [
       { id: 'position',  label: '位階' },
       { id: 'struct',    label: '結構判讀' },
       { id: 'relstrength', label: 'NDX相對強度' },
+      { id: 'mag7spy',     label: '七巨頭相對強度' },
       { id: 'marginmap', label: '融資斷頭地圖' },
       { id: 'kelly',     label: '凱利上限' },
       { id: 'madev',     label: '乖離率' },
