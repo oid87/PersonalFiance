@@ -104,7 +104,7 @@ async function loadUniverse(universe) {
     // 指數自身均線:用完整 overlay 歷史算,才不會在短窗(1Y/2Y)開頭缺一段
     const sorted = [...overlayJson.data].sort((a, b) => a.date < b.date ? -1 : 1);
     const maMaps = {};
-    for (const win of [50, 200]) {
+    for (const win of [20, 50, 200]) {
       const m = {};
       let sum = 0;
       for (let i = 0; i < sorted.length; i++) {
@@ -148,6 +148,7 @@ function refreshBreadthView() {
     el.textContent  = sig.label;
     el.style.color  = sig.color;
   }
+  setCard("20",  latest.above20_pct,  latest.above20_count,  latest.total, false);
   setCard("50",  latest.above50_pct,  latest.above50_count,  latest.total, false);
   setCard("200", latest.above200_pct, latest.above200_count, latest.total, true);
   setBearCard(latest.bear_pct, latest.bear_count, latest.bear_total);
@@ -268,10 +269,11 @@ export function renderBreadthChart() {
   }
 
   const dates    = rows.map(r => r.date);
-  const above50  = rows.map(r => r.above50_pct  != null ? r.above50_pct  : null);
-  const above200 = rows.map(r => r.above200_pct != null ? r.above200_pct : null);
   const spyVals  = rows.map(r => breadthSpy[r.date]   != null ? +breadthSpy[r.date].toFixed(2)   : null);
-  const breadthVals = breadthMaWin === 50 ? above50 : above200;
+  const breadthVals = rows.map(r => {
+    const v = r[`above${breadthMaWin}_pct`];
+    return v != null ? v : null;
+  });
   const maSrc    = breadthMaMap[breadthMaWin] || {};
   const maVals   = rows.map(r => maSrc[r.date] != null ? +maSrc[r.date].toFixed(2) : null);
   const vixVals  = rows.map(r => breadthVixMap[r.date] != null ? +breadthVixMap[r.date].toFixed(2) : null);
@@ -330,7 +332,7 @@ export function renderBreadthChart() {
         if (row) {
           html +=
             `<div style="margin-top:4px;font-size:11px;color:${axisClr}">` +
-            `50MA: ${row.above50_count}/${row.total} · 200MA: ${row.above200_count ?? "—"}/${row.total}</div>`;
+            `20MA: ${row.above20_count ?? "—"}/${row.total} · 50MA: ${row.above50_count}/${row.total} · 200MA: ${row.above200_count ?? "—"}/${row.total}</div>`;
           if (row.new_hi_count != null) {
             const isHb = hbTriggers.includes(row.date);
             html +=
@@ -367,8 +369,8 @@ export function renderBreadthChart() {
         name: `${breadthMaWin}日均線以上`,
         type: "line", data: breadthVals, smooth: 0.3, symbol: "none",
         yAxisIndex: 0, z: 3,
-        lineStyle: { width: 2, color: breadthMaWin === 50 ? "#58a6ff" : "#3fb950" },
-        areaStyle: { color: breadthMaWin === 50 ? "rgba(88,166,255,0.08)" : "rgba(63,185,80,0.06)" },
+        lineStyle: { width: 2, color: breadthMaWin === 20 ? "#e3b341" : breadthMaWin === 200 ? "#3fb950" : "#58a6ff" },
+        areaStyle: { color: breadthMaWin === 20 ? "rgba(227,179,65,0.06)" : breadthMaWin === 200 ? "rgba(63,185,80,0.06)" : "rgba(88,166,255,0.08)" },
         markLine: {
           silent: true, symbol: "none",
           data: [

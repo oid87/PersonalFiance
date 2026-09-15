@@ -595,6 +595,15 @@
   <section id="tab-breadth" class="tab-section" hidden>
     <div id="breadth-top">
       <div class="breadth-card">
+        <div class="bc-label">20日均線以上</div>
+        <div class="bc-main">
+          <span class="bc-pct" id="bc-20-pct">—</span>
+          <span class="bc-unit">%</span>
+        </div>
+        <div class="bc-count" id="bc-20-count">— / —</div>
+        <div class="bc-signal" id="bc-20-signal">—</div>
+      </div>
+      <div class="breadth-card">
         <div class="bc-label">50日均線以上</div>
         <div class="bc-main">
           <span class="bc-pct" id="bc-50-pct">—</span>
@@ -637,6 +646,7 @@
           <span class="chip" data-breadth-universe="TW50" data-tooltip="對應 0050 · 臺灣50指數(台灣前 50 大),台版超大型股廣度">台灣50</span>
         </div>
         <div id="breadth-ma-picker" style="display:flex;gap:4px">
+          <span class="chip" data-breadth-ma="20" data-tooltip="成分股站上 20MA 比例 + 指數自身 20MA（右軸）">20MA</span>
           <span class="chip active" data-breadth-ma="50" data-tooltip="成分股站上 50MA 比例 + 指數自身 50MA（右軸）">50MA</span>
           <span class="chip" data-breadth-ma="200" data-tooltip="成分股站上 200MA 比例 + 指數自身 200MA（右軸）">200MA</span>
         </div>
