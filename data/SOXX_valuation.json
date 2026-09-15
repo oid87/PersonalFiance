@@ -1,5 +1,5 @@
 {
-  "updated": "2026-09-13",
+  "updated": "2026-09-15",
   "note": "Philadelphia Semiconductor Index (SOXX) 估值。fpe=forward（前20大持股 NTM 加權算術平均，排除 PE>70x 或負 EPS；NTM=(m/12)×當FY+(12-m)/12×次FY）；fpe_harmonic=同一籃子的NTM加權調和平均（= total_weight/Σ(weight/PE)，等價市值加權聚合PE，不受少數高PE小權重成分股扭曲，只從2026-09-13起提供，之前日期無此欄位）；tpe=trailing（SOXX ETF，每日累積）。半導體 PE 週期性強，熊市底部可壓縮至 14x，AI 高峰可達 32x+。",
   "data": [
     {
@@ -1948,6 +1948,13 @@
       "fpe": 26.11,
       "tpe": 38.74,
       "fpe_harmonic": 17.67
+    },
+    {
+      "date": "2026-09-15",
+      "src": "calc-live",
+      "fpe": 24.65,
+      "fpe_harmonic": 16.73,
+      "tpe": 36.56
     }
   ]
 }
