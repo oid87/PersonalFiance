@@ -10,6 +10,7 @@ let breadthFgActive  = false;
 let breadthRange     = "2Y";
 let breadthMaWin     = 50;   // 50 | 200 — 一次只看一條廣度線 + 指數同窗均線
 let breadthMaMap     = {};   // { 50: {date: ma}, 200: {...} } — 以完整 overlay 歷史計算
+let breadthPeakMap   = {};   // { 20: {date: 90交易日滾動高點}, 50: {...}, 200: {...} }
 let hbTriggers       = [];   // ["YYYY-MM-DD", ...] Hindenburg-style trigger dates
 
 const UNIVERSE_CONFIG = {
@@ -43,6 +44,23 @@ function breadthBearSignal(pct) {
   if (pct < 30) return { label: "局部修正",     color: "#e3b341" };
   if (pct < 50) return { label: "廣泛修正",     color: "#f0883e" };
   return              { label: "系統性熊市徵兆", color: "#f85149" };
+}
+
+function breadthMomentumSignal(diff) {
+  if (diff == null) return { label: "—", color: "var(--muted)" };
+  if (diff <= -5) return { label: "波峰顯著降低（動能轉弱）", color: "#f85149" };
+  if (diff <= -1) return { label: "波峰略降",                 color: "#f0883e" };
+  return                { label: "波峰持平／走高",             color: "#3fb950" };
+}
+
+function computeMomentum(rows, peakMap, maWin) {
+  if (!rows.length || !peakMap) return null;
+  const lastIdx = rows.length - 1;
+  const peakNow = peakMap[rows[lastIdx].date];
+  const priorRow = rows[lastIdx - 90];
+  const peakPrior = priorRow ? peakMap[priorRow.date] : null;
+  if (peakNow == null || peakPrior == null) return null;
+  return { peakNow, peakPrior, diff: peakNow - peakPrior };
 }
 
 // Simplified Hindenburg-style trigger on S&P 500 constituents.
@@ -89,6 +107,20 @@ function hindenburgStatus(triggers, latestDate, rows) {
   return { label: "30日內無觸發", color: "var(--muted)", count: 0 };
 }
 
+function rollingPeakMap(rows, field, window = 90) {
+  const m = {};
+  const buf = []; // 存最近 window 筆非 null 值
+  for (const row of rows) {
+    const v = row[field];
+    if (v != null) {
+      buf.push(v);
+      if (buf.length > window) buf.shift();
+    }
+    if (buf.length > 0) m[row.date] = Math.max(...buf);
+  }
+  return m;
+}
+
 async function loadUniverse(universe) {
   if (!breadthCache[universe]) {
     const cfg = UNIVERSE_CONFIG[universe];
@@ -114,12 +146,17 @@ async function loadUniverse(universe) {
       }
       maMaps[win] = m;
     }
-    breadthCache[universe] = { data, overlay, maMaps };
+    const peakMaps = {};
+    for (const win of [20, 50, 200]) {
+      peakMaps[win] = rollingPeakMap(data.data, `above${win}_pct`, 90);
+    }
+    breadthCache[universe] = { data, overlay, maMaps, peakMaps };
   }
   breadthUniverse = universe;
   breadthData = breadthCache[universe].data;
   breadthSpy  = breadthCache[universe].overlay;
   breadthMaMap = breadthCache[universe].maMaps;
+  breadthPeakMap = breadthCache[universe].peakMaps;
 }
 
 function setBearCard(pct, count, total) {
@@ -131,6 +168,25 @@ function setBearCard(pct, count, total) {
   const el  = document.getElementById("bc-bear-signal");
   el.textContent = sig.label;
   el.style.color = sig.color;
+}
+
+function setMomentumCard(rows) {
+  const mom = computeMomentum(rows, breadthPeakMap[breadthMaWin], breadthMaWin);
+  const pctEl = document.getElementById("bc-mom-pct");
+  const countEl = document.getElementById("bc-mom-count");
+  const sigEl = document.getElementById("bc-mom-signal");
+  if (!pctEl) return;
+  if (!mom) {
+    pctEl.textContent = "—";
+    countEl.textContent = "— / —";
+    sigEl.textContent = "—";
+    return;
+  }
+  pctEl.textContent = mom.peakNow.toFixed(1);
+  countEl.textContent = `前90日高點 ${mom.peakPrior.toFixed(1)}%`;
+  const sig = breadthMomentumSignal(mom.diff);
+  sigEl.textContent = sig.label;
+  sigEl.style.color = sig.color;
 }
 
 function refreshBreadthView() {
@@ -152,6 +208,7 @@ function refreshBreadthView() {
   setCard("50",  latest.above50_pct,  latest.above50_count,  latest.total, false);
   setCard("200", latest.above200_pct, latest.above200_count, latest.total, true);
   setBearCard(latest.bear_pct, latest.bear_count, latest.bear_total);
+  setMomentumCard(rows);
 
   // Compute Hindenburg-style triggers (needs SPY for trend filter)
   hbTriggers = computeHindenburgTriggers(rows, breadthSpy);
@@ -202,6 +259,7 @@ export async function init() {
         document.querySelectorAll("[data-breadth-ma]").forEach(e =>
           e.classList.toggle("active", +e.dataset.breadthMa === breadthMaWin));
         renderBreadthChart();
+        setMomentumCard(breadthData.data);
       });
     });
 
@@ -276,6 +334,8 @@ export function renderBreadthChart() {
   });
   const maSrc    = breadthMaMap[breadthMaWin] || {};
   const maVals   = rows.map(r => maSrc[r.date] != null ? +maSrc[r.date].toFixed(2) : null);
+  const peakSrc  = breadthPeakMap[breadthMaWin] || {};
+  const peakVals = rows.map(r => peakSrc[r.date] != null ? +peakSrc[r.date].toFixed(2) : null);
   const vixVals  = rows.map(r => breadthVixMap[r.date] != null ? +breadthVixMap[r.date].toFixed(2) : null);
   const fgVals   = rows.map(r => breadthFgMap[r.date]  != null ? +breadthFgMap[r.date].toFixed(1)  : null);
 
@@ -396,6 +456,12 @@ export function renderBreadthChart() {
             [{ yAxis: 85, itemStyle: { color: "rgba(63,185,80,0.06)"  } }, { yAxis: 100 }],
           ],
         },
+      },
+      {
+        name: "90日滾動高點",
+        type: "line", data: peakVals, smooth: false, symbol: "none",
+        yAxisIndex: 0, z: 4,
+        lineStyle: { width: 1.5, color: "#8b949e", type: "dashed" },
       },
       ...(breadthVixActive ? [{
         name: "VIX",
