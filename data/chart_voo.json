@@ -7,7 +7,8 @@
     "2026-09-14",
     "2026-09-15",
     "2026-09-16",
-    "2026-09-17"
+    "2026-09-17",
+    "2026-09-18"
   ],
   "datasets": [
     {
@@ -20,7 +21,8 @@
         19.22,
         19.11,
         18.99,
-        18.9
+        18.9,
+        19.11
       ],
       "spanGaps": false
     },
@@ -34,13 +36,15 @@
         18.35,
         18.23,
         18.14,
-        18.06
+        18.06,
+        18.27
       ],
       "spanGaps": false
     },
     {
       "label": "5y avg",
       "data": [
+        null,
         null,
         null,
         null,
@@ -65,6 +69,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "borderDash": [
@@ -82,7 +87,7 @@
     "price_asof_note": "date 是腳本執行日；股價/EPS 實際反映的交易日記錄在每筆entry 的 price_asof（通常是執行日的前一個交易日收盤，遇連假/週末會差更多天，兩者各自記錄、不假設固定關係）。",
     "holdings_source": "iShares IVV latest-holdings.csv (VOO proxy)",
     "series_start": "2026-09-06",
-    "points": 8,
+    "points": 9,
     "avg_5y_available_after": 1260,
     "avg_10y_available_after": 2520,
     "note": "VOO 無公開 holdings feed，用同追 S&P 500 的 IVV 持股代替。"
