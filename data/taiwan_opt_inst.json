@@ -1,7 +1,7 @@
 {
   "source": "TAIFEX 三大法人-選擇權買賣權分計-依日期 (callsAndPutsDateDown), 臺指選擇權",
   "note": "各身份別 CALL/PUT 未平倉口數買賣淨額(口). 正=淨買方(買進未平倉>賣出未平倉). 外資 CALL 淨額為主要觀察值. 期交所僅提供滾動3年查詢視窗, 更早歷史靠本檔累積保存.",
-  "updated": "2026-09-23",
+  "updated": "2026-09-24",
   "data": [
     {
       "date": "2023-08-04",
@@ -6878,6 +6878,15 @@
       "put_dealer": 4880,
       "put_trust": 105,
       "put_foreign": 909
+    },
+    {
+      "date": "2026-09-24",
+      "call_dealer": 11666,
+      "call_trust": -6748,
+      "call_foreign": -1698,
+      "put_dealer": 4941,
+      "put_trust": 105,
+      "put_foreign": 1645
     }
   ]
 }
