@@ -19,6 +19,8 @@ from pathlib import Path
 
 import requests
 
+from _common import load_rows
+
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "WSJ_PE.json"
 
@@ -86,12 +88,7 @@ def parse(html: str) -> list[dict]:
 
 
 def load_existing() -> list[dict]:
-    if not OUT.exists():
-        return []
-    try:
-        return json.loads(OUT.read_text()).get("data", [])
-    except Exception:
-        return []
+    return load_rows(OUT)
 
 
 def main() -> None:

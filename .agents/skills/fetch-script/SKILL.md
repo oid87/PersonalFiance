@@ -78,25 +78,25 @@ from datetime import date
 from pathlib import Path
 import requests
 
+import _common
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
 OUT = DATA_DIR / "xxx.json"
 
-UA = {"User-Agent": "PersonalFiance/1.0"}
+# headers 依來源決定，不要全 repo 統一：新來源先用簡單 UA 試，被擋（如 403 /
+# Incapsula）才加完整瀏覽器 headers（參考 AAII 的例子：Referer + 完整瀏覽器
+# headers 才過得了 Incapsula）；已驗證過能用的來源，沿用它已驗證的 headers，
+# 不要「順手」統一改寫。
+UA = {"User-Agent": "Mozilla/5.0"}
 
 def fetch_rows() -> "OrderedDict[str, dict]":
     """Return {date: record} keyed by YYYY-MM-DD."""
     ...
 
 def load_existing() -> "OrderedDict[str, dict]":
-    if not OUT.exists():
-        return OrderedDict()
-    try:
-        payload = json.loads(OUT.read_text())
-        return OrderedDict((r["date"], r) for r in payload.get("data", []) if r.get("date"))
-    except Exception:
-        return OrderedDict()
+    return _common.load_rows_by_date(OUT)  # {date: row}；純 list 用 _common.load_rows(OUT)
 
 def main() -> None:
     existing = load_existing()
@@ -125,9 +125,11 @@ if __name__ == "__main__":
 ```
 
 **必查清單**：
-- [ ] `load_existing()` + idempotent merge（新覆舊，不是直接覆蓋）
+- [ ] `load_existing()` + idempotent merge（新覆舊，不是直接覆蓋）；優先用
+      `_common.load_rows_by_date(OUT)` / `_common.load_rows(OUT)`，別自己重寫
+      loader。多條序列組列合併用 `_common.idempotent_merge(existing_path, new_rows, key_field="date")`。
 - [ ] try/except：失敗時保留舊資料，不 raise（避免 CI 整批失敗）
-- [ ] `User-Agent: PersonalFiance/1.0`
+- [ ] headers 依來源決定，不要全 repo 統一（見上方 UA 的說明）
 - [ ] date 升序、format 統一
 - [ ] 最後一行輸出 row count（CI log 可查）
 - [ ] 完成後把新 fetch 腳本與對應 data seed 檔一起 `git add`（不要只 stage
@@ -183,9 +185,9 @@ python3 validate_data.py
 
 | 來源 | 取法 | 注意 |
 |------|------|------|
-| FRED | `requests.get(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}")` | 注意 FRED 單位（千/百萬）|
-| yfinance | `yf.download(ticker, auto_adjust=True)` | split 斷崖要另外處理 |
-| FinMind | 需要 FINMIND_TOKEN env var | 個股資料是付費牆 |
+| FRED | `_common.fetch_fred_csv(series_id, headers=...)`；重試包 `_common.retry_call(...)` | 注意 FRED 單位（千/百萬）|
+| yfinance | `yf.download(ticker, auto_adjust=False)`（原始收盤價，全 repo 慣例） | split 斷崖要另外處理，參考 `fetch_stocks.py` 的 `SPLICE_FIXES`（idempotent ratio-splice） |
+| FinMind | token 一律用 `_common.get_finmind_token()`（CI 讀 `FINMIND_TOKEN` env，本地讀 `.finmind_token`） | 個股資料是付費牆 |
 | TAIFEX P/C ratio | HTML 爬蟲 + BeautifulSoup | 2005 起有歷史 |
 | FINRA margin debt | 單一 xlsx curl 直抓 | 每月更新一次 |
 | OFR FSI | CSV 直抓無需 key | 免費，日頻，2000+ |

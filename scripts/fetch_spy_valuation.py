@@ -51,16 +51,23 @@ FPE_CAP = 50.0
 
 
 def fetch_live_weights() -> dict[str, float] | None:
-    """Try to get live SPY holdings weights from yfinance funds_data."""
+    """Try to get live SPY holdings weights from yfinance funds_data.
+
+    The DataFrame (yfinance 1.x) is indexed by Symbol with a 'Holding Percent'
+    column (fraction). Older builds exposed 'symbol'/'holdingPercent' columns —
+    handle both (same dual-format parsing as fetch_qqq_valuation.py / fetch_soxx_valuation.py).
+    """
     try:
         spy = yf.Ticker("SPY")
         top = spy.funds_data.top_holdings
         if top is None or top.empty:
             return None
         holdings = {}
-        for _, row in top.iterrows():
-            sym = str(row.get("symbol", "")).upper()
-            pct = row.get("holdingPercent", 0)
+        for idx, row in top.iterrows():
+            sym = str(row.get("symbol") or idx or "").upper().strip()
+            pct = row.get("Holding Percent")
+            if pct is None:
+                pct = row.get("holdingPercent")
             if sym and pct:
                 holdings[sym] = float(pct) * 100
         return holdings if holdings else None

@@ -9,7 +9,7 @@ GitHub Actions `.github/workflows/fetch.yml` 每天自動跑、跑完 `git add d
 - **06:00 台北（週二–週六）** — cron `0 22 * * 1-5`（美股收盤後）
 - **18:00 台北（週一–週五）** — cron `0 10 * * 1-5`（台股收盤後）
 - 另有 `.github/workflows/forward_pe.yml`：**13:00 台北（週一–週五）** cron `0 5 * * 1-5`，只跑 `fetch_forward_pe.py`（VOO / QQQ），不在 `fetch.yml` 裡。
-- 也可手動 `workflow_dispatch`。本地 `scripts/update_all.sh` = git pull → 所有 fetch → `validate_data.py`，**刻意不 commit / 不 push**（`data/` 只由 Action 單一寫入，避免雙寫分歧）；本地刷新的 `data/` 只供 preview，下次跑 `update_all.sh` 時會先被 `git checkout -- data/` 丟掉。
+- 也可手動 `workflow_dispatch`。本地 `scripts/update_all.sh` = git pull → 所有 fetch（`fetch_forward_pe.py` 除外，只由 `forward_pe.yml` 跑）→ `validate_data.py`，**刻意不 commit / 不 push**（`data/` 只由 Action 單一寫入，避免雙寫分歧）；本地刷新的 `data/` 只供 preview，下次跑 `update_all.sh` 時會先被 `git checkout -- data/` 丟掉。
 
 每個 fetch 腳本：讀現有 `data/<x>.json` → 抓最新 → **idempotent 合併**（依日期，新蓋舊）→ 寫回。**新增資料來源時務必三處都加**：寫 `fetch_*.py` → 加進 `fetch.yml`（用 `continue-on-error: true`）→ 加進 `update_all.sh`。
 
@@ -17,7 +17,7 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 
 ### scripts 共用模組（2026-09-25 建立）
 
-- `scripts/_common.py`：`get_finmind_token()`、`fetch_fred_csv(series_id, *, headers, timeout=30)`（回傳未 round 的 `[(date, float)]`，round／容器由呼叫端決定）、`load_rows_by_date(path)`（`{"data":[...]}` → `OrderedDict[date, row]`）、`load_rows(path)`（同上但回 list）、`retry_call(fn, *, attempts, backoff, retry_on, retry_if, on_retry, on_final)`（最後一次失敗後不 sleep；節流 sleep 留在 fn 內）。腳本直接 `import _common`，CI（repo 根跑 `python scripts/x.py`）與 `update_all.sh`（`cd scripts`）兩種呼叫都 resolve 得到，別加 `sys.path` hack。
+- `scripts/_common.py`：`get_finmind_token()`、`fetch_fred_csv(series_id, *, headers, timeout=30)`（回傳未 round 的 `[(date, float)]`，round／容器由呼叫端決定）、`load_rows_by_date(path)`（`{"data":[...]}` → `OrderedDict[date, row]`）、`load_rows(path)`（同上但回 list）、`idempotent_merge(existing_path, new_rows, key_field="date")`（整列新蓋舊；遇缺 key 的列中止並保留已讀部分，容錯和 `load_rows_by_date` 不同，別互換）、`retry_call(fn, *, attempts, backoff, retry_on, retry_if, on_retry, on_final)`（最後一次失敗後不 sleep；節流 sleep 留在 fn 內）。腳本直接 `import _common`，CI（repo 根跑 `python scripts/x.py`）與 `update_all.sh`（`cd scripts`）兩種呼叫都 resolve 得到，別加 `sys.path` hack。多條 FRED 序列組成一列的腳本（`fetch_real_rates`／`fetch_yield_curve`／`fetch_money_market`／`fetch_central_banks`）任一序列整條回空就 raise、保留舊檔——否則整列覆蓋會把其他日期的舊值蓋成 null。
 - `scripts/_breadth.py`：breadth 四支（`fetch_breadth{,_ndx,_tw50,_xlg}.py`）的共同核心 `run(get_tickers, out_path, min_coverage, label)`；各檔只留常數與取成分股／成員快取。
 - `scripts/_valuation.py`：valuation 系列共用的 `ntm_pe(sym, *, throttle, retries=3)`、`weighted_means(pairs)`（算術＋調和）、`write_daily_snapshot(out_path, today, entry, note)`；各檔自己的 HOLDINGS、cap、`MIN_STOCKS`、coverage 算法留在原檔。
 - **刻意沒收斂**（寫法看似重複但語意不同，別硬套）：JSON 寫檔（序列化參數至少 10 種組合，改了就改輸出位元組）、各檔的 User-Agent／headers（每站不同，有的站會擋 bot UA）、依狀態碼分流或兩種 backoff 公式並存的重試迴圈（`fetch_margin_concentration`、`fetch_margin_costmap`、`fetch_taifex_foreign_oi`、`fetch_taiwan_sector_index`、`fetch_tw_sector_flow`、`get_json` 系列，以及 `_breadth.py` 的 chunk 迴圈）、`fetch_tw_valuation.py` 的寫檔尾段、`backfill_tw_valuation_finmind.py` 的 token 順序、`fetch_liquidity*.py` 與 `fetch_inflation_exp.py` 的 FRED 解析。
