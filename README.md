@@ -44,7 +44,7 @@ FinMind 來源的腳本需要 token：放在 repo 根目錄的 `.finmind_token`�
 | `js/utils/` | 共用函式：`theme`（色票 `PALETTE`）、`dates`、`math`、`data`、`dom`（`bindOnce` / `chipPicker`） |
 | `css/main.css` | 樣式；主題色用 CSS 變數（`--bg/--panel/--border/--text/--muted`） |
 | `scripts/fetch_*.py`、`compute_*.py` | 資料抓取／計算；共用模組 `_common.py`、`_breadth.py` |
-| `scripts/update_all.sh` | 本地一次跑完所有抓取（不 commit） |
+| `scripts/update_all.sh` | 本地一次跑完主資料更新（不 commit；forward P/E 由 `forward_pe.yml` 獨立更新，本地不含） |
 | `data/*.json` | 前端讀的資料檔，慣例為 `{ "updated": "YYYY-MM-DD", "data": [{ "date": "YYYY-MM-DD", ... }] }` |
 | `api/` | Vercel serverless（`trend` tab 即時查任意 ticker） |
 | `.github/workflows/` | `fetch.yml`（每日資料）、`forward_pe.yml`（forward P/E） |

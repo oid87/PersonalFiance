@@ -7,6 +7,11 @@ ROOT_DIR="$(dirname "$SCRIPTS_DIR")"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
+# 0. 決定 python interpreter，並在動任何 git 操作之前確認它存在
+#    （launchd 的 plist 靠這個預設值；找不到就中止，避免 git checkout -- data/ 先把本地 preview 資料丟掉）
+PYTHON="${PYTHON:-/opt/homebrew/Caskroom/miniconda/base/bin/python3}"
+[ -x "$PYTHON" ] || command -v "$PYTHON" >/dev/null 2>&1 || { log "找不到 PYTHON=$PYTHON，中止"; exit 1; }
+
 log "=== 開始更新 ==="
 
 # 1. 同步到 Action 的最新 data（丟掉上次本地刷新的 data/ 以便乾淨 ff；不動未提交的 code）
@@ -19,8 +24,9 @@ git pull --ff-only origin main 2>&1 || log "非 fast-forward（本地有未提�
 # 2. 跑所有 fetch 腳本
 cd "$SCRIPTS_DIR"
 log "fetch_stocks..."
-PYTHON=/opt/homebrew/Caskroom/miniconda/base/bin/python3
 $PYTHON fetch_stocks.py
+$PYTHON prep_relstrength.py    || true
+$PYTHON prep_vxnvix.py         || true
 $PYTHON fetch_leverage.py      || true
 $PYTHON fetch_fear_greed.py    || true
 $PYTHON fetch_aaii.py          || true
