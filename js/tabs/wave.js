@@ -3,6 +3,7 @@
 // 標準化基準：各指數 2022/10 月內最低收盤 = 100（Wave II 底部）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { tsToLocalDate } from '../utils/dates.js';
 
 const TICKERS = [
   { file: 'data/TWII.json', key: 'TWII', label: '台股 TAIEX', color: '#E9A810', width: 2,   ltype: 'solid'  },
@@ -90,7 +91,8 @@ function renderTaixChart(light) {
       trigger: 'axis',
       backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText, fontSize: 12 },
       formatter(params) {
-        let s = `<b>${params[0]?.axisValue?.slice(0, 10)}</b><br/>`;
+        if (!params?.length) return '';
+        let s = `<b>${tsToLocalDate(params[0].axisValue)}</b><br/>`;
         for (const p of params) {
           const v = p.value?.[1];
           if (v != null)
@@ -255,7 +257,8 @@ function render(light) {
     tooltip: {
       trigger: 'axis',
       formatter: params => {
-        let s = `<b>${params[0].axisValue}</b><br/>`;
+        if (!params?.length) return '';
+        let s = `<b>${tsToLocalDate(params[0].axisValue)}</b><br/>`;
         params.forEach(p => {
           const v = p.value?.[1];
           if (v != null)

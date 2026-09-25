@@ -162,9 +162,12 @@ function monthChange(rows) {
   if (!rows || rows.length < 2) return null;
   const latestDate = rows[rows.length - 1][0];
   const latestVal = rows[rows.length - 1][1];
-  const cutoff = new Date(latestDate);
-  cutoff.setMonth(cutoff.getMonth() - 1);
-  const cutoffStr = tsToLocalDate(cutoff.getTime());
+  // 全程用 UTC 運算，避免 new Date("YYYY-MM-DD") 解析成 UTC 午夜、卻用本地
+  // setMonth/getMonth 導致負時區(如 America/Los_Angeles)差一天。
+  const d = new Date(latestDate + 'T00:00:00Z');
+  d.setUTCMonth(d.getUTCMonth() - 1);
+  // check_reuse: keep — 全程 UTC 運算,tsToLocalDate 用本地 getFullYear/getMonth/getDate,套在這裡會重新引入本地時區的月份溢位問題(正是這次要修的 bug)
+  const cutoffStr = d.toISOString().slice(0, 10);
   // 找「一個月前」最接近(不晚於)的一筆
   let prevVal = null;
   for (let i = rows.length - 1; i >= 0; i--) {

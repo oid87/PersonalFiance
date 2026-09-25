@@ -12,6 +12,7 @@
 
 import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeMA, computeMACD } from '../utils/math.js';
+import { toWeeklyOHLC } from '../utils/dates.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const TICKERS = [
@@ -26,43 +27,6 @@ const TOUCH_HORIZON = 26; // 死叉後找首次觸及MA20的上限週數，同 p
 let chart = null;
 let ticker = "QQQ";
 const cache = {}; // key -> { weeks, dif, dea, ma20, ma50, crossIdx }
-
-// ── 週K 重採樣（複製自 wkrev.js，需同步） ──────────────────────────
-function toWeeklyOHLC(daily) {
-  // daily: [[date, open, high, low, close, volume], ...] ascending
-  const byWeek = new Map();
-  const order = [];
-  for (const [date, open, high, low, close, volume] of daily) {
-    const d = new Date(date + "T00:00:00Z");
-    const day = d.getUTCDay();
-    const diff = day === 0 ? -6 : 1 - day;
-    const mon = new Date(d);
-    mon.setUTCDate(d.getUTCDate() + diff);
-    // check_reuse: keep — toWeeklyOHLC 是第三種變體(回 OHLCV 物件帶 weekStart/weekEndDate),非 dates.toWeekly([date,close]) 也非 toWeeklyHLC([date,h,l,c])
-    const key = mon.toISOString().slice(0, 10);
-    let w = byWeek.get(key);
-    if (!w) {
-      w = { weekStart: key, weekEndDate: date, open, high, low, close, volume: volume || 0 };
-      byWeek.set(key, w);
-      order.push(key);
-    } else {
-      w.high = Math.max(w.high, high);
-      w.low = Math.min(w.low, low);
-      w.close = close;
-      w.weekEndDate = date;
-      w.volume += volume || 0;
-    }
-  }
-  const weeks = order.map(k => byWeek.get(k)).sort((a, b) => a.weekStart < b.weekStart ? -1 : 1);
-  // partial: 只有「資料末端那一週」且該週最後交易日不是週五(UTC getUTCDay()===5) 才算
-  if (weeks.length) {
-    const last = weeks[weeks.length - 1];
-    const lastDow = new Date(last.weekEndDate + "T00:00:00Z").getUTCDay();
-    last.partial = lastDow !== 5;
-  }
-  for (let i = 0; i < weeks.length - 1; i++) weeks[i].partial = false;
-  return weeks;
-}
 
 // ── MA20/MA50 對齊回完整長度陣列（computeMA 回傳的是砍掉暖身期的短陣列） ──
 function alignMA(weeks, period) {

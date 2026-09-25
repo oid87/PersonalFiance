@@ -36,10 +36,13 @@ let showFy2 = false;
 // data/forward_pe_*.jsonl 是 JSONL（一行一個 JSON 物件），utils/data.js 的
 // fetchJSON 吃不了（它假設單一 JSON payload 帶 `.data` 欄位）。目前只有這個
 // tab 用 jsonl，故本檔自己寫一個小 helper，不上提到 utils/data.js（過早抽象）。
+// 回傳值語意:[] = 該標的確定無資料(404,可快取);null = 這次載入失敗(其他非 ok
+// 狀態碼或例外,不快取,下次切入 tab 要重抓)。
 async function loadJsonl(url) {
   try {
     const res = await fetch(url, { cache: 'no-cache' });
-    if (!res.ok) return []; // 404 等 → 視為該標的無資料，不炸掉整個 tab
+    if (res.status === 404) return []; // 404 → 視為該標的無資料，不炸掉整個 tab
+    if (!res.ok) return null; // 其他非 ok 狀態(如 503)→ 這次失敗,不快取
     const text = await res.text();
     return text
       .split('\n')
@@ -48,7 +51,7 @@ async function loadJsonl(url) {
       .map(line => JSON.parse(line));
   } catch (e) {
     console.error(`[fwdpe] loadJsonl failed: ${url}`, e);
-    return [];
+    return null;
   }
 }
 
@@ -66,13 +69,13 @@ function sortByEffDate(rows) {
 }
 
 async function loadAll() {
-  if (vooRows && qqqRows) return; // 首次切入才載入
+  if (vooRows && qqqRows) return; // 兩支都成功過才不重抓
   const [voo, qqq] = await Promise.all([
-    loadJsonl('data/forward_pe_voo.jsonl'),
-    loadJsonl('data/forward_pe_qqq.jsonl'),
+    vooRows ? Promise.resolve(vooRows) : loadJsonl('data/forward_pe_voo.jsonl'),
+    qqqRows ? Promise.resolve(qqqRows) : loadJsonl('data/forward_pe_qqq.jsonl'),
   ]);
-  vooRows = sortByEffDate(voo);
-  qqqRows = sortByEffDate(qqq);
+  vooRows = voo ? sortByEffDate(voo) : null;
+  qqqRows = qqq ? sortByEffDate(qqq) : null;
 }
 
 // ── cards ────────────────────────────────────────────────────────────────

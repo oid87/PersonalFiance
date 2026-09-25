@@ -216,10 +216,11 @@ function renderBizChart() {
     tooltip: {
       trigger: "axis", backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: tipText },
       formatter(params) {
+        if (!params?.length) return "";
         const v = params[0]?.value?.[1];
         if (v == null) return "";
         const z = BIZ_ZONES.find(z => v >= z.lo) ?? BIZ_ZONES.at(-1);
-        return `<b>${params[0].axisValue?.slice(0, 7)}</b><br/>` +
+        return `<b>${tsToLocalDate(params[0].axisValue).slice(0, 7)}</b><br/>` +
           `<span style="color:${z.c}">●</span> ${z.name} <b>${v}</b> 分`;
       },
     },
@@ -265,6 +266,23 @@ function connectMacroCharts() {
 // and bizChart are separate instances (and different frequency: daily vs monthly), so the
 // crosshair is relayed manually — see js/tabs/credit.js for the fuller writeup of why
 // dispatchAction({type:"showTip", x, y}) (position-based) is used instead of a dataIndex.
+//
+// ⚠️ Reentrancy: relaying showTip to `dst` makes `dst` fire its own "updateAxisPointer",
+// which (being wired the same way) relays back to `src` synchronously — with no guard this
+// is unbounded mutual recursion and throws "Maximum call stack size exceeded" on every real
+// hover (confirmed empirically: removing the updateAxisPointer listeners via chart.off()
+// makes an identical dispatchAction succeed cleanly, so the crash is this ping-pong, not an
+// ECharts-internal tooltip/marker bug). `syncing` breaks the cycle: while relaying an event
+// we're already inside, any nested "updateAxisPointer" fired as a side effect of our own
+// dispatch is ignored.
+let syncing = false;
+// Which chart instances already have the cross-sync listeners registered. activate() runs
+// again on every tab switch (module-level macroChart/bizChart persist across switches), so
+// without this, wireMacroCrossSync() would call .on(...) again each time and pile up one more
+// duplicate handler per switch. onThemeChange() disposes and recreates both chart instances,
+// so the new instances are naturally absent from this set and get wired again.
+const wiredCharts = new WeakSet();
+
 function targetMacroY(chart) {
   return chart.getHeight() * 0.5;
 }
@@ -273,19 +291,27 @@ function wireMacroCrossSync() {
   const charts = [macroChart, bizChart].filter(Boolean);
   if (charts.length < 2) return;
   for (const src of charts) {
+    if (wiredCharts.has(src)) continue;
+    wiredCharts.add(src);
     src.on("updateAxisPointer", event => {
+      if (syncing) return;
       const xInfo = (event.axesInfo || []).find(a => a.axisDim === "x");
       if (xInfo?.value == null) return;
-      for (const dst of charts) {
-        if (dst === src) continue;
-        const w = dst.getWidth();
-        let px = dst.convertToPixel({ xAxisIndex: 0 }, xInfo.value);
-        if (px == null || Number.isNaN(px) || px < -50 || px > w + 50) {
-          dst.dispatchAction({ type: "hideTip" });
-          continue;
+      syncing = true;
+      try {
+        for (const dst of charts) {
+          if (dst === src) continue;
+          const w = dst.getWidth();
+          let px = dst.convertToPixel({ xAxisIndex: 0 }, xInfo.value);
+          if (px == null || Number.isNaN(px) || px < -50 || px > w + 50) {
+            dst.dispatchAction({ type: "hideTip" });
+            continue;
+          }
+          px = Math.max(0, Math.min(px, w - 1));
+          dst.dispatchAction({ type: "showTip", x: px, y: targetMacroY(dst) });
         }
-        px = Math.max(0, Math.min(px, w - 1));
-        dst.dispatchAction({ type: "showTip", x: px, y: targetMacroY(dst) });
+      } finally {
+        syncing = false;
       }
     });
     src.getZr().on("globalout", () => {
