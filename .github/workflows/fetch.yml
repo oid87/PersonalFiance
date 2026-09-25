@@ -37,6 +37,14 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_stocks.py
 
+      - name: Prep QQQ/SPY relative-strength ratio (relstrength tab)
+        continue-on-error: true
+        run: python scripts/prep_relstrength.py
+
+      - name: Prep VXN-VIX spread (vxnvix tab)
+        continue-on-error: true
+        run: python scripts/prep_vxnvix.py
+
       - name: Fetch leverage simulator data (total-return underlyings + 3x/2x ETFs)
         continue-on-error: true
         run: python scripts/fetch_leverage.py
@@ -262,9 +270,12 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "chore: daily data update (US) [skip ci]"
+            ok=0
             for i in 1 2 3; do
-              git pull --rebase --autostash origin main && git push && break || sleep 5
+              if git pull --rebase --autostash origin main && git push; then ok=1; break; fi
+              [ "$i" -lt 3 ] && sleep 5
             done
+            [ "$ok" = 1 ] || { echo "::error::git push failed after 3 attempts"; exit 1; }
           fi
 
   # ── 台股:只在 18:00 台北(台股收盤後)跑 ──────────────────────────────
@@ -424,7 +435,10 @@ jobs:
             echo "No changes to commit."
           else
             git commit -m "chore: daily data update (TW) [skip ci]"
+            ok=0
             for i in 1 2 3; do
-              git pull --rebase --autostash origin main && git push && break || sleep 5
+              if git pull --rebase --autostash origin main && git push; then ok=1; break; fi
+              [ "$i" -lt 3 ] && sleep 5
             done
+            [ "$ok" = 1 ] || { echo "::error::git push failed after 3 attempts"; exit 1; }
           fi
