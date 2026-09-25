@@ -4,6 +4,7 @@
 //   資料：data/umich.json（fetch_umich.py 抓 FRED UMCSENT + USREC + yfinance SPY）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const CSI_COLOR  = "#e3b341";  // amber — UMCSENT line
 const SPY_COLOR  = "#f778ba";  // pink — SPY
@@ -246,19 +247,9 @@ export function render() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("umich-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-umich-range]");
-      if (!t) return;
-      range = t.dataset.umichRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "umich-range", v => { range = v; render(); });
   const sb = document.getElementById("umich-spy-toggle");
-  if (sb && !sb.dataset.built) {
-    sb.dataset.built = "1";
+  if (bindOnce(sb)) {
     sb.addEventListener("click", () => {
       showSPY = !showSPY;
       sb.classList.toggle("active", showSPY);

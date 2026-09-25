@@ -10,6 +10,7 @@
 import { loaded, loadedHLC, loadedVol } from '../state.js';
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { ensureLoaded } from '../utils/data.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const MOM_PERIODS = [{ key: "1M", n: 21 }, { key: "3M", n: 63 }, { key: "6M", n: 126 }, { key: "12M", n: 252 }];
 const ATR_PERIOD = 14;
@@ -408,16 +409,10 @@ function render(rows) {
 // ── controls (idempotent) ──────────────────────────────────────────
 function buildControls() {
   const tp = document.getElementById("pos-ticker-picker");
-  if (tp && !tp.dataset.built) {
+  if (bindOnce(tp)) {
     tp.innerHTML = POS_TICKERS.map(t =>
       `<span class="chip${t.key === posTicker ? " active" : ""}" data-pos-ticker="${t.key}">${t.label}</span>`).join("");
-    tp.dataset.built = "1";
-    tp.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
-      tp.querySelectorAll(".chip").forEach(e => e.classList.remove("active"));
-      c.classList.add("active");
-      posTicker = c.dataset.posTicker;
-      refresh();
-    }));
+    chipPicker(tp, "pos-ticker", v => { posTicker = v; refresh(); });
   }
   const pickWire = (sel, attr, set) => {
     const host = document.getElementById(sel);

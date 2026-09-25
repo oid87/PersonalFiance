@@ -4,6 +4,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
+import { chipPicker } from '../utils/dom.js';
 
 const LINES = [
   { key: "dfii5",  name: "5Y 實質殖利率",  color: "#58a6ff" },
@@ -147,16 +148,7 @@ export function render() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("realr-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-realr-range]");
-      if (!t) return;
-      range = t.dataset.realrRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "realr-range", v => { range = v; render(); });
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────

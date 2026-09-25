@@ -8,6 +8,7 @@
 // 才偏離 0，是同步壓力指標；NFCI 涵蓋整個鬆緊光譜）。定位「環境理解」非交易訊號。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const COMPS = [
   { key: "risk",     name: "風險",  color: "#f85149" },
@@ -254,19 +255,9 @@ export function render() {
 // ── controls ─────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("nfci-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-nfci-range]");
-      if (!t) return;
-      nfciRange = t.dataset.nfciRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "nfci-range", v => { nfciRange = v; render(); });
   const sb = document.getElementById("nfci-sp-toggle");
-  if (sb && !sb.dataset.built) {
-    sb.dataset.built = "1";
+  if (bindOnce(sb)) {
     sb.addEventListener("click", () => {
       showSP = !showSP;
       sb.classList.toggle("active", showSP);
@@ -274,8 +265,7 @@ function buildControls() {
     });
   }
   const ab = document.getElementById("nfci-anfci-toggle");
-  if (ab && !ab.dataset.built) {
-    ab.dataset.built = "1";
+  if (bindOnce(ab)) {
     ab.addEventListener("click", () => {
       showANFCI = !showANFCI;
       ab.classList.toggle("active", showANFCI);

@@ -6,6 +6,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
+import { chipPicker } from '../utils/dom.js';
 
 const RATIO_COLOR = "#58a6ff";
 
@@ -161,16 +162,7 @@ export function render() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("relstrength-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-relstrength-range]");
-      if (!t) return;
-      range = t.dataset.relstrengthRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "relstrength-range", v => { range = v; render(); });
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────

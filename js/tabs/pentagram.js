@@ -3,6 +3,7 @@ import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate, toWeekly, toWeeklyHLC } from '../utils/dates.js';
 import { computeLinearRegression, computeChannelBands, computeRSI, computeKD, computeTDSetup } from '../utils/math.js';
 import { ensureLoaded, loadSeries } from '../utils/data.js';
+import { chipPicker } from '../utils/dom.js';
 
 let pentaChart        = null;
 let pentaActiveTicker = "VOO";
@@ -656,21 +657,13 @@ export function resize() {
   pentaChart?.resize();
 }
 
-document.getElementById("penta-period-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-period]");
-  if (!t) return;
-  pentaPeriod = t.dataset.period;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("penta-period-picker"), "period", v => {
+  pentaPeriod = v;
   renderPentagram();
 });
 
-document.getElementById("penta-mode-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-mode]");
-  if (!t) return;
-  pentaMode = t.dataset.mode;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("penta-mode-picker"), "mode", v => {
+  pentaMode = v;
   renderPentagram();
 });
 

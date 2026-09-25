@@ -2,6 +2,7 @@ import { SERIES, CORR_EXTRA, loaded } from '../state.js';
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { loadSeries } from '../utils/data.js';
 import { toArithReturns, pearsonCorr } from '../utils/math.js';
+import { chipPicker } from '../utils/dom.js';
 
 let corrChart  = null;
 let corrPeriod = "1Y";
@@ -129,11 +130,7 @@ export function resize() {
 }
 
 // Wire period picker once at module load
-document.getElementById("corr-period-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-corr-period]");
-  if (!t) return;
-  corrPeriod = t.dataset.corrPeriod;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("corr-period-picker"), "corr-period", v => {
+  corrPeriod = v;
   renderCorrTab();
 });

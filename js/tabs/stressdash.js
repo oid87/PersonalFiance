@@ -22,6 +22,7 @@ import { ensureLoaded, fetchJSON } from '../utils/data.js';
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate, toWeeklyHLC, lookupLE } from '../utils/dates.js';
 import { computeMA } from '../utils/math.js';
+import { chipPicker } from '../utils/dom.js';
 
 const TICKERS = ["SPY", "QQQ", "SOXX"];
 const NFCI_COLOR    = "#d2a8ff";
@@ -379,27 +380,9 @@ export function render() {
 // ── controls ─────────────────────────────────────────────────────────
 function buildControls() {
   const tp = document.getElementById("stressdash-ticker-toggle");
-  if (tp && !tp.dataset.built) {
-    tp.dataset.built = "1";
-    tp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-stressdash-ticker]");
-      if (!t) return;
-      ticker = t.dataset.stressdashTicker;
-      tp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(tp, "stressdash-ticker", v => { ticker = v; render(); });
   const rp = document.getElementById("stressdash-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-stressdash-range]");
-      if (!t) return;
-      range = t.dataset.stressdashRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "stressdash-range", v => { range = v; render(); });
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────

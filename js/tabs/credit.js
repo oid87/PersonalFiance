@@ -11,6 +11,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const SP_COLOR  = "#f778ba";
 const HY_COLOR  = "#f85149";
@@ -458,19 +459,9 @@ function wireCrossSync() {
 
 function buildControls() {
   const rp = document.getElementById("crd-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-crd-range]");
-      if (!t) return;
-      cRange = t.dataset.crdRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "crd-range", v => { cRange = v; render(); });
   const sb = document.getElementById("crd-sp-toggle");
-  if (sb && !sb.dataset.built) {
-    sb.dataset.built = "1";
+  if (bindOnce(sb)) {
     sb.addEventListener("click", () => {
       showSP = !showSP;
       sb.classList.toggle("active", showSP);

@@ -17,6 +17,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const RED = "#f85149", ORANGE = "#f0883e", YELLOW = "#e3b341",
       BLUE = "#58a6ff", GREEN = "#3fb950", PURPLE = "#d2a8ff";
@@ -651,19 +652,9 @@ export function render() {
 // ── controls ─────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("cpi-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-cpi-range]");
-      if (!t) return;
-      cpiRange = t.dataset.cpiRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      renderBreadth(); renderSticky(); renderMarket();
-    });
-  }
+  chipPicker(rp, "cpi-range", v => { cpiRange = v; renderBreadth(); renderSticky(); renderMarket(); });
   const rm = document.getElementById("cpi-rollmin-toggle");
-  if (rm && !rm.dataset.built) {
-    rm.dataset.built = "1";
+  if (bindOnce(rm)) {
     rm.addEventListener("click", () => {
       showRollMin = !showRollMin;
       rm.classList.toggle("active", showRollMin);

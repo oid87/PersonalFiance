@@ -2,6 +2,7 @@ import { macroLoaded } from '../state.js';
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 import { computeM2YoY } from '../utils/math.js';
+import { chipPicker } from '../utils/dom.js';
 
 let macroChart       = null;
 let bizChart         = null;
@@ -335,12 +336,8 @@ document.getElementById("cape-toggle")?.addEventListener("click", () => {
   renderMacroTab();
 });
 
-document.getElementById("macro-range-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-macro-range]");
-  if (!t) return;
-  macroRangePreset = t.dataset.macroRange;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("macro-range-picker"), "macro-range", v => {
+  macroRangePreset = v;
   renderMacroTab();
   renderBizChart();
 });

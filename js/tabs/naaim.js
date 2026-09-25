@@ -46,6 +46,7 @@
 import { isLight, mob, PALETTE } from '../utils/theme.js';
 import { mean, std } from '../utils/math.js';
 import { tsToLocalDate } from '../utils/dates.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 // ── 標的設定 ─────────────────────────────────────────────────────────
 const TICKERS = [
@@ -663,41 +664,26 @@ async function refresh() {
 
 function buildControls() {
   const host = document.getElementById("naaim-ticker-picker");
-  if (host && !host.dataset.built) {
+  if (bindOnce(host)) {
     host.innerHTML = TICKERS.map(t =>
       `<span class="chip${t.key === ticker ? " active" : ""}" data-naaim-ticker="${t.key}">${t.label}</span>`
     ).join("");
-    host.dataset.built = "1";
-    host.querySelectorAll(".chip").forEach(chip =>
-      chip.addEventListener("click", () => {
-        host.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-        chip.classList.add("active");
-        ticker = chip.dataset.naaimTicker;
-        refresh();
-      })
-    );
+    chipPicker(host, "naaim-ticker", v => { ticker = v; refresh(); });
   }
 
   // 功能③：時間範圍 chips。不重跑 computeForTicker/不重算統計表（仍為全樣本），
   // 但要重呼叫 render()——價格/VIX 軸的 min/max 依可視窗重算（見檔頭 2026-07-19
   // 修正說明），資料本身沿用 resultCache，不重算，所以這裡是便宜的重繪。
   const rangeHost = document.getElementById("naaim-range-picker");
-  if (rangeHost && !rangeHost.dataset.built) {
-    rangeHost.dataset.built = "1";
-    rangeHost.addEventListener("click", (e) => {
-      const t = e.target.closest(".chip[data-naaim-range]");
-      if (!t) return;
-      rangeKey = t.dataset.naaimRange;
-      rangeHost.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      if (resultCache[ticker]) render(ticker, resultCache[ticker]);
-      applyRangeZoom();  // render() 是 notMerge:true 會重置 dataZoom，範圍要在其後重套
-    });
-  }
+  chipPicker(rangeHost, "naaim-range", v => {
+    rangeKey = v;
+    if (resultCache[ticker]) render(ticker, resultCache[ticker]);
+    applyRangeZoom();  // render() 是 notMerge:true 會重置 dataZoom，範圍要在其後重套
+  });
 
   // 功能①末段：統計表顯示/隱藏開關。只切 display，不重算。
   const tableToggle = document.getElementById("naaim-table-toggle");
-  if (tableToggle && !tableToggle.dataset.built) {
-    tableToggle.dataset.built = "1";
+  if (bindOnce(tableToggle)) {
     tableToggle.addEventListener("click", () => {
       showTable = !showTable;
       tableToggle.classList.toggle("active", showTable);

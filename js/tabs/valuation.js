@@ -11,6 +11,7 @@ import { loaded } from '../state.js';
 import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 import { ensureLoaded } from '../utils/data.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 // ── Per-ticker config ──────────────────────────────────────────────
 // 每個來源附 real（實際值算法）/ est（估計值依據），供 tooltip 標明「用什麼算的」
@@ -491,24 +492,10 @@ export function setCompareMode(on) { compareMode = !!on; refresh(); }
 // build the ticker chip row (idempotent) — 單一標的 chips + 一個「比較模式」chip，二擇一 active
 function renderTickerPicker() {
   const host = document.getElementById("val-ticker-picker");
-  if (!host || host.dataset.built) return;
+  if (!bindOnce(host)) return;
   host.innerHTML = VAL_TICKERS.map(t =>
     `<span class="chip${!compareMode && t.key === valTicker ? " active" : ""}" data-val-ticker="${t.key}">${t.label}</span>`
   ).join("") + `<span class="chip${compareMode ? " active" : ""}" data-val-compare="1">SOXX vs SPY 比較</span>`;
-  host.dataset.built = "1";
-  host.querySelectorAll("[data-val-ticker]").forEach(chip =>
-    chip.addEventListener("click", () => {
-      host.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-      chip.classList.add("active");
-      setTicker(chip.dataset.valTicker);
-    })
-  );
-  const compareChip = host.querySelector("[data-val-compare]");
-  if (compareChip) {
-    compareChip.addEventListener("click", () => {
-      host.querySelectorAll(".chip").forEach(c => c.classList.remove("active"));
-      compareChip.classList.add("active");
-      setCompareMode(true);
-    });
-  }
+  chipPicker(host, "val-ticker", v => setTicker(v));
+  chipPicker(host, "val-compare", () => setCompareMode(true));
 }

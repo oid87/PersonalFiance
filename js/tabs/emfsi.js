@@ -16,6 +16,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { computeMA } from '../utils/math.js';
+import { chipPicker } from '../utils/dom.js';
 
 const PERIODS  = [20, 50, 200];
 const MA_COLOR = { 20: "#58a6ff", 50: "#e3b341", 200: "#f85149" };
@@ -254,16 +255,7 @@ export function render() {
 // ── controls ─────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("emfsi-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-emfsi-range]");
-      if (!t) return;
-      emfsiRange = t.dataset.emfsiRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "emfsi-range", v => { emfsiRange = v; render(); });
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────

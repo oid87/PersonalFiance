@@ -4,6 +4,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
+import { chipPicker } from '../utils/dom.js';
 
 const LINES = [
   { key: "vix9d", name: "VIX9D",  color: "#8b949e" },
@@ -196,16 +197,7 @@ export function render() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("vixterm-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-vixterm-range]");
-      if (!t) return;
-      range = t.dataset.vixtermRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "vixterm-range", v => { range = v; render(); });
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────

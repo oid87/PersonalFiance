@@ -3,6 +3,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
+import { chipPicker } from '../utils/dom.js';
 
 const SPREAD_LINES = [
   { key: "t10y2y", name: "10Y−2Y 利差", color: "#58a6ff" },
@@ -190,16 +191,7 @@ export function render() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("yc-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-yc-range]");
-      if (!t) return;
-      range = t.dataset.ycRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "yc-range", v => { range = v; render(); });
   const sub = document.getElementById("yc-yield-toggles");
   if (sub && !sub.dataset.built) {
     sub.dataset.built = "1";

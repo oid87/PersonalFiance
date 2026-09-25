@@ -7,6 +7,7 @@
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 import { fetchJSON } from '../utils/data.js';
+import { chipPicker } from '../utils/dom.js';
 
 let levChart = null;
 let BUNDLE = null;
@@ -513,11 +514,8 @@ function onPanelClick(e) {
 function setupEvents() {
   if (wired) return;
   wired = true;
-  $('lev-mode-picker').addEventListener('click', e => {
-    const t = e.target.closest('.chip[data-lev-mode]');
-    if (!t) return;
-    mode = t.dataset.levMode;
-    for (const c of document.querySelectorAll('#lev-mode-picker .chip')) c.classList.toggle('active', c === t);
+  chipPicker($('lev-mode-picker'), 'lev-mode', v => {
+    mode = v;
     renderPanel(); renderMode();
   });
   const panel = $('lev-panel');
