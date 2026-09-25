@@ -12,6 +12,7 @@
 
 import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeMA, computeMACD } from '../utils/math.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const TICKERS = [
   { key: "QQQ", label: "QQQ",       file: "data/QQQ.json",   color: "#f778ba" },
@@ -318,16 +319,10 @@ function render(weeks, dif, dea, ma20, ma50, res) {
 // ── controls ───────────────────────────────────────────────────────
 function buildControls() {
   const host = document.getElementById("qqqmacd-ticker-picker");
-  if (!host || host.dataset.built) return;
+  if (!bindOnce(host)) return;
   host.innerHTML = TICKERS.map(t =>
     `<span class="chip${t.key === ticker ? " active" : ""}" data-qqqmacd-ticker="${t.key}">${t.label}</span>`).join("");
-  host.dataset.built = "1";
-  host.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
-    host.querySelectorAll(".chip").forEach(e => e.classList.remove("active"));
-    c.classList.add("active");
-    ticker = c.dataset.qqqmacdTicker;
-    refresh();
-  }));
+  chipPicker(host, "qqqmacd-ticker", v => { ticker = v; refresh(); });
 }
 
 async function loadTicker(key) {

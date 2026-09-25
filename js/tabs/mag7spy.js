@@ -8,6 +8,7 @@ import { loaded } from '../state.js';
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
 import { ensureLoaded } from '../utils/data.js';
+import { chipPicker } from '../utils/dom.js';
 
 const RATIO_COLOR = "#e3b341";
 
@@ -134,16 +135,7 @@ export function render() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("mag7spy-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-mag7spy-range]");
-      if (!t) return;
-      range = t.dataset.mag7spyRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "mag7spy-range", v => { range = v; render(); });
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────

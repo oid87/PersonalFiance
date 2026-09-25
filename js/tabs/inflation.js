@@ -5,6 +5,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const LINES = [
   { key: "be5y",    name: "5Y Breakeven",  color: "#58a6ff" },
@@ -235,19 +236,9 @@ export function render() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("inf-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-inf-range]");
-      if (!t) return;
-      range = t.dataset.infRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "inf-range", v => { range = v; render(); });
   const sb = document.getElementById("inf-spy-toggle");
-  if (sb && !sb.dataset.built) {
-    sb.dataset.built = "1";
+  if (bindOnce(sb)) {
     sb.addEventListener("click", () => {
       showSPY = !showSPY;
       sb.classList.toggle("active", showSPY);
@@ -255,8 +246,7 @@ function buildControls() {
     });
   }
   const mb = document.getElementById("inf-ma-toggle");
-  if (mb && !mb.dataset.built) {
-    mb.dataset.built = "1";
+  if (bindOnce(mb)) {
     mb.addEventListener("click", () => {
       showMA = !showMA;
       mb.classList.toggle("active", showMA);

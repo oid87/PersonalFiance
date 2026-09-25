@@ -8,6 +8,7 @@
 
 import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeRSI } from '../utils/math.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const TICKERS = [
   { key: "SPX", label: "SPX（^GSPC）", file: "data/SP500.json", color: "#58a6ff" },
@@ -300,16 +301,10 @@ function render(weeks, sig) {
 // ── controls ───────────────────────────────────────────────────────
 function buildControls() {
   const host = document.getElementById("wkrev-ticker-picker");
-  if (!host || host.dataset.built) return;
+  if (!bindOnce(host)) return;
   host.innerHTML = TICKERS.map(t =>
     `<span class="chip${t.key === ticker ? " active" : ""}" data-wkrev-ticker="${t.key}">${t.label}</span>`).join("");
-  host.dataset.built = "1";
-  host.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
-    host.querySelectorAll(".chip").forEach(e => e.classList.remove("active"));
-    c.classList.add("active");
-    ticker = c.dataset.wkrevTicker;
-    refresh();
-  }));
+  chipPicker(host, "wkrev-ticker", v => { ticker = v; refresh(); });
 }
 
 async function loadTicker(key) {

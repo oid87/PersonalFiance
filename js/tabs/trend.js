@@ -12,6 +12,7 @@ import {
   computeMA, computeRSI, computeKD, computeTDSetup, computeDDZones, computeBounceSignals,
 } from '../utils/math.js';
 import { loadSeries, ensureLoaded } from '../utils/data.js';
+import { chipPicker } from '../utils/dom.js';
 
 const chartEl = document.getElementById("chart");
 let chart = echarts.init(chartEl, null); // light by default
@@ -691,15 +692,11 @@ document.getElementById("fear-threshold")?.addEventListener("input", e => {
   }, 300);
 });
 
-document.getElementById("range-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-range]");
-  if (!t) return;
-  state.rangePreset = t.dataset.range;
+chipPicker(document.getElementById("range-picker"), "range", v => {
+  state.rangePreset = v;
   state.customFrom = ""; state.customTo = "";
   if (dateFrom) dateFrom.value = "";
   if (dateTo)   dateTo.value = "";
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
   render();
 });
 

@@ -3,6 +3,7 @@
 //   資料：data/central_banks.json（fetch_central_banks.py 抓 FRED WALCL/ECBASSETSW/JPNASSETS,免 key）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { chipPicker } from '../utils/dom.js';
 
 const LINES = [
   { key: "fed", name: "Fed（WALCL）",     color: "#58a6ff" },
@@ -147,16 +148,7 @@ export function render() {
 
 function buildControls() {
   const rp = document.getElementById("cb-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-cb-range]");
-      if (!t) return;
-      range = t.dataset.cbRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "cb-range", v => { range = v; render(); });
 }
 
 export async function activate() {

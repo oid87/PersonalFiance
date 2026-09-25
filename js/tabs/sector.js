@@ -1,5 +1,6 @@
 import { SECTOR_ETFS, SECTOR_LABEL, sectorLoaded } from '../state.js';
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { chipPicker } from '../utils/dom.js';
 
 // ── State ──────────────────────────────────────────────────────────────
 let market        = "us";
@@ -634,12 +635,8 @@ export function resize() {
 }
 
 // ── Event listeners ─────────────────────────────────────────────────────
-document.getElementById("sector-sort-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-sector-col]");
-  if (!t) return;
-  sortCol = t.dataset.sectorCol;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("sector-sort-picker"), "sector-col", v => {
+  sortCol = v;
   renderSectorTab();
 });
 
@@ -649,11 +646,7 @@ document.getElementById("sector-sparkline-toggle")?.addEventListener("click", e 
   renderSparklines();
 });
 
-document.getElementById("sector-market-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-sector-mkt]");
-  if (!t) return;
-  market = t.dataset.sectorMkt;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("sector-market-picker"), "sector-mkt", v => {
+  market = v;
   renderSectorTab();
 });

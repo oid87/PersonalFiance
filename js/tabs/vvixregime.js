@@ -15,6 +15,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
+import { chipPicker } from '../utils/dom.js';
 
 const REGIME_COLOR = {
   regime1: "#3fb950", // 平靜 — 綠
@@ -275,16 +276,7 @@ export function render() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("vvixregime-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-vvixregime-range]");
-      if (!t) return;
-      range = t.dataset.vvixregimeRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "vvixregime-range", v => { range = v; render(); });
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────

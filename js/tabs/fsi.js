@@ -7,6 +7,7 @@
 // 定位「環境理解 / 風險溫度計」非交易訊號。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const COMPS = [
   { key: "credit",  name: "信用",         color: "#f85149" },
@@ -247,19 +248,9 @@ export function render() {
 // ── controls ─────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("fsi-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-fsi-range]");
-      if (!t) return;
-      fsiRange = t.dataset.fsiRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "fsi-range", v => { fsiRange = v; render(); });
   const sb = document.getElementById("fsi-sp-toggle");
-  if (sb && !sb.dataset.built) {
-    sb.dataset.built = "1";
+  if (bindOnce(sb)) {
     sb.addEventListener("click", () => {
       showSP = !showSP;
       sb.classList.toggle("active", showSP);

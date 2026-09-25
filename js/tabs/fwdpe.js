@@ -14,6 +14,7 @@
 
 import { isLight, mob, PALETTE, echartsBase } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
+import { bindOnce } from '../utils/dom.js';
 
 const VOO_NTM_COLOR = '#58a6ff'; // 藍 — VOO NTM
 const VOO_FY2_COLOR = '#8bc4ff'; // 淡藍 — VOO FY2（虛線）
@@ -255,8 +256,7 @@ function buildOption() {
 // ── controls ─────────────────────────────────────────────────────────────
 function buildControls() {
   const voo = document.getElementById('fwdpe-voo-toggle');
-  if (voo && !voo.dataset.built) {
-    voo.dataset.built = '1';
+  if (bindOnce(voo)) {
     voo.addEventListener('click', () => {
       showVoo = !showVoo;
       voo.classList.toggle('active', showVoo);
@@ -264,8 +264,7 @@ function buildControls() {
     });
   }
   const qqq = document.getElementById('fwdpe-qqq-toggle');
-  if (qqq && !qqq.dataset.built) {
-    qqq.dataset.built = '1';
+  if (bindOnce(qqq)) {
     qqq.addEventListener('click', () => {
       showQqq = !showQqq;
       qqq.classList.toggle('active', showQqq);
@@ -273,8 +272,7 @@ function buildControls() {
     });
   }
   const fy2 = document.getElementById('fwdpe-fy2-toggle');
-  if (fy2 && !fy2.dataset.built) {
-    fy2.dataset.built = '1';
+  if (bindOnce(fy2)) {
     fy2.addEventListener('click', () => {
       showFy2 = !showFy2;
       fy2.classList.toggle('active', showFy2);

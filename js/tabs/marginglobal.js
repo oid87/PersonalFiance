@@ -7,6 +7,7 @@
 
 import { isLight, mob, PALETTE, echartsBase } from '../utils/theme.js';
 import { cutoffDate, presetStart, tsToLocalDate, lookupLE } from '../utils/dates.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const MARGIN_COLOR = '#f778ba';
 const INDEX_COLOR  = '#58a6ff';
@@ -218,8 +219,7 @@ function renderTable() {
       </table>
     </div>`;
 
-  if (!host.dataset.built) {
-    host.dataset.built = '1';
+  if (bindOnce(host)) {
     host.addEventListener('click', e => {
       const tr = e.target.closest('tr[data-mg-id]');
       if (!tr) return;
@@ -696,8 +696,7 @@ function attachMarginDragMeasure() {
 // ── controls ─────────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById('mg-range-picker');
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = '1';
+  if (bindOnce(rp)) {
     rp.addEventListener('click', e => {
       const clearBtn = e.target.closest('#mg-anchor-clear');
       if (clearBtn) {
@@ -714,18 +713,13 @@ function buildControls() {
         renderChart();
         return;
       }
-      const t = e.target.closest('.chip[data-mg-range]');
-      if (!t) return;
-      range = t.dataset.mgRange;
-      // 只切換 range chip 彼此的 active 狀態,不動同容器內的錨點清除/VWAC 開關 chip。
-      rp.querySelectorAll('.chip[data-mg-range]').forEach(c => c.classList.toggle('active', c === t));
-      renderChart();
     });
+    // 只切換 range chip 彼此的 active 狀態,不動同容器內的錨點清除/VWAC 開關 chip。
+    chipPicker(rp, 'mg-range', v => { range = v; renderChart(); }, { onlyMatching: true });
   }
 
   const altPicker = document.getElementById('mg-altindex-picker');
-  if (altPicker && !altPicker.dataset.built) {
-    altPicker.dataset.built = '1';
+  if (bindOnce(altPicker)) {
     altPicker.addEventListener('click', async e => {
       const t = e.target.closest('.chip[data-mg-altindex]');
       if (!t) return;

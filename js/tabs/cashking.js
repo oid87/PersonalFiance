@@ -1,5 +1,6 @@
 import { CK_ASSETS, CK_ASSETS_3 } from '../state.js';
 import { computeMA, computeBounceSignals } from '../utils/math.js';
+import { chipPicker } from '../utils/dom.js';
 
 const ckRaw = {};
 let ckFilter = "all";
@@ -270,38 +271,22 @@ export function onThemeChange(_light) {
 
 export function resize() { /* no chart */ }
 
-document.getElementById("ck-asset-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-ck-asset]");
-  if (!t) return;
-  ckAssetMode = t.dataset.ckAsset;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("ck-asset-picker"), "ck-asset", v => {
+  ckAssetMode = v;
   if (ckInited) renderCKTab();
 });
 
-document.getElementById("ck-filter-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-ck-filter]");
-  if (!t) return;
-  ckFilter = t.dataset.ckFilter;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("ck-filter-picker"), "ck-filter", v => {
+  ckFilter = v;
   if (ckInited) renderCKTab();
 });
 
-document.getElementById("ck-mode-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-ck-mode]");
-  if (!t) return;
-  ckMode = t.dataset.ckMode;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("ck-mode-picker"), "ck-mode", v => {
+  ckMode = v;
   if (ckInited) renderCKTab();
 });
 
-document.getElementById("ck-window-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-ck-window]");
-  if (!t) return;
-  ckWindow = +t.dataset.ckWindow;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("ck-window-picker"), "ck-window", v => {
+  ckWindow = +v;
   if (ckInited) renderCKTab();
 });

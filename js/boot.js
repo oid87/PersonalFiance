@@ -1,6 +1,7 @@
 import { SERIES, loaded, active } from './state.js';
 import { isLight } from './utils/theme.js';
 import { isDataFresh, loadSeries, ensureLoaded } from './utils/data.js';
+import { chipPicker } from './utils/dom.js';
 import { registerAll, switchTo, applyThemeAll, setupResizeHandler } from './switcher.js';
 
 import * as trendTab     from './tabs/trend.js';
@@ -303,13 +304,7 @@ document.querySelectorAll(".cat-btn").forEach(btn =>
 document.getElementById("penta-fpe-toggle")?.addEventListener("click", () => pentagramTab.toggleFpe());
 document.getElementById("trend-fpe-toggle")?.addEventListener("click", () => trendTab.toggleTrendFpe());
 
-document.querySelectorAll("#val-range-picker .chip").forEach(chip =>
-  chip.addEventListener("click", () => {
-    document.querySelectorAll("#val-range-picker .chip").forEach(c => c.classList.remove("active"));
-    chip.classList.add("active");
-    valuationTab.setRange(chip.dataset.valRange);
-  })
-);
+chipPicker(document.getElementById("val-range-picker"), "val-range", v => valuationTab.setRange(v));
 
 document.querySelectorAll(".info-panel-header").forEach(h => {
   h.addEventListener("click", () => {

@@ -4,6 +4,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
+import { chipPicker } from '../utils/dom.js';
 
 const SUB_LINES = [
   { key: "walcl", name: "Fed 總資產 (WALCL)", color: "#58a6ff" },
@@ -177,16 +178,7 @@ export function render() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById("netliq-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-netliq-range]");
-      if (!t) return;
-      range = t.dataset.netliqRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "netliq-range", v => { range = v; render(); });
   const sub = document.getElementById("netliq-sub-toggles");
   if (sub && !sub.dataset.built) {
     sub.dataset.built = "1";

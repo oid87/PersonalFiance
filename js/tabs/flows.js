@@ -5,6 +5,7 @@
 //   資料：data/flows.json + data/fear_greed.json + data/VIX.json
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const TICKERS = [
   { key: 'semi', label: '半導體 (SOXX+SMH)', unit: '$', color: '#1a3a6b', colorDark: '#3987e5' },
@@ -393,30 +394,11 @@ function applyView() {
 
 function buildControls() {
   const sw = document.getElementById('flows-ticker-picker');
-  if (sw && !sw.dataset.built) {
-    sw.dataset.built = '1';
-    sw.addEventListener('click', e => {
-      const t = e.target.closest('.chip[data-flows-ticker]');
-      if (!t) return;
-      activeTicker = t.dataset.flowsTicker;
-      sw.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === t));
-      render();
-    });
-  }
+  chipPicker(sw, 'flows-ticker', v => { activeTicker = v; render(); });
   const rp = document.getElementById('flows-range-picker');
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = '1';
-    rp.addEventListener('click', e => {
-      const t = e.target.closest('.chip[data-flows-range]');
-      if (!t) return;
-      range = t.dataset.flowsRange;
-      rp.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === t));
-      render();
-    });
-  }
+  chipPicker(rp, 'flows-range', v => { range = v; render(); });
   const fgBtn = document.getElementById('flows-fg-toggle');
-  if (fgBtn && !fgBtn.dataset.built) {
-    fgBtn.dataset.built = '1';
+  if (bindOnce(fgBtn)) {
     fgBtn.addEventListener('click', () => {
       showFG = !showFG;
       fgBtn.classList.toggle('active', showFG);
@@ -424,8 +406,7 @@ function buildControls() {
     });
   }
   const vixBtn = document.getElementById('flows-vix-toggle');
-  if (vixBtn && !vixBtn.dataset.built) {
-    vixBtn.dataset.built = '1';
+  if (bindOnce(vixBtn)) {
     vixBtn.addEventListener('click', () => {
       showVIX = !showVIX;
       vixBtn.classList.toggle('active', showVIX);
@@ -434,27 +415,9 @@ function buildControls() {
   }
 
   const vp = document.getElementById('flows-view-picker');
-  if (vp && !vp.dataset.built) {
-    vp.dataset.built = '1';
-    vp.addEventListener('click', e => {
-      const t = e.target.closest('.chip[data-flows-view]');
-      if (!t) return;
-      view = t.dataset.flowsView;
-      vp.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === t));
-      applyView();
-    });
-  }
+  chipPicker(vp, 'flows-view', v => { view = v; applyView(); });
   const swp = document.getElementById('flows-sector-window-picker');
-  if (swp && !swp.dataset.built) {
-    swp.dataset.built = '1';
-    swp.addEventListener('click', e => {
-      const t = e.target.closest('.chip[data-flows-sector-window]');
-      if (!t) return;
-      sectorWindow = t.dataset.flowsSectorWindow;
-      swp.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === t));
-      renderSectorRank();
-    });
-  }
+  chipPicker(swp, 'flows-sector-window', v => { sectorWindow = v; renderSectorRank(); });
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@
 import { isLight, PALETTE, mob } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
 import { fetchJSON } from '../utils/data.js';
+import { chipPicker } from '../utils/dom.js';
 
 const POS_COLOR = "#3fb950";
 const NEG_COLOR = "#f85149";
@@ -359,31 +360,13 @@ function renderAll() {
 
 function buildControls() {
   const rp = document.getElementById("twchips-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-twchips-range]");
-      if (!t) return;
-      range = t.dataset.twchipsRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      renderAll();
-    });
-  }
+  chipPicker(rp, "twchips-range", v => { range = v; renderAll(); });
 }
 
 // 商品切換（微台/小台）狀態獨立於 range picker；切換只重繪第五格，不動其他四格。
 function buildProductPicker() {
   const pp = document.getElementById("twchips-retail-product-picker");
-  if (pp && !pp.dataset.built) {
-    pp.dataset.built = "1";
-    pp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-twchips-product]");
-      if (!t) return;
-      retailProduct = t.dataset.twchipsProduct;
-      pp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      renderRetail();
-    });
-  }
+  chipPicker(pp, "twchips-product", v => { retailProduct = v; renderRetail(); });
 }
 
 export async function init() {

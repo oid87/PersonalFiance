@@ -7,6 +7,7 @@
 // 定位環境理解 / 風險溫度計，非交易訊號。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const DIMS = [
   { key: "fx",      name: "匯率波動",  color: "#e3b341" },
@@ -227,19 +228,9 @@ export function render() {
 
 function buildControls() {
   const rp = document.getElementById("ts-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-ts-range]");
-      if (!t) return;
-      tsRange = t.dataset.tsRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "ts-range", v => { tsRange = v; render(); });
   const tb = document.getElementById("ts-twii-toggle");
-  if (tb && !tb.dataset.built) {
-    tb.dataset.built = "1";
+  if (bindOnce(tb)) {
     tb.addEventListener("click", () => {
       showTwii = !showTwii;
       tb.classList.toggle("active", showTwii);

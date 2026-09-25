@@ -9,6 +9,7 @@
 import { isLight, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
 import { fetchJSON } from '../utils/data.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const TAB_ID = 'roc4';
 const HORIZONS = [1, 5, 10, 20, 60];
@@ -212,15 +213,9 @@ function renderTables(i0) {
 // ── controls ─────────────────────────────────────────────────────────────
 function buildControls() {
   const host = document.getElementById(`${TAB_ID}-controls`);
-  if (!host || host.dataset.built) return;
-  host.dataset.built = '1';
+  if (!bindOnce(host)) return;
 
-  host.querySelectorAll('[data-roc4-range]').forEach(c => c.addEventListener('click', () => {
-    host.querySelectorAll('[data-roc4-range]').forEach(e => e.classList.remove('active'));
-    c.classList.add('active');
-    range = c.dataset.roc4Range;
-    render();
-  }));
+  chipPicker(host, 'roc4-range', v => { range = v; render(); }, { onlyMatching: true });
 
   const bind = (id, fn) => {
     const c = document.getElementById(id);

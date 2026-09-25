@@ -21,6 +21,7 @@
 import { isLight, mob, PALETTE, echartsBase } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
 import { percentile } from '../utils/math.js';
+import { chipPicker } from '../utils/dom.js';
 
 const SOFR_COLOR   = '#58a6ff';
 const EFFR_COLOR   = '#3fb950';
@@ -408,31 +409,16 @@ async function renderDrawdownSection() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById('mc-range-picker');
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = '1';
-    rp.addEventListener('click', e => {
-      const t = e.target.closest('.chip[data-mc-range]');
-      if (!t) return;
-      range = t.dataset.mcRange;
-      rp.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === t));
-      renderRateChart();
-    });
-  }
+  chipPicker(rp, 'mc-range', v => { range = v; renderRateChart(); });
   const dp = document.getElementById('mc-dd-index-picker');
-  if (dp && !dp.dataset.built) {
-    dp.dataset.built = '1';
-    dp.addEventListener('click', e => {
-      const t = e.target.closest('.chip[data-mc-dd-index]');
-      if (!t) return;
-      ddIndex = t.dataset.mcDdIndex;
-      dp.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === t));
-      renderDrawdownSection().catch(e2 => {
-        const s = document.getElementById('mc-dd-status');
-        if (s) s.textContent = '載入失敗：' + (e2.message || e2);
-        console.error('[margincost] drawdown load failed', e2);
-      });
+  chipPicker(dp, 'mc-dd-index', v => {
+    ddIndex = v;
+    renderDrawdownSection().catch(e2 => {
+      const s = document.getElementById('mc-dd-status');
+      if (s) s.textContent = '載入失敗：' + (e2.message || e2);
+      console.error('[margincost] drawdown load failed', e2);
     });
-  }
+  });
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────

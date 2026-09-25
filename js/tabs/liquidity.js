@@ -11,6 +11,7 @@
 //   當月未滿月讀數會隨月底重取樣持續變動。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { chipPicker } from '../utils/dom.js';
 
 let excessChart = null;
 let yoyChart = null;
@@ -315,12 +316,8 @@ export function onThemeChange(light) {
 export function resize() { excessChart?.resize(); yoyChart?.resize(); }
 
 // === Event wiring ===
-document.getElementById("ll-market-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-ll-mkt]");
-  if (!t) return;
-  market = t.dataset.llMkt;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("ll-market-picker"), "ll-mkt", v => {
+  market = v;
   const foreignToggle = document.getElementById("ll-foreign-toggle");
   if (foreignToggle) foreignToggle.style.display = market === "tw" ? "" : "none";
   renderAll();
@@ -333,11 +330,7 @@ document.getElementById("ll-foreign-toggle")?.addEventListener("click", e => {
   renderYoyChart();
 });
 
-document.getElementById("ll-range-picker")?.addEventListener("click", e => {
-  const t = e.target.closest(".chip[data-ll-range]");
-  if (!t) return;
-  llRange = t.dataset.llRange;
-  for (const c of e.currentTarget.querySelectorAll(".chip"))
-    c.classList.toggle("active", c === t);
+chipPicker(document.getElementById("ll-range-picker"), "ll-range", v => {
+  llRange = v;
   renderAll();
 });

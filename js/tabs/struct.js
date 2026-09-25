@@ -5,6 +5,7 @@
 
 import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeMA } from '../utils/math.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const VPVR_BINS = 40;
 const HVN_PERCENTILE = 0.70;
@@ -548,14 +549,11 @@ function render(bars) {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const host = document.getElementById('struct-lookback-picker');
-  if (!host || host.dataset.built) return;
-  host.dataset.built = '1';
-  host.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
-    host.querySelectorAll('.chip').forEach(e => e.classList.remove('active'));
-    c.classList.add('active');
-    lookback = parseInt(c.dataset.structLookback, 10);
+  if (!bindOnce(host)) return;
+  chipPicker(host, 'struct-lookback', v => {
+    lookback = parseInt(v, 10);
     if (allBars) render(allBars);
-  }));
+  });
 }
 
 async function refresh() {

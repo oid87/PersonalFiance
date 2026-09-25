@@ -7,6 +7,7 @@
 //      「最新值」一律 = 該欄最後一筆非 null 的值，不是陣列最後一筆。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { chipPicker } from '../utils/dom.js';
 
 // ── 格式化 helpers ───────────────────────────────────────────────────
 function fmtB(v, dp = 1) {
@@ -635,27 +636,9 @@ function renderAll() {
 // ── controls ──────────────────────────────────────────────────────────
 function buildControls() {
   const rp = document.getElementById('ul-range-picker');
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = '1';
-    rp.addEventListener('click', e => {
-      const t = e.target.closest('.chip[data-ul-range]');
-      if (!t) return;
-      range = t.dataset.ulRange;
-      rp.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === t));
-      renderCorridor(); renderBuffer(); renderSupply(); updateStatus();
-    });
-  }
+  chipPicker(rp, 'ul-range', v => { range = v; renderCorridor(); renderBuffer(); renderSupply(); updateStatus(); });
   const sp = document.getElementById('ul-buffer-scale');
-  if (sp && !sp.dataset.built) {
-    sp.dataset.built = '1';
-    sp.addEventListener('click', e => {
-      const t = e.target.closest('.chip[data-ul-scale]');
-      if (!t) return;
-      bufferScale = t.dataset.ulScale;
-      sp.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === t));
-      renderBuffer();
-    });
-  }
+  chipPicker(sp, 'ul-scale', v => { bufferScale = v; renderBuffer(); });
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
