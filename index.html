@@ -27,14 +27,14 @@
         <span id="custom-ticker-btn" class="chip" style="padding:4px 10px;cursor:pointer;flex-shrink:0" data-tooltip="輸入任意 Yahoo Finance 代號並載入">＋</span>
       </div>
 
-      <div id="ma-picker" style="display:flex;gap:4px">
+      <div class="picker-row" id="ma-picker">
         <span class="chip" data-ma="20" data-tooltip="20日均線：短期趨勢，常見支撐壓力位">MA20</span>
         <span class="chip" data-ma="50" data-tooltip="50日均線：中期趨勢，機構常用基準線">MA50</span>
         <span class="chip" data-ma="200" data-tooltip="200日均線：長期牛熊分界，站上為多頭訊號">MA200</span>
       </div>
 
       <span id="fear-toggle" class="chip" title="標示 F&G 極度恐懼區間">恐懼區</span>
-      <span style="font-size:12px;color:var(--muted)">≤</span>
+      <span class="text-muted-sm">≤</span>
       <input type="number" id="fear-threshold" value="20" min="1" max="99" title="F&G 閾值" />
 
       <span id="dd-toggle" class="chip" data-tooltip="標示 QQQ 12週回撤 ≥10% 的歷史修正區間（淡紅背景）">回撤區</span>
@@ -106,11 +106,11 @@
         <span class="chip" data-mode="channel" data-tooltip="以滾動高低點為上下緣的價格通道">通道</span>
       </div>
       <span id="penta-vix-toggle" class="chip" style="margin-left:8px;flex-shrink:0" data-tooltip="疊加 VIX 恐慌指數（右軸，S&amp;P500 隱含波動率）">VIX</span>
-      <span id="penta-vxn-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="疊加 VXN NASDAQ-100 恐慌指數（右軸，對應 QQQ）">VXN</span>
-      <span id="penta-fg-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
-      <span id="penta-weekly-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="五線譜改用週線計算（資料點更少、噪音更低）">週線</span>
-      <span id="penta-ma125-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="自訂均線（預設125日，可手動調整天數）">MA</span><input id="penta-ma-period" type="number" min="5" max="999" value="125" readonly style="width:64px;margin-left:2px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--muted);font-size:13px;text-align:center;outline:none;cursor:default;pointer-events:none" />
-      <span id="penta-fpe-toggle" class="chip" style="margin-left:4px;flex-shrink:0" data-tooltip="QQQ/SPY/SOXX/0050/TWII Forward PE 子面板（季度資料線性插值）">FPE</span>
+      <span id="penta-vxn-toggle" class="chip ml-4-shrink0" data-tooltip="疊加 VXN NASDAQ-100 恐慌指數（右軸，對應 QQQ）">VXN</span>
+      <span id="penta-fg-toggle" class="chip ml-4-shrink0" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
+      <span id="penta-weekly-toggle" class="chip ml-4-shrink0" data-tooltip="五線譜改用週線計算（資料點更少、噪音更低）">週線</span>
+      <span id="penta-ma125-toggle" class="chip ml-4-shrink0" data-tooltip="自訂均線（預設125日，可手動調整天數）">MA</span><input id="penta-ma-period" type="number" min="5" max="999" value="125" readonly style="width:64px;margin-left:2px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--muted);font-size:13px;text-align:center;outline:none;cursor:default;pointer-events:none" />
+      <span id="penta-fpe-toggle" class="chip ml-4-shrink0" data-tooltip="QQQ/SPY/SOXX/0050/TWII Forward PE 子面板（季度資料線性插值）">FPE</span>
       <div id="penta-period-picker" style="margin-left:auto;display:flex;gap:6px;flex-shrink:0">
         <span class="chip" data-period="0.5Y" data-tooltip="用近0.5年數據算均值/標準差，較敏感">短期 0.5Y</span>
         <span class="chip" data-period="1.5Y" data-tooltip="用近1.5年數據算均值/標準差，均衡參考">中期 1.5Y</span>
@@ -138,7 +138,7 @@
           </tbody>
         </table>
         <p><b>市場情緒應用：</b>把多支股票的五線譜位置擺在一起看——若多數個股集中在 -2σ 以下，代表市場整體悲觀（超賣）；集中在 +2σ 以上，則整體過熱（超買）。適合大盤修正或急漲時快速掃描情緒極端程度。</p>
-        <p style="color:var(--muted);margin-top:6px">搭配 MA60 季線方向更穩——季線向上時偏多操作，季線向下時保守對待反彈訊號。</p>
+        <p class="mt-6-muted">搭配 MA60 季線方向更穩——季線向上時偏多操作，季線向下時保守對待反彈訊號。</p>
       </div>
     </div>
   </section>
@@ -146,10 +146,10 @@
   <!-- ── 宏觀 tab ──────────────────────────────────────────────── -->
   <section id="tab-macro" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">美債殖利率曲線 · 10Y / 2Y / 利差</span>
+      <span class="text-muted-13">美債殖利率曲線 · 10Y / 2Y / 利差</span>
       <span id="m2-toggle" class="chip" data-tooltip="M2貨幣供給年增率（右軸）：流動性寬鬆/緊縮指標">M2年增率</span>
       <span id="cape-toggle" class="chip" data-tooltip="Shiller CAPE / P/E10（右軸）：長期市場估值指標">CAPE</span>
-      <div id="macro-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="macro-range-picker">
         <span class="chip" data-macro-range="1Y" data-tooltip="顯示近1年總經數據">1Y</span>
         <span class="chip" data-macro-range="3Y" data-tooltip="顯示近3年總經數據">3Y</span>
         <span class="chip" data-macro-range="5Y" data-tooltip="顯示近5年總經數據">5Y</span>
@@ -175,12 +175,12 @@
   <!-- ── 產業輪動 tab ────────────────────────────────────────────── -->
   <section id="tab-sector" class="tab-section" hidden>
     <div class="controls">
-      <div id="sector-market-picker" style="display:flex;gap:4px">
+      <div class="picker-row" id="sector-market-picker">
         <span class="chip active" data-sector-mkt="us">🇺🇸 美股</span>
         <span class="chip" data-sector-mkt="tw">🇹🇼 台股</span>
       </div>
       <span class="chip active" id="sector-sparkline-toggle" data-tooltip="切換迷你走勢圖">走勢</span>
-      <div id="sector-sort-picker" style="display:flex;gap:4px;margin-left:auto">
+      <div class="picker-row picker-row--end" id="sector-sort-picker">
         <span class="chip active" data-sector-col="1M" data-tooltip="依最近1個月報酬率排列">1M</span>
         <span class="chip" data-sector-col="3M" data-tooltip="依最近3個月報酬率排列">3M</span>
         <span class="chip" data-sector-col="1Y" data-tooltip="依最近1年報酬率排列">1Y</span>
@@ -194,20 +194,20 @@
   <!-- ── 現金王 tab ────────────────────────────────────────────── -->
   <section id="tab-cashking" class="tab-section" hidden>
     <div class="controls">
-      <span id="ck-desc" style="font-size:13px;color:var(--muted)">GLD · BTC · TLT · QQQ — 4週累積同跌 · 現金為王訊號</span>
-      <div id="ck-asset-picker" style="display:flex;gap:4px;margin-left:auto">
+      <span class="text-muted-13" id="ck-desc">GLD · BTC · TLT · QQQ — 4週累積同跌 · 現金為王訊號</span>
+      <div class="picker-row picker-row--end" id="ck-asset-picker">
         <span class="chip active" data-ck-asset="4a" data-tooltip="含BTC，2014/10起（10年回測）">4資產</span>
         <span class="chip" data-ck-asset="3a" data-tooltip="黃金期貨+TLT+QQQ，2002/08起（23年回測）">3資產</span>
       </div>
-      <div id="ck-window-picker" style="display:flex;gap:4px">
+      <div class="picker-row" id="ck-window-picker">
         <span class="chip active" data-ck-window="4" data-tooltip="觀察近4週累積報酬，訊號較敏感">4週窗口</span>
         <span class="chip" data-ck-window="8" data-tooltip="觀察近8週累積報酬，訊號較穩定">8週窗口</span>
       </div>
-      <div id="ck-mode-picker" style="display:flex;gap:4px">
+      <div class="picker-row" id="ck-mode-picker">
         <span class="chip" data-ck-mode="week" data-tooltip="每週各資產個別報酬（%）">週報酬</span>
         <span class="chip active" data-ck-mode="4w" data-tooltip="選定視窗內各資產累積報酬">累積%</span>
       </div>
-      <div id="ck-filter-picker" style="display:flex;gap:4px">
+      <div class="picker-row" id="ck-filter-picker">
         <span class="chip active" data-ck-filter="all" data-tooltip="顯示所有週次，不篩選">全部</span>
         <span class="chip" data-ck-filter="3" data-tooltip="至少N-1個資產同週下跌">≥3/4 跌</span>
         <span class="chip" data-ck-filter="4" data-tooltip="全部資產同週下跌，現金為王時刻最強訊號">4/4 全跌</span>
@@ -237,7 +237,7 @@
   <!-- ── 相關係數 tab ────────────────────────────────────────────── -->
   <section id="tab-corr" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">日報酬率 Pearson 相關係數</span>
+      <span class="text-muted-13">日報酬率 Pearson 相關係數</span>
       <div id="corr-period-picker" style="display:flex;gap:4px;margin-left:12px">
         <span class="chip" data-corr-period="6M" data-tooltip="計算近6個月日報酬率相關係數">6M</span>
         <span class="chip active" data-corr-period="1Y" data-tooltip="計算近1年日報酬率相關係數">1Y</span>
@@ -251,10 +251,10 @@
 
   <!-- ── 估值 tab ──────────────────────────────────────────────────── -->
   <section id="tab-valuation" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="val-ticker-picker" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="controls controls--wrap">
+      <div class="flex-wrap-gap6" id="val-ticker-picker"></div>
     </div>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <div id="val-range-picker" style="display:flex;gap:6px">
         <span class="chip" data-val-range="1Y">1Y</span>
         <span class="chip" data-val-range="3Y">3Y</span>
@@ -263,20 +263,20 @@
         <span class="chip" data-val-range="20Y">20Y</span>
         <span class="chip" data-val-range="MAX">MAX</span>
       </div>
-      <div class="status" id="val-status" style="font-size:12px;color:var(--muted)"></div>
+      <div class="status" id="val-status"></div>
     </div>
-    <div id="val-chart" style="height:520px"></div>
+    <div class="chart-h520" id="val-chart"></div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> Forward PE vs Trailing PE 怎麼看？</div>
       <div class="info-panel-body">
         <table class="info-table">
           <thead><tr><th>指標</th><th>定義</th><th>特性</th></tr></thead>
           <tbody>
-            <tr><td style="color:#58a6ff">Forward PE</td><td>股價 ÷ <b>未來 12 個月「預估」EPS</b>（分析師共識）</td><td>前瞻、反映成長預期，但會隨預估修正而變動</td></tr>
-            <tr><td style="color:#f0883e">Trailing PE</td><td>股價 ÷ <b>過去 12 個月「已實現」EPS</b>（TTM 財報）</td><td>客觀、基於真實盈餘，但較落後</td></tr>
+            <tr><td class="c-blue-58a6ff">Forward PE</td><td>股價 ÷ <b>未來 12 個月「預估」EPS</b>（分析師共識）</td><td>前瞻、反映成長預期，但會隨預估修正而變動</td></tr>
+            <tr><td class="c-orange-f0883e">Trailing PE</td><td>股價 ÷ <b>過去 12 個月「已實現」EPS</b>（TTM 財報）</td><td>客觀、基於真實盈餘，但較落後</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px">
+        <p class="mt-10">
           <b>兩者的差 = 市場預期的盈餘成長。</b>
           成長股 Forward &lt; Trailing（預估 EPS 比過去高），<b>折讓</b>越大代表市場越預期它要賺更多；
           反之若 <b>Forward &gt; Trailing</b>，代表市場預期盈餘將<b>衰退</b>（警訊）。
@@ -285,15 +285,15 @@
           ⚠️ <b>Forward PE 的更新節奏</b>：分母是分析師<b>預估 EPS</b>，主要隨<b>財報季與預估修正</b>而調整（約每月底／財報後才大改），不像股價每天動。
           因此「最新」的 Forward PE 只是<b>在目前預估值下、可能的 forward 估值狀態</b>——當預估被上修／下修時，整條線會跟著移動，並非定論。
         </p>
-        <p style="margin-top:10px">
+        <p class="mt-10">
           📏 <b>線條讀法</b>：<b>實線＝真實值</b>（yfinance／multpl／TWSE 實際計算）；
           <span style="opacity:.6">虛線＝估計值</span>（早期無公開資料、以合理數值補；tooltip 會標「估計／實際」）。
         </p>
-        <p style="margin-top:8px;color:var(--muted)">
+        <p class="note-muted">
           資料來源（能撈多遠撈多遠）：ETF 的 forward PE 公開資料一律缺，故由成分股加權計算，<b>實際值自 2026 起每日累積、之前為估計</b>。
           Trailing：<b>SPY 全程真實</b>（multpl S&amp;P 500，深至 1871）、<b>台指 全程真實</b>（FinMind 大型股 PER 加權，深至 2005、含 2008 海嘯）；QQQ／SOXX／MAGS 早期為估計、近期為 ETF 每日實值。台指 forward 歷史以『未來4季<b>實際</b>EPS』回推（後見，深至 2005、含 look-ahead，因台股無公開歷史分析師預估），近期為成分股 forwardPE 加權。
         </p>
-        <p style="margin-top:10px"><b>各標的「用什麼算的」</b>（滑鼠移到線上，tooltip 也會逐點標來源）：</p>
+        <p class="mt-10"><b>各標的「用什麼算的」</b>（滑鼠移到線上，tooltip 也會逐點標來源）：</p>
         <table class="info-table">
           <thead><tr><th>標的</th><th>Forward（實際算法 / 估計依據）</th><th>Trailing（實際算法 / 估計依據）</th></tr></thead>
           <tbody>
@@ -304,7 +304,7 @@
             <tr><td>MAGS</td><td>七巨頭等權 forwardPE(排除 TSLA 離群) ／ 等權估計</td><td>七巨頭等權 trailingPE ／ 等權估計</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">「估計」值是早期無公開資料時，依上述來源的公開數值/區間設定的參考點（虛線）；有實際資料後即以實線覆蓋。實際計算（calc）為當日各成分股 yfinance forwardPE/trailingPE 加權平均、剔除離群值後得出。</p>
+        <p class="note-muted">「估計」值是早期無公開資料時，依上述來源的公開數值/區間設定的參考點（虛線）；有實際資料後即以實線覆蓋。實際計算（calc）為當日各成分股 yfinance forwardPE/trailingPE 加權平均、剔除離群值後得出。</p>
       </div>
     </div>
     <div class="info-panel">
@@ -321,11 +321,11 @@
             <tr><td style="color:#c62a47">&gt; 135%</td><td>顯著高估，報酬率可能低迷</td><td>2000 科技泡沫、2022 升息前 ~200%</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px"><b>核心邏輯：</b>企業獲利長期不可能遠超 GDP 成長，當市值/GDP 持續偏離，必有均值回歸。巴菲特以此指標作為是否大規模配置股票的「整體市場定價環境」參考，而非精確進出場訊號。</p>
+        <p class="mt-10"><b>核心邏輯：</b>企業獲利長期不可能遠超 GDP 成長，當市值/GDP 持續偏離，必有均值回歸。巴菲特以此指標作為是否大規模配置股票的「整體市場定價環境」參考，而非精確進出場訊號。</p>
         <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #E9A810;background:rgba(233,168,16,.08);border-radius:4px">
           ⚠️ <b>指標限制：</b>Fed 量化寬鬆使資產價格系統性偏高（「新常態」），2010 後的「正常」水準可能整體上移；此外全球化使大型企業海外獲利佔比提升，分母（美國 GDP）低估了企業真實盈利基礎。<b>宜與 PE/CAPE 等多指標交叉確認，而非單獨判斷。</b>
         </p>
-        <p style="margin-top:8px;color:var(--muted)">資料來源：Wilshire 5000 全市場指數市值 / 美國年度 GDP（FRED）。台股可用「TWSE 總市值 / 台灣 GDP」類比，台股長期均值約 180–220%（小型出口導向經濟、外資佔比高）。</p>
+        <p class="note-muted">資料來源：Wilshire 5000 全市場指數市值 / 美國年度 GDP（FRED）。台股可用「TWSE 總市值 / 台灣 GDP」類比，台股長期均值約 180–220%（小型出口導向經濟、外資佔比高）。</p>
       </div>
     </div>
     <div class="info-panel">
@@ -342,19 +342,19 @@
             <tr><td style="color:#2f6fb0">藍燈</td><td>9–16</td><td>低迷（衰退）</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">配合 台指（大盤）估值看：景氣紅燈＋本益比偏高＝循環高點警戒；藍燈＋本益比壓縮＝循環低點常見買點。資料月頻，回溯至 1984。</p>
+        <p class="note-muted">配合 台指（大盤）估值看：景氣紅燈＋本益比偏高＝循環高點警戒；藍燈＋本益比壓縮＝循環低點常見買點。資料月頻，回溯至 1984。</p>
       </div>
     </div>
   </section>
 
   <!-- ── Forward P/E 自建 tab ─────────────────────────────────────── -->
   <section id="tab-fwdpe" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <span id="fwdpe-voo-toggle" class="chip active" data-tooltip="顯示/隱藏 VOO">VOO</span>
       <span id="fwdpe-qqq-toggle" class="chip active" data-tooltip="顯示/隱藏 QQQ">QQQ</span>
       <span id="fwdpe-fy2-toggle" class="chip" data-tooltip="顯示/隱藏 FY2 線（預設隱藏）">顯示 FY2 線</span>
     </div>
-    <div id="fwdpe-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="fwdpe-top">
       <div class="breadth-card">
         <div class="bc-label">VOO Forward P/E</div>
         <div class="bc-main"><span class="bc-pct" id="fwdpe-voo-val">—</span></div>
@@ -368,14 +368,14 @@
         <div class="bc-signal" id="fwdpe-qqq-signal">—</div>
       </div>
     </div>
-    <div id="fwdpe-chart" style="height:520px"></div>
-    <div class="status" id="fwdpe-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="chart-h520" id="fwdpe-chart"></div>
+    <div class="status status--flush" id="fwdpe-status">切換至此 tab 自動載入…</div>
   </section>
 
   <!-- ── 情緒 tab ──────────────────────────────────────────────────── -->
   <section id="tab-sentiment" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">4指標複合情緒 · VIX · 信用利差 · SPY趨勢 · 避險資金</span>
+      <span class="text-muted-13">4指標複合情緒 · VIX · 信用利差 · SPY趨勢 · 避險資金</span>
       <div id="sent-range-picker" class="range-wrap" style="margin-left:auto">
         <span class="chip" data-sent-range="1Y">1Y</span>
         <span class="chip" data-sent-range="3Y">3Y</span>
@@ -449,14 +449,14 @@
         <table class="info-table" style="margin-top:14px">
           <thead><tr><th>分數</th><th>情緒狀態</th><th>歷史意涵</th></tr></thead>
           <tbody>
-            <tr><td>0 – 25</td><td style="color:#f85149">極度恐慌</td><td>歷史上常為中長期買點</td></tr>
-            <tr><td>25 – 45</td><td style="color:#f0883e">恐慌</td><td>市場悲觀，可開始觀察</td></tr>
-            <tr><td>45 – 55</td><td style="color:var(--muted)">中立</td><td>情緒均衡</td></tr>
-            <tr><td>55 – 75</td><td style="color:#3fb950">貪婪</td><td>樂觀情緒，謹慎追高</td></tr>
+            <tr><td>0 – 25</td><td class="c-red-f85149">極度恐慌</td><td>歷史上常為中長期買點</td></tr>
+            <tr><td>25 – 45</td><td class="c-orange-f0883e">恐慌</td><td>市場悲觀，可開始觀察</td></tr>
+            <tr><td>45 – 55</td><td class="text-muted">中立</td><td>情緒均衡</td></tr>
+            <tr><td>55 – 75</td><td class="c-green-3fb950">貪婪</td><td>樂觀情緒，謹慎追高</td></tr>
             <tr><td>75 – 100</td><td style="color:#e91e63">極度貪婪</td><td>過熱，歷史上常為警戒區</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px;color:var(--muted)">參考概念：台灣市場的 SIO 恐慌貪婪指標（jacksu.tw）以 AII 投資者情緒調查、CBOE P/C Ratio 8日均、SMT 動能、VIX 合成類似指數，讀數邏輯相通。</p>
+        <p class="mt-10-muted">參考概念：台灣市場的 SIO 恐慌貪婪指標（jacksu.tw）以 AII 投資者情緒調查、CBOE P/C Ratio 8日均、SMT 動能、VIX 合成類似指數，讀數邏輯相通。</p>
       </div>
     </div>
   </section>
@@ -464,7 +464,7 @@
   <!-- ── 散戶情緒 tab (AAII × F&G × VIX × S&P500) ───────────────── -->
   <section id="tab-aaii" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">AAII 散戶調查 · CNN恐懼貪婪 · VIX · S&P500 — 仿 MacroMicro 對照</span>
+      <span class="text-muted-13">AAII 散戶調查 · CNN恐懼貪婪 · VIX · S&P500 — 仿 MacroMicro 對照</span>
       <div id="aaii-range-picker" class="range-wrap">
         <span class="chip" data-aaii-range="1">1Y</span>
         <span class="chip" data-aaii-range="2">2Y</span>
@@ -498,9 +498,9 @@
             <tr><td>S&P 500 指數</td><td>^GSPC 指數（非 SPY ETF，故可回溯 1987）</td><td>基準大盤，對照情緒是否背離價格</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px;color:var(--muted)">圖分四格：S&P500 走勢 / CNN恐懼貪婪+VIX / AAII 看多·中立·看空 / 看多−看空（淨看多，含 0 基準線，正＝散戶偏多）。圖例可點擊開關各條線。AAII 為週頻（每週四公布），CNN F&G / VIX / S&P500 為日頻；表格中後三者取「該週 AAII 公布日(含)以前最近一個交易日」對齊。</p>
-        <p style="margin-top:6px;color:var(--muted)">範圍：「2011→」是四指標共同起點（CNN 恐懼貪婪自 2011 才有資料）；「全部」回到 AAII 最早的 1987。此時 S&P 500（^GSPC 指數）與 AAII 都畫到 1987，VIX 也以原始 ^VXO 接回 1987（看得到黑色星期一收 150 那根尖刺）。<b>只有 CNN 恐懼貪婪無法早於 2011</b>——這指數是 CNN 2012 年才推出、僅回填到 2011，更早的資料不存在，故 1987–2011 該格留白。</p>
-        <p style="margin-top:6px;color:var(--muted)">資料來源：AAII 官方 sentiment.xls 完整歷史（1987 至今，每週四公布）+ aaii.com 近期週報補最新一週。每日隨其他資料一起更新。</p>
+        <p class="mt-10-muted">圖分四格：S&P500 走勢 / CNN恐懼貪婪+VIX / AAII 看多·中立·看空 / 看多−看空（淨看多，含 0 基準線，正＝散戶偏多）。圖例可點擊開關各條線。AAII 為週頻（每週四公布），CNN F&G / VIX / S&P500 為日頻；表格中後三者取「該週 AAII 公布日(含)以前最近一個交易日」對齊。</p>
+        <p class="mt-6-muted">範圍：「2011→」是四指標共同起點（CNN 恐懼貪婪自 2011 才有資料）；「全部」回到 AAII 最早的 1987。此時 S&P 500（^GSPC 指數）與 AAII 都畫到 1987，VIX 也以原始 ^VXO 接回 1987（看得到黑色星期一收 150 那根尖刺）。<b>只有 CNN 恐懼貪婪無法早於 2011</b>——這指數是 CNN 2012 年才推出、僅回填到 2011，更早的資料不存在，故 1987–2011 該格留白。</p>
+        <p class="mt-6-muted">資料來源：AAII 官方 sentiment.xls 完整歷史（1987 至今，每週四公布）+ aaii.com 近期週報補最新一週。每日隨其他資料一起更新。</p>
       </div>
     </div>
   </section>
@@ -508,7 +508,7 @@
   <!-- ── 台股情緒 tab (台股恐懼貪婪 + 原始元件) ─────────────────────── -->
   <section id="tab-twsent" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">台股恐懼貪婪指數 · P/C · 散戶多空 · 趨勢 · 融資</span>
+      <span class="text-muted-13">台股恐懼貪婪指數 · P/C · 散戶多空 · 趨勢 · 融資</span>
       <div id="twsent-range-picker" class="range-wrap">
         <span class="chip" data-twsent-range="1">1Y</span>
         <span class="chip" data-twsent-range="2">2Y</span>
@@ -528,10 +528,10 @@
 
     <!-- 融資水位 × 斷頭壓力 (韓式雙軸) — 指數跌但融資不降=沒洗乾淨 -->
     <div class="twsent-forced-section" style="margin-top:22px">
-      <div class="aaii-table-title" style="margin-bottom:8px">融資水位 × 斷頭壓力 — 洗乾淨了嗎？（韓式雙格）</div>
-      <div id="twsent-forced-card" style="margin-bottom:8px"></div>
+      <div class="aaii-table-title">融資水位 × 斷頭壓力 — 洗乾淨了嗎？（韓式雙格）</div>
+      <div class="mb-8" id="twsent-forced-card"></div>
       <div id="twsent-forced-chart" style="height:420px"></div>
-      <p style="color:var(--muted);font-size:12px;margin-top:8px">
+      <p class="text-muted-sm-mt8">
         仿韓國 KOFIA 融資餘額×반대매매(斷頭)雙軸讀法。<b>上格</b>=大盤融資餘額(億)疊加權指數:指數重挫但融資餘額不降,代表被斷的部位反彈就有人開槓桿補回、籌碼未洗清。
         <b>下格</b>=融資維持率(重建)當斷頭壓力代理,越低越接近追繳/斷頭。<b>卡片</b>=自可視範圍加權指數波段高點起,指數跌幅 vs 融資餘額降幅,兩者背離越大越危險。
         ⚠️ 台灣無「已實現斷頭金額」免費公開數列(韓國有 반대매매),此處以維持率替代;重建維持率(擔保品市值÷融資)水位較券商整戶維持率偏高,故不硬畫 130% 追繳線,看趨勢方向為主。
@@ -540,8 +540,8 @@
 
     <!-- 融資 ÷ 上市市值 (千分比) — 台股槓桿密度，多年回測 -->
     <div class="twsent-mktcap-section" style="margin-top:22px">
-      <div class="aaii-table-title" style="margin-bottom:8px">融資餘額 ÷ 上市市值 (千分比 ‰) — 台股槓桿密度（回測級）</div>
-      <div id="twsent-mktcap-card" style="margin-bottom:8px"></div>
+      <div class="aaii-table-title">融資餘額 ÷ 上市市值 (千分比 ‰) — 台股槓桿密度（回測級）</div>
+      <div class="mb-8" id="twsent-mktcap-card"></div>
       <div id="twsent-mktcap-chart" style="height:300px"></div>
       <div class="status" style="color:var(--muted);font-size:11px;margin-top:4px">
         上市市值 = TAIEX × K(t)，K(t) 由 TWSE 集中市場月訊 + 證期局年度市值表的月度錨點線性插值。
@@ -552,17 +552,17 @@
 
     <!-- 台指期基差(近月正逆價差) — 獨立參考,未併入上方恐慌貪婪合成分數 -->
     <div class="twsent-basis-section" style="margin-top:22px">
-      <div class="aaii-table-title" style="margin-bottom:8px">台指期基差(近月正逆價差)</div>
-      <div id="twsent-basis-card" style="margin-bottom:8px"></div>
+      <div class="aaii-table-title">台指期基差(近月正逆價差)</div>
+      <div class="mb-8" id="twsent-basis-card"></div>
       <div id="twsent-basis-chart" style="height:300px"></div>
-      <p style="color:var(--muted);font-size:12px;margin-top:8px">基差 = 台指期近月日盤收盤 − 加權指數現貨。<b>逆價差(負)</b>= 期貨低於現貨,通常反映避險/看空情緒較濃;<b>正價差(正)</b>反之。台股獨有的期貨情緒維度,<b>獨立參考,未併入上方恐慌貪婪合成分數</b>。資料:FinMind TaiwanFuturesDaily(TX)+ 加權指數現貨。</p>
+      <p class="text-muted-sm-mt8">基差 = 台指期近月日盤收盤 − 加權指數現貨。<b>逆價差(負)</b>= 期貨低於現貨,通常反映避險/看空情緒較濃;<b>正價差(正)</b>反之。台股獨有的期貨情緒維度,<b>獨立參考,未併入上方恐慌貪婪合成分數</b>。資料:FinMind TaiwanFuturesDaily(TX)+ 加權指數現貨。</p>
     </div>
 
     <!-- 散戶籌碼:槓桿ETF受益人數 + 當沖占比 + 融券餘額 — 獨立參考,未併入上方恐慌貪婪合成分數 -->
     <div class="twsent-chips-section" style="margin-top:22px">
-      <div class="aaii-table-title" style="margin-bottom:8px">散戶籌碼:槓桿 ETF 受益人數 · 當沖占比 · 融券餘額</div>
+      <div class="aaii-table-title">散戶籌碼:槓桿 ETF 受益人數 · 當沖占比 · 融券餘額</div>
       <div id="twsent-chips-chart"></div>
-      <p style="color:var(--muted);font-size:12px;margin-top:8px">槓桿ETF受益人數(00631L元大台灣50正2、00675L富邦臺灣加權正2,週頻,TDCC集保股權分散表)、當沖占比(TWSE當日沖銷交易統計,日頻自2021起回補中)、融券餘額(FinMind大盤融券張數,2008+)。三者皆<b>獨立參考,未併入上方恐慌貪婪合成分數</b>。</p>
+      <p class="text-muted-sm-mt8">槓桿ETF受益人數(00631L元大台灣50正2、00675L富邦臺灣加權正2,週頻,TDCC集保股權分散表)、當沖占比(TWSE當日沖銷交易統計,日頻自2021起回補中)、融券餘額(FinMind大盤融券張數,2008+)。三者皆<b>獨立參考,未併入上方恐慌貪婪合成分數</b>。</p>
     </div>
 
     <div class="status" id="twsent-status">切換至此 tab 自動載入…</div>
@@ -585,8 +585,8 @@
             <tr><td>槓桿</td><td>大盤融資餘額 20日變動% · FinMind</td><td>正向 · 20% · 2008</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px;color:var(--muted)">分區：&lt;25 極度恐懼 / 25–45 恐懼 / 45–55 中性 / 55–75 貪婪 / &gt;75 極度貪婪。早於某元件起始日時自動少算該元件、權重重新分配，故指數可回溯到 1998（僅趨勢+P/C+融資）。外資淨部位為「聰明錢」方向、獨立顯示不進分數。</p>
-        <p style="margin-top:6px;color:var(--muted)">已知限制：<b>台指 VIX 無乾淨免費歷史</b>（TAIFEX/MacroMicro 付費），未納入。<b>融資維持率為自行重建</b>：Σ(逐檔融資張×收盤×1000)÷融資餘額（TWSE 免費逐檔，上市 only，逐檔張數加總已對 FinMind 總量驗證相等），與券商「整戶維持率」(含融券/現金/T+2) 定義略異、水位偏高，但趨勢一致 —— 僅供槓桿風險溫度計參考、<b>不進複合分數</b>。P/C 成交量比在急跌時偏雜訊（call 量暴增），日後可改用未平倉比微調。散戶多空＝台指期三大法人淨未平倉反推（零和近似）。</p>
+        <p class="mt-10-muted">分區：&lt;25 極度恐懼 / 25–45 恐懼 / 45–55 中性 / 55–75 貪婪 / &gt;75 極度貪婪。早於某元件起始日時自動少算該元件、權重重新分配，故指數可回溯到 1998（僅趨勢+P/C+融資）。外資淨部位為「聰明錢」方向、獨立顯示不進分數。</p>
+        <p class="mt-6-muted">已知限制：<b>台指 VIX 無乾淨免費歷史</b>（TAIFEX/MacroMicro 付費），未納入。<b>融資維持率為自行重建</b>：Σ(逐檔融資張×收盤×1000)÷融資餘額（TWSE 免費逐檔，上市 only，逐檔張數加總已對 FinMind 總量驗證相等），與券商「整戶維持率」(含融券/現金/T+2) 定義略異、水位偏高，但趨勢一致 —— 僅供槓桿風險溫度計參考、<b>不進複合分數</b>。P/C 成交量比在急跌時偏雜訊（call 量暴增），日後可改用未平倉比微調。散戶多空＝台指期三大法人淨未平倉反推（零和近似）。</p>
       </div>
     </div>
   </section>
@@ -648,20 +648,20 @@
         <div class="bc-signal" id="bc-mom-signal">—</div>
       </div>
       <div style="display:flex;gap:8px;margin-left:auto;align-items:center;flex-wrap:wrap">
-        <div id="breadth-universe-picker" style="display:flex;gap:4px">
+        <div class="picker-row" id="breadth-universe-picker">
           <span class="chip active" data-breadth-universe="SP500" data-tooltip="對應 VOO">S&amp;P 500</span>
           <span class="chip" data-breadth-universe="NDX" data-tooltip="對應 QQQ">Nasdaq-100</span>
           <span class="chip" data-breadth-universe="XLG" data-tooltip="對應 XLG · S&amp;P 500 市值前 50 大">超大型50</span>
           <span class="chip" data-breadth-universe="TW50" data-tooltip="對應 0050 · 臺灣50指數(台灣前 50 大),台版超大型股廣度">台灣50</span>
         </div>
-        <div id="breadth-ma-picker" style="display:flex;gap:4px">
+        <div class="picker-row" id="breadth-ma-picker">
           <span class="chip" data-breadth-ma="20" data-tooltip="成分股站上 20MA 比例 + 指數自身 20MA（右軸）">20MA</span>
           <span class="chip active" data-breadth-ma="50" data-tooltip="成分股站上 50MA 比例 + 指數自身 50MA（右軸）">50MA</span>
           <span class="chip" data-breadth-ma="200" data-tooltip="成分股站上 200MA 比例 + 指數自身 200MA（右軸）">200MA</span>
         </div>
         <span id="breadth-vix-toggle" class="chip" data-tooltip="疊加 VIX 恐慌指數（右軸）">VIX</span>
         <span id="breadth-fg-toggle"  class="chip" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
-        <div id="breadth-range-picker" style="display:flex;gap:4px">
+        <div id="breadth-range-picker">
           <span class="chip" data-breadth-range="1Y" data-tooltip="近1年">1Y</span>
           <span class="chip active" data-breadth-range="2Y" data-tooltip="近2年">2Y</span>
           <span class="chip" data-breadth-range="5Y" data-tooltip="近5年">5Y</span>
@@ -685,17 +685,17 @@
         <table class="info-table" style="margin-top:14px">
           <thead><tr><th>比例</th><th>50日均線訊號</th><th>200日均線訊號</th></tr></thead>
           <tbody>
-            <tr><td>&gt; 75%</td><td style="color:#3fb950">強勢多頭</td><td style="color:#3fb950">長期多頭確認</td></tr>
+            <tr><td>&gt; 75%</td><td class="c-green-3fb950">強勢多頭</td><td class="c-green-3fb950">長期多頭確認</td></tr>
             <tr><td>55 – 75%</td><td style="color:#7ee787">多方主導</td><td style="color:#7ee787">偏多格局</td></tr>
-            <tr><td>35 – 55%</td><td style="color:var(--muted)">多空拉鋸</td><td style="color:var(--muted)">整理格局</td></tr>
-            <tr><td>20 – 35%</td><td style="color:#f0883e">空方壓力</td><td style="color:#f0883e">偏空格局</td></tr>
-            <tr><td>&lt; 20%</td><td style="color:#f85149">弱勢超賣</td><td style="color:#f85149">長期空頭警戒</td></tr>
+            <tr><td>35 – 55%</td><td class="text-muted">多空拉鋸</td><td class="text-muted">整理格局</td></tr>
+            <tr><td>20 – 35%</td><td class="c-orange-f0883e">空方壓力</td><td class="c-orange-f0883e">偏空格局</td></tr>
+            <tr><td>&lt; 20%</td><td class="c-red-f85149">弱勢超賣</td><td class="c-red-f85149">長期空頭警戒</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px;color:var(--muted)">觀察重點：當指數走高但廣度下滑（背離），通常是警示訊號；廣度由低點大幅回升，往往是新一波行情啟動的先行指標。</p>
+        <p class="mt-10-muted">觀察重點：當指數走高但廣度下滑（背離），通常是警示訊號；廣度由低點大幅回升，往往是新一波行情啟動的先行指標。</p>
         <h4 style="margin:14px 0 6px">52 週新高 / 新低 + 興登堡徵兆（S&amp;P 500 簡化版）</h4>
         <p>健康市場應該「全面創新高」或「全面創新低」二選一。<b>當大盤仍在上漲、卻同時出現大量新高 + 大量新低</b>，代表內部嚴重分歧，歷史上常先於崩盤。</p>
-        <p style="color:var(--muted);font-size:12px">⚠ 注意：原版用 NYSE 全市場 ~3000 檔 + McClellan Oscillator。本站用 S&amp;P 500 成份股自算（NYSE 新高/新低成分序列免費撈不到，Stooq/yfinance/MarketWatch 全擋），叫「Hindenburg-style」較誠實，歷史對齊不可直接比 NYSE 原版。</p>
+        <p class="text-muted-sm">⚠ 注意：原版用 NYSE 全市場 ~3000 檔 + McClellan Oscillator。本站用 S&amp;P 500 成份股自算（NYSE 新高/新低成分序列免費撈不到，Stooq/yfinance/MarketWatch 全擋），叫「Hindenburg-style」較誠實，歷史對齊不可直接比 NYSE 原版。</p>
         <table class="info-table">
           <thead><tr><th>觸發條件（同日全部成立）</th></tr></thead>
           <tbody>
@@ -705,10 +705,10 @@
             <tr><td>④ SPY 高於 50 個交易日前（仍處上升趨勢）</td></tr>
           </tbody>
         </table>
-        <p style="color:var(--muted);font-size:12px;margin-top:8px">用法：<b>單次觸發</b>不可怕（歷史誤報率高）；<b>30 個交易日內叢集出現 ≥ 2 次</b>才有意義。是「降槓桿、檢查停損」的環境提示，不是反手做空訊號。SPY 線上紅色 pin 即觸發日。</p>
+        <p class="text-muted-sm-mt8">用法：<b>單次觸發</b>不可怕（歷史誤報率高）；<b>30 個交易日內叢集出現 ≥ 2 次</b>才有意義。是「降槓桿、檢查停損」的環境提示，不是反手做空訊號。SPY 線上紅色 pin 即觸發日。</p>
         <h4 style="margin:14px 0 6px">技術性熊市比例</h4>
         <p>這是<b>個股層級</b>的定義：成分股中，目前價格距離自身 52 週滾動高點回落 20% 以上的比例，<b>不是指數本身的跌幅</b>。即使大盤只回檔一成，底層仍可能有近半數成分股個別重跌超過兩成——常見於漲勢由少數權值股撐起的格局。</p>
-        <p style="color:var(--muted);font-size:12px">⚠ 繼承既有廣度資料的先天限制：今日成分股名單套用全歷史（倖存者/前視偏誤），可接受作環境理解，不可拿來做嚴謹回測。</p>
+        <p class="text-muted-sm">⚠ 繼承既有廣度資料的先天限制：今日成分股名單套用全歷史（倖存者/前視偏誤），可接受作環境理解，不可拿來做嚴謹回測。</p>
       </div>
     </div>
   </section>
@@ -755,8 +755,8 @@
             <tr><td>−10%</td><td>+10%</td><td>−1.0%</td><td><b style="color:#f78166">−4.0%</b></td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px">標的兩天來回只跌 1%，2倍卻跌 4%——多出來的 3% 就是耗損。波動越大、持有越久，耗損越兇；3倍又比 2倍更嚴重。此外還有<b>每日下跌的回本數學</b>：跌 50% 要漲 100% 才回本，3倍 ETF 在一次大跌後常常永遠回不去。</p>
-        <p style="margin-top:10px;color:var(--muted)">資料說明：底層用<b>含息總報酬</b>序列（auto_adjust）才是誠實的對照；槓桿 ETF 成立後用<b>真實基金淨值</b>日報酬，成立前以<b>合成模型</b>（K×標的單日報酬 − 每日成本，成本＝費用率＋(K−1)×假設融資成本）回推。台股加權（00675L 底層）為<b>價格指數</b>無股息、略低估；0050（00631L 底層）為含息且已修復 2014 分割斷點。合成段為近似，僅供理解風險量級之用，非投資建議。</p>
+        <p class="mt-10">標的兩天來回只跌 1%，2倍卻跌 4%——多出來的 3% 就是耗損。波動越大、持有越久，耗損越兇；3倍又比 2倍更嚴重。此外還有<b>每日下跌的回本數學</b>：跌 50% 要漲 100% 才回本，3倍 ETF 在一次大跌後常常永遠回不去。</p>
+        <p class="mt-10-muted">資料說明：底層用<b>含息總報酬</b>序列（auto_adjust）才是誠實的對照；槓桿 ETF 成立後用<b>真實基金淨值</b>日報酬，成立前以<b>合成模型</b>（K×標的單日報酬 − 每日成本，成本＝費用率＋(K−1)×假設融資成本）回推。台股加權（00675L 底層）為<b>價格指數</b>無股息、略低估；0050（00631L 底層）為含息且已修復 2014 分割斷點。合成段為近似，僅供理解風險量級之用，非投資建議。</p>
       </div>
     </div>
   </section>
@@ -767,7 +767,7 @@
       <select id="levvol-pair" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px"></select>
     </div>
     <div id="levvol-chart" style="height:480px"></div>
-    <div id="levvol-table" style="margin-top:12px"></div>
+    <div class="mt-12" id="levvol-table"></div>
     <div class="status" id="levvol-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 波動率倍數怎麼看？</div>
@@ -779,18 +779,18 @@
 
   <!-- ── 位階 tab ────────────────────────────────────────────────── -->
   <section id="tab-position" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="pos-ticker-picker" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="controls controls--wrap">
+      <div class="flex-wrap-gap6" id="pos-ticker-picker"></div>
       <div style="margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <div style="display:flex;gap:5px;align-items:center">
-          <span style="font-size:12px;color:var(--muted)">布林/乖離均線天數</span>
-          <div id="pos-period-picker" style="display:flex;gap:4px">
+          <span class="text-muted-sm">布林/乖離均線天數</span>
+          <div class="picker-row" id="pos-period-picker">
             <span class="chip" data-pos-period="20"  data-tooltip="月線 20日（短線）">20</span>
             <span class="chip active" data-pos-period="50"  data-tooltip="季線 50日（美股季線，下緣＝多頭買點）">50</span>
             <span class="chip" data-pos-period="200" data-tooltip="年線 200日（美股年線，上緣＝短線過熱）">200</span>
           </div>
         </div>
-        <div id="pos-range-picker" style="display:flex;gap:4px">
+        <div class="picker-row" id="pos-range-picker">
           <span class="chip" data-pos-range="1Y">1Y</span>
           <span class="chip active" data-pos-range="3Y">3Y</span>
           <span class="chip" data-pos-range="5Y">5Y</span>
@@ -813,7 +813,7 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">趨勢濾網（200日年線）</div>
-        <div class="bc-main"><span class="bc-pct" id="pos-regime-pct" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="pos-regime-pct">—</span></div>
         <div class="bc-count" id="pos-regime-sub">—</div>
         <div class="bc-signal" id="pos-regime-signal">—</div>
       </div>
@@ -837,7 +837,7 @@
       </div>
     </div>
     <div id="pos-chart" style="height:680px"></div>
-    <div class="status" id="pos-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="status status--flush" id="pos-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 布林通道 + 乖離率 怎麼看？</div>
       <div class="info-panel-body">
@@ -845,9 +845,9 @@
         <table class="info-table">
           <thead><tr><th>訊號</th><th>意義</th></tr></thead>
           <tbody>
-            <tr><td style="color:#3fb950">季線(50)布林下緣</td><td><b>多頭背景下</b>回測下緣＝趨勢內的低位階買點（均值回歸）</td></tr>
-            <tr><td style="color:#f85149">年線(200)布林上緣</td><td>突破上緣＝離年均值 2σ 以上，短線過熱、別追、考慮減碼</td></tr>
-            <tr><td style="color:#f0883e">乖離率百分位</td><td>目前乖離 vs 自己歷史分布；&gt;90 百分位＝過熱、&lt;10＝超賣（各標的門檻不同，故用百分位而非固定 %）</td></tr>
+            <tr><td class="c-green-3fb950">季線(50)布林下緣</td><td><b>多頭背景下</b>回測下緣＝趨勢內的低位階買點（均值回歸）</td></tr>
+            <tr><td class="c-red-f85149">年線(200)布林上緣</td><td>突破上緣＝離年均值 2σ 以上，短線過熱、別追、考慮減碼</td></tr>
+            <tr><td class="c-orange-f0883e">乖離率百分位</td><td>目前乖離 vs 自己歷史分布；&gt;90 百分位＝過熱、&lt;10＝超賣（各標的門檻不同，故用百分位而非固定 %）</td></tr>
             <tr><td style="color:#d2a8ff">QQQ 年線 +20%</td><td>只在<b>選 QQQ ＋ 200 年線</b>時多一條<b>固定 +20% 過熱線</b>（紫）—— QQQ 年線乖離 +20% 是常用短線過熱門檻（指數專用 rule of thumb，故不套用到 SOXX 等其他標的）</td></tr>
             <tr><td>動能卡</td><td>1M/3M/6M/12M 報酬率（time-series momentum）；全期同向代表趨勢一致，混雜代表盤整。<b>不是</b>超買超賣指標，強勢股可以長期動能為正</td></tr>
             <tr><td>ATR14 波動度</td><td>14 日真實波幅平均，不判斷方向，只量「這檔平常一天/幾天正常晃多少」；用來校正停損位置（1.5～3×ATR），避免停損設在正常波動範圍內被掃</td></tr>
@@ -858,10 +858,10 @@
         <p style="margin-top:10px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
           ⚠️ <b>務必先看「趨勢濾網」（年線）</b>：布林下緣＝買點<b>只在多頭（站上年線且年線上彎）成立</b>。空頭崩盤時價格會「沿著下緣走」（band-riding），碰下緣不是買點，是還在跌 —— 這也是原始方法強調「多頭背景下」的原因。
         </p>
-        <p style="margin-top:8px;color:var(--muted)">
+        <p class="note-muted">
           📌 <b>半導體（SOXX）特性</b>：高 beta，布林帶與乖離振幅遠大於 SPY，碰下緣更頻繁、幅度更大；門檻用「自身歷史百分位」才公平，別套 SPY 的數字。乖離率與布林 %B 量測的是同一件事（離均線多遠），互為佐證。
         </p>
-        <p style="margin-top:8px;color:var(--muted)">資料：直接讀 data/&lt;TICKER&gt;.json 收盤價，前端 rolling mean/std 即時計算（無另開 fetch 腳本）。±σ 參考帶用「全歷史」乖離分布，故視窗縮放時門檻不變。</p>
+        <p class="note-muted">資料：直接讀 data/&lt;TICKER&gt;.json 收盤價，前端 rolling mean/std 即時計算（無另開 fetch 腳本）。±σ 參考帶用「全歷史」乖離分布，故視窗縮放時門檻不變。</p>
       </div>
     </div>
   </section>
@@ -871,29 +871,29 @@
     <div style="padding:16px 24px;display:flex;gap:14px;flex-wrap:wrap">
       <div style="flex:1;min-width:240px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
         <div style="font-weight:600;margin-bottom:6px">① 支撐</div>
-        <div style="font-size:13px;line-height:1.75;color:var(--text)">某個價位有大量持股成本集中，當股價跌到附近時，持股者或新買盤容易進場承接，因此形成支撐；若籌碼沒明顯鬆動，通常較不容易跌破該區間。</div>
+        <div class="text-body-lh">某個價位有大量持股成本集中，當股價跌到附近時，持股者或新買盤容易進場承接，因此形成支撐；若籌碼沒明顯鬆動，通常較不容易跌破該區間。</div>
         <div style="margin-top:8px;padding:8px 10px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px;font-size:12px;color:var(--muted)">
           ⚠️ QQQ 是指數 ETF，沒有「持股者成本分佈」資料。本頁支撐用「成交量價格分佈（VPVR）」代理——代表該價位過去成交/換手密集，不是真的籌碼成本。
         </div>
-        <div style="margin-top:8px;font-size:12px;color:var(--muted)">均線（季線/年線）常被當動態支撐或壓力；整數關卡與成交量密集區也是常見來源。</div>
+        <div class="text-muted-sm-mt8">均線（季線/年線）常被當動態支撐或壓力；整數關卡與成交量密集區也是常見來源。</div>
       </div>
       <div style="flex:1;min-width:240px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
         <div style="font-weight:600;margin-bottom:6px">② 上升通道突破</div>
-        <div style="font-size:13px;line-height:1.75;color:var(--text)">股價長期沿上升通道往上，若後續放量突破上緣，通常代表多方力道延續，行情有機會加速。</div>
-        <div style="margin-top:8px;font-size:12px;color:var(--muted)">⚠️ 剛突破就拉回、剛跌破又收上來是常見洗盤（假突破/假跌破），要搭配成交量與後續幾根 K 確認，別一突破就追。支撐壓力是「區間」不是精準的線，屬機率性參考。</div>
+        <div class="text-body-lh">股價長期沿上升通道往上，若後續放量突破上緣，通常代表多方力道延續，行情有機會加速。</div>
+        <div class="text-muted-sm-mt8">⚠️ 剛突破就拉回、剛跌破又收上來是常見洗盤（假突破/假跌破），要搭配成交量與後續幾根 K 確認，別一突破就追。支撐壓力是「區間」不是精準的線，屬機率性參考。</div>
       </div>
       <div style="flex:1;min-width:240px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
         <div style="font-weight:600;margin-bottom:6px">③ 下跌趨勢</div>
-        <div style="font-size:13px;line-height:1.75;color:var(--text)">高點越來越低、低點也越來越低＝結構偏弱；此時即使短線反彈，也先視為反彈，不要急著當反轉。</div>
+        <div class="text-body-lh">高點越來越低、低點也越來越低＝結構偏弱；此時即使短線反彈，也先視為反彈，不要急著當反轉。</div>
       </div>
       <div style="flex:1;min-width:240px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
         <div style="font-weight:600;margin-bottom:6px">④ 支撐壓力互換</div>
-        <div style="font-size:13px;line-height:1.75;color:var(--text)">帶量突破壓力後，原壓力常反過來變支撐（賣壓被消化）；跌破支撐後原支撐變壓力。這叫支撐壓力互換。</div>
+        <div class="text-body-lh">帶量突破壓力後，原壓力常反過來變支撐（賣壓被消化）；跌破支撐後原支撐變壓力。這叫支撐壓力互換。</div>
       </div>
     </div>
 
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <span style="font-size:12px;color:var(--muted)">lookback</span>
+    <div class="controls controls--wrap">
+      <span class="text-muted-sm">lookback</span>
       <div id="struct-lookback-picker" style="display:flex;gap:6px">
         <span class="chip" data-struct-lookback="126">126日</span>
         <span class="chip active" data-struct-lookback="252">252日</span>
@@ -904,12 +904,12 @@
     <div id="struct-top" style="display:flex;gap:24px;padding:16px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center">
       <div class="breadth-card">
         <div class="bc-label">趨勢結構（swing pivot）</div>
-        <div class="bc-main"><span class="bc-pct" id="struct-trend-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="struct-trend-val">—</span></div>
         <div class="bc-count" id="struct-trend-sub">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">通道狀態（迴歸±2σ）</div>
-        <div class="bc-main"><span class="bc-pct" id="struct-channel-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="struct-channel-val">—</span></div>
         <div class="bc-count" id="struct-channel-sub">—</div>
       </div>
       <div class="breadth-card" style="min-width:260px">
@@ -923,7 +923,7 @@
       <div id="struct-chart" style="flex:1;min-width:0;height:520px"></div>
       <div id="struct-vpvr" style="width:200px;height:520px"></div>
     </div>
-    <div class="status" id="struct-status" style="padding:8px 24px">切換至此 tab 自動載入…</div>
+    <div class="status status--pad8" id="struct-status">切換至此 tab 自動載入…</div>
     <div class="status" id="struct-notes" style="padding:0 24px 12px;font-size:12px"></div>
   </section>
 
@@ -932,28 +932,28 @@
     <div id="kelly-top" style="display:flex;gap:14px;padding:16px 24px;flex-wrap:wrap">
       <div class="breadth-card">
         <div class="bc-label">L*(252d) 全凱利（主看）</div>
-        <div class="bc-main"><span class="bc-pct" id="kelly-l252-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="kelly-l252-val">—</span></div>
         <div class="bc-count" id="kelly-l252-sub">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">L*(126d)</div>
-        <div class="bc-main"><span class="bc-pct" id="kelly-l126-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="kelly-l126-val">—</span></div>
         <div class="bc-count" id="kelly-l126-sub">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">L*(63d)</div>
-        <div class="bc-main"><span class="bc-pct" id="kelly-l63-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="kelly-l63-val">—</span></div>
         <div class="bc-count" id="kelly-l63-sub">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">200MA 乖離%</div>
-        <div class="bc-main"><span class="bc-pct" id="kelly-dev-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="kelly-dev-val">—</span></div>
         <div class="bc-count" id="kelly-dev-sub">—</div>
       </div>
     </div>
 
     <div id="kelly-chart" style="width:100%;height:640px"></div>
-    <div class="status" id="kelly-status" style="padding:8px 24px">切換至此 tab 自動載入…</div>
+    <div class="status status--pad8" id="kelly-status">切換至此 tab 自動載入…</div>
 
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> L* 是天花板/尺，不是進場訊號</div>
@@ -961,7 +961,7 @@
         <p>L* = μ/σ² 看不見偏度；QQQ 負偏（崩盤急殺），平靜期 σ² 被壓低會把 L* 灌大（現在叫你開
           6~12x 是陷阱）。此線是當天花板/尺，非訊號。實際安全槓桿要比 L* 更往左。L*&lt;1 才與
           「該收槓桿」一致。</p>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+        <p class="callout-danger">
           ⚠️ 權威來源為 <code>Financial_work/kelly_leverage_ceiling.py</code>（RF=4% 固定、未接 FRED；
           未來函數防護：L* 整條序列 shift(1)，t 日只用 t-1 收盤算出的值）。<b>本頁數字與 python
           對照組有系統性落差</b>：<code>data/QQQ.json</code> 存的是未還原（不含股息）收盤價，python
@@ -976,8 +976,8 @@
 
   <!-- ── 乖離率 tab（任意 MA + 正/負乖離門檻，區間高亮） ──────────── -->
   <section id="tab-madev" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="madev-ticker-picker" style="display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row" id="madev-ticker-picker">
         <span class="chip active" data-madev-ticker="QQQ">QQQ</span>
         <span class="chip" data-madev-ticker="VOO">VOO</span>
         <span class="chip" data-madev-ticker="SOXX">SOXX</span>
@@ -986,7 +986,7 @@
       <span style="font-size:12px;color:var(--muted);margin-left:10px">MA</span>
       <input id="madev-ma" type="number" min="2" max="1000" step="1" value="200"
              style="width:64px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px">
-      <div id="madev-ma-preset" style="display:flex;gap:4px">
+      <div class="picker-row" id="madev-ma-preset">
         <span class="chip" data-madev-ma="20">20</span>
         <span class="chip" data-madev-ma="50">50</span>
         <span class="chip" data-madev-ma="100">100</span>
@@ -995,13 +995,13 @@
       <span style="font-size:12px;color:var(--muted);margin-left:10px">正乖離 ≥</span>
       <input id="madev-pos" type="number" step="0.5" value="15"
              style="width:64px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px">
-      <span style="font-size:12px;color:var(--muted)">%</span>
+      <span class="text-muted-sm">%</span>
       <span style="font-size:12px;color:var(--muted);margin-left:10px">負乖離 ≤</span>
       <input id="madev-neg" type="number" step="0.5" value="-15"
              style="width:64px;background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:12px">
-      <span style="font-size:12px;color:var(--muted)">%</span>
+      <span class="text-muted-sm">%</span>
       <span id="madev-show-ma" class="chip active" data-tooltip="上格是否疊 MA 線">MA 線</span>
-      <div id="madev-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="madev-range-picker">
         <span class="chip" data-madev-range="1Y">1Y</span>
         <span class="chip" data-madev-range="3Y">3Y</span>
         <span class="chip active" data-madev-range="5Y">5Y</span>
@@ -1013,17 +1013,17 @@
     <div id="madev-top" style="display:flex;gap:14px;padding:16px 24px;flex-wrap:wrap">
       <div class="breadth-card">
         <div class="bc-label">目前乖離率</div>
-        <div class="bc-main"><span class="bc-pct" id="madev-now-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="madev-now-val">—</span></div>
         <div class="bc-count" id="madev-now-sub">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">正乖離區間（區間內）</div>
-        <div class="bc-main"><span class="bc-pct" id="madev-pos-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="madev-pos-val">—</span></div>
         <div class="bc-count" id="madev-pos-sub">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">負乖離區間（區間內）</div>
-        <div class="bc-main"><span class="bc-pct" id="madev-neg-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="madev-neg-val">—</span></div>
         <div class="bc-count" id="madev-neg-sub">—</div>
       </div>
       <div class="breadth-card">
@@ -1034,20 +1034,20 @@
     </div>
 
     <div id="madev-chart" style="width:100%;height:640px"></div>
-    <div class="status" id="madev-status" style="padding:8px 24px">切換至此 tab 自動載入…</div>
+    <div class="status status--pad8" id="madev-status">切換至此 tab 自動載入…</div>
 
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 怎麼看這頁</div>
       <div class="info-panel-body">
         <p>乖離率 =（收盤 ÷ MA − 1）× 100%。上格是收盤價與 MA 線，下格是乖離率；<b>紅底</b>為乖離
           ≥ 正門檻的連續區間、<b>綠底</b>為 ≤ 負門檻的連續區間，兩格同步標示，可直接對照當時的價格位置。</p>
-        <p style="margin-top:8px">MA 週期與正/負門檻都可自行輸入（MA 也有 20/50/100/200 快捷）。統計卡片
+        <p class="mt-8">MA 週期與正/負門檻都可自行輸入（MA 也有 20/50/100/200 快捷）。統計卡片
           只計算「目前顯示區間」內的資料，換時間範圍數字會跟著變。</p>
         <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #e3b341;background:rgba(227,179,65,.08);border-radius:4px">
           ⚠️ MA 一律用<b>全歷史</b>計算後再依時間範圍裁切顯示，所以切到 1Y 也不會有 200MA 暖身缺口。
           乖離率無未來函數（rolling 右對齊）。價格為 <code>data/*.json</code> 的<b>未還原息</b>收盤價，
           與還原息版本的乖離率會有小幅系統性差異（同 kelly tab 的已知落差）。</p>
-        <p style="margin-top:8px">用法提醒：高正乖離代表短線漲過頭、均值回歸壓力大，但<b>本身不是賣出訊號</b>——
+        <p class="mt-8">用法提醒：高正乖離代表短線漲過頭、均值回歸壓力大，但<b>本身不是賣出訊號</b>——
           強勢段可以長期掛在高乖離不回頭。當「位階尺」用，不要當觸發器。</p>
       </div>
     </div>
@@ -1055,14 +1055,14 @@
 
   <!-- ── 流動性 tab ──────────────────────────────────────────────── -->
   <section id="tab-liquidity" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="ll-market-picker" style="display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row" id="ll-market-picker">
         <span class="chip active" data-ll-mkt="tw">🇹🇼 台灣</span>
         <span class="chip" data-ll-mkt="us">🇺🇸 美國</span>
         <span class="chip" data-ll-mkt="jp">🇯🇵 日本</span>
       </div>
       <span id="ll-foreign-toggle" class="chip active" data-tooltip="疊上外資累計買超（億，僅台灣，區間內歸零起算）">外資累計</span>
-      <div id="ll-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="ll-range-picker">
         <span class="chip" data-ll-range="1Y">1Y</span>
         <span class="chip" data-ll-range="2Y">2Y</span>
         <span class="chip active" data-ll-range="5Y">5Y</span>
@@ -1070,7 +1070,7 @@
         <span class="chip" data-ll-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="ll-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="ll-top">
       <div class="breadth-card">
         <div class="bc-label">指數年增率 index_yoy</div>
         <div class="bc-main"><span class="bc-pct" id="ll-index-yoy">—</span></div>
@@ -1127,7 +1127,7 @@
   <!-- ── 牛熊指標 tab ────────────────────────────────────────────── -->
   <section id="tab-bullbear" class="tab-section" hidden>
     <div class="controls">
-      <div id="bb-range-picker" style="display:flex;gap:4px">
+      <div class="picker-row" id="bb-range-picker">
         <span class="chip" data-bb-range="1Y">1Y</span>
         <span class="chip" data-bb-range="3Y">3Y</span>
         <span class="chip active" data-bb-range="5Y">5Y</span>
@@ -1152,7 +1152,7 @@
       <div class="info-panel-header"><i class="chevron">▶</i> 窮人版 BofA 牛熊指標：8 元件說明</div>
       <div class="info-panel-body">
         <p>仿照美國銀行（BofA）的 Bull & Bear Indicator 邏輯，以 8 個免費可得的情緒 / 資金面指標各自做歷史百分位排名（0-10），再取平均得到合成分數。</p>
-        <p style="margin-top:8px"><b>反向指標解讀：</b>&gt; 8 = 極度貪婪（賣出訊號）；&lt; 2 = 極度恐懼（買入訊號）</p>
+        <p class="mt-8"><b>反向指標解讀：</b>&gt; 8 = 極度貪婪（賣出訊號）；&lt; 2 = 極度恐懼（買入訊號）</p>
         <table class="info-table">
           <thead><tr><th>元件</th><th>方向</th><th>說明</th><th>來源</th></tr></thead>
           <tbody>
@@ -1166,7 +1166,7 @@
             <tr><td>NAAIM 經理曝險</td><td>正向</td><td>（選配）機構經理股票曝險</td><td>naaim.org</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">NAAIM 因 Incapsula 阻擋暫無法自動抓取；已用貨幣基金部位(MMF)作為機構「現金偏好」的替代指標。每週 CFTC 與月頻 FRED 混頻對齊，取最近可用值（120 天內），至少需 3 個元件才計算合成。</p>
+        <p class="note-muted">NAAIM 因 Incapsula 阻擋暫無法自動抓取；已用貨幣基金部位(MMF)作為機構「現金偏好」的替代指標。每週 CFTC 與月頻 FRED 混頻對齊，取最近可用值（120 天內），至少需 3 個元件才計算合成。</p>
       </div>
     </div>
   </section>
@@ -1174,7 +1174,7 @@
   <!-- ── 經理人曝險 tab（NAAIM 曝險滾動百分位 vs SPY/QQQ/SOXX 後續報酬/波動）── -->
   <section id="tab-naaim" class="tab-section" hidden>
     <div class="controls">
-      <div id="naaim-ticker-picker" style="display:flex;gap:4px"></div>
+      <div class="picker-row" id="naaim-ticker-picker"></div>
       <div id="naaim-range-picker" style="display:flex;gap:4px;margin-left:12px">
         <span class="chip" data-naaim-range="1Y">1Y</span>
         <span class="chip" data-naaim-range="2Y">2Y</span>
@@ -1201,7 +1201,7 @@
 
     <div style="margin:0 24px 16px;padding:12px 16px;background:var(--panel);border:1px solid var(--border);border-radius:8px">
       <div style="font-weight:600;margin-bottom:8px">判讀：NAAIM 是反應性指標，不是預測性指標</div>
-      <p style="font-size:13px;line-height:1.75;color:var(--text)">
+      <p class="text-body-lh">
         扣掉基率後，<b>報酬面 edge≈0</b>——高/低曝險組的報酬差在正負之間反覆變號，沒有穩定方向。
         但<b>波動面方向高度一致且與直覺相反</b>：在 SPY/QQQ 的驗證中，48 格波動差全部同向——
         經理人<b>滿倉（高曝險）後續已實現波動反而更低</b>（平均約 −3.73pp），
@@ -1221,7 +1221,7 @@
   <!-- ── 台指期外資未平倉 tab ─────────────────────────────────────── -->
   <section id="tab-taifex_foreign_oi" class="tab-section" hidden>
     <div class="controls">
-      <div id="taifex-range-picker" style="display:flex;gap:4px;margin-left:auto">
+      <div class="picker-row picker-row--end" id="taifex-range-picker">
         <span class="chip" data-taifex-range="3M">3M</span>
         <span class="chip" data-taifex-range="6M">6M</span>
         <span class="chip" data-taifex-range="1Y">1Y</span>
@@ -1261,7 +1261,7 @@
   <!-- ── 台股籌碼 tab ────────────────────────────────────────────── -->
   <section id="tab-twchips" class="tab-section" hidden>
     <div class="controls">
-      <div id="twchips-range-picker" style="display:flex;gap:4px;margin-left:auto">
+      <div class="picker-row picker-row--end" id="twchips-range-picker">
         <span class="chip" data-twchips-range="1Y">1Y</span>
         <span class="chip active" data-twchips-range="3Y">3Y</span>
         <span class="chip" data-twchips-range="MAX">MAX</span>
@@ -1356,7 +1356,7 @@
         </span>
       </div>
       <!-- 時間範圍 -->
-      <div id="wave-range-picker" style="display:flex;gap:4px;margin-left:auto">
+      <div class="picker-row picker-row--end" id="wave-range-picker">
         <span class="chip" data-range="2Y">2Y</span>
         <span class="chip active" data-range="4Y">4Y</span>
         <span class="chip" data-range="MAX">MAX</span>
@@ -1364,7 +1364,7 @@
     </div>
 
     <!-- 線圖 -->
-    <div id="wave-chart" style="width:100%;height:420px"></div>
+    <div class="chart-w100-h420" id="wave-chart"></div>
 
     <!-- 摘要卡片 -->
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 24px 0">
@@ -1438,11 +1438,11 @@
               <td>~19,395（-19%）</td><td>~$421（-14%）</td><td>~$499（-9%）</td><td>~$157（-39%）</td>
               <td>Trump 關稅衝擊，融資大減幅確認底部</td>
             </tr>
-            <tr style="background:rgba(233,168,16,0.06)">
+            <tr class="row-amber">
               <td><b>Wave V（目前）</b></td><td>2026/06</td>
               <td style="color:#E9A810">~46,465（+139%）</td>
-              <td style="color:#3fb950">~$741（+76%）</td>
-              <td style="color:#58a6ff">~$748（+50%）</td>
+              <td class="c-green-3fb950">~$741（+76%）</td>
+              <td class="c-blue-58a6ff">~$748（+50%）</td>
               <td style="color:#a371f7">~$640（+308%）</td>
               <td>Wave V 進行中，SOXX 最強</td>
             </tr>
@@ -1453,7 +1453,7 @@
             </tr>
           </tbody>
         </table>
-        <p style="color:var(--muted);font-size:12px">⚠ Wave III 不得最短；Wave IV 不得進入 Wave I 區間；時間點參考 55月 Fibonacci 週期（2022/10 + 55M ≈ 2027/05）。</p>
+        <p class="text-muted-sm">⚠ Wave III 不得最短；Wave IV 不得進入 Wave I 區間；時間點參考 55月 Fibonacci 週期（2022/10 + 55M ≈ 2027/05）。</p>
       </div>
     </div>
 
@@ -1462,16 +1462,16 @@
       <div class="info-panel-body">
         <p>TAIEX 53,000 需要台積電站上 <b>~3,000 元</b>（台積佔加權約 30%）。輸入現股價，矩陣自動高亮所在區間。</p>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <label style="font-size:12px;color:var(--muted)">台積電現股價</label>
+          <label class="text-muted-sm">台積電現股價</label>
           <input id="tsmc-price-input" type="number" value="2410" min="500" max="8000" step="10"
             style="width:85px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
-          <span style="font-size:11px;color:var(--muted)">元 ｜ <span style="color:#3fb950">■ 已過</span>&nbsp; <span style="color:#E9A810">■ 現區(±6%)</span>&nbsp; <span style="color:#f0883e">■ 近15%</span></span>
+          <span style="font-size:11px;color:var(--muted)">元 ｜ <span class="c-green-3fb950">■ 已過</span>&nbsp; <span style="color:#E9A810">■ 現區(±6%)</span>&nbsp; <span class="c-orange-f0883e">■ 近15%</span></span>
         </div>
         <table class="info-table">
           <thead>
             <tr>
               <th>EPS 情境</th><th>悲觀 15x</th>
-              <th style="text-align:center">中性 20x</th>
+              <th class="text-center">中性 20x</th>
               <th style="text-align:center;color:#f0883e">樂觀 25x</th>
               <th style="text-align:center;color:#f85149">極樂觀 30x</th>
             </tr>
@@ -1480,42 +1480,42 @@
             <tr>
               <td>TTM 73.6元（2026/Q1年化）</td>
               <td class="tpe-cell" data-val="1104">1,104</td>
-              <td class="tpe-cell" data-val="1472" style="text-align:center">1,472</td>
-              <td class="tpe-cell" data-val="1840" style="text-align:center">1,840</td>
-              <td class="tpe-cell" data-val="2208" style="text-align:center">2,208</td>
+              <td class="tpe-cell text-center" data-val="1472">1,472</td>
+              <td class="tpe-cell text-center" data-val="1840">1,840</td>
+              <td class="tpe-cell text-center" data-val="2208">2,208</td>
             </tr>
             <tr>
               <td>2026F 100元</td>
               <td class="tpe-cell" data-val="1500">1,500</td>
-              <td class="tpe-cell" data-val="2000" style="text-align:center">2,000</td>
-              <td class="tpe-cell" data-val="2500" style="text-align:center">2,500</td>
-              <td class="tpe-cell" data-val="3000" style="text-align:center">3,000</td>
+              <td class="tpe-cell text-center" data-val="2000">2,000</td>
+              <td class="tpe-cell text-center" data-val="2500">2,500</td>
+              <td class="tpe-cell text-center" data-val="3000">3,000</td>
             </tr>
             <tr style="background:rgba(233,168,16,0.04)">
               <td><b>2027F 120元</b></td>
               <td class="tpe-cell" data-val="1800">1,800</td>
-              <td class="tpe-cell" data-val="2400" style="text-align:center">2,400 ← 現況</td>
+              <td class="tpe-cell text-center" data-val="2400">2,400 ← 現況</td>
               <td class="tpe-cell" data-val="3000" style="text-align:center;font-weight:600" data-orig-weight="600">3,000</td>
-              <td class="tpe-cell" data-val="3600" style="text-align:center">3,600</td>
+              <td class="tpe-cell text-center" data-val="3600">3,600</td>
             </tr>
             <tr>
               <td>2028F 150元</td>
               <td class="tpe-cell" data-val="2250">2,250</td>
               <td class="tpe-cell" data-val="3000" style="text-align:center;font-weight:600" data-orig-weight="600">3,000</td>
-              <td class="tpe-cell" data-val="3750" style="text-align:center">3,750</td>
-              <td class="tpe-cell" data-val="4500" style="text-align:center">4,500</td>
+              <td class="tpe-cell text-center" data-val="3750">3,750</td>
+              <td class="tpe-cell text-center" data-val="4500">4,500</td>
             </tr>
             <tr>
               <td>2029F 200元</td>
               <td class="tpe-cell" data-val="3000">3,000</td>
-              <td class="tpe-cell" data-val="4000" style="text-align:center">4,000</td>
-              <td class="tpe-cell" data-val="5000" style="text-align:center">5,000</td>
-              <td class="tpe-cell" data-val="6000" style="text-align:center">6,000</td>
+              <td class="tpe-cell text-center" data-val="4000">4,000</td>
+              <td class="tpe-cell text-center" data-val="5000">5,000</td>
+              <td class="tpe-cell text-center" data-val="6000">6,000</td>
             </tr>
           </tbody>
         </table>
         <p>現股價（~2,410元）≈ <b>2027F × 20x</b>（中性），市場已提前定價 2027 年 EPS。Wave V 目標 3,000 = 2027F × 25x 或 2028F × 20x。</p>
-        <p style="color:var(--muted);font-size:12px">單位：新台幣元。EPS 為法人共識預估，實際結果視 AI HPC 訂單與 N3/N2 良率而異。</p>
+        <p class="text-muted-sm">單位：新台幣元。EPS 為法人共識預估，實際結果視 AI HPC 訂單與 N3/N2 良率而異。</p>
       </div>
     </div>
 
@@ -1525,17 +1525,17 @@
         <p>將當日<b>成交金額 ÷ M1B（活期貨幣供給量）</b>，消除歷年貨幣增加的規模差異，得到真正的「市場熱度」。輸入最新數字即時計算。</p>
         <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin-bottom:10px;padding:10px 14px;background:var(--panel);border-radius:6px">
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">日成交金額（億元）</div>
+            <div class="text-muted-11-mb3">日成交金額（億元）</div>
             <input id="wave-m1b-vol" type="number" value="5000" step="100" min="0"
               style="width:90px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">M1B（兆元）</div>
+            <div class="text-muted-11-mb3">M1B（兆元）</div>
             <input id="wave-m1b-m1b" type="number" value="31" step="0.5" min="1"
               style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">成交 / M1B</div>
+            <div class="text-muted-11-mb3">成交 / M1B</div>
             <span id="wave-m1b-ratio" style="font-size:22px;font-weight:700;color:#E9A810">—</span>
           </div>
         </div>
@@ -1548,13 +1548,13 @@
             <tr><th>年代</th><th>日均成交額</th><th>M1B</th><th>比率</th><th>背景</th></tr>
           </thead>
           <tbody>
-            <tr style="color:var(--muted)"><td>1990 (民79)</td><td>~2,600億</td><td>2.6兆</td><td style="font-weight:600;color:#f85149">10%（歷史峰值）</td><td>台股 12,682 點泡沫頂</td></tr>
-            <tr style="color:var(--muted)"><td>2000 (民89)</td><td>~3,827億</td><td>4.6兆</td><td style="font-weight:600;color:#f0883e">8.4%</td><td>科技泡沫，名目量最高</td></tr>
+            <tr class="text-muted"><td>1990 (民79)</td><td>~2,600億</td><td>2.6兆</td><td class="c-red-f85149-bold">10%（歷史峰值）</td><td>台股 12,682 點泡沫頂</td></tr>
+            <tr class="text-muted"><td>2000 (民89)</td><td>~3,827億</td><td>4.6兆</td><td style="font-weight:600;color:#f0883e">8.4%</td><td>科技泡沫，名目量最高</td></tr>
             <tr><td>2026/06（目前）</td><td>~5,000億</td><td>~31兆</td><td style="font-weight:600;color:#3fb950">~1.6%</td><td>離泡沫峰值仍遠</td></tr>
-            <tr style="background:rgba(233,168,16,0.06)"><td>推算極端頂部</td><td>~3.1兆/日</td><td>31兆</td><td style="font-weight:600;color:#E9A810">10%（理論上限）</td><td>需成交量翻 6 倍才到歷史極端</td></tr>
+            <tr class="row-amber"><td>推算極端頂部</td><td>~3.1兆/日</td><td>31兆</td><td style="font-weight:600;color:#E9A810">10%（理論上限）</td><td>需成交量翻 6 倍才到歷史極端</td></tr>
           </tbody>
         </table>
-        <p style="color:var(--muted);font-size:12px">M1B 來源：中央銀行每月公布。成交量含上市（TWSE）+ 上櫃（TPEx）合計。</p>
+        <p class="text-muted-sm">M1B 來源：中央銀行每月公布。成交量含上市（TWSE）+ 上櫃（TPEx）合計。</p>
 
         <p style="margin-top:14px"><b>三時代完整標準化對照（融資 + 成交量雙重修正）：</b></p>
         <table class="info-table">
@@ -1562,10 +1562,10 @@
           <tbody>
             <tr><td>上市+上櫃家數</td><td>199</td><td>831</td><td>1,938</td><td>—</td></tr>
             <tr><td>M1B 貨幣供給</td><td>2.6 兆</td><td>4.6 兆</td><td>31 兆</td><td>—</td></tr>
-            <tr><td>融資餘額（絕對值）</td><td>2,600 億</td><td style="color:#f85149;font-weight:600">5,956 億</td><td>5,931 億</td><td style="color:var(--muted)">看起來差不多 ←</td></tr>
-            <tr style="background:rgba(88,166,255,0.06)"><td><b>融資 ÷ M1B</b></td><td>10.0%</td><td style="color:#f85149;font-weight:600">12.95%</td><td style="color:#3fb950;font-weight:600">1.91%</td><td style="color:#E9A810;font-weight:600">等效 = 4.01 兆</td></tr>
+            <tr><td>融資餘額（絕對值）</td><td>2,600 億</td><td class="c-red-f85149-bold">5,956 億</td><td>5,931 億</td><td class="text-muted">看起來差不多 ←</td></tr>
+            <tr style="background:rgba(88,166,255,0.06)"><td><b>融資 ÷ M1B</b></td><td>10.0%</td><td class="c-red-f85149-bold">12.95%</td><td style="color:#3fb950;font-weight:600">1.91%</td><td style="color:#E9A810;font-weight:600">等效 = 4.01 兆</td></tr>
             <tr><td>融資 ÷ 上市家數</td><td>13.1 億/家</td><td>7.17 億/家</td><td>3.06 億/家</td><td>等效 = 1.39 兆</td></tr>
-            <tr style="background:rgba(233,168,16,0.06)"><td><b>成交量 ÷ M1B</b></td><td style="color:#f85149;font-weight:600">~10.0%</td><td>8.32%</td><td style="color:#E9A810;font-weight:600">7.42%</td><td style="color:#E9A810">← 快到了！</td></tr>
+            <tr class="row-amber"><td><b>成交量 ÷ M1B</b></td><td class="c-red-f85149-bold">~10.0%</td><td>8.32%</td><td style="color:#E9A810;font-weight:600">7.42%</td><td style="color:#E9A810">← 快到了！</td></tr>
           </tbody>
         </table>
 
@@ -1595,27 +1595,27 @@
             <tr><th>事件</th><th>大盤跌幅</th><th>融資減幅</th><th>結果</th></tr>
           </thead>
           <tbody>
-            <tr><td>2025/04 Trump 關稅衝擊（Wave IV）</td><td>-28.7%</td><td style="color:#f85149;font-weight:600">-33.1%</td><td style="color:#3fb950">✓ 融資減幅 > 大盤 → 底部確認 → Wave V 啟動</td></tr>
+            <tr><td>2025/04 Trump 關稅衝擊（Wave IV）</td><td>-28.7%</td><td class="c-red-f85149-bold">-33.1%</td><td class="c-green-3fb950">✓ 融資減幅 > 大盤 → 底部確認 → Wave V 啟動</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px"><b>相對規模（M1B 修正）：</b></p>
+        <p class="mt-10"><b>相對規模（M1B 修正）：</b></p>
         <table class="info-table">
           <thead>
             <tr><th>時代</th><th>融資餘額（絕對）</th><th>M1B</th><th>融資 / M1B</th><th>上市家數</th></tr>
           </thead>
           <tbody>
-            <tr style="color:var(--muted)"><td>2000 年 4 月（歷史峰值）</td><td>5,956 億</td><td>4.6 兆</td><td style="font-weight:600;color:#f85149">12.95%</td><td>~499 家</td></tr>
+            <tr class="text-muted"><td>2000 年 4 月（歷史峰值）</td><td>5,956 億</td><td>4.6 兆</td><td class="c-red-f85149-bold">12.95%</td><td>~499 家</td></tr>
             <tr><td>2026 年 6 月（目前）</td><td>~5,931 億</td><td>~31 兆</td><td style="font-weight:600;color:#3fb950">1.91%</td><td>~1,938 家</td></tr>
-            <tr style="background:rgba(233,168,16,0.06)"><td>等效 2000 年峰值水準</td><td>~4.01 兆</td><td>31 兆</td><td>12.95%</td><td>—</td></tr>
+            <tr class="row-amber"><td>等效 2000 年峰值水準</td><td>~4.01 兆</td><td>31 兆</td><td>12.95%</td><td>—</td></tr>
           </tbody>
         </table>
-        <p style="color:var(--muted);font-size:12px">目前融資餘額名目接近 2000 年峰值，但相對 M1B 僅 1.91%（約 2000 年的 15%），加上上市家數翻近 4 倍，市場實際融資使用強度遠低於歷史高峰。<b>等效 2000 年峰值水準 = 約 4 兆融資</b>，Wave V 真正噴出時才可能到達那個水位。</p>
+        <p class="text-muted-sm">目前融資餘額名目接近 2000 年峰值，但相對 M1B 僅 1.91%（約 2000 年的 15%），加上上市家數翻近 4 倍，市場實際融資使用強度遠低於歷史高峰。<b>等效 2000 年峰值水準 = 約 4 兆融資</b>，Wave V 真正噴出時才可能到達那個水位。</p>
 
-        <p style="margin-top:12px"><b>歷史關鍵時間點對照：</b></p>
+        <p class="mt-12"><b>歷史關鍵時間點對照：</b></p>
         <table class="info-table">
           <thead><tr><th>時間點</th><th>事件</th><th>融資餘額</th><th>大盤</th><th>意義</th></tr></thead>
           <tbody>
-            <tr style="color:var(--muted)"><td>89.4.12 (2000)</td><td>歷史最高 / 泡沫頂</td><td style="color:#f85149;font-weight:600">5,956 億</td><td>10,256</td><td>ATH 警戒</td></tr>
+            <tr class="text-muted"><td>89.4.12 (2000)</td><td>歷史最高 / 泡沫頂</td><td class="c-red-f85149-bold">5,956 億</td><td>10,256</td><td>ATH 警戒</td></tr>
             <tr><td>113.7.11 (2024)</td><td>Wave III 頂</td><td>3,345 億</td><td>24,390</td><td>正常</td></tr>
             <tr><td>114.4.9 (2025)</td><td>Wave IV 底 / 關稅崩跌</td><td style="color:#3fb950;font-weight:600">2,238 億</td><td>17,392</td><td>底部訊號</td></tr>
             <tr><td>115.6.4 (2026)</td><td>近期高點</td><td>5,726 億</td><td>45,071</td><td>接近 ATH</td></tr>
@@ -1632,11 +1632,11 @@
         <table class="info-table">
           <thead><tr><th>條件</th><th>觸發標準</th><th>狀態</th></tr></thead>
           <tbody>
-            <tr><td>① 指數跌至季線支撐</td><td>TAIEX 回到 36,000–38,000</td><td style="color:var(--muted)">待觀察</td></tr>
-            <tr><td>② 融資大幅萎縮</td><td>從 ~5,900億 下跌超過 40%（→ ~3,500億）</td><td style="color:var(--muted)">待觀察</td></tr>
-            <tr><td>③ 底部法則觸發</td><td>融資跌幅 &gt; 大盤跌幅（斷頭完成）</td><td style="color:var(--muted)">待觀察</td></tr>
-            <tr><td>④ M1B 比率冷卻</td><td>成交量 / M1B 降至 5% 以下</td><td style="color:var(--muted)">待觀察</td></tr>
-            <tr><td>⑤ 技術面確認</td><td>200MA 走平或上彎（你的 MA 系統）</td><td style="color:var(--muted)">待觀察</td></tr>
+            <tr><td>① 指數跌至季線支撐</td><td>TAIEX 回到 36,000–38,000</td><td class="text-muted">待觀察</td></tr>
+            <tr><td>② 融資大幅萎縮</td><td>從 ~5,900億 下跌超過 40%（→ ~3,500億）</td><td class="text-muted">待觀察</td></tr>
+            <tr><td>③ 底部法則觸發</td><td>融資跌幅 &gt; 大盤跌幅（斷頭完成）</td><td class="text-muted">待觀察</td></tr>
+            <tr><td>④ M1B 比率冷卻</td><td>成交量 / M1B 降至 5% 以下</td><td class="text-muted">待觀察</td></tr>
+            <tr><td>⑤ 技術面確認</td><td>200MA 走平或上彎（你的 MA 系統）</td><td class="text-muted">待觀察</td></tr>
           </tbody>
         </table>
       </div>
@@ -1648,22 +1648,22 @@
         <p>輸入各波浪轉折點位，自動計算 Wave V 的 Fibonacci 延伸目標。預設填入台股 TAIEX，可換填 QQQ/SPY/SOXX 對應點位。</p>
         <div style="display:flex;flex-wrap:wrap;gap:10px 18px;margin-bottom:10px">
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Wave II 底（基準）</div>
+            <div class="text-muted-11-mb3">Wave II 底（基準）</div>
             <input id="wave-calc-w2" type="number" value="12788" step="1"
               style="width:82px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Wave III 頂</div>
+            <div class="text-muted-11-mb3">Wave III 頂</div>
             <input id="wave-calc-w3" type="number" value="23917" step="1"
               style="width:82px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Wave IV 底</div>
+            <div class="text-muted-11-mb3">Wave IV 底</div>
             <input id="wave-calc-w4" type="number" value="19395" step="1"
               style="width:82px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
           </div>
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:3px">現價（自動填入）</div>
+            <div class="text-muted-11-mb3">現價（自動填入）</div>
             <input id="wave-calc-cur" type="number" value="46465" step="1"
               style="width:88px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-size:13px">
           </div>
@@ -1673,7 +1673,7 @@
           <thead><tr><th>Fib 倍率</th><th>Wave V 目標</th><th>距現價</th><th>狀態</th></tr></thead>
           <tbody id="wave-calc-tbody"></tbody>
         </table>
-        <p style="color:var(--muted);font-size:12px">公式：Wave V = Wave IV 底 + (W3 頂 − W2 底) × Fib 倍率。超過 1.618× 屬延伸浪；台股目前在 2.618× 附近（約 48,500），下一目標 3.0× ≈ 52,700。</p>
+        <p class="text-muted-sm">公式：Wave V = Wave IV 底 + (W3 頂 − W2 底) × Fib 倍率。超過 1.618× 屬延伸浪；台股目前在 2.618× 附近（約 48,500），下一目標 3.0× ≈ 52,700。</p>
       </div>
     </div>
 
@@ -1687,21 +1687,21 @@
             <tr>
               <td><b>規則一</b><br>W2 不超過 W1 起點</td>
               <td>Wave 2 修正幅度不得超過 Wave 1 漲幅的 100%（不能跌破起漲點）</td>
-              <td style="color:#3fb950">✓ W2 底 12,788 &gt; 2020/03 起點 ~8,523</td>
+              <td class="c-green-3fb950">✓ W2 底 12,788 &gt; 2020/03 起點 ~8,523</td>
             </tr>
             <tr>
               <td><b>規則二</b><br>W3 不是最短</td>
               <td>W1 / W3 / W5 三段推進浪中，W3 不得是最短的一段</td>
-              <td style="color:#3fb950">✓ W3(+87%) 大於 W1(+49%)；W5 尚未完成</td>
+              <td class="c-green-3fb950">✓ W3(+87%) 大於 W1(+49%)；W5 尚未完成</td>
             </tr>
             <tr>
               <td><b>規則三</b><br>W4 不進入 W1 區間</td>
               <td>Wave 4 不得回落至 Wave 1 高點以下（禁止價格重疊）</td>
-              <td style="color:#3fb950">✓ W4 底 19,395 &gt; W1 前高 ~18,619</td>
+              <td class="c-green-3fb950">✓ W4 底 19,395 &gt; W1 前高 ~18,619</td>
             </tr>
           </tbody>
         </table>
-        <p style="margin-top:12px"><b>四大準則</b>（非鐵律，高機率成立）</p>
+        <p class="mt-12"><b>四大準則</b>（非鐵律，高機率成立）</p>
         <table class="info-table">
           <thead><tr><th>準則</th><th>說明</th></tr></thead>
           <tbody>
@@ -1711,7 +1711,7 @@
             <tr><td>交替準則</td><td>W2 若急跌簡單型，W4 通常是橫盤複雜型（反之亦然）。台股 W2 急跌（2022 升息），W4 則是關稅黑天鵝但回升也快</td></tr>
           </tbody>
         </table>
-        <p style="color:var(--muted);font-size:12px">規則一/二/三是硬性條件。準則是統計傾向，可以違反，但違反時要有更強的替代理由。</p>
+        <p class="text-muted-sm">規則一/二/三是硬性條件。準則是統計傾向，可以違反，但違反時要有更強的替代理由。</p>
       </div>
     </div>
 
@@ -1722,24 +1722,24 @@
         <table class="info-table">
           <thead><tr><th>級別</th><th>典型週期</th><th>台股對應</th><th>目前位置</th></tr></thead>
           <tbody>
-            <tr style="color:var(--muted)"><td>超大浪（Supercycle）</td><td>數十年</td><td>1990 泡沫以來大週期</td><td>仍在上升 Supercycle 中</td></tr>
-            <tr style="background:rgba(233,168,16,0.06)"><td><b>大浪（Primary）← 主要分析</b></td><td>1–10 年</td><td>2022/10 底 → ~2027/05</td><td><b>Wave V 進行中</b></td></tr>
+            <tr class="text-muted"><td>超大浪（Supercycle）</td><td>數十年</td><td>1990 泡沫以來大週期</td><td>仍在上升 Supercycle 中</td></tr>
+            <tr class="row-amber"><td><b>大浪（Primary）← 主要分析</b></td><td>1–10 年</td><td>2022/10 底 → ~2027/05</td><td><b>Wave V 進行中</b></td></tr>
             <tr><td>中浪（Intermediate）</td><td>數週–數月</td><td>Wave V 內部的 5 個小段</td><td>Wave V 的 wave(iii) 或(iv) 附近</td></tr>
             <tr><td>小浪（Minor）</td><td>數天–數週</td><td>日線/週線上下波動</td><td>需用日線另行計數，不在此分析</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px"><b>Wave V 內部中浪估算（僅供參考）：</b></p>
+        <p class="mt-10"><b>Wave V 內部中浪估算（僅供參考）：</b></p>
         <table class="info-table">
           <thead><tr><th>Wave V 內部</th><th>時間估算</th><th>TAIEX 估值</th><th>說明</th></tr></thead>
           <tbody>
             <tr><td>wave (i)</td><td>2025/04 – 2025/07</td><td>19,395 → ~22,000</td><td>Wave IV 底強力反彈，關稅解除</td></tr>
             <tr><td>wave (ii)</td><td>2025/07 – 2025/09</td><td>小回 0.382–0.5</td><td>回測確認，低點不破 Wave IV</td></tr>
-            <tr style="background:rgba(233,168,16,0.06)"><td><b>wave (iii)（目前）</b></td><td>2025/09 – 2026/06?</td><td>→ ~46,000</td><td><b>最強段：AI/半導體/台積電爆發</b></td></tr>
+            <tr class="row-amber"><td><b>wave (iii)（目前）</b></td><td>2025/09 – 2026/06?</td><td>→ ~46,000</td><td><b>最強段：AI/半導體/台積電爆發</b></td></tr>
             <tr><td>wave (iv)</td><td>2026/07 – 2026/09?</td><td>小盤整 / 回檔</td><td>高點後健康整理，確認基礎</td></tr>
             <tr><td>wave (v)</td><td>2026/09 – 2027/05?</td><td>→ 47,000–54,000</td><td>最後衝高，量能可能背離頂部</td></tr>
           </tbody>
         </table>
-        <p style="color:var(--muted);font-size:12px">⚠ 中浪時間為推算，不確定性高。若 Wave V 內部提早完成 5 小浪，大浪即告完成。</p>
+        <p class="text-muted-sm">⚠ 中浪時間為推算，不確定性高。若 Wave V 內部提早完成 5 小浪，大浪即告完成。</p>
       </div>
     </div>
 
@@ -1750,15 +1750,15 @@
         <table class="info-table">
           <thead><tr><th>基準點</th><th>+月數（Fib）</th><th>預測日期</th><th>實際吻合？</th></tr></thead>
           <tbody>
-            <tr><td>Wave II 底（2022/10）</td><td>+13M</td><td>2023/11</td><td style="color:var(--muted)">─ 無明顯轉折</td></tr>
-            <tr style="background:rgba(63,185,80,0.06)"><td>Wave II 底（2022/10）</td><td><b>+21M</b></td><td><b>2024/07</b></td><td style="color:#3fb950">✓ Wave III 頂（2024/07/14）精準吻合</td></tr>
-            <tr style="background:rgba(63,185,80,0.06)"><td>Wave II 底（2022/10）</td><td>+30M（非Fib，≈+8M後）</td><td><b>2025/04</b></td><td style="color:#3fb950">✓ Wave IV 底（2025/04 關稅衝擊）吻合</td></tr>
+            <tr><td>Wave II 底（2022/10）</td><td>+13M</td><td>2023/11</td><td class="text-muted">─ 無明顯轉折</td></tr>
+            <tr style="background:rgba(63,185,80,0.06)"><td>Wave II 底（2022/10）</td><td><b>+21M</b></td><td><b>2024/07</b></td><td class="c-green-3fb950">✓ Wave III 頂（2024/07/14）精準吻合</td></tr>
+            <tr style="background:rgba(63,185,80,0.06)"><td>Wave II 底（2022/10）</td><td>+30M（非Fib，≈+8M後）</td><td><b>2025/04</b></td><td class="c-green-3fb950">✓ Wave IV 底（2025/04 關稅衝擊）吻合</td></tr>
             <tr style="background:rgba(233,168,16,0.10)"><td>Wave II 底（2022/10）</td><td><b>+55M ← 主要目標</b></td><td><b>2027/05</b></td><td style="color:#E9A810">◉ Wave V 頂預估（價時雙確認）</td></tr>
-            <tr style="color:var(--muted)"><td>Wave II 底（2022/10）</td><td>+89M</td><td>2030/03</td><td>─ 超級延伸浪最遠時間目標</td></tr>
+            <tr class="text-muted"><td>Wave II 底（2022/10）</td><td>+89M</td><td>2030/03</td><td>─ 超級延伸浪最遠時間目標</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px">Wave III 頂（2024/07）與 Fibonacci <b>21個月</b>精準吻合，給予此框架較高可信度。2027/05（<b>55個月</b>）與價格目標 47,000–54,000 形成「<b>時價雙確認</b>」，是最值得關注的轉折窗口。</p>
-        <p style="color:var(--muted);font-size:12px">Fibonacci 時間投影為參考，非鐵律。市場實際轉折可提早或延後 1–3 個月。到達時間窗口前，以量價背離 + 融資過熱為主要退場訊號。</p>
+        <p class="mt-8">Wave III 頂（2024/07）與 Fibonacci <b>21個月</b>精準吻合，給予此框架較高可信度。2027/05（<b>55個月</b>）與價格目標 47,000–54,000 形成「<b>時價雙確認</b>」，是最值得關注的轉折窗口。</p>
+        <p class="text-muted-sm">Fibonacci 時間投影為參考，非鐵律。市場實際轉折可提早或延後 1–3 個月。到達時間窗口前，以量價背離 + 融資過熱為主要退場訊號。</p>
       </div>
     </div>
 
@@ -1770,12 +1770,12 @@
           <thead><tr><th>修正情境</th><th>說明</th><th>TAIEX 估算（假設 W5 頂 50,000）</th></tr></thead>
           <tbody>
             <tr><td>淺回（0.382）</td><td>牛市情緒維持，技術性修正。多頭格局未破壞。</td><td>≈ <b>35,800</b></td></tr>
-            <tr style="background:rgba(233,168,16,0.06)"><td><b>中回（Wave IV 測試）← 最常見</b></td><td>A-B-C 修正至前 Wave IV 底部區間，是 EW 最常見目標</td><td>≈ <b>19,000–22,000</b></td></tr>
+            <tr class="row-amber"><td><b>中回（Wave IV 測試）← 最常見</b></td><td>A-B-C 修正至前 Wave IV 底部區間，是 EW 最常見目標</td><td>≈ <b>19,000–22,000</b></td></tr>
             <tr><td>深回（0.618）</td><td>基本面受損或系統性風險，深度修正</td><td>≈ <b>27,000</b></td></tr>
-            <tr style="color:var(--muted)"><td>完全回撤（極端）</td><td>泡沫破裂，回到 Wave II 底，類 2000–2003 科技股</td><td>≈ <b>12,788</b></td></tr>
+            <tr class="text-muted"><td>完全回撤（極端）</td><td>泡沫破裂，回到 Wave II 底，類 2000–2003 科技股</td><td>≈ <b>12,788</b></td></tr>
           </tbody>
         </table>
-        <p style="margin-top:12px"><b>A-B-C 各浪特徵：</b></p>
+        <p class="mt-12"><b>A-B-C 各浪特徵：</b></p>
         <table class="info-table">
           <thead><tr><th>浪</th><th>特徵</th><th>時間估算</th></tr></thead>
           <tbody>
@@ -1796,7 +1796,7 @@
             </tr>
           </tbody>
         </table>
-        <p style="margin-top:10px"><b>Wave V 頂部早期警示訊號（提前 1–3 個月出現）：</b></p>
+        <p class="mt-10"><b>Wave V 頂部早期警示訊號（提前 1–3 個月出現）：</b></p>
         <ul style="margin:6px 0 6px 18px;line-height:1.8;font-size:13px">
           <li>量價背離：指數創新高但成交量不再放大</li>
           <li>融資餘額創近年新高，M1B/成交量比接近 5–8%</li>
@@ -1804,7 +1804,7 @@
           <li>Fibonacci 時間窗口（2027/04–06）到達</li>
           <li>A 浪初跌後，融資減幅 &lt; 大盤跌幅 → 頂部未確認、勿逆勢買</li>
         </ul>
-        <p style="color:var(--muted);font-size:12px">⚠ 以上預測基於目前波浪計數為 Primary Wave V 的假設。若計數錯誤，修正情境完全不同。用戶設有 125/200MA 離場系統可做下檔保護。</p>
+        <p class="text-muted-sm">⚠ 以上預測基於目前波浪計數為 Primary Wave V 的假設。若計數錯誤，修正情境完全不同。用戶設有 125/200MA 離場系統可做下檔保護。</p>
       </div>
     </div>
   </section>
@@ -1823,7 +1823,7 @@
 
   <section id="tab-twcycle" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">國發會景氣對策信號 · 9 項構成項加總 9–45 分 → 五燈 · 月頻</span>
+      <span class="text-muted-13">國發會景氣對策信號 · 9 項構成項加總 9–45 分 → 五燈 · 月頻</span>
       <div class="range-wrap">
         <span class="chip" data-twcycle-range="5">5Y</span>
         <span class="chip active" data-twcycle-range="10">10Y</span>
@@ -1837,12 +1837,12 @@
     <div class="info-panel">
       <p style="margin:0 0 8px">國發會每月公布的景氣綜合判斷指標，由貨幣總計數 M1B、股價指數、工業生產、海關出口、非農就業等
         <b>9 項構成項目</b>各依年變動率對照檢查值打 1–5 分，加總成 9–45 分，對應五種燈號：</p>
-      <table class="info-table" style="margin-bottom:8px">
+      <table class="info-table mb-8">
         <thead><tr><th>燈號</th><th>分數</th><th>景氣狀態</th></tr></thead>
         <tbody>
           <tr><td><span style="color:#e24b4a">● 紅燈</span></td><td>38–45</td><td>熱絡（可能過熱）</td></tr>
-          <tr><td><span style="color:#f0883e">● 黃紅燈</span></td><td>32–37</td><td>轉向（偏熱）</td></tr>
-          <tr><td><span style="color:#3fb950">● 綠燈</span></td><td>23–31</td><td>穩定</td></tr>
+          <tr><td><span class="c-orange-f0883e">● 黃紅燈</span></td><td>32–37</td><td>轉向（偏熱）</td></tr>
+          <tr><td><span class="c-green-3fb950">● 綠燈</span></td><td>23–31</td><td>穩定</td></tr>
           <tr><td><span style="color:#17a2b8">● 黃藍燈</span></td><td>17–22</td><td>轉向（偏弱）</td></tr>
           <tr><td><span style="color:#2f6fed">● 藍燈</span></td><td>9–16</td><td>低迷</td></tr>
         </tbody>
@@ -1856,7 +1856,7 @@
   <!-- ── 反指標(8zz) tab ──────────────────────────────────────────── -->
   <section id="tab-banini" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">banini-tracker 公開資料集 · 345 筆預測 · 2024-04~2026-04</span>
+      <span class="text-muted-13">banini-tracker 公開資料集 · 345 筆預測 · 2024-04~2026-04</span>
     </div>
     <div id="banini-header"></div>
     <div style="height:360px"><div id="banini-chart-timeline" style="width:100%;height:100%"></div></div>
@@ -1891,7 +1891,7 @@
   <!-- ── VIX-SKEW 序列背離 tab ──────────────────────────────────────────── -->
   <section id="tab-vixskew" class="tab-section" hidden>
     <div class="controls">
-      <span style="font-size:13px;color:var(--muted)">VIX · SKEW · SPY — 序列背離警報 · 1993起</span>
+      <span class="text-muted-13">VIX · SKEW · SPY — 序列背離警報 · 1993起</span>
       <div class="range-wrap">
         <span class="chip" data-vs-range="3Y">3Y</span>
         <span class="chip active" data-vs-range="5Y">5Y</span>
@@ -1921,28 +1921,28 @@
           <li><b>VIX 回落但 SKEW 維持</b>：VIX 從峰值跌 &gt;15%（短期恐慌消散），但 SKEW 仍在峰值 5% 以內（機構尾部對沖未撤）。這個背離是訊號核心。</li>
           <li><b>加強條件</b>：若同時 SPY 跌破 200MA（趨勢反轉）＋市寬 &lt;50%（廣度惡化），歷史回測顯示 3M 勝率僅 40%、均報酬 −1.3%，為完整警報狀態。</li>
         </ol>
-        <p style="color:var(--muted);font-size:12px">
+        <p class="text-muted-sm">
           缺陷：訊號出現時大市往往已下跌一些（滯後性），且單一序列信號（無加強條件）歷史 3M 均報酬仍為正（+3.7%），不應視為崩盤預測器。
           建議配合大周期 MACD、RSI、市寬同步觀察，在警報亮起且市場出現短線反彈時作為減倉時機參考。
-          圖表中 <span style="color:#f85149">▼ 紅色三角</span> 為歷史序列信號觸發點；橙色柱 = SKEW 百分位高於 VIX 百分位（背離）；綠色柱 = 無背離。
+          圖表中 <span class="c-red-f85149">▼ 紅色三角</span> 為歷史序列信號觸發點；橙色柱 = SKEW 百分位高於 VIX 百分位（背離）；綠色柱 = 無背離。
         </p>
       </div>
     </div>
 
     <div class="controls" style="margin-top:20px">
-      <span style="font-size:13px;color:var(--muted)">VIX 期限結構 · VIX / VIX3M · Backwardation（ts_ratio&gt;1）= 恐慌確認 · 2006起</span>
+      <span class="text-muted-13">VIX 期限結構 · VIX / VIX3M · Backwardation（ts_ratio&gt;1）= 恐慌確認 · 2006起</span>
     </div>
     <div class="status" id="vts-status">載入中…</div>
     <div id="vts-chart" style="height:260px"></div>
 
     <div class="controls" style="margin-top:20px">
-      <span style="font-size:13px;color:var(--muted)">美股 Total Put/Call Ratio（OCC + CBOE 拼接）· 20日均線 · P10/P90 參考線 · 2006起</span>
+      <span class="text-muted-13">美股 Total Put/Call Ratio（OCC + CBOE 拼接）· 20日均線 · P10/P90 參考線 · 2006起</span>
     </div>
     <div class="status" id="pc-status">載入中…</div>
     <div id="pc-chart" style="height:260px"></div>
 
     <div class="controls" style="margin-top:20px">
-      <span style="font-size:13px;color:var(--muted)">⑥ 低SKEW裸奔回測 · 2年滾動百分位&le;10 反指標檢定 · 1993起</span>
+      <span class="text-muted-13">⑥ 低SKEW裸奔回測 · 2年滾動百分位&le;10 反指標檢定 · 1993起</span>
     </div>
     <div class="status" id="cx-status">載入中…</div>
     <div id="cx-chart" style="height:300px"></div>
@@ -1958,7 +1958,7 @@
           方法：2 年滾動百分位（504 交易日窗、最少 120 筆，僅用歷史資料 trailing 計算）落在最低十分位
           （最不避險/最樂觀）時標記訊號，同一訊號間隔 &lt;30 曆日去重，比較訊號後 SPY 1M/3M/6M 報酬 vs 全樣本基準。
         </p>
-        <p style="color:var(--muted);font-size:12px">
+        <p class="text-muted-sm">
           結論：訊號組報酬與基準組報酬差異很小，<b>無反指標 edge</b>。且現值 SKEW 其實在全史高位，
           與病毒圖「裸奔」方向相反。
         </p>
@@ -1968,9 +1968,9 @@
 
   <!-- ── 金融壓力指數 tab ────────────────────────────────────────── -->
   <section id="tab-fsi" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <span id="fsi-sp-toggle" class="chip active" data-tooltip="疊上 S&P 500（對數右軸）">疊 S&amp;P 500</span>
-      <div id="fsi-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="fsi-range-picker">
         <span class="chip" data-fsi-range="1Y">1Y</span>
         <span class="chip" data-fsi-range="3Y">3Y</span>
         <span class="chip" data-fsi-range="5Y">5Y</span>
@@ -1987,19 +1987,19 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">壓力趨勢（vs 季均 MA50）</div>
-        <div class="bc-main"><span class="bc-pct" id="fsi-trend-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="fsi-trend-val">—</span></div>
         <div class="bc-count" id="fsi-trend-sub">—</div>
         <div class="bc-signal" id="fsi-trend-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">最大壓力來源（細項）</div>
-        <div class="bc-main"><span class="bc-pct" id="fsi-driver-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="fsi-driver-val">—</span></div>
         <div class="bc-count" id="fsi-driver-sub">—</div>
         <div class="bc-signal" id="fsi-driver-signal">—</div>
       </div>
     </div>
-    <div id="fsi-chart" style="height:580px"></div>
-    <div class="status" id="fsi-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="chart-h580" id="fsi-chart"></div>
+    <div class="status status--flush" id="fsi-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 金融壓力指數（OFR FSI）怎麼看？</div>
       <div class="info-panel-body">
@@ -2008,24 +2008,24 @@
         <table class="info-table">
           <thead><tr><th>細項</th><th>衡量什麼</th></tr></thead>
           <tbody>
-            <tr><td style="color:#f85149">信用 Credit</td><td>信用利差、違約風險（公司債 vs 公債）</td></tr>
+            <tr><td class="c-red-f85149">信用 Credit</td><td>信用利差、違約風險（公司債 vs 公債）</td></tr>
             <tr><td style="color:#d2a8ff">股票估值 Equity</td><td>股市評價與本益比面向的壓力</td></tr>
-            <tr><td style="color:#58a6ff">安全資產 Safe assets</td><td>避險資產需求（公債等）</td></tr>
+            <tr><td class="c-blue-58a6ff">安全資產 Safe assets</td><td>避險資產需求（公債等）</td></tr>
             <tr><td style="color:#e3b341">資金/流動性 Funding</td><td>銀行間／貨幣市場資金緊俏程度</td></tr>
             <tr><td style="color:#2dd4bf">波動性 Volatility</td><td>市場波動度（VIX 類）</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">資料：financialresearch.gov OFR FSI（每日、免費、無 key）。定位「環境理解 / 風險溫度計」，非交易訊號 —— 壓力飆升（如 2008、2020 那兩根尖峰）通常與股市重挫同時發生，是事中而非領先指標。台灣對應請見「台股壓力」tab（自建）。</p>
+        <p class="note-muted">資料：financialresearch.gov OFR FSI（每日、免費、無 key）。定位「環境理解 / 風險溫度計」，非交易訊號 —— 壓力飆升（如 2008、2020 那兩根尖峰）通常與股市重挫同時發生，是事中而非領先指標。台灣對應請見「台股壓力」tab（自建）。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 金融狀況指數 tab (Chicago Fed NFCI) ───────────────────────── -->
   <section id="tab-nfci" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <span id="nfci-sp-toggle" class="chip active" data-tooltip="疊上 S&P 500（對數右軸）">疊 S&amp;P 500</span>
       <span id="nfci-anfci-toggle" class="chip" data-tooltip="疊上 ANFCI（剔除景氣循環效果的調整版）">疊 ANFCI</span>
-      <div id="nfci-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="nfci-range-picker">
         <span class="chip" data-nfci-range="1Y">1Y</span>
         <span class="chip" data-nfci-range="3Y">3Y</span>
         <span class="chip" data-nfci-range="5Y">5Y</span>
@@ -2042,19 +2042,19 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">緊鬆趨勢（vs MA13）</div>
-        <div class="bc-main"><span class="bc-pct" id="nfci-trend-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="nfci-trend-val">—</span></div>
         <div class="bc-count" id="nfci-trend-sub">—</div>
         <div class="bc-signal" id="nfci-trend-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">最大驅動細項</div>
-        <div class="bc-main"><span class="bc-pct" id="nfci-driver-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="nfci-driver-val">—</span></div>
         <div class="bc-count" id="nfci-driver-sub">—</div>
         <div class="bc-signal" id="nfci-driver-signal">—</div>
       </div>
     </div>
-    <div id="nfci-chart" style="height:580px"></div>
-    <div class="status" id="nfci-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="chart-h580" id="nfci-chart"></div>
+    <div class="status status--flush" id="nfci-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 金融狀況指數（Chicago Fed NFCI）怎麼看？</div>
       <div class="info-panel-body">
@@ -2064,22 +2064,22 @@
         <table class="info-table">
           <thead><tr><th>細項</th><th>衡量什麼</th></tr></thead>
           <tbody>
-            <tr><td style="color:#f85149">風險 Risk</td><td>資產價格波動度、資金風險溢酬（VIX 類指標權重最高）</td></tr>
+            <tr><td class="c-red-f85149">風險 Risk</td><td>資產價格波動度、資金風險溢酬（VIX 類指標權重最高）</td></tr>
             <tr><td style="color:#e3b341">信用 Credit</td><td>借貸雙方意願與信用利差條件</td></tr>
-            <tr><td style="color:#58a6ff">槓桿 Leverage</td><td>債務相對股權水位（家庭＋企業＋金融部門）</td></tr>
+            <tr><td class="c-blue-58a6ff">槓桿 Leverage</td><td>債務相對股權水位（家庭＋企業＋金融部門）</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+        <p class="callout-warn">
           ⚠️ <b>誠實揭露</b>：查證芝加哥聯準官方 FAQ 後確認，風險／信用／槓桿三細項<b>各自獨立</b>被標準化為均值 0、標準差 1（不像「金融壓力」FSI 的五細項那樣直接加總＝總分），所以三者加總<b>不會</b>精確等於 NFCI 總分，壓力期間（如 2008）落差可以到 -5～-6，這是指數建構方式的結構性特性、不是資料錯誤。下圖三細項僅供<b>方向性對照</b>（哪個面向偏緊/偏鬆），不是總分的拆解。</p>
-        <p style="margin-top:8px;color:var(--muted)">資料：FRED NFCI / ANFCI / NFCIRISK / NFCICREDIT / NFCILEVERAGE（芝加哥聯準銀行編製、每週五、免費、無 key，回溯 1971 年）。定位「環境理解」，非交易訊號。台灣目前無免費可訂閱的官方 FCI 時序（僅央行學術論文，非持續更新），暫不提供台版對照。</p>
+        <p class="note-muted">資料：FRED NFCI / ANFCI / NFCIRISK / NFCICREDIT / NFCILEVERAGE（芝加哥聯準銀行編製、每週五、免費、無 key，回溯 1971 年）。定位「環境理解」，非交易訊號。台灣目前無免費可訂閱的官方 FCI 時序（僅央行學術論文，非持續更新），暫不提供台版對照。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 新興市場壓力 tab (OFR FSI Emerging markets 倒置 × 台股加權) ─── -->
   <section id="tab-emfsi" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="emfsi-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="emfsi-range-picker">
         <span class="chip" data-emfsi-range="6M">6M</span>
         <span class="chip" data-emfsi-range="1Y">1Y</span>
         <span class="chip active" data-emfsi-range="2Y">2Y</span>
@@ -2098,41 +2098,41 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">vs 週 MA50（倒置後序列）</div>
-        <div class="bc-main"><span class="bc-pct" id="emfsi-ma50-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="emfsi-ma50-val">—</span></div>
         <div class="bc-count" id="emfsi-ma50-sub">—</div>
         <div class="bc-signal" id="emfsi-ma50-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">資料最新日期</div>
-        <div class="bc-main"><span class="bc-pct" id="emfsi-date-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="emfsi-date-val">—</span></div>
         <div class="bc-count" id="emfsi-date-sub">—</div>
         <div class="bc-signal" id="emfsi-date-signal">—</div>
       </div>
     </div>
-    <div id="emfsi-chart" style="height:580px"></div>
-    <div class="status" id="emfsi-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="chart-h580" id="emfsi-chart"></div>
+    <div class="status status--flush" id="emfsi-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 新興市場壓力 × 台股加權 怎麼看？</div>
       <div class="info-panel-body">
         <p>上圖是 OFR 金融壓力指數（FSI）的 <b>新興市場（Emerging markets）分項</b>，<b>倒置（×-1）</b>後疊上 20/50/200 <b>週</b>均線；下圖是<b>台股加權指數</b>疊同樣的週均線，兩圖 x 軸對齊，方便對照新興市場壓力面向與台股走勢的關係。倒置是因為原始分項「數值越大＝壓力越大」，×-1 後「線越高」在視覺上更直覺地對應「壓力越低」。</p>
         <p>資料先各自轉成<b>週頻</b>（取該週最後一個交易日的值，對齊到該週週日）再取兩者<b>交集</b>——FSI 與台股加權的休市日曆不同（美國假日 vs 台灣休市日），直接照日期比對會處處對不上。</p>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+        <p class="callout-warn">
           ⚠️ <b>誠實揭露</b>：OFR FSI 的「地區」拆解（美國/其他先進經濟體/新興市場）跟「五大類」拆解（信用/股票估值/安全資產/資金/波動性）是<b>兩套獨立的正交分解</b>，地區三項加總<b>不會</b>精確等於總分（實測最大差距約 0.108），不是四捨五入誤差。本 tab 只取「新興市場」單一分項單獨看，不做地區堆疊圖、也不宣稱地區可加總。
         </p>
-        <p style="margin-top:8px;color:var(--muted)">資料：financialresearch.gov OFR FSI（每日、免費、無 key，更新約延遲 2 個交易日）+ 台股加權指數 <code>^TWII</code>（fetch_stocks.py，1997 年起日頻，已在 CI）。定位「環境理解」，非交易訊號。</p>
+        <p class="note-muted">資料：financialresearch.gov OFR FSI（每日、免費、無 key，更新約延遲 2 個交易日）+ 台股加權指數 <code>^TWII</code>（fetch_stocks.py，1997 年起日頻，已在 CI）。定位「環境理解」，非交易訊號。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 壓力總覽 tab (NFCI/STLFSI4/KCFSI × SPY/QQQ/SOXX) ────────────── -->
   <section id="tab-stressdash" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="stressdash-ticker-toggle" style="display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row" id="stressdash-ticker-toggle">
         <span class="chip active" data-stressdash-ticker="SPY">SPY</span>
         <span class="chip" data-stressdash-ticker="QQQ">QQQ</span>
         <span class="chip" data-stressdash-ticker="SOXX">SOXX</span>
       </div>
-      <div id="stressdash-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="stressdash-range-picker">
         <span class="chip" data-stressdash-range="1Y">1Y</span>
         <span class="chip active" data-stressdash-range="3Y">3Y</span>
         <span class="chip" data-stressdash-range="5Y">5Y</span>
@@ -2160,8 +2160,8 @@
         <div class="bc-signal" id="stressdash-kcfsi-signal">—</div>
       </div>
     </div>
-    <div id="stressdash-chart" style="height:580px"></div>
-    <div class="status" id="stressdash-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="chart-h580" id="stressdash-chart"></div>
+    <div class="status status--flush" id="stressdash-status">切換至此 tab 自動載入…</div>
     <div id="stressdash-table" style="padding:0 24px;margin-top:12px"></div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> NFCI / STLFSI4 / KCFSI 怎麼看？</div>
@@ -2177,16 +2177,16 @@
         </table>
         <p><b>0 = 歷史均值</b>；<b>正值 = 壓力/緊縮升高</b>（高於歷史平均的緊縮或失序程度），<b>負值 = 寬鬆/低於平均</b>。三者建構方式不同（NFCI 105 項指標、STLFSI4 18 項、KCFSI 11 項），數值不能直接相加比較，但方向性走勢可互相印證——同時轉正通常代表壓力訊號較可靠，方向不一致則要留意是否為個別指數的雜訊。</p>
         <p>上圖是選定標的（SPY/QQQ/SOXX）的週K蠟燭疊 NFCI（副軸，正/負區間各有底色帶標示），下圖是三指數各自原始頻率的走勢對照（KCFSI 月頻，圖上會比週頻的兩條稀疏，屬於資料原生頻率的正常現象，不是缺值錯誤）。均線（NFCI MA20/50、STLFSI4/KCFSI MA20）預設收合，點圖例可展開。</p>
-        <p style="margin-top:8px;color:var(--muted)">資料：FRED NFCI/ANFCI/NFCIRISK/NFCICREDIT/NFCILEVERAGE（Chicago Fed）+ FRED STLFSI4（St. Louis Fed）+ FRED KCFSI（Kansas City Fed），皆免費、無 key。定位「環境理解」，非交易訊號。</p>
+        <p class="note-muted">資料：FRED NFCI/ANFCI/NFCIRISK/NFCICREDIT/NFCILEVERAGE（Chicago Fed）+ FRED STLFSI4（St. Louis Fed）+ FRED KCFSI（Kansas City Fed），皆免費、無 key。定位「環境理解」，非交易訊號。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 台股金融壓力 tab ──────────────────────────────────────────── -->
   <section id="tab-twstress" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <span id="ts-twii-toggle" class="chip active" data-tooltip="疊上加權指數（對數右軸）">疊加權指數</span>
-      <div id="ts-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="ts-range-picker">
         <span class="chip" data-ts-range="1Y">1Y</span>
         <span class="chip" data-ts-range="3Y">3Y</span>
         <span class="chip" data-ts-range="5Y">5Y</span>
@@ -2203,19 +2203,19 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">壓力趨勢（vs 季均 MA50）</div>
-        <div class="bc-main"><span class="bc-pct" id="ts-trend-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="ts-trend-val">—</span></div>
         <div class="bc-count" id="ts-trend-sub">—</div>
         <div class="bc-signal" id="ts-trend-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">最大壓力來源（四維）</div>
-        <div class="bc-main"><span class="bc-pct" id="ts-driver-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="ts-driver-val">—</span></div>
         <div class="bc-count" id="ts-driver-sub">—</div>
         <div class="bc-signal" id="ts-driver-signal">—</div>
       </div>
     </div>
-    <div id="ts-chart" style="height:580px"></div>
-    <div class="status" id="ts-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="chart-h580" id="ts-chart"></div>
+    <div class="status status--flush" id="ts-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 台股金融壓力（自建台版 FSI）怎麼看？</div>
       <div class="info-panel-body">
@@ -2225,14 +2225,14 @@
           <tbody>
             <tr><td style="color:#e3b341">匯率波動</td><td>25%</td><td>USD/TWD 20日已實現波動（匯率失序＝壓力）</td></tr>
             <tr><td style="color:#2dd4bf">股市波動</td><td>30%</td><td>加權 20日已實現波動（台指 VIX 的免費替身）</td></tr>
-            <tr><td style="color:#f85149">融資斷頭</td><td>20%</td><td>大盤融資維持率（反向：維持率低＝接近斷頭）</td></tr>
+            <tr><td class="c-red-f85149">融資斷頭</td><td>20%</td><td>大盤融資維持率（反向：維持率低＝接近斷頭）</td></tr>
             <tr><td style="color:#a371f7">外資避險</td><td>25%</td><td>外資台指期淨未平倉（反向：轉空/減多＝risk-off）</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+        <p class="callout-warn">
           ⚠️ <b>誠實揭露</b>：這版<b>缺兩個維度</b> —— 真正的<b>信用利差</b>（公司債 vs 公債）與<b>銀行間資金壓力</b>，台灣免費端沒有乾淨日序，所以本指數只涵蓋「波動／槓桿／部位」這一角。另外<b>融資維持率只有 2022-12 起</b>，該 leg 的百分位歷史較短、解讀保守看。
         </p>
-        <p style="margin-top:8px;color:var(--muted)">驗證：2024-08 日圓套利平倉（台股史上最大單日跌點）綜合壓力衝到 ~94、2020-03 COVID ~85，極端事件方向正確。資料：USD/TWD（Yahoo TWD=X）+ 加權（TWII）+ 融資維持率（TWSE 重建）+ 外資期貨（FinMind），皆免費。定位環境理解、非交易訊號。</p>
+        <p class="note-muted">驗證：2024-08 日圓套利平倉（台股史上最大單日跌點）綜合壓力衝到 ~94、2020-03 COVID ~85，極端事件方向正確。資料：USD/TWD（Yahoo TWD=X）+ 加權（TWII）+ 融資維持率（TWSE 重建）+ 外資期貨（FinMind），皆免費。定位環境理解、非交易訊號。</p>
       </div>
     </div>
   </section>
@@ -2240,14 +2240,14 @@
   <!-- ── 融資熱度 tab (FINRA Margin Debt YoY% vs S&P500) ───── -->
   <section id="tab-marginheat" class="tab-section" hidden>
     <div id="marginheat-status" style="padding:8px 16px;color:var(--muted);font-size:12px"></div>
-    <div id="marginheat-chart" style="width:100%;height:420px"></div>
+    <div class="chart-w100-h420" id="marginheat-chart"></div>
 
     <!-- 融資水位 × 指數背離 (韓式) — 美股版:Margin Debt 絕對水位 vs S&P500 -->
     <div style="padding:0 16px;margin-top:18px">
-      <div class="aaii-table-title" style="margin-bottom:8px">融資水位 × 指數背離 — 槓桿出清了嗎？（韓式）</div>
-      <div id="marginheat-forced-card" style="margin-bottom:8px"></div>
+      <div class="aaii-table-title">融資水位 × 指數背離 — 槓桿出清了嗎？（韓式）</div>
+      <div class="mb-8" id="marginheat-forced-card"></div>
       <div id="marginheat-forced-chart" style="width:100%;height:360px"></div>
-      <p style="color:var(--muted);font-size:12px;margin-top:8px">
+      <p class="text-muted-sm-mt8">
         仿韓國 KOFIA 融資餘額水位讀法的美股版。金線=FINRA Margin Debt 絕對水位($兆)、白線=S&P500(對數):
         指數重挫但融資餘額不降,代表槓桿未被沖洗、反彈就有人補回。<b>卡片</b>=近18個月 S&P500 波段高點起,指數跌幅 vs 融資餘額降幅,背離越大越危險。
         ⚠️ 美股<b>無「已實現斷頭金額/整戶維持率」免費公開源</b>(韓國有 반대매매、台灣可用重建維持率代理),故美股版只有水位背離、無斷頭壓力子格;
@@ -2276,8 +2276,8 @@
         <table class="info-table" style="margin-bottom:14px">
           <thead><tr><th>區間</th><th>意義</th><th>歷史經驗</th></tr></thead>
           <tbody>
-            <tr><td><span style="color:#f85149">紅色帶 YoY +30%~+40%</span></td><td>槓桿擴張過熱</td><td>過去三次進入此區間（2000/2007/2021）後，S&amp;P500 都在 18-30 個月內出現兩位數修正，但幅度落差很大（-9.7%~-49.5%）</td></tr>
-            <tr><td><span style="color:#3fb950">綠色帶 YoY -20%~-40%</span></td><td>去槓桿末端 / 投降</td><td>強制平倉、恐慌性去槓桿接近尾聲；2009 這次幾乎與市場真實低點重合，但 2001 那次市場其實還沒真正落底</td></tr>
+            <tr><td><span class="c-red-f85149">紅色帶 YoY +30%~+40%</span></td><td>槓桿擴張過熱</td><td>過去三次進入此區間（2000/2007/2021）後，S&amp;P500 都在 18-30 個月內出現兩位數修正，但幅度落差很大（-9.7%~-49.5%）</td></tr>
+            <tr><td><span class="c-green-3fb950">綠色帶 YoY -20%~-40%</span></td><td>去槓桿末端 / 投降</td><td>強制平倉、恐慌性去槓桿接近尾聲；2009 這次幾乎與市場真實低點重合，但 2001 那次市場其實還沒真正落底</td></tr>
           </tbody>
         </table>
         <p><b>用法上的兩個關鍵陷阱：</b></p>
@@ -2285,7 +2285,7 @@
           <li><b>融資YoY觸頂/觸底 ≠ 市場真正見頂/見底</b>——兩者常有數月到近一年的時間落差（2021 融資峰值領先市場真頂約 10 個月；2001 融資YoY已觸底但市場還要再跌 18 個月才見真底）。</li>
           <li><b>去槓桿幅度不對稱</b>——2000、2007 兩次去槓桿完成時市場跌幅都在 -45%~-50%，但 2021 這輪只跌了 -9.7% 就止穩，寬鬆的資金環境可以大幅緩衝去槓桿的殺傷力，不能套用同一套跌幅預期。</li>
         </ol>
-        <p style="color:var(--muted);font-size:12px">
+        <p class="text-muted-sm">
           定位：<b>環境理解工具，不是精準擇時或交易觸發訊號</b>。融資熱度只能提示「風險胃納正處於歷史極端」，不能預測何時反轉、跌多深。實際進出場建議搭配 125/200MA 等技術指標做下檔保護，而非單看這張圖進出場。
         </p>
       </div>
@@ -2296,14 +2296,14 @@
   <section id="tab-marginpeak" class="tab-section" hidden>
     <div id="marginpeak-status" style="padding:8px 16px;color:var(--muted);font-size:12px"></div>
     <div style="padding:0 16px;display:flex;gap:16px;flex-wrap:wrap;align-items:center">
-      <span style="color:var(--muted);font-size:12px">指數</span>
+      <span class="text-muted-sm">指數</span>
       <span id="marginpeak-idx-spx" class="chip" data-idx="SPX">SPX</span>
       <span id="marginpeak-idx-qqq" class="chip" data-idx="QQQ">QQQ</span>
       <span style="color:var(--muted);font-size:12px;margin-left:8px">融資</span>
       <span id="marginpeak-mode-yoy" class="chip" data-mode="yoy">YoY%</span>
       <span id="marginpeak-mode-abs" class="chip" data-mode="abs">餘額$</span>
     </div>
-    <div id="marginpeak-chart" style="width:100%;height:420px"></div>
+    <div class="chart-w100-h420" id="marginpeak-chart"></div>
     <div style="padding:0 16px 24px">
       <table class="info-table" id="marginpeak-table"><!-- JS 填 --></table>
     </div>
@@ -2312,7 +2312,7 @@
   <!-- ── 融資集中度 tab (個股融資集中度 + 清算天數) ───────────────── -->
   <section id="tab-marginconc" class="tab-section" hidden>
     <div id="marginconc-status" style="padding:8px 16px;color:var(--muted);font-size:12px"></div>
-    <div id="marginconc-chart" style="width:100%;height:420px"></div>
+    <div class="chart-w100-h420" id="marginconc-chart"></div>
     <div style="padding:0 16px 24px">
       <div id="marginconc-table"><!-- JS 填(含誠實揭露文字 + 表格) --></div>
     </div>
@@ -2321,16 +2321,16 @@
   <!-- ── 融資斷頭地圖 tab (每日融資買進/賣出/償還還原成本位階 vintage) ── -->
   <section id="tab-marginmap" class="tab-section" hidden>
     <div id="marginmap-summary" style="display:flex;gap:16px;padding:16px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:stretch"><!-- JS 填 --></div>
-    <div id="marginmap-chartA" style="width:100%;height:420px"></div>
+    <div class="chart-w100-h420" id="marginmap-chartA"></div>
     <div id="marginmap-chartB" style="width:100%;height:380px"></div>
     <div id="marginmap-chartC" style="width:100%;height:380px"></div>
   </section>
 
   <!-- ── 消費者信心 tab (UMich UMCSENT + SPY + NBER recessions) ───── -->
   <section id="tab-umich" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <span id="umich-spy-toggle" class="chip active" data-tooltip="疊上 SPY（對數右軸）">疊 SPY</span>
-      <div id="umich-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="umich-range-picker">
         <span class="chip" data-umich-range="5Y">5Y</span>
         <span class="chip" data-umich-range="10Y">10Y</span>
         <span class="chip" data-umich-range="20Y">20Y</span>
@@ -2338,7 +2338,7 @@
         <span class="chip active" data-umich-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="umich-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="umich-top">
       <div class="breadth-card">
         <div class="bc-label">CSI 當前水位（最新月）</div>
         <div class="bc-main"><span class="bc-pct" id="umich-level-val">—</span></div>
@@ -2347,19 +2347,19 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">年度趨勢（vs 12個月前）</div>
-        <div class="bc-main"><span class="bc-pct" id="umich-trend-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="umich-trend-val">—</span></div>
         <div class="bc-count" id="umich-trend-sub">—</div>
         <div class="bc-signal" id="umich-trend-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">均線位置（MA12 / MA24）</div>
-        <div class="bc-main"><span class="bc-pct" id="umich-ma-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="umich-ma-val">—</span></div>
         <div class="bc-count" id="umich-ma-sub">—</div>
         <div class="bc-signal" id="umich-ma-signal">—</div>
       </div>
     </div>
-    <div id="umich-chart" style="height:520px"></div>
-    <div class="status" id="umich-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="chart-h520" id="umich-chart"></div>
+    <div class="status status--flush" id="umich-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 密西根大學消費者信心怎麼看？</div>
       <div class="info-panel-body">
@@ -2375,37 +2375,37 @@
             <tr><td>&gt; 100</td><td>2000/2018 景氣高峰</td><td>高度樂觀，注意均值回歸</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)"><b>2026-05 讀數 44.8</b>，為有紀錄以來歷史新低（打破 2022-06 低點 50.0），2022–2026 這波下滑延續超過 4 年，為史上持續時間最長的消費信心低迷期。是否真的預示 2027 衰退，需搭配信用市場、就業、領先指標交叉確認。</p>
-        <p style="margin-top:6px;color:var(--muted)">資料：FRED UMCSENT（每月，免費，無 key）+ FRED USREC（NBER 衰退判定）+ yfinance SPY 月頻調整後收盤。定位「環境理解 / 宏觀溫度計」，非短期交易訊號。</p>
+        <p class="note-muted"><b>2026-05 讀數 44.8</b>，為有紀錄以來歷史新低（打破 2022-06 低點 50.0），2022–2026 這波下滑延續超過 4 年，為史上持續時間最長的消費信心低迷期。是否真的預示 2027 衰退，需搭配信用市場、就業、領先指標交叉確認。</p>
+        <p class="mt-6-muted">資料：FRED UMCSENT（每月，免費，無 key）+ FRED USREC（NBER 衰退判定）+ yfinance SPY 月頻調整後收盤。定位「環境理解 / 宏觀溫度計」，非短期交易訊號。</p>
       </div>
     </div>
   </section>
 
   <section id="tab-flows" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="flows-view-picker" style="display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row" id="flows-view-picker">
         <span class="chip active" data-flows-view="timeseries">時序圖</span>
         <span class="chip" data-flows-view="sector">板塊榜</span>
       </div>
     </div>
 
     <div id="flows-timeseries-view">
-      <div class="controls" style="flex-wrap:wrap;gap:8px">
-        <div id="flows-ticker-picker" style="display:flex;gap:4px">
+      <div class="controls controls--wrap">
+        <div class="picker-row" id="flows-ticker-picker">
           <span class="chip active" data-flows-ticker="semi">半導體 (SOXX+SMH)</span>
           <span class="chip" data-flows-ticker="qqq">QQQ</span>
           <span class="chip" data-flows-ticker="tw50">0050.TW</span>
         </div>
         <span id="flows-fg-toggle" class="chip" data-tooltip="疊 CNN Fear & Greed（右軸 0-100）">F&G</span>
         <span id="flows-vix-toggle" class="chip" data-tooltip="疊 VIX（右軸）">VIX</span>
-        <div id="flows-range-picker" style="margin-left:auto;display:flex;gap:4px">
+        <div class="picker-row picker-row--end" id="flows-range-picker">
           <span class="chip" data-flows-range="3Y">3Y</span>
           <span class="chip" data-flows-range="5Y">5Y</span>
           <span class="chip" data-flows-range="10Y">10Y</span>
           <span class="chip active" data-flows-range="MAX">MAX</span>
         </div>
       </div>
-      <div id="flows-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+      <div class="top-row" id="flows-top">
         <div class="breadth-card">
           <div class="bc-label">本週簽名成交量</div>
           <div class="bc-main"><span class="bc-pct" id="flows-cur-val">—</span></div>
@@ -2414,24 +2414,24 @@
         </div>
         <div class="breadth-card">
           <div class="bc-label">絕對值百分位（擁擠度）</div>
-          <div class="bc-main"><span class="bc-pct" id="flows-rank-val" style="font-size:22px">—</span></div>
+          <div class="bc-main"><span class="bc-pct bc-pct--sm" id="flows-rank-val">—</span></div>
           <div class="bc-count" id="flows-rank-sub">—</div>
           <div class="bc-signal" id="flows-rank-signal">—</div>
         </div>
         <div class="breadth-card">
           <div class="bc-label">歷史最大正向週</div>
-          <div class="bc-main"><span class="bc-pct" id="flows-max-val" style="font-size:22px">—</span></div>
+          <div class="bc-main"><span class="bc-pct bc-pct--sm" id="flows-max-val">—</span></div>
           <div class="bc-count" id="flows-max-sub">—</div>
           <div class="bc-signal" id="flows-max-signal">—</div>
         </div>
       </div>
-      <div id="flows-chart" style="height:520px"></div>
-      <div class="status" id="flows-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+      <div class="chart-h520" id="flows-chart"></div>
+      <div class="status status--flush" id="flows-status">切換至此 tab 自動載入…</div>
     </div>
 
     <div id="flows-sector-view" hidden>
-      <div class="controls" style="flex-wrap:wrap;gap:8px">
-        <div id="flows-sector-window-picker" style="display:flex;gap:4px">
+      <div class="controls controls--wrap">
+        <div class="picker-row" id="flows-sector-window-picker">
           <span class="chip active" data-flows-sector-window="1d">當日</span>
           <span class="chip" data-flows-sector-window="5d">5 日</span>
           <span class="chip" data-flows-sector-window="20d">20 日</span>
@@ -2439,7 +2439,7 @@
       </div>
       <div id="flows-sector-note" style="padding:8px 24px 0;color:var(--muted);font-size:11px"></div>
       <div id="flows-sector-rank" style="padding:12px 24px"></div>
-      <div class="status" id="flows-sector-status" style="padding:0 24px">切換至板塊榜自動載入…</div>
+      <div class="status status--flush" id="flows-sector-status">切換至板塊榜自動載入…</div>
     </div>
 
     <div class="info-panel">
@@ -2456,18 +2456,18 @@
             <tr><td>波幅擴大趨勢</td><td>ETF 規模成長 + 市場參與度上升 → 2025+ 波幅自然放大</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">標的：半導體 = SOXX + SMH 合併成交量；QQQ = Nasdaq-100 ETF；0050.TW = 元大台灣50 ETF（NT$ 計價）。週頻，2012 年至今。定位「群體擁擠度 / 情緒脈衝」，搭配其他情緒指標交叉確認。</p>
-        <p style="margin-top:6px;color:var(--muted)">資料：yfinance（免費，無 key）。圖靈感來源：Goldman Sachs Semiconductor ETFs Weekly Flows。</p>
+        <p class="note-muted">標的：半導體 = SOXX + SMH 合併成交量；QQQ = Nasdaq-100 ETF；0050.TW = 元大台灣50 ETF（NT$ 計價）。週頻，2012 年至今。定位「群體擁擠度 / 情緒脈衝」，搭配其他情緒指標交叉確認。</p>
+        <p class="mt-6-muted">資料：yfinance（免費，無 key）。圖靈感來源：Goldman Sachs Semiconductor ETFs Weekly Flows。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 通膨預期 tab ──────────────────────────────────────────────── -->
   <section id="tab-inflation" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <span id="inf-spy-toggle" class="chip" data-tooltip="疊上 SPY（對數右軸）">疊 SPY</span>
       <span id="inf-ma-toggle" class="chip" data-tooltip="顯示 5Y Breakeven 的 MA20 / MA50">均線</span>
-      <div id="inf-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="inf-range-picker">
         <span class="chip" data-inf-range="1Y">1Y</span>
         <span class="chip active" data-inf-range="3Y">3Y</span>
         <span class="chip" data-inf-range="5Y">5Y</span>
@@ -2475,7 +2475,7 @@
         <span class="chip" data-inf-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="inf-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="inf-top">
       <div class="breadth-card">
         <div class="bc-label">5Y Breakeven（最新日）</div>
         <div class="bc-main"><span class="bc-pct" id="inf-5y-val">—</span></div>
@@ -2484,19 +2484,19 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">月變化（20個交易日）</div>
-        <div class="bc-main"><span class="bc-pct" id="inf-chg-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="inf-chg-val">—</span></div>
         <div class="bc-count" id="inf-chg-sub">—</div>
         <div class="bc-signal" id="inf-chg-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">期限利差（10Y − 5Y）</div>
-        <div class="bc-main"><span class="bc-pct" id="inf-spread-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="inf-spread-val">—</span></div>
         <div class="bc-count" id="inf-spread-sub">—</div>
         <div class="bc-signal" id="inf-spread-signal">—</div>
       </div>
     </div>
-    <div id="inf-chart" style="height:520px"></div>
-    <div class="status" id="inf-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="chart-h520" id="inf-chart"></div>
+    <div class="status status--flush" id="inf-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 通膨預期（Breakeven）怎麼看？</div>
       <div class="info-panel-body">
@@ -2509,7 +2509,7 @@
             <tr><td>5Y-5Y Forward (T5YIFR)</td><td>5 年後起算的 5 年通膨預期</td><td>純長期預期，排除短期噪音，Fed 最愛</td></tr>
           </tbody>
         </table>
-        <table class="info-table" style="margin-top:12px">
+        <table class="info-table mt-12">
           <thead><tr><th>5Y Breakeven 水位</th><th>解讀</th></tr></thead>
           <tbody>
             <tr><td>&gt; 3.0%</td><td>通膨預期過熱，升息壓力大</td></tr>
@@ -2519,17 +2519,17 @@
             <tr><td>&lt; 1.5%</td><td>通縮預期，衰退/金融危機訊號</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)"><b>期限利差（10Y − 5Y）</b>：正值 = 市場認為通膨持久（長期 > 短期）；負值 = 暫時性通膨或短期衝擊（如關稅）。5Y 急跌而 5Y-5Y Forward 穩定 = 結構性產能過剩壓住長期通膨。</p>
-        <p style="margin-top:6px;color:var(--muted)">資料：FRED T5YIE / T10YIE / T5YIFR（每日，2003+，免費，無 key）。虛線為 Fed 2% 通膨目標。定位「貨幣政策預期 / 利率方向參考」。</p>
+        <p class="note-muted"><b>期限利差（10Y − 5Y）</b>：正值 = 市場認為通膨持久（長期 > 短期）；負值 = 暫時性通膨或短期衝擊（如關稅）。5Y 急跌而 5Y-5Y Forward 穩定 = 結構性產能過剩壓住長期通膨。</p>
+        <p class="mt-6-muted">資料：FRED T5YIE / T10YIE / T5YIFR（每日，2003+，免費，無 key）。虛線為 Fed 2% 通膨目標。定位「貨幣政策預期 / 利率方向參考」。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 信用 tab ──────────────────────────────────────────────────── -->
   <section id="tab-credit" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <span id="crd-sp-toggle" class="chip active" data-tooltip="疊上 SP500（對數右軸）">疊 SP500</span>
-      <div id="crd-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="crd-range-picker">
         <span class="chip" data-crd-range="1Y">1Y</span>
         <span class="chip" data-crd-range="3Y">3Y</span>
         <span class="chip" data-crd-range="5Y">5Y</span>
@@ -2537,7 +2537,7 @@
         <span class="chip" data-crd-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="crd-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="crd-top">
       <div class="breadth-card">
         <div class="bc-label">HY 信用利差（最新日）</div>
         <div class="bc-main"><span class="bc-pct" id="crd-hy-val">—</span></div>
@@ -2546,19 +2546,19 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">10Y − 2Y 殖利率曲線</div>
-        <div class="bc-main"><span class="bc-pct" id="crd-yc-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="crd-yc-val">—</span></div>
         <div class="bc-count" id="crd-yc-sub">—</div>
         <div class="bc-signal" id="crd-yc-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">信用卡逾期率（最新季）</div>
-        <div class="bc-main"><span class="bc-pct" id="crd-del-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="crd-del-val">—</span></div>
         <div class="bc-count" id="crd-del-sub">—</div>
         <div class="bc-signal" id="crd-del-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">BDC P/NAV（私募信貸壓力代理）</div>
-        <div class="bc-main"><span class="bc-pct" id="crd-bdc-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="crd-bdc-val">—</span></div>
         <div class="bc-count" id="crd-bdc-sub">—</div>
         <div class="bc-signal" id="crd-bdc-signal">—</div>
       </div>
@@ -2568,7 +2568,7 @@
     <div id="crd-delinq-chart" style="height:230px"></div>
     <div style="padding:6px 16px 4px;color:var(--muted);font-size:12px;border-top:1px solid var(--border)">BDC P/NAV — 私募信貸壓力代理（ARCC · OBDC · BXSL · FSK · MAIN）</div>
     <div id="crd-bdc-chart" style="height:230px"></div>
-    <div class="status" id="crd-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
+    <div class="status status--flush" id="crd-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 信用市場三指標怎麼看？</div>
       <div class="info-panel-body">
@@ -2582,7 +2582,7 @@
             <tr><td>&lt; −0.5%</td><td>深度倒掛 · 歷史強訊號</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px"><b>HY / IG 信用利差（OAS）</b>：債市對違約風險的「定價」，比股票更難操縱。高收益（HY）利差快速走闊 = 機構開始定價衰退或信用危機；投資等級（IG）利差走闊 = 恐慌蔓延至大企業。</p>
+        <p class="mt-10"><b>HY / IG 信用利差（OAS）</b>：債市對違約風險的「定價」，比股票更難操縱。高收益（HY）利差快速走闊 = 機構開始定價衰退或信用危機；投資等級（IG）利差走闊 = 恐慌蔓延至大企業。</p>
         <table class="info-table">
           <thead><tr><th>HY OAS</th><th>解讀</th></tr></thead>
           <tbody>
@@ -2592,8 +2592,8 @@
             <tr><td>&gt; 8%</td><td>危機級（2008 峰 19%，2020 峰 11%）</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:10px"><b>逾期率</b>：季頻滯後指標，但消費者信用健康的直接量化。信用卡逾期率 &gt; 3% = 消費者壓力明顯；2009 年峰值 ~6.7%。</p>
-        <p style="margin-top:10px"><b>BDC P/NAV（私募信貸壓力代理）</b>：BDC（Business Development Company，商業發展公司）是美國上市基金，專門放貸給無法進傳統銀行或公開債市的中小企業，本質上就是可見光版的 Private Credit。當 BDC 以折價交易（股價 &lt; 每股淨資產 NAV），代表市場不相信其季度估值，或預期未來撇帳。折價愈大 = 市場對私募信貸資產品質的疑慮愈深。由於非上市私募信貸基金（如 BCRED、HPS CLF）缺乏每日定價，上市 BDC 是最接近「即時私信壓力溫度計」的可用指標。MAIN 長期以溢價交易（股息成長模範生），故壓力讀值採 <b>avg4（ARCC + OBDC + BXSL + FSK 等權重）</b>。</p>
+        <p class="mt-10"><b>逾期率</b>：季頻滯後指標，但消費者信用健康的直接量化。信用卡逾期率 &gt; 3% = 消費者壓力明顯；2009 年峰值 ~6.7%。</p>
+        <p class="mt-10"><b>BDC P/NAV（私募信貸壓力代理）</b>：BDC（Business Development Company，商業發展公司）是美國上市基金，專門放貸給無法進傳統銀行或公開債市的中小企業，本質上就是可見光版的 Private Credit。當 BDC 以折價交易（股價 &lt; 每股淨資產 NAV），代表市場不相信其季度估值，或預期未來撇帳。折價愈大 = 市場對私募信貸資產品質的疑慮愈深。由於非上市私募信貸基金（如 BCRED、HPS CLF）缺乏每日定價，上市 BDC 是最接近「即時私信壓力溫度計」的可用指標。MAIN 長期以溢價交易（股息成長模範生），故壓力讀值採 <b>avg4（ARCC + OBDC + BXSL + FSK 等權重）</b>。</p>
         <table class="info-table">
           <thead><tr><th>avg4 P/NAV</th><th>解讀</th></tr></thead>
           <tbody>
@@ -2603,14 +2603,14 @@
             <tr><td>&lt; 0.75x</td><td>深度折價 · 流動性危機等級（COVID 2020 最低 ~0.55x）</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:6px;color:var(--muted)">資料：FRED BAMLH0A0HYM2 / BAMLC0A0CM（HY/IG OAS，日頻，FRED 公開 API 提供近 3 年）/ DRCCLACBS / DRSFRMACBS（逾期率，季頻，1991+）/ US10Y−US2Y（殖利率曲線，日頻，2000+）/ yfinance ARCC OBDC BXSL FSK MAIN（BDC P/NAV，日頻，NAV 每季更新自 10-Q）。衰退陰影 = NBER 官方認定。定位「信用市場環境理解」非交易訊號。</p>
+        <p class="mt-6-muted">資料：FRED BAMLH0A0HYM2 / BAMLC0A0CM（HY/IG OAS，日頻，FRED 公開 API 提供近 3 年）/ DRCCLACBS / DRSFRMACBS（逾期率，季頻，1991+）/ US10Y−US2Y（殖利率曲線，日頻，2000+）/ yfinance ARCC OBDC BXSL FSK MAIN（BDC P/NAV，日頻，NAV 每季更新自 10-Q）。衰退陰影 = NBER 官方認定。定位「信用市場環境理解」非交易訊號。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 外資板塊流向 tab ──────────────────────────────────────────── -->
   <section id="tab-twsectorflow" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <span class="chip active" id="sf-sort-1w" data-tooltip="依近1週外資淨買超排列">近1週</span>
       <span class="chip"        id="sf-sort-1m" data-tooltip="依近1月外資淨買超排列">近1月</span>
     </div>
@@ -2620,19 +2620,19 @@
       <div class="info-panel-header"><i class="chevron">▶</i> 外資板塊流向怎麼看？</div>
       <div class="info-panel-body">
         <p>每日抓取 TWSE T86（三大法人個股買賣超），依 FinMind 產業別對照表加總到 18 個板塊。<b>藍線 = 板塊指數（正規化 100）</b>，<b>橙線 = 外資滾動累積淨買超（萬張）</b>。正斜率 = 外資持續增持，負斜率 = 持續出走。</p>
-        <p style="margin-top:6px;color:var(--muted)">單位：萬張（1張 = 1000股）。資料：TWSE T86（日頻）× FinMind TaiwanStockInfo（產業別）× TWSE MI_5MINS_INDEX（板塊指數）。適合觀察「哪個板塊外資在加碼 / 減碼」，搭配位階 tab 看具體超買超賣位置。</p>
+        <p class="mt-6-muted">單位：萬張（1張 = 1000股）。資料：TWSE T86（日頻）× FinMind TaiwanStockInfo（產業別）× TWSE MI_5MINS_INDEX（板塊指數）。適合觀察「哪個板塊外資在加碼 / 減碼」，搭配位階 tab 看具體超買超賣位置。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 週K反轉 tab ─────────────────────────────────────────────── -->
   <section id="tab-wkrev" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="wkrev-ticker-picker" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="controls controls--wrap">
+      <div class="flex-wrap-gap6" id="wkrev-ticker-picker"></div>
     </div>
     <div id="wkrev-chart" style="width:100%;height:520px"></div>
-    <div class="status" id="wkrev-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
-    <div id="wkrev-table" style="padding:8px 24px"></div>
+    <div class="status status--flush" id="wkrev-status">切換至此 tab 自動載入…</div>
+    <div class="pad-8-24" id="wkrev-table"></div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 四訊號定義與警語</div>
       <div class="info-panel-body">
@@ -2645,32 +2645,32 @@
             <tr><td>週RSI 超賣</td><td>RSI(14)，Wilder 平滑；&lt;30 視為超賣狀態</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">
+        <p class="note-muted">
           <b>BIR 出處說明</b>：原始研究以 ES 期貨（S&amp;P 500 e-mini）盤中高低點定義 inside week，本 tab 改用現貨指數（^GSPC）日線 OHLC 重採樣週K，兩者盤中高低來源不同，本 tab 統計出的事件次數不必、也不應該對齊原始研究的次數。
         </p>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+        <p class="callout-danger">
           ⚠️ 樣本數小（事件型訊號次數少，統計顯著性有限）；週K本身無條件收漲基率約 57–60%（見下表「全樣本無條件基率」列），訊號要明顯優於這個基準才有意義；本 tab 定位「環境理解」輔助判讀，<b>不是</b>交易觸發訊號。
         </p>
-        <p style="margin-top:8px;color:var(--muted)">資料：直接讀 data/SP500.json（^GSPC）／data/QQQ.json 日 OHLCV，前端重採樣週K並即時計算，無另開 fetch 腳本。防前視：訊號當週收盤成立，前瞻報酬從次週收盤起算；資料末端未走完的一週（partial）排除於所有統計。</p>
+        <p class="note-muted">資料：直接讀 data/SP500.json（^GSPC）／data/QQQ.json 日 OHLCV，前端重採樣週K並即時計算，無另開 fetch 腳本。防前視：訊號當週收盤成立，前瞻報酬從次週收盤起算；資料末端未走完的一週（partial）排除於所有統計。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 週MACD死叉→回MA20 tab ───────────────────────────────────── -->
   <section id="tab-qqqmacd" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="qqqmacd-ticker-picker" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    <div class="controls controls--wrap">
+      <div class="flex-wrap-gap6" id="qqqmacd-ticker-picker"></div>
     </div>
     <div id="qqqmacd-chart" style="width:100%;height:520px"></div>
-    <div class="status" id="qqqmacd-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
-    <div id="qqqmacd-tables" style="padding:8px 24px"></div>
+    <div class="status status--flush" id="qqqmacd-status">切換至此 tab 自動載入…</div>
+    <div class="pad-8-24" id="qqqmacd-tables"></div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 週MACD死叉怎麼看？</div>
       <div class="info-panel-body">
         <p>週MACD死叉（DIF 由上而下穿越 DEA）= 一次<b>又快又淺的 MA20 拉回擇時訊號</b>，edge 主要在 2–4 週（觸及率明顯高於全樣本無條件基率，且倍數隨 horizon 拉長逐漸收斂到 1x）；<b>不是崩跌預警</b>——死叉後 ≥8% 大跌的捕捉率 ≈ 基率，並未系統性抬高。</p>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+        <p class="callout-danger">
           ⚠️ 樣本數小（QQQ N=56、SPX N=91，事件型訊號次數少，統計顯著性有限）；本 tab 定位「環境理解」輔助判讀，<b>不是</b>交易觸發訊號；下檔捕捉那條腿誠實呈現無 edge，勿誤讀成崩跌預警。</p>
-        <p style="margin-top:8px;color:var(--muted)">資料：直接讀 data/QQQ.json／data/SP500.json（^GSPC）日 OHLCV，前端重採樣週K並即時計算 MACD(12,26,9)/MA20/MA50，無另開 fetch 腳本。防前視：死叉在第 i 週收盤確立，只用到 i 週(含)以前資料；觸及/下檔統計一律從 i+1 週起算；資料末端未走完的一週整根丟棄，不進入統計或圖表。</p>
+        <p class="note-muted">資料：直接讀 data/QQQ.json／data/SP500.json（^GSPC）日 OHLCV，前端重採樣週K並即時計算 MACD(12,26,9)/MA20/MA50，無另開 fetch 腳本。防前視：死叉在第 i 週收盤確立，只用到 i 週(含)以前資料；觸及/下檔統計一律從 i+1 週起算；資料末端未走完的一週整根丟棄，不進入統計或圖表。</p>
       </div>
     </div>
   </section>
@@ -2685,7 +2685,7 @@
         門檻 ± <input type="number" id="roc4-thr" value="5" step="0.5" min="0.5"
           style="width:64px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 6px"> %
       </label>
-      <div style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end">
         <span class="chip" data-roc4-range="1Y">1Y</span>
         <span class="chip" data-roc4-range="3Y">3Y</span>
         <span class="chip" data-roc4-range="5Y">5Y</span>
@@ -2694,25 +2694,25 @@
       </div>
     </div>
     <div id="roc4-chart" style="width:100%;height:560px"></div>
-    <div class="status" id="roc4-status" style="padding:0 24px">切換至此 tab 自動載入…</div>
-    <div id="roc4-tables" style="padding:8px 24px"></div>
+    <div class="status status--flush" id="roc4-status">切換至此 tab 自動載入…</div>
+    <div class="pad-8-24" id="roc4-tables"></div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> ROC4 怎麼看？</div>
       <div class="info-panel-body">
         <p>ROC(4) = Close[t] / Close[t−4] − 1，以<b>交易日</b>計（非日曆日）。四天內漲跌超過門檻＝一次<b>急漲／急殺</b>；上圖垂直虛線標事件日（綠＝上穿、紅＝下穿），下圖長條為 ROC4 本身、超標染色。</p>
-        <p style="margin-top:8px">「只標事件首日」把連續同向超標的日子合併成一次事件；關掉會看到 2020-03、2025-04 這種急殺整片糊成一團。<b>統計表一律用去重後首日</b>，不受這個勾選影響。</p>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+        <p class="mt-8">「只標事件首日」把連續同向超標的日子合併成一次事件；關掉會看到 2020-03、2025-04 這種急殺整片糊成一團。<b>統計表一律用去重後首日</b>，不受這個勾選影響。</p>
+        <p class="callout-danger">
           ⚠️ 事件之間<b>高度重疊、並非獨立樣本</b>——急殺常在同一波段連續出現，平均報酬與勝率容易被單一波段（2008、2020-03、2025-04）主導。門檻拉高時樣本數迅速掉到個位數，數字僅供環境判讀，<b>不是</b>交易訊號，不構成投資建議。
         </p>
-        <p style="margin-top:8px;color:var(--muted)">資料：直接讀 data/QQQ.json（2000 起原始收盤，未還原股息），前端即時計算，無另開 fetch 腳本。防前視：事件於第 i 日收盤確立，T+h 報酬取 i+h 收盤；i+h 超出資料末端者排除、不補值（故表中 n 會小於事件數）。</p>
+        <p class="note-muted">資料：直接讀 data/QQQ.json（2000 起原始收盤，未還原股息），前端即時計算，無另開 fetch 腳本。防前視：事件於第 i 日收盤確立，T+h 報酬取 i+h 收盤；i+h 超出資料末端者排除、不補值（故表中 n 會小於事件數）。</p>
       </div>
     </div>
   </section>
 
   <!-- ── VVIX波動象限 tab ─────────────────────────────────────────── -->
   <section id="tab-vvixregime" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="vvixregime-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="vvixregime-range-picker">
         <span class="chip" data-vvixregime-range="1Y">1Y</span>
         <span class="chip active" data-vvixregime-range="3Y">3Y</span>
         <span class="chip" data-vvixregime-range="5Y">5Y</span>
@@ -2720,7 +2720,7 @@
         <span class="chip" data-vvixregime-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="vvixregime-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="vvixregime-top">
       <div class="breadth-card">
         <div class="bc-label">目前 Regime</div>
         <div class="bc-main"><span class="bc-pct" id="vvixregime-cur-val" style="font-size:20px">—</span></div>
@@ -2740,7 +2740,7 @@
         <div class="bc-signal" id="vvixregime-vixts-signal">—</div>
       </div>
     </div>
-    <div id="vvixregime-chart" style="height:560px"></div>
+    <div class="chart-h560" id="vvixregime-chart"></div>
     <div class="status" id="vvixregime-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> VVIX波動象限怎麼看？</div>
@@ -2754,12 +2754,12 @@
             <tr><td>regime3（極端恐慌）</td><td>VIX&gt;35 且 ts_ratio≥1 且 VVIX&gt;100</td><td>21</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">核心對照（N=10交易日遠期）：regime2 已實現波動率 mean 16.62% vs regime1 14.16%；regime2 entry-to-trough 回撤 mean −2.16% vs regime1 −1.80%——N=5/10/20 三個窗口方向一致。regime3（N=10）遠期報酬 mean +1.40%、勝率71.4%（n=21，樣本偏少僅供參考，傾向支持恐慌後均值回歸）。</p>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+        <p class="note-muted">核心對照（N=10交易日遠期）：regime2 已實現波動率 mean 16.62% vs regime1 14.16%；regime2 entry-to-trough 回撤 mean −2.16% vs regime1 −1.80%——N=5/10/20 三個窗口方向一致。regime3（N=10）遠期報酬 mean +1.40%、勝率71.4%（n=21，樣本偏少僅供參考，傾向支持恐慌後均值回歸）。</p>
+        <p class="callout-warn">
           ⚠️ regime3 的 VVIX&gt;100 門檻是本次查證的<b>延伸假設</b>，非原推文明確數字（原推文只寫「High VVIX」，未給具體門檻）；regime1/regime2 的門檻數字則直接引用原推文。本回測<b>未驗證</b>原推文「75–80%勝率」這個具體數字——那是選擇權策略 P&amp;L，本回測只用 QQQ 現貨代理指標測方向性。</p>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f85149;background:rgba(248,81,73,.08);border-radius:4px">
+        <p class="callout-danger">
           ⚠️ 有效回測窗 2009-09-18～2026-07-24（受 ts_ratio 資料起點限制）；regime3 樣本數僅 21 個 episode，統計顯著性有限。本 tab 定位「環境理解」輔助判讀，<b>不是</b>交易觸發訊號。</p>
-        <p style="margin-top:8px;color:var(--muted)">資料：CBOE VIX/VIX3M（data/vix_term.json）、yfinance ^VVIX（data/VVIX.json）、QQQ 日 OHLCV（data/QQQ.json），三者以 QQQ 交易日對齊（inner join，同 python dropna()）。研究來源：Financial_work/vvix_term_regime_backtest.py（verifier PASS）。</p>
+        <p class="note-muted">資料：CBOE VIX/VIX3M（data/vix_term.json）、yfinance ^VVIX（data/VVIX.json）、QQQ 日 OHLCV（data/QQQ.json），三者以 QQQ 交易日對齊（inner join，同 python dropna()）。研究來源：Financial_work/vvix_term_regime_backtest.py（verifier PASS）。</p>
       </div>
     </div>
   </section>
@@ -2767,7 +2767,7 @@
   <!-- ── 工具箱 tab（教育速查 + 純前端互動計算機，無外部資料源） ──── -->
   <section id="tab-tools" class="tab-section" hidden>
     <div class="controls">
-      <div id="tools-nav" style="display:flex;gap:6px;flex-wrap:wrap">
+      <div class="flex-wrap-gap6" id="tools-nav">
         <span class="chip active" data-tools-sec="indicators">技術指標速查</span>
         <span class="chip" data-tools-sec="margin">融資維持率</span>
         <span class="chip" data-tools-sec="calc">互動計算機</span>
@@ -2783,13 +2783,13 @@
 
   <!-- ── 淨流動性 tab ──────────────────────────────────────────────── -->
   <section id="tab-net_liquidity" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="netliq-sub-toggles" style="display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row" id="netliq-sub-toggles">
         <span class="chip" data-netliq-sub="walcl">Fed 總資產</span>
         <span class="chip" data-netliq-sub="tga">TGA</span>
         <span class="chip" data-netliq-sub="rrp">RRP</span>
       </div>
-      <div id="netliq-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="netliq-range-picker">
         <span class="chip" data-netliq-range="1Y">1Y</span>
         <span class="chip active" data-netliq-range="3Y">3Y</span>
         <span class="chip" data-netliq-range="5Y">5Y</span>
@@ -2797,7 +2797,7 @@
         <span class="chip" data-netliq-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="netliq-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="netliq-top">
       <div class="breadth-card">
         <div class="bc-label">淨流動性（最新）</div>
         <div class="bc-main"><span class="bc-pct" id="netliq-cur-val">—</span></div>
@@ -2806,18 +2806,18 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">近 1 年變化</div>
-        <div class="bc-main"><span class="bc-pct" id="netliq-1y-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="netliq-1y-val">—</span></div>
         <div class="bc-count" id="netliq-1y-sub">—</div>
         <div class="bc-signal" id="netliq-1y-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">近 3 個月變化</div>
-        <div class="bc-main"><span class="bc-pct" id="netliq-3m-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="netliq-3m-val">—</span></div>
         <div class="bc-count" id="netliq-3m-sub">—</div>
         <div class="bc-signal" id="netliq-3m-signal">—</div>
       </div>
     </div>
-    <div id="netliq-chart" style="height:520px"></div>
+    <div class="chart-h520" id="netliq-chart"></div>
     <div class="status" id="netliq-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 淨流動性怎麼看？</div>
@@ -2831,14 +2831,14 @@
             <tr><td>RRP（隔夜逆回購）</td><td>貨幣市場基金停泊在 Fed 的資金，屬於「被鎖住」未進入市場的流動性</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">資料：FRED WALCL / WTREGEN / RRPONTSYD（免費，無 key）。單位：百萬美元。定位「流動性環境理解」，非交易觸發訊號。</p>
+        <p class="note-muted">資料：FRED WALCL / WTREGEN / RRPONTSYD（免費，無 key）。單位：百萬美元。定位「流動性環境理解」，非交易觸發訊號。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 殖利率曲線 tab ────────────────────────────────────────────── -->
   <section id="tab-yield_curve" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <div id="yc-yield-toggles" style="display:flex;gap:4px;flex-wrap:wrap">
         <span class="chip" data-yc-yield="dgs3mo">3M</span>
         <span class="chip" data-yc-yield="dgs2">2Y</span>
@@ -2846,7 +2846,7 @@
         <span class="chip" data-yc-yield="dgs10">10Y</span>
         <span class="chip" data-yc-yield="dgs30">30Y</span>
       </div>
-      <div id="yc-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="yc-range-picker">
         <span class="chip" data-yc-range="1Y">1Y</span>
         <span class="chip active" data-yc-range="3Y">3Y</span>
         <span class="chip" data-yc-range="5Y">5Y</span>
@@ -2854,7 +2854,7 @@
         <span class="chip" data-yc-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="yc-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="yc-top">
       <div class="breadth-card">
         <div class="bc-label">10Y − 2Y 利差</div>
         <div class="bc-main"><span class="bc-pct" id="yc-2y-val">—</span></div>
@@ -2869,12 +2869,12 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">是否倒掛</div>
-        <div class="bc-main"><span class="bc-pct" id="yc-inv-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="yc-inv-val">—</span></div>
         <div class="bc-count" id="yc-inv-sub">—</div>
         <div class="bc-signal" id="yc-inv-signal">—</div>
       </div>
     </div>
-    <div id="yc-chart" style="height:520px"></div>
+    <div class="chart-h520" id="yc-chart"></div>
     <div class="status" id="yc-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 殖利率曲線倒掛怎麼看？</div>
@@ -2887,15 +2887,15 @@
             <tr><td>10Y−3M（T10Y3M）</td><td>NY Fed 衰退機率模型採用版本，對短端政策利率更敏感</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">資料：FRED DGS3MO/DGS2/DGS5/DGS10/DGS30 + T10Y2Y/T10Y3M（免費，無 key，日頻）。紅色區塊 = 10Y−2Y 倒掛期間。純描述性資訊，非投資建議。</p>
+        <p class="note-muted">資料：FRED DGS3MO/DGS2/DGS5/DGS10/DGS30 + T10Y2Y/T10Y3M（免費，無 key，日頻）。紅色區塊 = 10Y−2Y 倒掛期間。純描述性資訊，非投資建議。</p>
       </div>
     </div>
   </section>
 
   <!-- ── VIX 期限結構 tab ──────────────────────────────────────────── -->
   <section id="tab-vix_term" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="vixterm-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="vixterm-range-picker">
         <span class="chip" data-vixterm-range="1Y">1Y</span>
         <span class="chip active" data-vixterm-range="3Y">3Y</span>
         <span class="chip" data-vixterm-range="5Y">5Y</span>
@@ -2903,7 +2903,7 @@
         <span class="chip" data-vixterm-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="vixterm-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="vixterm-top">
       <div class="breadth-card">
         <div class="bc-label">ts_ratio（VIX/VIX3M）</div>
         <div class="bc-main"><span class="bc-pct" id="vixterm-ratio-val">—</span></div>
@@ -2912,7 +2912,7 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">結構狀態</div>
-        <div class="bc-main"><span class="bc-pct" id="vixterm-struct-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="vixterm-struct-val">—</span></div>
         <div class="bc-count" id="vixterm-struct-sub">—</div>
         <div class="bc-signal" id="vixterm-struct-signal">—</div>
       </div>
@@ -2923,7 +2923,7 @@
         <div class="bc-signal" id="vixterm-vix-signal">—</div>
       </div>
     </div>
-    <div id="vixterm-chart" style="height:560px"></div>
+    <div class="chart-h560" id="vixterm-chart"></div>
     <div class="status" id="vixterm-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> VIX 期限結構斜率怎麼看？</div>
@@ -2936,7 +2936,7 @@
             <tr><td>&lt; 1.0</td><td>Contango，正常期限結構，市場平靜</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">資料：CBOE 官方每日收盤 VIX9D/VIX/VIX3M/VIX6M（免費，無 key）。紅色區塊 = backwardation 期間（ts_ratio &gt; 1）。定位「恐慌程度/市場結構理解」，非交易觸發訊號。</p>
+        <p class="note-muted">資料：CBOE 官方每日收盤 VIX9D/VIX/VIX3M/VIX6M（免費，無 key）。紅色區塊 = backwardation 期間（ts_ratio &gt; 1）。定位「恐慌程度/市場結構理解」，非交易觸發訊號。</p>
       </div>
     </div>
   </section>
@@ -2948,8 +2948,8 @@
 
   <!-- ── VXN−VIX 波動率價差 tab ─────────────────────────────────────── -->
   <section id="tab-vxnvix" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="vxnvix-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="vxnvix-range-picker">
         <span class="chip" data-vxnvix-range="1Y">1Y</span>
         <span class="chip active" data-vxnvix-range="3Y">3Y</span>
         <span class="chip" data-vxnvix-range="5Y">5Y</span>
@@ -2957,7 +2957,7 @@
         <span class="chip" data-vxnvix-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="vxnvix-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="vxnvix-top">
       <div class="breadth-card">
         <div class="bc-label">VXN−VIX 價差（最新）</div>
         <div class="bc-main"><span class="bc-pct" id="vxnvix-spread-val">—</span></div>
@@ -2972,12 +2972,12 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">90th / 95th 門檻</div>
-        <div class="bc-main"><span class="bc-pct" id="vxnvix-thresh-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="vxnvix-thresh-val">—</span></div>
         <div class="bc-count" id="vxnvix-thresh-sub">—</div>
         <div class="bc-signal" id="vxnvix-thresh-signal">—</div>
       </div>
     </div>
-    <div id="vxnvix-chart" style="height:560px"></div>
+    <div class="chart-h560" id="vxnvix-chart"></div>
     <div class="status" id="vxnvix-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> VXN−VIX 波動率價差怎麼看？</div>
@@ -2990,15 +2990,15 @@
             <tr><td>≥ 95th 百分位</td><td>Nasdaq 相對波動溢價極端偏高</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)"><b>重要：</b>圖上 90th/95th 門檻線是用「全樣本」（2001年至今）固定分位數計算，<b>不是</b>該時間點當下即時的滾動分位數——它只是用來標示「現在的價差在整段歷史分布中大約落在什麼位置」的參考線，不是逐日更新的訊號。資料：CBOE 官方每日收盤 VXN/VIX（免費，無 key）。純描述性資訊，非投資建議。</p>
+        <p class="note-muted"><b>重要：</b>圖上 90th/95th 門檻線是用「全樣本」（2001年至今）固定分位數計算，<b>不是</b>該時間點當下即時的滾動分位數——它只是用來標示「現在的價差在整段歷史分布中大約落在什麼位置」的參考線，不是逐日更新的訊號。資料：CBOE 官方每日收盤 VXN/VIX（免費，無 key）。純描述性資訊，非投資建議。</p>
       </div>
     </div>
   </section>
 
   <!-- ── QQQ/SPY 長期相對強度 tab ───────────────────────────────────── -->
   <section id="tab-relstrength" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="relstrength-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="relstrength-range-picker">
         <span class="chip" data-relstrength-range="1Y">1Y</span>
         <span class="chip" data-relstrength-range="3Y">3Y</span>
         <span class="chip" data-relstrength-range="5Y">5Y</span>
@@ -3006,7 +3006,7 @@
         <span class="chip active" data-relstrength-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="relstrength-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="relstrength-top">
       <div class="breadth-card">
         <div class="bc-label">QQQ/SPY 比值（最新）</div>
         <div class="bc-main"><span class="bc-pct" id="relstrength-current-val">—</span></div>
@@ -3026,7 +3026,7 @@
         <div class="bc-signal" id="relstrength-trough-signal">—</div>
       </div>
     </div>
-    <div id="relstrength-chart" style="height:560px"></div>
+    <div class="chart-h560" id="relstrength-chart"></div>
     <div class="status" id="relstrength-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> QQQ/SPY 長期相對強度怎麼看？</div>
@@ -3034,21 +3034,21 @@
         <p>這是 QQQ（Nasdaq-100 ETF）與 SPY（S&amp;P 500 ETF）收盤價的比值時序，代表 Nasdaq／科技成長股相對於大盤的長期相對強度。比值上升＝Nasdaq 跑贏大盤，比值下降＝Nasdaq 跑輸大盤。圖表使用 log scale y軸，因為比值歷史區間橫跨約 0.25x～1x 以上，線性軸會失真。</p>
         <p><b>已知限制：</b>QQQ ETF 直到 1999 年 3 月才成立，本地資料僅從 <b>2000-01-03</b> 起算，<b>無法涵蓋更早期間</b>（1995～1999 的 dot-com 起漲段）。圖上僅能看到 2000 年之後的相對強度變化。</p>
         <p><b>方法論：</b>比值為<b>未還原息</b>價格比（不含股息），此為刻意選擇，方法論比照原始靈感來源（SpotGamma 的 NDX/SPX 比較圖，同樣排除股息）。</p>
-        <p style="margin-top:8px;color:var(--muted)">資料：本地 QQQ.json / SPY.json 每日收盤價對齊計算（免費，無 key）。純描述性資訊，非投資建議。</p>
+        <p class="note-muted">資料：本地 QQQ.json / SPY.json 每日收盤價對齊計算（免費，無 key）。純描述性資訊，非投資建議。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 七巨頭相對強度 tab ───────────────────────────────────────── -->
   <section id="tab-mag7spy" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="mag7spy-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="mag7spy-range-picker">
         <span class="chip" data-mag7spy-range="1Y">1Y</span>
         <span class="chip" data-mag7spy-range="3Y">3Y</span>
         <span class="chip active" data-mag7spy-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="mag7spy-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="mag7spy-top">
       <div class="breadth-card">
         <div class="bc-label">MAGS/SPY 比值（最新）</div>
         <div class="bc-main"><span class="bc-pct" id="mag7spy-current-val">—</span></div>
@@ -3056,7 +3056,7 @@
         <div class="bc-signal" id="mag7spy-current-signal">—</div>
       </div>
     </div>
-    <div id="mag7spy-chart" style="height:560px"></div>
+    <div class="chart-h560" id="mag7spy-chart"></div>
     <div class="status" id="mag7spy-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 七巨頭相對強度怎麼看？</div>
@@ -3064,15 +3064,15 @@
         <p>這是 MAGS（七巨頭 ETF）與 SPY（S&amp;P 500 ETF）收盤價的比值時序，代表七巨頭相對於大盤的相對強度。比值上升＝七巨頭跑贏大盤，比值下降＝七巨頭跑輸大盤。圖表使用 log scale y軸。</p>
         <p><b>已知限制：</b>MAGS ETF 直到 <b>2023-04-11</b> 才有資料，<b>無法回溯更早期的七巨頭走勢</b>。</p>
         <p><b>方法論：</b>比值為<b>未還原息</b>價格比（不含股息），方法論比照 NDX/SPY 相對強度 tab（<code>js/tabs/relstrength.js</code>）。</p>
-        <p style="margin-top:8px;color:var(--muted)"><b>提醒：</b>這條線本身只是相對強弱的敘述性指標，不是預測工具——不要把單一背離事件當成「必然」訊號（base rate 未知）。純描述性資訊，非投資建議。</p>
+        <p class="note-muted"><b>提醒：</b>這條線本身只是相對強弱的敘述性指標，不是預測工具——不要把單一背離事件當成「必然」訊號（base rate 未知）。純描述性資訊，非投資建議。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 實質利率 tab ──────────────────────────────────────────────── -->
   <section id="tab-real_rates" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="realr-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="realr-range-picker">
         <span class="chip" data-realr-range="1Y">1Y</span>
         <span class="chip active" data-realr-range="3Y">3Y</span>
         <span class="chip" data-realr-range="5Y">5Y</span>
@@ -3080,7 +3080,7 @@
         <span class="chip" data-realr-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="realr-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="realr-top">
       <div class="breadth-card">
         <div class="bc-label">10Y 實質殖利率（最新）</div>
         <div class="bc-main"><span class="bc-pct" id="realr-10y-val">—</span></div>
@@ -3089,18 +3089,18 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">政策實質狀態</div>
-        <div class="bc-main"><span class="bc-pct" id="realr-state-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="realr-state-val">—</span></div>
         <div class="bc-count" id="realr-state-sub">—</div>
         <div class="bc-signal" id="realr-state-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">5Y 實質殖利率</div>
-        <div class="bc-main"><span class="bc-pct" id="realr-5y-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="realr-5y-val">—</span></div>
         <div class="bc-count" id="realr-5y-sub">—</div>
         <div class="bc-signal" id="realr-5y-signal">—</div>
       </div>
     </div>
-    <div id="realr-chart" style="height:520px"></div>
+    <div class="chart-h520" id="realr-chart"></div>
     <div class="status" id="realr-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 實質利率怎麼看？</div>
@@ -3114,15 +3114,15 @@
             <tr><td>&lt; 0</td><td>實質偏鬆，鼓勵風險資產</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">資料：FRED DFII5 / DFII10 / DFII30（免費，無 key）。單位：%。定位「貨幣環境理解」，非交易觸發訊號。</p>
+        <p class="note-muted">資料：FRED DFII5 / DFII10 / DFII30（免費，無 key）。單位：%。定位「貨幣環境理解」，非交易觸發訊號。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 貨幣市場壓力 tab ──────────────────────────────────────────── -->
   <section id="tab-money_market" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="mmkt-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="mmkt-range-picker">
         <span class="chip" data-mmkt-range="1Y">1Y</span>
         <span class="chip active" data-mmkt-range="3Y">3Y</span>
         <span class="chip" data-mmkt-range="5Y">5Y</span>
@@ -3130,7 +3130,7 @@
         <span class="chip" data-mmkt-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="mmkt-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="mmkt-top">
       <div class="breadth-card">
         <div class="bc-label">SOFR（最新）</div>
         <div class="bc-main"><span class="bc-pct" id="mmkt-sofr-val">—</span></div>
@@ -3139,18 +3139,18 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">SOFR − IORB 利差</div>
-        <div class="bc-main"><span class="bc-pct" id="mmkt-spread-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="mmkt-spread-val">—</span></div>
         <div class="bc-count" id="mmkt-spread-sub">—</div>
         <div class="bc-signal" id="mmkt-spread-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">EFFR</div>
-        <div class="bc-main"><span class="bc-pct" id="mmkt-effr-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="mmkt-effr-val">—</span></div>
         <div class="bc-count" id="mmkt-effr-sub">—</div>
         <div class="bc-signal" id="mmkt-effr-signal">—</div>
       </div>
     </div>
-    <div id="mmkt-chart" style="height:520px"></div>
+    <div class="chart-h520" id="mmkt-chart"></div>
     <div class="status" id="mmkt-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 貨幣市場壓力怎麼看？</div>
@@ -3165,15 +3165,15 @@
             <tr><td>SOFR − IORB &gt; 0 且 spike</td><td>隔夜擔保資金吃緊訊號</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">資料：FRED SOFR / IORB / EFFR（免費，無 key）。單位：%。定位「資金面壓力理解」，非交易觸發訊號。</p>
+        <p class="note-muted">資料：FRED SOFR / IORB / EFFR（免費，無 key）。單位：%。定位「資金面壓力理解」，非交易觸發訊號。</p>
       </div>
     </div>
   </section>
 
   <!-- ── Put/Call ratio tab ────────────────────────────────────────── -->
   <section id="tab-putcall" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="putc-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="putc-range-picker">
         <span class="chip" data-putc-range="1Y">1Y</span>
         <span class="chip active" data-putc-range="3Y">3Y</span>
         <span class="chip" data-putc-range="5Y">5Y</span>
@@ -3181,7 +3181,7 @@
         <span class="chip" data-putc-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="putc-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="putc-top">
       <div class="breadth-card">
         <div class="bc-label">Total P/C（最新）</div>
         <div class="bc-main"><span class="bc-pct" id="putc-total-val">—</span></div>
@@ -3196,12 +3196,12 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">Equity P/C</div>
-        <div class="bc-main"><span class="bc-pct" id="putc-equity-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="putc-equity-val">—</span></div>
         <div class="bc-count" id="putc-equity-sub">—</div>
         <div class="bc-signal" id="putc-equity-signal">—</div>
       </div>
     </div>
-    <div id="putc-chart" style="height:520px"></div>
+    <div class="chart-h520" id="putc-chart"></div>
     <div class="status" id="putc-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> Put/Call 怎麼看？</div>
@@ -3215,15 +3215,15 @@
             <tr><td>&lt; 0.7</td><td>貪婪、避險不足(反向偏空)</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">資料：CBOE 凍結 archive(2006-2019)接 OCC daily-volume-totals(2019+,19 家交易所加總)。⚠️兩段口徑不同(單一交易所 vs 19 家加總),接續處未平滑。定位「情緒理解」,非交易觸發訊號。</p>
+        <p class="note-muted">資料：CBOE 凍結 archive(2006-2019)接 OCC daily-volume-totals(2019+,19 家交易所加總)。⚠️兩段口徑不同(單一交易所 vs 19 家加總),接續處未平滑。定位「情緒理解」,非交易觸發訊號。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 全球央行資產表 tab ────────────────────────────────────────── -->
   <section id="tab-central_banks" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="cb-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="cb-range-picker">
         <span class="chip" data-cb-range="3Y">3Y</span>
         <span class="chip" data-cb-range="5Y">5Y</span>
         <span class="chip active" data-cb-range="10Y">10Y</span>
@@ -3231,7 +3231,7 @@
         <span class="chip" data-cb-range="MAX">MAX</span>
       </div>
     </div>
-    <div id="cb-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="cb-top">
       <div class="breadth-card">
         <div class="bc-label">Fed 擴縮(視窗基期以來)</div>
         <div class="bc-main"><span class="bc-pct" id="cb-fed-val">—</span></div>
@@ -3240,18 +3240,18 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">ECB 擴縮</div>
-        <div class="bc-main"><span class="bc-pct" id="cb-ecb-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="cb-ecb-val">—</span></div>
         <div class="bc-count" id="cb-ecb-sub">—</div>
         <div class="bc-signal" id="cb-ecb-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">BOJ 擴縮</div>
-        <div class="bc-main"><span class="bc-pct" id="cb-boj-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="cb-boj-val">—</span></div>
         <div class="bc-count" id="cb-boj-sub">—</div>
         <div class="bc-signal" id="cb-boj-signal">—</div>
       </div>
     </div>
-    <div id="cb-chart" style="height:520px"></div>
+    <div class="chart-h520" id="cb-chart"></div>
     <div class="status" id="cb-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 全球央行資產表怎麼看？</div>
@@ -3265,14 +3265,14 @@
             <tr><td>BOJ</td><td>JPNASSETS,億日圓,月頻</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;color:var(--muted)">資料：FRED(免費,無 key)。三者頻率/幣別不同,rebase 後僅供擴縮速度比較。定位「全球流動性環境理解」,非交易觸發訊號。</p>
+        <p class="note-muted">資料：FRED(免費,無 key)。三者頻率/幣別不同,rebase 後僅供擴縮速度比較。定位「全球流動性環境理解」,非交易觸發訊號。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 通膨 Nowcast tab ──────────────────────────────────────────── -->
   <section id="tab-infl_nowcast" class="tab-section" hidden>
-    <div id="nowc-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap">
+    <div class="top-row" id="nowc-top">
       <div class="breadth-card">
         <div class="bc-label">CPI YoY(當月預估)</div>
         <div class="bc-main"><span class="bc-pct" id="nowc-cpi-val">—</span></div>
@@ -3281,13 +3281,13 @@
       </div>
       <div class="breadth-card">
         <div class="bc-label">Core CPI YoY(當月預估)</div>
-        <div class="bc-main"><span class="bc-pct" id="nowc-corecpi-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="nowc-corecpi-val">—</span></div>
         <div class="bc-count" id="nowc-corecpi-sub">—</div>
         <div class="bc-signal" id="nowc-corecpi-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">Core PCE YoY(當月預估)</div>
-        <div class="bc-main"><span class="bc-pct" id="nowc-corepce-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="nowc-corepce-val">—</span></div>
         <div class="bc-count" id="nowc-corepce-sub">—</div>
         <div class="bc-signal" id="nowc-corepce-signal">—</div>
       </div>
@@ -3298,16 +3298,16 @@
       <div class="info-panel-header"><i class="chevron">▶</i> 通膨 Nowcast 怎麼看？</div>
       <div class="info-panel-body">
         <p><b>Cleveland Fed Inflation Nowcasting</b> 用高頻資料(油價、公債殖利率等)即時預估<b>當月與次月</b>的 CPI/PCE,比官方每月延遲公布搶先一步。長條圖比較四個口徑的 YoY 預估與 2% Fed 目標。</p>
-        <p style="margin-top:8px;color:var(--muted)">⚠️這是<b>模型預估值(nowcast),非已公布實績</b>,date 語意是「預估目標月」而非已實現月份——與本站其他 tab「不留未來日期」的慣例刻意不同。官網只提供最近 1-2 期,歷史序列靠每日自動累積。資料：Cleveland Fed(免費,無 key)。</p>
+        <p class="note-muted">⚠️這是<b>模型預估值(nowcast),非已公布實績</b>,date 語意是「預估目標月」而非已實現月份——與本站其他 tab「不留未來日期」的慣例刻意不同。官網只提供最近 1-2 期,歷史序列靠每日自動累積。資料：Cleveland Fed(免費,無 key)。</p>
       </div>
     </div>
   </section>
 
   <!-- ── CPI 分項 tab ──────────────────────────────────────────────── -->
   <section id="tab-cpi" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
+    <div class="controls controls--wrap">
       <span id="cpi-rollmin-toggle" class="chip active" data-tooltip="DGS10 疊上滾動 60 交易日最低值,檢驗低點是否不斷墊高">10Y 滾動低點</span>
-      <div id="cpi-range-picker" style="margin-left:auto;display:flex;gap:4px">
+      <div class="picker-row picker-row--end" id="cpi-range-picker">
         <span class="chip" data-cpi-range="1Y">1Y</span>
         <span class="chip" data-cpi-range="3Y">3Y</span>
         <span class="chip" data-cpi-range="5Y">5Y</span>
@@ -3320,25 +3320,25 @@
     <div id="cpi-top" style="display:flex;gap:12px;padding:12px 16px;flex-wrap:wrap;border-bottom:1px solid var(--border)">
       <div class="breadth-card">
         <div class="bc-label">Headline CPI MoM</div>
-        <div class="bc-main"><span class="bc-pct" id="cpi-headline-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="cpi-headline-val">—</span></div>
         <div class="bc-count" id="cpi-headline-sub">—</div>
         <div class="bc-signal" id="cpi-headline-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">Core CPI MoM</div>
-        <div class="bc-main"><span class="bc-pct" id="cpi-core-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="cpi-core-val">—</span></div>
         <div class="bc-count" id="cpi-core-sub">—</div>
         <div class="bc-signal" id="cpi-core-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">住房 MoM</div>
-        <div class="bc-main"><span class="bc-pct" id="cpi-housing-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="cpi-housing-val">—</span></div>
         <div class="bc-count" id="cpi-housing-sub">—</div>
         <div class="bc-signal" id="cpi-housing-signal">—</div>
       </div>
       <div class="breadth-card">
         <div class="bc-label">服務扣能源 MoM</div>
-        <div class="bc-main"><span class="bc-pct" id="cpi-svc-val" style="font-size:22px">—</span></div>
+        <div class="bc-main"><span class="bc-pct bc-pct--sm" id="cpi-svc-val">—</span></div>
         <div class="bc-count" id="cpi-svc-sub">—</div>
         <div class="bc-signal" id="cpi-svc-signal">—</div>
       </div>
@@ -3346,7 +3346,7 @@
 
     <!-- 2. 分項貢獻度瀑布(主圖):互斥窮盡五塊 + 近似誤差,吃 decomposition -->
     <div style="padding:10px 16px 4px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
-      <span style="color:var(--text);font-weight:600;font-size:13px">分項貢獻度分解(MECE)</span>
+      <span class="text-strong-13">分項貢獻度分解(MECE)</span>
       <select id="cpi-decomp-month" style="background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:12px"></select>
     </div>
     <div id="cpi-contrib-subtitle" style="padding:0 16px 6px;color:var(--muted);font-size:12px"></div>
@@ -3369,29 +3369,29 @@
     <!-- 6. 市場解讀 -->
     <div style="padding:10px 16px 4px;color:var(--text);font-weight:600;font-size:13px;border-top:1px solid var(--border)">市場解讀:公布後殖利率買不買單</div>
     <div id="cpi-market-subtitle" style="padding:0 16px 6px;color:var(--muted);font-size:12px"></div>
-    <div id="cpi-market-chart" style="width:100%;height:420px"></div>
+    <div class="chart-w100-h420" id="cpi-market-chart"></div>
     <div id="cpi-release-table" style="padding:8px 16px 4px"></div>
 
-    <div class="status" id="cpi-status" style="padding:8px 24px">切換至此 tab 自動載入…</div>
+    <div class="status status--pad8" id="cpi-status">切換至此 tab 自動載入…</div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> CPI 分項怎麼看?</div>
       <div class="info-panel-body">
         <p>這個 tab 機械回答兩個問題:(1) 這次降溫是<b>廣泛</b>的,還是<b>少數高波動項</b>(通常是能源)壓低平均?看「分項貢獻度分解」與「通膨廣度」兩格。(2) 數據偏鴿之後,<b>市場買不買單</b>(殖利率有沒有跟著跌)?看「市場解讀」格與公布日殖利率變動表。</p>
         <p><b>分項貢獻度分解</b>採用<b>互斥且窮盡(MECE)</b>的五塊拆法:能源、食品、核心商品、住房、核心服務(扣住房),外加一根「近似誤差」灰色長條 —— 五塊 contrib_pp 加近似誤差理論上等於 headline MoM(資料層已驗證此恆等式)。contrib_pp 本身是 weight × MoM 的<b>一階近似</b>,BLS 官方用 chained 公式計算貢獻度,兩者會有小幅差異;近似誤差也包含 BLS relative importance 權重 vintage(年更、非即時)造成的誤差 —— 這裡誠實揭露,不會把誤差硬塞進其他分項裡。</p>
         <p><b>分項熱力圖</b>吃的是 24 個原始 BLS 分項(部分是大類加總、部分是細項,彼此本來就有重疊,例如「住房」是「服務」的子集),所以熱力圖<b>只看各分項自己的 MoM 走勢</b>,不做橫向加總;總體項(Headline / Core)獨立放最上面一區,不與其他細項混在同一級距比較。</p>
-        <p id="cpi-residual-note" style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">⚠️ 載入中…</p>
-        <p id="cpi-breadth-note" style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">⚠️ 載入中…</p>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">
+        <p class="callout-warn" id="cpi-residual-note">⚠️ 載入中…</p>
+        <p class="callout-warn" id="cpi-breadth-note">⚠️ 載入中…</p>
+        <p class="callout-warn">
           ⚠️ <b>誠實揭露</b>:本 tab <b>無市場 consensus 預期資料</b>(免費源撈不到華爾街一致預期),因此不計算、也不呈現「CPI surprise」,「市場解讀」格只呈現<b>公布日當日</b>殖利率的實際反應,不代表這是相對預期的驚訝程度。</p>
-        <p style="margin-top:8px;color:var(--muted)">資料:FRED(BLS CPI 分項序列、Cleveland Fed Median/Trimmed CPI、Atlanta Fed Sticky/Flex CPI、DGS10/DGS2/T10YIE),公布日期取自 ALFRED(St. Louis Fed 的 BLS 發布時程鏡像)。權重取自 BLS 官方 relative importance 正表(Table 1, 2024 Weights, December 2025 vintage, CPI-U);因 bls.gov 擋自動抓取且該表年更一次,故硬編碼於 fetch script,每年 BLS 發布新版時需手動更新。汽車保險/汽車維修/個人照護服務三項 FRED 無鏡射,改由 BLS 官方 API 取得。</p>
+        <p class="note-muted">資料:FRED(BLS CPI 分項序列、Cleveland Fed Median/Trimmed CPI、Atlanta Fed Sticky/Flex CPI、DGS10/DGS2/T10YIE),公布日期取自 ALFRED(St. Louis Fed 的 BLS 發布時程鏡像)。權重取自 BLS 官方 relative importance 正表(Table 1, 2024 Weights, December 2025 vintage, CPI-U);因 bls.gov 擋自動抓取且該表年更一次,故硬編碼於 fetch script,每年 BLS 發布新版時需手動更新。汽車保險/汽車維修/個人照護服務三項 FRED 無鏡射,改由 BLS 官方 API 取得。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 美元流動性 tab ─────────────────────────────────────────────── -->
   <section id="tab-usdliq" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <div id="ul-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="ul-range-picker">
         <span class="chip" data-ul-range="1Y">1Y</span>
         <span class="chip active" data-ul-range="3Y">3Y</span>
         <span class="chip" data-ul-range="MAX">MAX</span>
@@ -3407,8 +3407,8 @@
 
     <!-- 3. 緩衝墊耗盡 -->
     <div style="padding:10px 16px 2px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border)">
-      <span style="color:var(--text);font-weight:600;font-size:13px">緩衝墊耗盡（Reserves / TGA / ON RRP）</span>
-      <div id="ul-buffer-scale" style="margin-left:auto;display:flex;gap:4px">
+      <span class="text-strong-13">緩衝墊耗盡（Reserves / TGA / ON RRP）</span>
+      <div class="picker-row picker-row--end" id="ul-buffer-scale">
         <span class="chip active" data-ul-scale="linear">線性</span>
         <span class="chip" data-ul-scale="log">對數</span>
       </div>
@@ -3437,18 +3437,18 @@
             <tr><td>L8 全球美元層</td><td>央行互換 swaps、境外 RRP</td></tr>
           </tbody>
         </table>
-        <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">⚠️ <b>ON RRP 幾近歸零代表「緩衝墊耗盡」，不是現金荒本身</b>——2021–2022 年時 ON RRP 曾高達 2 兆美元，是銀行體系準備金過剩、貨幣市場基金停泊資金的地方；隨著 Fed QT，這個緩衝墊被逐步用光，代表市場對準備金的餘裕正在收斂，需要更密切觀察 L1/L5 是否跟著轉緊，而不是直接解讀成「錢不夠」。</p>
+        <p class="callout-warn">⚠️ <b>ON RRP 幾近歸零代表「緩衝墊耗盡」，不是現金荒本身</b>——2021–2022 年時 ON RRP 曾高達 2 兆美元，是銀行體系準備金過剩、貨幣市場基金停泊資金的地方；隨著 Fed QT，這個緩衝墊被逐步用光，代表市場對準備金的餘裕正在收斂，需要更密切觀察 L1/L5 是否跟著轉緊，而不是直接解讀成「錢不夠」。</p>
         <p style="margin-top:8px;padding:8px 12px;border-left:3px solid #8b949e;background:rgba(139,148,158,.08);border-radius:4px">⚠️ <b>L7 支付清算層（fails）為週頻且落後約兩週的資料</b>，新鮮度圓點多半只會是黃或灰，不代表資料異常，只是這個資料源本身的發布節奏。</p>
-        <p style="margin-top:8px;color:var(--muted)">資料：FRED / NY Fed Markets API / Treasury Fiscal Data / TreasuryDirect（皆免費，無 key）。金額單位十億美元（B），利率為 %。daily 陣列最後一筆常態性部分缺值（IORB 當天即有、SOFR/ON RRP 隔日才公布），本頁「最新值」一律取該欄最後一筆非 null 值，不是陣列最後一列。</p>
+        <p class="note-muted">資料：FRED / NY Fed Markets API / Treasury Fiscal Data / TreasuryDirect（皆免費，無 key）。金額單位十億美元（B），利率為 %。daily 陣列最後一筆常態性部分缺值（IORB 當天即有、SOFR/ON RRP 隔日才公布），本頁「最新值」一律取該欄最後一筆非 null 值，不是陣列最後一列。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 美國融資成本 tab ──────────────────────────────────────────── -->
   <section id="tab-margincost" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <span style="color:var(--text);font-weight:600;font-size:13px">融資成本走廊 + FINRA 融資餘額（日頻 vs 月頻，頻率不同）</span>
-      <div id="mc-range-picker" style="margin-left:auto;display:flex;gap:4px">
+    <div class="controls controls--wrap">
+      <span class="text-strong-13">融資成本走廊 + FINRA 融資餘額（日頻 vs 月頻，頻率不同）</span>
+      <div class="picker-row picker-row--end" id="mc-range-picker">
         <span class="chip" data-mc-range="1Y">1Y</span>
         <span class="chip active" data-mc-range="3Y">3Y</span>
         <span class="chip" data-mc-range="5Y">5Y</span>
@@ -3461,15 +3461,15 @@
 
     <!-- 回撤 vs 融資成本對照 -->
     <div style="padding:10px 16px 2px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border)">
-      <span style="color:var(--text);font-weight:600;font-size:13px">市場低點 vs 融資成本（回撤分箱 × FFR 中位數，已拆下跌中／修復中）</span>
-      <div id="mc-dd-index-picker" style="margin-left:auto;display:flex;gap:4px">
+      <span class="text-strong-13">市場低點 vs 融資成本（回撤分箱 × FFR 中位數，已拆下跌中／修復中）</span>
+      <div class="picker-row picker-row--end" id="mc-dd-index-picker">
         <span class="chip active" data-mc-dd-index="SP500">^GSPC</span>
         <span class="chip" data-mc-dd-index="QQQ">QQQ</span>
         <span class="chip" data-mc-dd-index="SOXX">SOXX</span>
         <span class="chip" data-mc-dd-index="VOO">VOO</span>
       </div>
     </div>
-    <div style="padding:0 16px 8px;font-size:12px;color:var(--muted)">⚠️ 深回撤分箱（-20~-30%／&lt;-30%）的「FFR 中位數」很大部分是被<b style="color:var(--text)">少數幾段低利率復甦年</b>（如 2003-2005、2009-2010）撐出來的，不是「崩盤下跌當下」的成本 —— 請看下方每個分箱拆開的<span style="color:#f85149">下跌中</span> / <span style="color:#58a6ff">修復中</span>中位數與年份分布，不要把單一中位數讀成「市場跌深時借錢比較便宜」。</div>
+    <div style="padding:0 16px 8px;font-size:12px;color:var(--muted)">⚠️ 深回撤分箱（-20~-30%／&lt;-30%）的「FFR 中位數」很大部分是被<b style="color:var(--text)">少數幾段低利率復甦年</b>（如 2003-2005、2009-2010）撐出來的，不是「崩盤下跌當下」的成本 —— 請看下方每個分箱拆開的<span class="c-red-f85149">下跌中</span> / <span class="c-blue-58a6ff">修復中</span>中位數與年份分布，不要把單一中位數讀成「市場跌深時借錢比較便宜」。</div>
     <div id="mc-dd-chart" style="width:100%;height:340px"></div>
     <div id="mc-dd-table" style="padding:4px 16px 12px"></div>
     <div class="status" id="mc-dd-status">—</div>
@@ -3480,15 +3480,15 @@
         <p>上圖：<b>SOFR</b>（擔保隔夜融資利率，券商 margin rate 主流基準）／<b>EFFR</b>（有效聯邦資金利率）／<b>IORB</b>（準備金餘額利率）／<b>FFR</b>（DFF，長期融資成本代理，1954 起，其餘三者只到 2000–2021 才有資料），右軸疊 <b>FINRA 融資餘額</b>（美國券商融資餘額，兆美元）。下圖：<b>SOFR−IORB 利差</b>（bp，正值代表附買回市場壓力），若有 SOFR99 資料則疊一條尾端壓力線。</p>
         <p style="padding:8px 12px;border-left:3px solid #f0883e;background:rgba(240,136,62,.08);border-radius:4px">⚠️ <b>成本為日頻、FINRA 融資餘額為月頻且落後約兩週公布</b> —— 兩者疊在同一張圖只是方便對照時間軸，讀圖時別把月頻的階梯狀誤讀成日頻波動。</p>
         <p style="padding:8px 12px;border-left:3px solid #8b949e;background:rgba(139,148,158,.08);border-radius:4px">⚠️ <b>回撤分箱是同期相關，不是因果，也不是可交易訊號</b>。同一個分箱的天數，多半橫跨好幾段不同時期的行情（例如 -20~-30% 分箱可能同時包含 2004-2005 這種「還沒收復舊高點但已在漲」的復甦年，跟真正下跌中的月份）——直接看單一中位數會把「復甦期低利率」誤讀成「崩盤時借錢便宜」。因此每個分箱都拆成<b>下跌中</b>（收盤比 20 個交易日前的回撤更深）與<b>修復中</b>（更淺）兩組各自的 n 與中位數，並列出年份分布（前 6 大）供你核對中位數是被哪幾年決定的。「波段事件數」改用<b>回撤波段</b>定義：從某個歷史高點起算、到指數收復該高點為止算 1 段，波段中只要觸及過該分箱就計 1 次（不受期間內在分箱邊界來回穿越的天數影響），並列出每段的起訖年月。n &lt; 60 天的分箱會標示「樣本不足」。回撤一律用<b>截至當日為止的歷史最高點（expanding max）</b>計算，不使用全期最大值，避免未來函數。</p>
-        <p style="margin-top:8px;color:var(--muted)">資料：FRED SOFR/EFFR/IORB/SOFR99/DFF（免 key）+ FINRA Margin Statistics（重用 data/liquidity.json，未另抓）+ data/SP500.json／QQQ.json／SOXX.json／VOO.json（收盤價，未另抓）。</p>
+        <p class="note-muted">資料：FRED SOFR/EFFR/IORB/SOFR99/DFF（免 key）+ FINRA Margin Statistics（重用 data/liquidity.json，未另抓）+ data/SP500.json／QQQ.json／SOXX.json／VOO.json（收盤價，未另抓）。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 全球融資餘額 tab ──────────────────────────────────────────── -->
   <section id="tab-marginglobal" class="tab-section" hidden>
-    <div class="controls" style="flex-wrap:wrap;gap:8px">
-      <span style="color:var(--text);font-weight:600;font-size:13px">全球主要股市融資餘額</span>
+    <div class="controls controls--wrap">
+      <span class="text-strong-13">全球主要股市融資餘額</span>
       <div id="mg-range-picker" style="margin-left:auto;display:flex;gap:4px;align-items:center">
         <span class="chip" data-mg-range="6M">6M</span>
         <span class="chip" data-mg-range="1Y">1Y</span>
@@ -3538,50 +3538,50 @@
 
   <!-- ── 美國GDP拆解 tab ─────────────────────────────────────────── -->
   <section id="tab-gdp_productivity_decomp" class="tab-section" hidden>
-    <div id="gdp_productivity_decomp-chart" style="height:520px"></div>
+    <div class="chart-h520" id="gdp_productivity_decomp-chart"></div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 美國GDP/生產力/勞動力貢獻度拆解怎麼看？</div>
       <div class="info-panel-body">
         <p>把「經濟成長」拆成三根柱子：<b>GDP 成長率</b>（實質GDP年化成長）、<b>生產力成長率</b>（每工時產出的成長）、<b>勞動力成長率</b>（勞動人口的成長）。四個時期分別對照戰後嬰兒潮/雷根-金融海嘯前/金融海嘯後-疫情前/疫情後迄今，觀察每個時期的成長主要靠「人多」還是「效率高」帶動。</p>
-        <p id="gdp_productivity_decomp-note" style="color:var(--muted)">載入中…</p>
+        <p class="text-muted" id="gdp_productivity_decomp-note">載入中…</p>
       </div>
     </div>
   </section>
 
   <!-- ── 半導體估值 tab ─────────────────────────────────────────── -->
   <section id="tab-semi_vs_spx_pe" class="tab-section" hidden>
-    <div id="semi_vs_spx_pe-chart" style="height:520px"></div>
+    <div class="chart-h520" id="semi_vs_spx_pe-chart"></div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 半導體 vs 大盤 前瞻本益比對照怎麼看？</div>
       <div class="info-panel-body">
         <p>這張圖比較兩條 <b>Forward P/E（前瞻本益比）</b> 曲線：<b>SOXX</b>（費城半導體指數 ETF，代表半導體產業）vs <b>SPY</b>（S&amp;P 500 ETF，代表美股大盤）。半導體是景氣循環股，本益比波動幅度遠大於大盤——熊市底部可壓到 14x 附近，AI/景氣高峰期可衝上 30x 以上；大盤本益比相對平穩。看兩條線的「價差」可以判斷市場現在是把半導體當成「比大盤更貴的成長股」定價，還是「比大盤便宜的景氣循環股」定價，藉此評估半導體目前的估值相對大盤是貴還是便宜。圖上灰底區間標示 NBER 官方認定的美國衰退期，方便對照歷史上估值在衰退前後的變化。</p>
         <p id="semi_vs_spx_pe-latest" style="color:var(--muted);white-space:pre-line">載入中…</p>
-        <p style="color:var(--muted)">⚠️ 方法論/資料品質備註：2025年9月以前的區段為回溯測算（hindsight forward P/E，用往後12個月的實際EPS回推，不是當時市場的即時預期值）；之後為即時逐日計算。SOXX資料回補到2004年10月，SPY受限於NVDA等成分股歷史財報資料深度只能回補到2007年8月，兩者起點不同。灰底衰退區間為 FRED USREC（NBER 官方認定），本質是事後回溯公告，非即時訊號。圖上折線用的是加權<b>算術</b>平均（維持與歷史序列一致的計算方式），容易被少數高本益比、小權重的個股拉高；上面那行「現在到底貴不貴」改用加權<b>調和</b>平均，較不受這種扭曲影響，只從2026-09-13起才有,是判斷當下貴賤更準的數字。</p>
+        <p class="text-muted">⚠️ 方法論/資料品質備註：2025年9月以前的區段為回溯測算（hindsight forward P/E，用往後12個月的實際EPS回推，不是當時市場的即時預期值）；之後為即時逐日計算。SOXX資料回補到2004年10月，SPY受限於NVDA等成分股歷史財報資料深度只能回補到2007年8月，兩者起點不同。灰底衰退區間為 FRED USREC（NBER 官方認定），本質是事後回溯公告，非即時訊號。圖上折線用的是加權<b>算術</b>平均（維持與歷史序列一致的計算方式），容易被少數高本益比、小權重的個股拉高；上面那行「現在到底貴不貴」改用加權<b>調和</b>平均，較不受這種扭曲影響，只從2026-09-13起才有,是判斷當下貴賤更準的數字。</p>
       </div>
     </div>
   </section>
 
   <!-- ── SOX vs 台灣半導體籃子估值 tab ───────────────────────────── -->
   <section id="tab-sox_vs_tw_semi_pe" class="tab-section" hidden>
-    <div id="sox_vs_tw_semi_pe-chart" style="height:520px"></div>
+    <div class="chart-h520" id="sox_vs_tw_semi_pe-chart"></div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> SOX(全球半導體) vs 台灣半導體籃子 前瞻本益比對照怎麼看？</div>
       <div class="info-panel-body">
         <p>這張圖比較兩條 <b>Forward P/E（前瞻本益比）</b> 曲線：<b>SOX</b>（費城半導體指數 SOXX ETF，代表全球半導體產業）vs <b>台灣半導體籃子</b>（自建市值加權籃子，因 FinMind 台股類股指數需付費 Sponsor 方案，free tier 用不到，改用個股組籃近似）。兩條線的差距可以看出「台灣半導體股（以台積電為首）」相對「全球半導體整體」目前是估值較貴還是較便宜——例如台灣半導體若因為地緣政治或先進製程領先地位被市場多給一點溢價，這裡就會反映成台灣那條線相對SOX偏高。</p>
         <p id="sox_vs_tw_semi_pe-latest" style="color:var(--muted);white-space:pre-line">載入中…</p>
-        <p style="color:var(--muted)">⚠️ 方法論/資料品質備註：<b>台灣半導體籃子組成</b>（2026-09-13查證，市值前10大核心半導體業個股，權重=市值佔比）：台積電2330(~79%)、聯發科2454(~9%)、日月光投控3711(~4%)、聯電2303(~2%)、南亞科2408(~2%)、創意3443(~1%)、群聯8299(~0.6%)、環球晶6488(~0.6%)、瑞昱2379(~0.5%)、京元電子2449(~0.4%)；排除欣興3037/南亞電路板8046等IC載板/PCB廠商（非半導體業本身，即便市值更大）。⚠️ 台積電權重高達~79%，遠高於SOX最大持股NVDA的~20%，代表台灣這條線基本上高度貼近台積電自身的估值水準，不是均衡分散的產業代表——這是台灣半導體市值結構的真實反映，不是方法論瑕疵。<b>兩種平均</b>：圖上實線是加權<b>調和</b>平均（fpe_harmonic，= total_weight/Σ(weight/PE)，不受少數高PE小權重個股扭曲，判斷「現在貴不貴」用這條更準）；虛線是加權<b>算術</b>平均（fpe，歷史上比較容易被離群個股拉高，只作歷史脈絡參考）。<b>資料覆蓋率</b>：目前查證日全數10檔個股皆有 NTM 分析師預估可用，覆蓋率100%；若未來某次抓取覆蓋率低於40%會在頁面顯示並在腳本log標註，屆時該筆讀數應審慎看待。<b>歷史深度</b>：SOX資料回補到2004年10月；台灣半導體籃子是全新資料源，從2026-09-13才開始每日累積,目前只有一天資料,兩條線的可比較時間範圍會隨著資料每天累積而拉長。</p>
+        <p class="text-muted">⚠️ 方法論/資料品質備註：<b>台灣半導體籃子組成</b>（2026-09-13查證，市值前10大核心半導體業個股，權重=市值佔比）：台積電2330(~79%)、聯發科2454(~9%)、日月光投控3711(~4%)、聯電2303(~2%)、南亞科2408(~2%)、創意3443(~1%)、群聯8299(~0.6%)、環球晶6488(~0.6%)、瑞昱2379(~0.5%)、京元電子2449(~0.4%)；排除欣興3037/南亞電路板8046等IC載板/PCB廠商（非半導體業本身，即便市值更大）。⚠️ 台積電權重高達~79%，遠高於SOX最大持股NVDA的~20%，代表台灣這條線基本上高度貼近台積電自身的估值水準，不是均衡分散的產業代表——這是台灣半導體市值結構的真實反映，不是方法論瑕疵。<b>兩種平均</b>：圖上實線是加權<b>調和</b>平均（fpe_harmonic，= total_weight/Σ(weight/PE)，不受少數高PE小權重個股扭曲，判斷「現在貴不貴」用這條更準）；虛線是加權<b>算術</b>平均（fpe，歷史上比較容易被離群個股拉高，只作歷史脈絡參考）。<b>資料覆蓋率</b>：目前查證日全數10檔個股皆有 NTM 分析師預估可用，覆蓋率100%；若未來某次抓取覆蓋率低於40%會在頁面顯示並在腳本log標註，屆時該筆讀數應審慎看待。<b>歷史深度</b>：SOX資料回補到2004年10月；台灣半導體籃子是全新資料源，從2026-09-13才開始每日累積,目前只有一天資料,兩條線的可比較時間範圍會隨著資料每天累積而拉長。</p>
       </div>
     </div>
   </section>
 
   <!-- ── 台日韓GDP成長率對照 tab ─────────────────────────────────── -->
   <section id="tab-tw_jp_kr_gdp" class="tab-section" hidden>
-    <div id="tw_jp_kr_gdp-chart" style="height:520px"></div>
+    <div class="chart-h520" id="tw_jp_kr_gdp-chart"></div>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 台日韓GDP成長率對照怎麼看？</div>
       <div class="info-panel-body">
         <p>這張圖比較<b>台灣、日本、南韓</b>三個東亞出口導向經濟體的<b>年度實質GDP成長率</b>，逐年並排對照。用意是觀察台灣總體經濟表現相對日韓的位置——三國產業結構相近（半導體/電子/汽車出口占比高），景氣循環也常同步，所以放在一起看更容易判斷台灣是「跟著區域景氣走」還是「相對表現特別強或特別弱」，以及每次全球景氣衝擊（如2020疫情、2022升息循環）三國受影響的程度是否一致。</p>
-        <p id="tw_jp_kr_gdp-note" style="color:var(--muted)">載入中…</p>
+        <p class="text-muted" id="tw_jp_kr_gdp-note">載入中…</p>
       </div>
     </div>
   </section>
