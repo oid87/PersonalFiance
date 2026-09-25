@@ -55,8 +55,6 @@ Output (data/cpi.json):
 """
 from __future__ import annotations
 
-import csv
-import io
 import json
 from collections import OrderedDict
 from datetime import date, timedelta
@@ -64,12 +62,13 @@ from pathlib import Path
 
 import requests
 
+from _common import fetch_fred_csv
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
 OUT = DATA_DIR / "cpi.json"
 
-FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}"
 ALFRED_RELEASE_DATES_URL = "https://alfred.stlouisfed.org/release/downloaddates?rid=10&ff=txt"
 BLS_API_URL = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 UA = {"User-Agent": "PersonalFiance/1.0"}
@@ -237,19 +236,7 @@ FALLBACK_RELEASE_DATES = [
 
 def fetch_fred_series(series_id: str) -> "OrderedDict[str, float]":
     """Return {YYYY-MM-DD: value} for one FRED series, skipping missing ('.') obs."""
-    resp = requests.get(FRED_URL.format(sid=series_id), timeout=30, headers=UA)
-    resp.raise_for_status()
-    out: "OrderedDict[str, float]" = OrderedDict()
-    for row in csv.DictReader(io.StringIO(resp.text)):
-        d = (row.get("observation_date") or "").strip()
-        v = (row.get(series_id) or "").strip()
-        if not d or v in ("", "."):
-            continue
-        try:
-            out[d] = float(v)
-        except ValueError:
-            continue
-    return out
+    return OrderedDict(fetch_fred_csv(series_id, headers=UA))
 
 
 def fetch_bls_series(series_id: str, start_year: str, end_year: str) -> "OrderedDict[str, float]":

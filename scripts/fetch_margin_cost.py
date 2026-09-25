@@ -33,14 +33,13 @@ ALL fetches fail and there is no existing file, the exception propagates
 """
 from __future__ import annotations
 
-import csv
-import io
 import json
 from collections import OrderedDict
 from datetime import date
 from pathlib import Path
 
-import requests
+
+from _common import fetch_fred_csv, load_rows_by_date
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -62,30 +61,11 @@ FRED_SERIES = OrderedDict([
 
 def fetch_fred_daily(series_id: str) -> "OrderedDict[str, float]":
     """Return {YYYY-MM-DD: value} for a daily FRED series (no API key)."""
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    resp = requests.get(url, timeout=30, headers=UA)
-    resp.raise_for_status()
-    out: "OrderedDict[str, float]" = OrderedDict()
-    for row in csv.DictReader(io.StringIO(resp.text)):
-        d = row.get("observation_date", "").strip()
-        v = row.get(series_id, "").strip()
-        if not d or v in (".", ""):
-            continue
-        try:
-            out[d] = round(float(v), 4)
-        except ValueError:
-            continue
-    return out
+    return OrderedDict((d, round(v, 4)) for d, v in fetch_fred_csv(series_id, headers=UA))
 
 
 def load_existing_rows() -> "OrderedDict[str, dict]":
-    if not OUT.exists():
-        return OrderedDict()
-    try:
-        payload = json.loads(OUT.read_text())
-        return OrderedDict((r["date"], r) for r in payload.get("data", []) if r.get("date"))
-    except Exception:
-        return OrderedDict()
+    return load_rows_by_date(OUT)
 
 
 def main() -> None:

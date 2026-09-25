@@ -43,20 +43,18 @@ which case the recomputed numbers naturally change — no special handling neede
 """
 from __future__ import annotations
 
-import csv
-import io
 import json
 from datetime import date
 from pathlib import Path
 
-import requests
+
+from _common import fetch_fred_csv
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
 OUT = DATA_DIR / "us_gdp_productivity_decomp.json"
 
-FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}"
 UA = {"User-Agent": "PersonalFiance/1.0"}
 
 DISCLAIMER = (
@@ -74,19 +72,7 @@ PERIOD_BOUNDS = [
 
 def fetch_series(series_id: str) -> dict[str, float]:
     """Return {YYYY-MM-DD: value} for one FRED series, skipping missing ('.') obs."""
-    resp = requests.get(FRED_URL.format(sid=series_id), timeout=30, headers=UA)
-    resp.raise_for_status()
-    by_date: dict[str, float] = {}
-    for row in csv.DictReader(io.StringIO(resp.text)):
-        d = (row.get("observation_date") or "").strip()
-        v = (row.get(series_id) or "").strip()
-        if not d or v in ("", "."):
-            continue
-        try:
-            by_date[d] = float(v)
-        except ValueError:
-            continue
-    return by_date
+    return dict(fetch_fred_csv(series_id, headers=UA))
 
 
 def quarter_last_month(quarter_start: str) -> str:

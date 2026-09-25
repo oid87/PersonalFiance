@@ -14,15 +14,14 @@ Output data/umich.json:
 """
 from __future__ import annotations
 
-import csv
-import io
 import json
 from collections import OrderedDict
 from datetime import date, timedelta
 from pathlib import Path
 
-import requests
 import yfinance as yf
+
+from _common import fetch_fred_csv
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -30,26 +29,15 @@ DATA_DIR.mkdir(exist_ok=True)
 OUT = DATA_DIR / "umich.json"
 
 UA = {"User-Agent": "PersonalFiance/1.0"}
-FRED_CSV = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={id}"
 
 
 def fetch_fred(series_id: str) -> "OrderedDict[str, float]":
-    url = FRED_CSV.format(id=series_id)
-    resp = requests.get(url, timeout=30, headers=UA)
-    resp.raise_for_status()
-    result: "OrderedDict[str, float]" = OrderedDict()
-    reader = csv.DictReader(io.StringIO(resp.text))
-    date_col = reader.fieldnames[0] if reader.fieldnames else "DATE"
-    val_col  = reader.fieldnames[1] if len(reader.fieldnames or []) > 1 else series_id
-    for row in reader:
-        d = (row.get(date_col) or "").strip()
-        v = (row.get(val_col)  or "").strip()
-        if len(d) == 10 and v not in ("", "."):
-            try:
-                result[d] = float(v)
-            except ValueError:
-                pass
-    return result
+    # Original used csv.DictReader(...).fieldnames[0]/[1] (dynamic column
+    # names) instead of the fixed "observation_date"/series_id _common.py
+    # uses; verified empirically (2026-09-25) that FRED's fredgraph.csv for
+    # both UMCSENT and USREC has fieldnames == ["observation_date", series_id],
+    # so this is behavior-preserving for the two series actually fetched here.
+    return OrderedDict(fetch_fred_csv(series_id, headers=UA))
 
 
 def recessions_from_usrec(usrec: "OrderedDict[str, float]") -> list[dict]:

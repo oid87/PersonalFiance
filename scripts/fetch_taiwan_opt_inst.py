@@ -55,6 +55,8 @@ from pathlib import Path
 import pandas as pd
 import requests
 
+from _common import load_rows_by_date
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -139,13 +141,7 @@ def fetch_range(start: date, end: date) -> "OrderedDict[str, dict]":
 
 
 def load_existing() -> "OrderedDict[str, dict]":
-    if not OUT.exists():
-        return OrderedDict()
-    try:
-        payload = json.loads(OUT.read_text())
-        return OrderedDict((r["date"], r) for r in payload.get("data", []) if r.get("date"))
-    except Exception:
-        return OrderedDict()
+    return load_rows_by_date(OUT)
 
 
 def save(merged: "OrderedDict[str, dict]") -> None:

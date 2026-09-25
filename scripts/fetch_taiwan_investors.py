@@ -15,26 +15,17 @@ Output: data/taiwan_investors.json -> {source, note, updated, data:[{date, forei
 from __future__ import annotations
 
 import json
-import os
 from datetime import date, timedelta
 from pathlib import Path
 
 import requests
 
+from _common import get_finmind_token as get_token
+
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "taiwan_investors.json"
 API = "https://api.finmindtrade.com/api/v4/data"
 START = "2004-01-01"
-
-
-def get_token() -> str:
-    tok = os.environ.get("FINMIND_TOKEN", "").strip()
-    if tok:
-        return tok
-    for p in (ROOT / ".finmind_token", ROOT.parent / "Financial_work" / ".finmind_token"):
-        if p.exists():
-            return p.read_text().strip()
-    return ""
 
 
 def load_existing() -> list[dict]:

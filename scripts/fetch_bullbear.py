@@ -15,7 +15,6 @@ Each section degrades independently: if one source is down the existing data is 
 """
 from __future__ import annotations
 
-import csv
 import io
 import json
 import re
@@ -27,6 +26,8 @@ from pathlib import Path
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+
+from _common import fetch_fred_csv as _fetch_fred_csv
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -52,20 +53,7 @@ def load_existing() -> dict:
 
 def fetch_fred_csv(series_id: str) -> list[dict]:
     """Download a FRED series as CSV → [{date, value}] sorted ascending."""
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    resp = requests.get(url, timeout=30, headers=UA)
-    resp.raise_for_status()
-    rows = []
-    for row in csv.DictReader(io.StringIO(resp.text)):
-        d = (row.get("observation_date") or row.get("DATE") or "").strip()
-        v = row.get(series_id, "").strip()
-        if not d or v in (".", ""):
-            continue
-        try:
-            rows.append({"date": d, "value": round(float(v), 4)})
-        except ValueError:
-            continue
-    return sorted(rows, key=lambda x: x["date"])
+    return [{"date": d, "value": round(v, 4)} for d, v in _fetch_fred_csv(series_id, headers=UA)]
 
 
 # ── 1. NAAIM Exposure Index ─────────────────────────────────────────────────

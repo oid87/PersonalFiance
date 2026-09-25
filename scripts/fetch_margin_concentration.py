@@ -45,7 +45,6 @@
 from __future__ import annotations
 
 import json
-import os
 import time
 from datetime import datetime
 from pathlib import Path
@@ -53,6 +52,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import requests
+
+from _common import get_finmind_token as get_token
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
@@ -120,16 +121,6 @@ NAME_FALLBACK = {
     "2885": "元大金", "2345": "智邦", "6244": "茂迪", "2449": "京元電子",
     "3529": "力旺", "8299": "群聯", "3037": "欣興", "2451": "創見",
 }
-
-
-def get_token() -> str:
-    tok = os.environ.get("FINMIND_TOKEN", "").strip()
-    if tok:
-        return tok
-    for p in (ROOT / ".finmind_token", ROOT.parent / "Financial_work" / ".finmind_token"):
-        if p.exists():
-            return p.read_text().strip()
-    return ""  # anonymous (低額度,可能仍可用)
 
 
 # ─────────────────────────────────────────────────────────────────────────
