@@ -93,6 +93,27 @@ def load_rows(path: Path) -> list:
         return []
 
 
+def idempotent_merge(existing_path: Path, new_rows: list[dict], key_field: str = "date") -> list[dict]:
+    """Merge new_rows into the {"data": [...]} file at existing_path, keyed by
+    key_field (new overwrites old on the same key). Verbatim body shared by 6
+    fetch scripts (fetch_credit.py, fetch_real_rates.py, fetch_vix_term.py,
+    fetch_yield_curve.py, fetch_central_banks.py, fetch_money_market.py).
+
+    Missing file or any parse error -> start from empty. A row missing
+    key_field raises KeyError, aborting the merge (rows processed so far stay
+    in `existing`, but the exception propagates and nothing is returned)."""
+    existing = {}
+    if existing_path.exists():
+        try:
+            for r in json.loads(existing_path.read_text()).get("data", []):
+                existing[r[key_field]] = r
+        except Exception:
+            pass
+    for r in new_rows:
+        existing[r[key_field]] = r
+    return sorted(existing.values(), key=lambda r: r[key_field])
+
+
 def retry_call(fn, *, attempts, backoff, retry_on=(Exception,), retry_if=None,
                 on_retry=None, on_final=None):
     """Call fn() up to `attempts` times.

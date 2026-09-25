@@ -145,5 +145,61 @@ class GetFinmindTokenTests(unittest.TestCase):
                 self.assertEqual(_common.get_finmind_token(), "")
 
 
+class IdempotentMergeTests(unittest.TestCase):
+    def test_missing_file_starts_from_empty(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "nope.json"
+            merged = _common.idempotent_merge(path, [{"date": "2020-01-02", "v": 2}])
+        self.assertEqual(merged, [{"date": "2020-01-02", "v": 2}])
+
+    def test_corrupt_json_starts_from_empty(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "bad.json"
+            path.write_text("{not json")
+            merged = _common.idempotent_merge(path, [{"date": "2020-01-01", "v": 1}])
+        self.assertEqual(merged, [{"date": "2020-01-01", "v": 1}])
+
+    def test_new_overwrites_old_and_sorts_by_key(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "data.json"
+            path.write_text(json.dumps({"data": [
+                {"date": "2020-01-01", "v": 1},
+                {"date": "2020-01-03", "v": 3},
+            ]}))
+            merged = _common.idempotent_merge(path, [
+                {"date": "2020-01-02", "v": 20},
+                {"date": "2020-01-01", "v": 100},  # overwrites existing 2020-01-01
+            ])
+        self.assertEqual(merged, [
+            {"date": "2020-01-01", "v": 100},
+            {"date": "2020-01-02", "v": 20},
+            {"date": "2020-01-03", "v": 3},
+        ])
+
+    def test_non_date_key_field(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "data.json"
+            path.write_text(json.dumps({"data": [{"series_id": "B", "v": 1}]}))
+            merged = _common.idempotent_merge(
+                path, [{"series_id": "A", "v": 2}], key_field="series_id",
+            )
+        self.assertEqual(merged, [{"series_id": "A", "v": 2}, {"series_id": "B", "v": 1}])
+
+    def test_row_missing_key_field_raises_and_keeps_earlier_rows_out_of_result(self):
+        # Matches the old inline idempotent_merge()'s behavior: existing[r[key_field]]
+        # raises KeyError as soon as a new_row lacks key_field, aborting the merge —
+        # rows processed before the bad one are accumulated into the local `existing`
+        # dict, but that dict is never returned because the exception propagates.
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d) / "data.json"
+            path.write_text(json.dumps({"data": [{"date": "2020-01-01", "v": 1}]}))
+            with self.assertRaises(KeyError):
+                _common.idempotent_merge(path, [
+                    {"date": "2020-01-02", "v": 2},  # processed fine
+                    {"v": 99},                        # missing "date" -> KeyError
+                    {"date": "2020-01-03", "v": 3},   # never reached
+                ])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9,7 +9,9 @@ import json
 from datetime import date
 from pathlib import Path
 
+import requests
 
+import _common
 from _common import fetch_fred_csv
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -19,8 +21,22 @@ DATA_DIR.mkdir(exist_ok=True)
 HEADERS = {"User-Agent": "PersonalFiance/1.0"}
 
 
+def _reraise_last_error(exc, result):
+    """retry_call on_final: all attempts failed on a request error -> re-raise it."""
+    raise exc
+
+
 def fetch_fred(series_id: str) -> list[dict]:
-    return [{"date": d, "value": round(v, 4)} for d, v in fetch_fred_csv(series_id, headers=HEADERS)]
+    rows = _common.retry_call(
+        lambda: fetch_fred_csv(series_id, headers=HEADERS),
+        attempts=3,
+        backoff=lambda a: 5 * (a + 1),
+        retry_on=(requests.RequestException,),
+        on_final=_reraise_last_error,
+    )
+    if not rows:
+        raise RuntimeError(f"FRED {series_id} returned 0 rows")
+    return [{"date": d, "value": round(v, 4)} for d, v in rows]
 
 
 def merge_three(sofr_rows: list[dict], iorb_rows: list[dict], effr_rows: list[dict]) -> list[dict]:
@@ -46,16 +62,7 @@ def merge_three(sofr_rows: list[dict], iorb_rows: list[dict], effr_rows: list[di
 
 
 def idempotent_merge(existing_path: Path, new_rows: list[dict], key_field: str = "date") -> list[dict]:
-    existing = {}
-    if existing_path.exists():
-        try:
-            for r in json.loads(existing_path.read_text()).get("data", []):
-                existing[r[key_field]] = r
-        except Exception:
-            pass
-    for r in new_rows:
-        existing[r[key_field]] = r
-    return sorted(existing.values(), key=lambda r: r[key_field])
+    return _common.idempotent_merge(existing_path, new_rows, key_field)
 
 
 def main() -> None:

@@ -16,6 +16,8 @@ from pathlib import Path
 
 import requests
 
+from _common import load_rows
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -42,12 +44,7 @@ def _rating_from(value: float) -> str:
 
 
 def load_existing() -> list[dict]:
-    if not OUT.exists():
-        return []
-    try:
-        return json.loads(OUT.read_text()).get("data", [])
-    except Exception:
-        return []
+    return load_rows(OUT)
 
 
 def fetch_backfill() -> list[dict]:

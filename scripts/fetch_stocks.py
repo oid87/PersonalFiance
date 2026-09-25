@@ -12,6 +12,8 @@ from pathlib import Path
 import pandas as pd
 import yfinance as yf
 
+from _common import load_rows
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -91,12 +93,7 @@ SPLICE_TRIGGER = 0.40
 
 
 def load_existing(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
-    try:
-        return json.loads(path.read_text()).get("data", [])
-    except Exception:
-        return []
+    return load_rows(path)
 
 
 def fetch_range(ticker: str, start: str) -> pd.DataFrame:

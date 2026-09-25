@@ -18,6 +18,7 @@ from pathlib import Path
 import requests
 
 from _common import get_finmind_token as get_token
+from _common import load_rows
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "taiwan_fut_inst.json"
@@ -26,12 +27,7 @@ START = "2018-01-01"
 
 
 def load_existing() -> list[dict]:
-    if not OUT.exists():
-        return []
-    try:
-        return json.loads(OUT.read_text()).get("data", [])
-    except Exception:
-        return []
+    return load_rows(OUT)
 
 
 def fetch(start: str, token: str) -> list[dict]:

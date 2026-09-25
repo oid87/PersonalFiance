@@ -21,6 +21,8 @@ from pathlib import Path
 
 import requests
 
+from _common import load_rows
+
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "taiwan_pcratio.json"
 URL = "https://www.taifex.com.tw/cht/3/pcRatioDown"
@@ -29,12 +31,7 @@ START_YEAR = 2005  # TAIFEX P/C ratio history begins 2005
 
 
 def load_existing() -> list[dict]:
-    if not OUT.exists():
-        return []
-    try:
-        return json.loads(OUT.read_text()).get("data", [])
-    except Exception:
-        return []
+    return load_rows(OUT)
 
 
 def fetch_month(y: int, m: int) -> list[dict]:

@@ -15,6 +15,8 @@ import time
 import pandas as pd
 import yfinance as yf
 
+from _common import load_rows
+
 FRESHNESS_DAYS    = 4     # same as isDataFresh() in frontend
 FULL_BACKFILL_CAL = 2555  # ~7 calendar years → ~1820 trading days → ~1620 valid after 200-day warmup
 INCREMENTAL_CAL   = 450   # must cover win52=252 trading days (~365 cal. days) + 30-day recompute
@@ -28,12 +30,7 @@ CHUNK_SIZE = 50  # tickers per yfinance batch to avoid rate limiting
 
 
 def load_existing(out_path: Path) -> list[dict]:
-    if not out_path.exists():
-        return []
-    try:
-        return json.loads(out_path.read_text()).get("data", [])
-    except Exception:
-        return []
+    return load_rows(out_path)
 
 
 def fetch_prices(tickers: list[str], start: str) -> pd.DataFrame:

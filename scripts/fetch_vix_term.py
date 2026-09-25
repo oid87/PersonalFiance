@@ -18,6 +18,8 @@ from pathlib import Path
 
 import requests
 
+import _common
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -60,16 +62,7 @@ def fetch_cboe_close(url: str) -> dict[str, float]:
 
 
 def idempotent_merge(existing_path: Path, new_rows: list[dict], key_field: str = "date") -> list[dict]:
-    existing = {}
-    if existing_path.exists():
-        try:
-            for r in json.loads(existing_path.read_text()).get("data", []):
-                existing[r[key_field]] = r
-        except Exception:
-            pass
-    for r in new_rows:
-        existing[r[key_field]] = r
-    return sorted(existing.values(), key=lambda r: r[key_field])
+    return _common.idempotent_merge(existing_path, new_rows, key_field)
 
 
 def main() -> None:
