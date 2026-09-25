@@ -7,6 +7,7 @@
 
 import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeMA } from '../utils/math.js';
+import { bindOnce } from '../utils/dom.js';
 
 const RANGE_DAYS = { '1Y': 365, '3Y': 365 * 3, '5Y': 365 * 5, '10Y': 365 * 10, 'MAX': null };
 
@@ -244,8 +245,7 @@ function syncMaPreset() {
 
 function buildControls() {
   const host = document.getElementById('tab-madev');
-  if (!host || host.dataset.built) return;
-  host.dataset.built = '1';
+  if (!bindOnce(host)) return;
 
   pickGroup(host, '#madev-ticker-picker .chip', c => { ticker = c.dataset.madevTicker; refresh(); });
   pickGroup(host, '#madev-range-picker .chip', c => { range = c.dataset.madevRange; refresh(); });

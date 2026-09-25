@@ -116,6 +116,7 @@ function updateCards() {
 // ── 2. 分項貢獻度分解(MECE,吃 decomposition)────────────────────────
 function populateDecompPicker() {
   const sel = document.getElementById("cpi-decomp-month");
+  // check_reuse: keep — 建完 <option> 才標記 built;bindOnce 先標記,建構中途丟例外時下次不會重試
   if (!sel || sel.dataset.built) return;
   const decomp = payload.decomposition ?? [];
   sel.innerHTML = decomp.map(d => `<option value="${d.date}">${d.date.slice(0, 7)}</option>`).join("");

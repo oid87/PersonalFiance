@@ -721,6 +721,7 @@ function buildControls() {
   const altPicker = document.getElementById('mg-altindex-picker');
   if (bindOnce(altPicker)) {
     altPicker.addEventListener('click', async e => {
+      // check_reuse: keep — 已選取就短路 + async loadAltIndex;chipPicker 先切 active 再 onPick,無法短路
       const t = e.target.closest('.chip[data-mg-altindex]');
       if (!t) return;
       const key = t.dataset.mgAltindex;

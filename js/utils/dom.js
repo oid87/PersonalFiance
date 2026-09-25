@@ -3,12 +3,14 @@
 
 const pickerRegistry = new WeakMap();
 
+// One-time-bind guard: true on first call (marks el.dataset.built), false if el is null or already bound.
 export function bindOnce(el) {
   if (!el || el.dataset.built) return false;
   el.dataset.built = "1";
   return true;
 }
 
+// Single-select chip group: toggles .active (all .chip in host, or onlyMatching), then onPick(value, chip).
 export function chipPicker(host, attr, onPick, { onlyMatching = false } = {}) {
   if (!host) return;
   let attrs = pickerRegistry.get(host);
