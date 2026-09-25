@@ -20,12 +20,14 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 OUT_PATH = DATA_DIR / "breadth_ndx.json"
 
-MIN_COVERAGE = 95    # ~95% of S&P 500; drop RECENT days below this (yfinance often
-                      # hasn't filled all ~500 names yet → shrunk denominator spikes %).
+MIN_COVERAGE = 95    # ~95% of Nasdaq-100 (~101 tickers); drop RECENT days below this (yfinance
+                      # often hasn't filled all names yet → shrunk denominator spikes %).
 
 
 def get_nasdaq100_tickers() -> list[str]:
-    url  = "https://en.wikipedia.org/wiki/Nasdaq-100"
+    # The "Nasdaq-100" article no longer carries the components table (broke 2026-07);
+    # the constituents live on this separate list page (same "Ticker" column).
+    url  = "https://en.wikipedia.org/wiki/List_of_NASDAQ-100_companies"
     html = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=30).text
     tables = pd.read_html(StringIO(html), header=0)
     table  = next(t for t in tables if "Ticker" in t.columns)
