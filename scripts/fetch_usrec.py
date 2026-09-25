@@ -13,49 +13,31 @@ Output (data/USREC.json), idempotent merge by date (new overwrites old):
 """
 from __future__ import annotations
 
-import csv
-import io
 import json
 from collections import OrderedDict
 from datetime import date
 from pathlib import Path
 
-import requests
+
+from _common import fetch_fred_csv, load_rows_by_date
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
 OUT = DATA_DIR / "USREC.json"
 
-FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=USREC"
 UA = {"User-Agent": "PersonalFiance/1.0"}
 
 
 def fetch_rows() -> "OrderedDict[str, dict]":
     """Return {date: {date, usrec}} from FRED USREC CSV, skipping missing ('.') obs."""
-    resp = requests.get(FRED_URL, timeout=30, headers=UA)
-    resp.raise_for_status()
-    rows: "OrderedDict[str, dict]" = OrderedDict()
-    for row in csv.DictReader(io.StringIO(resp.text)):
-        d = (row.get("observation_date") or "").strip()
-        v = (row.get("USREC") or "").strip()
-        if not d or v in ("", "."):
-            continue
-        try:
-            rows[d] = {"date": d, "usrec": int(float(v))}
-        except ValueError:
-            continue
-    return rows
+    # helper already returns float; int(v) here is equivalent to the original
+    # int(float(v)) since the value came from fetch_fred_csv as a float.
+    return OrderedDict((d, {"date": d, "usrec": int(v)}) for d, v in fetch_fred_csv("USREC", headers=UA))
 
 
 def load_existing() -> "OrderedDict[str, dict]":
-    if not OUT.exists():
-        return OrderedDict()
-    try:
-        payload = json.loads(OUT.read_text())
-        return OrderedDict((r["date"], r) for r in payload.get("data", []) if r.get("date"))
-    except Exception:
-        return OrderedDict()
+    return load_rows_by_date(OUT)
 
 
 def main() -> None:

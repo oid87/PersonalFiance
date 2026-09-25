@@ -43,6 +43,8 @@ from pathlib import Path
 
 import requests
 
+from _common import load_rows_by_date
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -99,13 +101,7 @@ def fetch_margin_debt() -> "OrderedDict[str, int]":
 
 
 def load_existing_rows() -> "OrderedDict[str, dict]":
-    if not OUT.exists():
-        return OrderedDict()
-    try:
-        payload = json.loads(OUT.read_text())
-        return OrderedDict((r["date"], r) for r in payload.get("data", []) if r.get("date"))
-    except Exception:
-        return OrderedDict()
+    return load_rows_by_date(OUT)
 
 
 def main() -> None:

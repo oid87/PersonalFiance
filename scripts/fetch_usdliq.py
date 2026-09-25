@@ -13,14 +13,14 @@ source failing does not prevent the others from writing data.
 """
 from __future__ import annotations
 
-import csv
-import io
 import json
 import time
 from datetime import date
 from pathlib import Path
 
 import requests
+
+from _common import fetch_fred_csv
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -54,21 +54,7 @@ FRED_WEEKLY = {
 
 
 def fetch_fred(series_id: str) -> list[tuple[str, float]]:
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    resp = requests.get(url, timeout=60, headers=HEADERS)
-    resp.raise_for_status()
-    rows = []
-    reader = csv.DictReader(io.StringIO(resp.text))
-    for row in reader:
-        d = row.get("observation_date", "").strip()
-        v = row.get(series_id, "").strip()
-        if not d or v in (".", ""):
-            continue
-        try:
-            rows.append((d, float(v)))
-        except ValueError:
-            continue
-    return rows
+    return fetch_fred_csv(series_id, headers=HEADERS, timeout=60)
 
 
 def year_ranges(start: str, end: str) -> list[tuple[str, str]]:

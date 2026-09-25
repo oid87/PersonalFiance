@@ -26,12 +26,13 @@ Output: data/taiwan_basis.json
 from __future__ import annotations
 
 import json
-import os
 import re
 from datetime import date, timedelta
 from pathlib import Path
 
 import requests
+
+from _common import get_finmind_token as get_token
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "taiwan_basis.json"
@@ -42,16 +43,6 @@ CONTRACT_RE = re.compile(r"^\d{6}$")
 
 INCREMENTAL_WINDOW_DAYS = 90   # 涵蓋轉倉的重抓窗口
 FULL_REFETCH_GAP_DAYS = 350    # 既有資料太舊(接近/超過免費單次 row 上限風險)才退回全量逐年 chunk
-
-
-def get_token() -> str:
-    tok = os.environ.get("FINMIND_TOKEN", "").strip()
-    if tok:
-        return tok
-    for p in (ROOT / ".finmind_token", ROOT.parent / "Financial_work" / ".finmind_token"):
-        if p.exists():
-            return p.read_text().strip()
-    return ""  # anonymous (low rate limit, may still work for a single daily call)
 
 
 def load_existing() -> list[dict]:

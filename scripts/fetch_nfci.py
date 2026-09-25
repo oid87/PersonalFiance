@@ -23,21 +23,19 @@ across the five series (only dates where all five have a value are kept):
 """
 from __future__ import annotations
 
-import csv
-import io
 import json
 from collections import OrderedDict
 from datetime import date
 from pathlib import Path
 
-import requests
+
+from _common import fetch_fred_csv, load_rows_by_date
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
 OUT = DATA_DIR / "nfci.json"
 
-FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}"
 UA = {"User-Agent": "PersonalFiance/1.0"}
 
 # FRED series id → output key
@@ -52,29 +50,11 @@ SERIES = OrderedDict([
 
 def fetch_series(series_id: str) -> "OrderedDict[str, float]":
     """Return {YYYY-MM-DD: value} for one FRED series, skipping missing ('.') obs."""
-    resp = requests.get(FRED_URL.format(sid=series_id), timeout=30, headers=UA)
-    resp.raise_for_status()
-    by_date: "OrderedDict[str, float]" = OrderedDict()
-    for row in csv.DictReader(io.StringIO(resp.text)):
-        d = (row.get("observation_date") or "").strip()
-        v = (row.get(series_id) or "").strip()
-        if not d or v in ("", "."):
-            continue
-        try:
-            by_date[d] = round(float(v), 4)
-        except ValueError:
-            continue
-    return by_date
+    return OrderedDict((d, round(v, 4)) for d, v in fetch_fred_csv(series_id, headers=UA))
 
 
 def load_existing() -> "OrderedDict[str, dict]":
-    if not OUT.exists():
-        return OrderedDict()
-    try:
-        payload = json.loads(OUT.read_text())
-        return OrderedDict((r["date"], r) for r in payload.get("data", []) if r.get("date"))
-    except Exception:
-        return OrderedDict()
+    return load_rows_by_date(OUT)
 
 
 def main() -> None:

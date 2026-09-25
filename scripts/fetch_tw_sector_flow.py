@@ -16,6 +16,8 @@ from pathlib import Path
 
 import requests
 
+from _common import get_finmind_token as get_token
+
 ROOT   = Path(__file__).resolve().parent.parent
 DATA   = ROOT / "data"
 OUT    = DATA / "tw_sector_flow.json"
@@ -81,17 +83,6 @@ INDUSTRY_TO_SECTOR: dict[str, str] = {
 
 SESSION = requests.Session()
 SESSION.headers.update(HEADERS)
-
-
-def get_token() -> str:
-    import os
-    tok = os.environ.get("FINMIND_TOKEN", "").strip()
-    if tok:
-        return tok
-    for p in (ROOT / ".finmind_token", ROOT.parent / "Financial_work" / ".finmind_token"):
-        if p.exists():
-            return p.read_text().strip()
-    return ""
 
 
 def load_sector_map() -> dict[str, str]:

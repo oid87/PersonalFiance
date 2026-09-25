@@ -37,8 +37,6 @@ Output data/tw_jp_kr_gdp_growth.json, idempotent merge by year (新覆舊):
 """
 from __future__ import annotations
 
-import csv
-import io
 import json
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
@@ -47,6 +45,8 @@ from pathlib import Path
 
 import requests
 import urllib3
+
+from _common import fetch_fred_csv
 
 # 政府網站(ws.dgbas.gov.tw)TLS chain 有問題,已於 2026-09 實測確認(curl 也需要
 # -k 才過),verify=False 是已知取捨,非隨意關閉 SSL 驗證。關掉對應的 warning 洗版。
@@ -60,7 +60,6 @@ OUT = DATA_DIR / "tw_jp_kr_gdp_growth.json"
 UA = {"User-Agent": "PersonalFiance/1.0"}
 
 DGBAS_URL = "https://ws.dgbas.gov.tw/001/Upload/461/relfile/11525/230514/na8101a1a.xml"
-FRED_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}"
 
 NOTE = (
     "台灣經濟成長率為DGBAS官方直接發布之年增率;日本為FRED JPNRGDPEXP之GDP水準值"
@@ -106,19 +105,7 @@ def fetch_taiwan_growth() -> "OrderedDict[int, float]":
 
 def fetch_fred_series(series_id: str) -> "OrderedDict[str, float]":
     """Return {YYYY-MM-DD: value} for one FRED series, skipping missing ('.') obs."""
-    resp = requests.get(FRED_URL.format(sid=series_id), timeout=30, headers=UA)
-    resp.raise_for_status()
-    by_date: "OrderedDict[str, float]" = OrderedDict()
-    for row in csv.DictReader(io.StringIO(resp.text)):
-        d = (row.get("observation_date") or "").strip()
-        v = (row.get(series_id) or "").strip()
-        if not d or v in ("", "."):
-            continue
-        try:
-            by_date[d] = float(v)
-        except ValueError:
-            continue
-    return by_date
+    return OrderedDict(fetch_fred_csv(series_id, headers=UA))
 
 
 def group_by_year(by_date: "OrderedDict[str, float]") -> "dict[int, dict[str, float]]":

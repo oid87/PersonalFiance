@@ -24,13 +24,12 @@ Output: data/net_liquidity.json
 from __future__ import annotations
 
 import bisect
-import csv
-import io
 import json
 from datetime import date
 from pathlib import Path
 
-import requests
+
+from _common import fetch_fred_csv
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -41,21 +40,7 @@ UA = {"User-Agent": "PersonalFiance/1.0"}
 
 
 def fetch_fred(series_id: str) -> list[dict]:
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    resp = requests.get(url, timeout=30, headers=UA)
-    resp.raise_for_status()
-    rows = []
-    reader = csv.DictReader(io.StringIO(resp.text))
-    for row in reader:
-        date_str = (row.get("observation_date") or "").strip()
-        val_str = (row.get(series_id) or "").strip()
-        if not date_str or val_str in (".", ""):
-            continue
-        try:
-            rows.append({"date": date_str, "value": round(float(val_str), 4)})
-        except ValueError:
-            continue
-    return sorted(rows, key=lambda r: r["date"])
+    return [{"date": d, "value": round(v, 4)} for d, v in fetch_fred_csv(series_id, headers=UA)]
 
 
 def forward_fill_lookup(rows: list[dict]):
