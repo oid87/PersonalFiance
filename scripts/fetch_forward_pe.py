@@ -51,6 +51,8 @@ import requests
 import yfinance as yf
 from bs4 import BeautifulSoup
 
+import _common
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 
@@ -250,19 +252,16 @@ def fx_rate(frm: str, to: str) -> float | None:
     key = (frm, to)
     if key in _FX_CACHE:
         return _FX_CACHE[key]
-    rate = None
-    for attempt in range(FETCH_RETRIES):
-        try:
-            fx_info = yf.Ticker(f"{frm}{to}=X").info
-            price = fx_info.get("regularMarketPrice")
-            if price:
-                rate = float(price)
-        except Exception:                     # noqa: BLE001 — 逐次容錯，靠迴圈重試
-            rate = None
-        if rate is not None:
-            break
-        if attempt < FETCH_RETRIES - 1:
-            time.sleep(15 * (attempt + 1))
+
+    def _fn():
+        fx_info = yf.Ticker(f"{frm}{to}=X").info
+        price = fx_info.get("regularMarketPrice")
+        return float(price) if price else None
+
+    rate = _common.retry_call(
+        _fn, attempts=FETCH_RETRIES, backoff=lambda a: 15 * (a + 1),
+        retry_if=lambda r: r is None,
+    )
     _FX_CACHE[key] = rate
     return rate
 
@@ -309,86 +308,87 @@ def fetch_quote(sym: str) -> dict:
     earnings_estimate 抓取失敗、或幣別換算不到，**都不炸掉整檔**——price/fy2（來自
     forwardEps）還在就仍算得出 FY2 那條線，只是 ntm_eps 缺這檔。
     """
-    last_err = None
-    for attempt in range(FETCH_RETRIES):
+    def _fn():
+        time.sleep(FETCH_DELAY)
+        t = yf.Ticker(sym)
+        info = t.info
+        price = info.get("regularMarketPrice") or info.get("currentPrice")
+        ccy = info.get("currency")
+        fin_ccy = info.get("financialCurrency")
+        fx = fx_rate(fin_ccy, ccy)
+
+        fy1_est_fx = fy2_est_fx = None
+        est_fy2_raw = None
         try:
-            time.sleep(FETCH_DELAY)
-            t = yf.Ticker(sym)
-            info = t.info
-            price = info.get("regularMarketPrice") or info.get("currentPrice")
-            ccy = info.get("currency")
-            fin_ccy = info.get("financialCurrency")
-            fx = fx_rate(fin_ccy, ccy)
+            est = t.earnings_estimate
+            if est is not None and not est.empty:
+                if "+1y" in est.index and pd.notna(est.loc["+1y", "avg"]):
+                    est_fy2_raw = float(est.loc["+1y", "avg"])
+                    if fx is not None:
+                        fy2_est_fx = est_fy2_raw * fx
+                if ("0y" in est.index and pd.notna(est.loc["0y", "avg"])
+                        and fx is not None):
+                    fy1_est_fx = float(est.loc["0y", "avg"]) * fx
+        except Exception:                     # noqa: BLE001 — 缺這個不該炸掉整檔
+            pass
 
-            fy1_est_fx = fy2_est_fx = None
-            est_fy2_raw = None
+        forward_eps_info = info.get("forwardEps")
+        forward_eps_info = (float(forward_eps_info)
+                             if forward_eps_info is not None else None)
+
+        if forward_eps_info is not None:
+            fy2 = forward_eps_info
+            fy2_source = "forwardEps"
+        elif fy2_est_fx is not None:
+            fy2 = fy2_est_fx
+            fy2_source = "earnings_estimate_fx_fallback"
+        else:
+            fy2 = None
+            fy2_source = None
+
+        fy1_end = None
+        ts = info.get("nextFiscalYearEnd")
+        if ts:
             try:
-                est = t.earnings_estimate
-                if est is not None and not est.empty:
-                    if "+1y" in est.index and pd.notna(est.loc["+1y", "avg"]):
-                        est_fy2_raw = float(est.loc["+1y", "avg"])
-                        if fx is not None:
-                            fy2_est_fx = est_fy2_raw * fx
-                    if ("0y" in est.index and pd.notna(est.loc["0y", "avg"])
-                            and fx is not None):
-                        fy1_est_fx = float(est.loc["0y", "avg"]) * fx
-            except Exception:                     # noqa: BLE001 — 缺這個不該炸掉整檔
-                pass
+                fy1_end = date.fromtimestamp(ts)
+            except Exception:                 # noqa: BLE001
+                fy1_end = None
 
-            forward_eps_info = info.get("forwardEps")
-            forward_eps_info = (float(forward_eps_info)
-                                 if forward_eps_info is not None else None)
+        # w：diagnostic 用途獨立於 ntm_eps 是否算得出來——只要有 fy1_end 就能算，
+        # print_table/print_w_distribution/--dump 都吃這個欄位，不各自重算一份。
+        w = None
+        if fy1_end is not None:
+            w = (fy1_end - date.today()).days / 365.0
+            w = max(0.0, min(1.0, w))
 
-            if forward_eps_info is not None:
-                fy2 = forward_eps_info
-                fy2_source = "forwardEps"
-            elif fy2_est_fx is not None:
-                fy2 = fy2_est_fx
-                fy2_source = "earnings_estimate_fx_fallback"
-            else:
-                fy2 = None
-                fy2_source = None
+        ntm_eps = None
+        if fy1_est_fx is not None and fy2_est_fx is not None and w is not None:
+            ntm_eps = w * fy1_est_fx + (1 - w) * fy2_est_fx
 
-            fy1_end = None
-            ts = info.get("nextFiscalYearEnd")
-            if ts:
-                try:
-                    fy1_end = date.fromtimestamp(ts)
-                except Exception:                 # noqa: BLE001
-                    fy1_end = None
+        return {
+            "price": float(price) if price else None,
+            "fwd_eps_fy2": fy2,
+            "fwd_eps_fy1": fy1_est_fx,
+            "fy1_end": fy1_end.isoformat() if fy1_end else None,
+            "w": w,
+            "ntm_eps": ntm_eps,
+            "fy2_source": fy2_source,
+            "fx": fx,
+            "fin_ccy": fin_ccy,
+            "ccy": ccy,
+            "est_fy2_raw": est_fy2_raw,
+            "est_fy2_fx": fy2_est_fx,
+            "forward_eps_info": forward_eps_info,
+            "err": None,
+        }
 
-            # w：diagnostic 用途獨立於 ntm_eps 是否算得出來——只要有 fy1_end 就能算，
-            # print_table/print_w_distribution/--dump 都吃這個欄位，不各自重算一份。
-            w = None
-            if fy1_end is not None:
-                w = (fy1_end - date.today()).days / 365.0
-                w = max(0.0, min(1.0, w))
+    def _on_final(exc, result):                  # noqa: BLE001 — 逐檔容錯，單檔失敗不炸整批
+        return _blank_quote(str(exc))
 
-            ntm_eps = None
-            if fy1_est_fx is not None and fy2_est_fx is not None and w is not None:
-                ntm_eps = w * fy1_est_fx + (1 - w) * fy2_est_fx
-
-            return {
-                "price": float(price) if price else None,
-                "fwd_eps_fy2": fy2,
-                "fwd_eps_fy1": fy1_est_fx,
-                "fy1_end": fy1_end.isoformat() if fy1_end else None,
-                "w": w,
-                "ntm_eps": ntm_eps,
-                "fy2_source": fy2_source,
-                "fx": fx,
-                "fin_ccy": fin_ccy,
-                "ccy": ccy,
-                "est_fy2_raw": est_fy2_raw,
-                "est_fy2_fx": fy2_est_fx,
-                "forward_eps_info": forward_eps_info,
-                "err": None,
-            }
-        except Exception as e:                   # noqa: BLE001 — 逐檔容錯，單檔失敗不炸整批
-            last_err = e
-            if attempt < FETCH_RETRIES - 1:
-                time.sleep(15 * (attempt + 1))
-    return _blank_quote(str(last_err))
+    return _common.retry_call(
+        _fn, attempts=FETCH_RETRIES, backoff=lambda a: 15 * (a + 1),
+        on_final=_on_final,
+    )
 
 
 # ── Step 3：計算 + 品質門檻 ────────────────────────────────────────────────

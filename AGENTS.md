@@ -19,9 +19,11 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 
 ### scripts 共用模組（2026-09-25 建立）
 
-- `scripts/_common.py`：`get_finmind_token()`、`fetch_fred_csv(series_id, *, headers, timeout=30)`（回傳未 round 的 `[(date, float)]`，round／容器由呼叫端決定）、`load_rows_by_date(path)`（`{"data":[...]}` → `OrderedDict[date, row]`）。腳本直接 `import _common`，CI（repo 根跑 `python scripts/x.py`）與 `update_all.sh`（`cd scripts`）兩種呼叫都 resolve 得到，別加 `sys.path` hack。
+- `scripts/_common.py`：`get_finmind_token()`、`fetch_fred_csv(series_id, *, headers, timeout=30)`（回傳未 round 的 `[(date, float)]`，round／容器由呼叫端決定）、`load_rows_by_date(path)`（`{"data":[...]}` → `OrderedDict[date, row]`）、`load_rows(path)`（同上但回 list）、`retry_call(fn, *, attempts, backoff, retry_on, retry_if, on_retry, on_final)`（最後一次失敗後不 sleep；節流 sleep 留在 fn 內）。腳本直接 `import _common`，CI（repo 根跑 `python scripts/x.py`）與 `update_all.sh`（`cd scripts`）兩種呼叫都 resolve 得到，別加 `sys.path` hack。
 - `scripts/_breadth.py`：breadth 四支（`fetch_breadth{,_ndx,_tw50,_xlg}.py`）的共同核心 `run(get_tickers, out_path, min_coverage, label)`；各檔只留常數與取成分股／成員快取。
-- **刻意沒收斂**（寫法看似重複但語意不同，別硬套）：JSON 寫檔（序列化參數至少 10 種組合，改了就改輸出位元組）、User-Agent／Session／retry（每站 UA 與 backoff 不同）、`backfill_tw_valuation_finmind.py` 的 token 順序、`fetch_liquidity*.py` 與 `fetch_inflation_exp.py` 的 FRED 解析。
+- `scripts/_valuation.py`：valuation 系列共用的 `ntm_pe(sym, *, throttle, retries=3)`、`weighted_means(pairs)`（算術＋調和）、`write_daily_snapshot(out_path, today, entry, note)`；各檔自己的 HOLDINGS、cap、`MIN_STOCKS`、coverage 算法留在原檔。
+- **刻意沒收斂**（寫法看似重複但語意不同，別硬套）：JSON 寫檔（序列化參數至少 10 種組合，改了就改輸出位元組）、各檔的 User-Agent／headers（每站不同，有的站會擋 bot UA）、依狀態碼分流或兩種 backoff 公式並存的重試迴圈（`fetch_margin_concentration`、`fetch_margin_costmap`、`fetch_taifex_foreign_oi`、`fetch_taiwan_sector_index`、`fetch_tw_sector_flow`、`get_json` 系列，以及 `_breadth.py` 的 chunk 迴圈）、`fetch_tw_valuation.py` 的寫檔尾段、`backfill_tw_valuation_finmind.py` 的 token 順序、`fetch_liquidity*.py` 與 `fetch_inflation_exp.py` 的 FRED 解析。
+- 重試邏輯的重構：即時實跑幾乎走不到重試分支，位元組比對驗不到。要用 `git show HEAD:` 取出舊版，在同一組假資料（patch `yfinance.Ticker` 與 `time.sleep`）下比對回傳值、呼叫次數、sleep 秒數序列（2026-09-25 V 包做法）。
 - 測試：`python3 -m unittest discover -s scripts/tests`（離線；CI 不跑）。CI 用 Python 3.11、本地 miniconda 3.13 → 共用模組別用 3.12+ 語法。
 - ⚠️ **重構 fetch 腳本的等價驗收：改前改後輸出 `cmp` 相同 ≠ 等價。** 多數腳本有「資料夠新就跳過」（如 breadth 的 `FRESHNESS_DAYS`）或快取 TTL（如 `tw_sector_map_cache.json` 7 天），兩次都走 skip 分支時 `cmp` 必然相同、什麼都沒證明（2026-09-25 B2 首輪驗收即如此）。做法：在 scratchpad 建隔離的 `OLD/`、`NEW/` 兩棵樹（`scripts/` + `data/`，腳本的 ROOT 都由 `__file__` 推導），把輸入資料切掉最後 N 列或刪掉快取，逼腳本真的走重算／cache-miss 路徑，從 stdout 確認走到了，再 `cmp`。另外檢查產出檔的 `updated` 是今天、內容與 HEAD 不同，確定兩次都真的有寫檔。別在真 repo 的 `data/` 裡做這件事。
 

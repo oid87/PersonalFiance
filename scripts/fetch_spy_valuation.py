@@ -10,12 +10,14 @@ Weights are renormalized after exclusions.
 """
 from __future__ import annotations
 
-import json
 import time
 from datetime import date
 from pathlib import Path
 
 import yfinance as yf
+
+import _common
+import _valuation
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "SPY_valuation.json"
@@ -68,23 +70,24 @@ def fetch_live_weights() -> dict[str, float] | None:
 
 
 def _get_forward_pe(sym: str, retries: int = 3) -> float | None:
-    for attempt in range(retries):
-        try:
-            time.sleep(0.8)
-            info = yf.Ticker(sym).info
-            fpe = info.get("forwardPE")
-            if fpe and isinstance(fpe, (int, float)):
-                return float(fpe)
-            return None
-        except Exception as e:
-            if attempt < retries - 1:
-                wait = 30 * (attempt + 1)
-                print(f"  [{sym}] error ({e}), retry in {wait}s...")
-                time.sleep(wait)
-            else:
-                print(f"  [{sym}] failed after {retries} attempts: {e}")
-                return None
-    return None
+    def _fn():
+        time.sleep(0.8)
+        info = yf.Ticker(sym).info
+        fpe = info.get("forwardPE")
+        return float(fpe) if fpe and isinstance(fpe, (int, float)) else None
+
+    def _on_retry(attempt, exc, result):
+        wait = 30 * (attempt + 1)
+        print(f"  [{sym}] error ({exc}), retry in {wait}s...")
+
+    def _on_final(exc, result):
+        print(f"  [{sym}] failed after {retries} attempts: {exc}")
+        return None
+
+    return _common.retry_call(
+        _fn, attempts=retries, backoff=lambda a: 30 * (a + 1),
+        on_retry=_on_retry, on_final=_on_final,
+    )
 
 
 def calc_fpe(holdings: dict[str, float]) -> tuple[float | None, float | None]:
@@ -107,8 +110,7 @@ def calc_fpe(holdings: dict[str, float]) -> tuple[float | None, float | None]:
         return None, None
 
     total_w = sum(w for _, w in valid)
-    arith = sum(fpe * w for fpe, w in valid) / total_w
-    harmonic = total_w / sum(w / fpe for fpe, w in valid)
+    arith, harmonic = _valuation.weighted_means(valid)
     print(
         f"  Weighted forward PE: arithmetic={arith:.2f}x harmonic={harmonic:.2f}x  "
         f"({len(valid)} stocks, coverage {total_w:.1f}%)"
@@ -117,12 +119,7 @@ def calc_fpe(holdings: dict[str, float]) -> tuple[float | None, float | None]:
 
 
 def load_existing() -> list[dict]:
-    if not OUT.exists():
-        return []
-    try:
-        return json.loads(OUT.read_text()).get("data", [])
-    except Exception:
-        return []
+    return _common.load_rows(OUT)
 
 
 def main() -> None:
@@ -155,8 +152,6 @@ def main() -> None:
         print("  No valid PE data — skipping update.")
         return
 
-    existing = load_existing()
-    by_date = {r["date"]: r for r in existing}
     entry = {"date": today, "src": src_label}
     if fpe is not None:
         entry["fpe"] = fpe
@@ -164,8 +159,6 @@ def main() -> None:
         entry["fpe_harmonic"] = fpe_harmonic
     if tpe is not None:
         entry["tpe"] = tpe
-    by_date[today] = {**by_date.get(today, {}), **entry}
-    merged = sorted(by_date.values(), key=lambda r: r["date"])
 
     note = (
         "S&P 500 估值。fpe=forward（前20大持股加權算術平均，排除 PE>50x；歷史為 FactSet/Yardeni 估計）；"
@@ -173,8 +166,7 @@ def main() -> None:
         "只從2026-09-13起提供，之前日期無此欄位）；"
         "tpe=trailing（SPY ETF）。圖表 trailing 線另疊 multpl.com 長期歷史（SP500_PE.json）。"
     )
-    payload = {"updated": today, "note": note, "data": merged}
-    OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+    merged = _valuation.write_daily_snapshot(OUT, today, entry, note)
     print(f"  Wrote {len(merged)} entries -> {OUT.name}")
 
 
