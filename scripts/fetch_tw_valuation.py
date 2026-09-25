@@ -22,6 +22,8 @@ from pathlib import Path
 import requests
 import yfinance as yf
 
+import _common
+
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "TW_valuation.json"
 
@@ -153,12 +155,7 @@ def calc_forward(holdings: dict[str, float], cap: float = 60.0) -> float | None:
 
 
 def load_existing() -> list[dict]:
-    if not OUT.exists():
-        return []
-    try:
-        return json.loads(OUT.read_text()).get("data", [])
-    except Exception:
-        return []
+    return _common.load_rows(OUT)
 
 
 def main() -> None:

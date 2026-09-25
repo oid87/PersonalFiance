@@ -10,12 +10,14 @@ Weights are renormalized after exclusions.
 """
 from __future__ import annotations
 
-import json
 import time
 from datetime import date
 from pathlib import Path
 
 import yfinance as yf
+
+import _common
+import _valuation
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "MAGS_valuation.json"
@@ -28,19 +30,22 @@ TPE_CAP = 80.0   # exclude trailing PE above this
 
 
 def _get_info(sym: str, retries: int = 3) -> dict | None:
-    for attempt in range(retries):
-        try:
-            time.sleep(0.8)
-            return yf.Ticker(sym).info
-        except Exception as e:
-            if attempt < retries - 1:
-                wait = 30 * (attempt + 1)
-                print(f"  [{sym}] error ({e}), retry in {wait}s...")
-                time.sleep(wait)
-            else:
-                print(f"  [{sym}] failed after {retries} attempts: {e}")
-                return None
-    return None
+    def _fn():
+        time.sleep(0.8)
+        return yf.Ticker(sym).info
+
+    def _on_retry(attempt, exc, result):
+        wait = 30 * (attempt + 1)
+        print(f"  [{sym}] error ({exc}), retry in {wait}s...")
+
+    def _on_final(exc, result):
+        print(f"  [{sym}] failed after {retries} attempts: {exc}")
+        return None
+
+    return _common.retry_call(
+        _fn, attempts=retries, backoff=lambda a: 30 * (a + 1),
+        on_retry=_on_retry, on_final=_on_final,
+    )
 
 
 def calc() -> tuple[float | None, float | None]:
@@ -69,12 +74,7 @@ def calc() -> tuple[float | None, float | None]:
 
 
 def load_existing() -> list[dict]:
-    if not OUT.exists():
-        return []
-    try:
-        return json.loads(OUT.read_text()).get("data", [])
-    except Exception:
-        return []
+    return _common.load_rows(OUT)
 
 
 def main() -> None:
@@ -86,23 +86,18 @@ def main() -> None:
         print("  No valid PE data — skipping update.")
         return
 
-    existing = load_existing()
-    by_date = {r["date"]: r for r in existing}
     entry = {"date": today, "src": "calc"}
     if fpe is not None:
         entry["fpe"] = fpe
     if tpe is not None:
         entry["tpe"] = tpe
-    by_date[today] = {**by_date.get(today, {}), **entry}
-    merged = sorted(by_date.values(), key=lambda r: r["date"])
 
     note = (
         "Magnificent 7（MAGS）本益比，七巨頭等權平均（AAPL/MSFT/GOOGL/AMZN/NVDA/META/TSLA）。"
         "fpe=forward、tpe=trailing；排除離群值（forward>60x、trailing>80x，主要為 TSLA）。"
         "MAGS ETF 本身 yfinance 不提供 PE，故由成分股計算。歷史值為估計。"
     )
-    payload = {"updated": today, "note": note, "data": merged}
-    OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+    merged = _valuation.write_daily_snapshot(OUT, today, entry, note)
     print(f"  Wrote {len(merged)} entries -> {OUT.name}")
 
 

@@ -1,12 +1,18 @@
 """Shared helpers for scripts/fetch_*.py — pure refactor, no behavior change.
 
-Three helpers, factored out of near-identical code that was duplicated across
-~30 fetch scripts (see spec_B.md / B1):
+Helpers factored out of near-identical code that was duplicated across
+~30 fetch scripts (see spec_B.md / B1, spec_V.md / V):
   - get_finmind_token(): FinMind token lookup (env -> repo .finmind_token ->
     sibling Financial_work/.finmind_token -> anonymous "").
   - fetch_fred_csv(): download + parse one FRED fredgraph.csv series.
   - load_rows_by_date(): load an existing data/*.json {"data": [...]} file into
     an OrderedDict keyed by date, for idempotent by-date merging.
+  - load_rows(): load an existing data/*.json {"data": [...]} file into a
+    plain list (verbatim body of the valuation scripts' load_existing()).
+  - retry_call(): generic retry-with-backoff wrapper, extracted from the
+    hand-rolled "for attempt in range(retries): try/except" loops that were
+    byte-for-byte identical (Class A in the spec_V.md inventory) across
+    several fetch scripts.
 
 Callers `import _common` (or `from _common import ...`) directly — both
 `python scripts/x.py` (cwd=repo root) and `cd scripts && python x.py` put this
@@ -18,6 +24,7 @@ import csv
 import io
 import json
 import os
+import time
 from collections import OrderedDict
 from pathlib import Path
 
@@ -69,3 +76,53 @@ def load_rows_by_date(path: Path) -> "OrderedDict[str, dict]":
         return OrderedDict((r["date"], r) for r in payload.get("data", []) if r.get("date"))
     except Exception:
         return OrderedDict()
+
+
+def load_rows(path: Path) -> list:
+    """Load a data/*.json {"data": [...]} file into a plain list.
+
+    Verbatim body of the valuation scripts' load_existing() (6 files, byte-
+    identical per spec_V.md Part 1 inventory). Missing file or any parse
+    error -> empty list.
+    """
+    if not path.exists():
+        return []
+    try:
+        return json.loads(path.read_text()).get("data", [])
+    except Exception:
+        return []
+
+
+def retry_call(fn, *, attempts, backoff, retry_on=(Exception,), retry_if=None,
+                on_retry=None, on_final=None):
+    """Call fn() up to `attempts` times.
+
+    - fn() raises an exception in retry_on  -> failed attempt (exc recorded)
+    - fn() returns r and retry_if(r) is truthy -> failed attempt (result recorded)
+    - otherwise return r immediately
+    Between failed attempts (never after the last one) call on_retry(attempt, exc, result)
+    if given, then time.sleep(backoff(attempt)); attempt is 0-based.
+    After the last failed attempt: return on_final(last_exc, last_result) if given,
+    else last_result (None when the last attempt raised).
+    Exceptions not in retry_on propagate immediately.
+    """
+    last_exc = None
+    last_result = None
+    for attempt in range(attempts):
+        try:
+            result = fn()
+        except retry_on as e:
+            last_exc = e
+            last_result = None
+        else:
+            if retry_if is None or not retry_if(result):
+                return result
+            last_exc = None
+            last_result = result
+        if attempt < attempts - 1:
+            if on_retry is not None:
+                on_retry(attempt, last_exc, last_result)
+            time.sleep(backoff(attempt))
+    if on_final is not None:
+        return on_final(last_exc, last_result)
+    return last_result
