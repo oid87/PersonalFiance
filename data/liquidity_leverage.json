@@ -7195,6 +7195,15 @@
         "action_point": true,
         "m1_yoy": null,
         "m2_yoy": null
+      },
+      {
+        "date": "2026-09-01",
+        "index_yoy": 45.8049,
+        "margin_yoy": 53.3104,
+        "excess": 7.5055,
+        "action_point": false,
+        "m1_yoy": null,
+        "m2_yoy": null
       }
     ],
     "note": "融資=JPX官網「信用取引現在高 過去推移表」(東京・名古屋二市場合計買残高金額,百万円,即時抓取,起點 2002-08-02)；指數=yfinance ^N225(起點 1990-01-04)；M1=不可得(FRED MYAGM1JPM189S 抓取失敗)；M2=不可得(FRED MYAGM2JPM189S 抓取失敗)。 日本無 M1B,只有 M1/M2。"
