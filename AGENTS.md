@@ -74,7 +74,7 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 - theme.PALETTE — Collapses the most common literal tc("#dark","#light") pairs repeated
 - theme.echartsBase(overrides = {}) — 
 
-### dates.js(11)
+### dates.js(12)
 - dates.tsToLocalDate(ts) — ECharts time-axis parses "YYYY-MM-DD" as local midnight, not UTC
 - dates.presetStart(preset) — 
 - dates.cutoffDate(key) — 「今天往回 N 年」的 range cutoff(key: 1Y/3Y/5Y/10Y/MAX,未命中回 3 年)。
@@ -85,6 +85,7 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 - dates.minBetween(key, t0, t1) — 
 - dates.lookupLE(arr, date) — Binary search: last entry where arr[i][0] <= date
 - dates.toWeekly(dailyData) — 
+- dates.toWeeklyOHLC(daily) — Resample daily OHLCV rows into weekly OHLCV objects (週一=key；open=首日open、
 - dates.toWeeklyHLC(dailyHLC) — 
 
 ### math.js(17)
@@ -106,12 +107,14 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 - math.computeMACD(closes, fast = 12, slow = 26, signal = 9) — MACD: DIF = EMA(fast) - EMA(slow); DEA = EMA(DIF, signal); HIST = DIF - DEA
 - math.computeChannelBands(weeklyAll) — 
 
-### data.js(5)
+### data.js(7)
 - data.fetchJSON(url) — Generic fetch, not tied to the SERIES registry (unlike loadSeries below)
 - data.isDataFresh(data) — 
 - data.loadSeries(s) — 
 - data.ensureLoaded(key) — 
 - data.loadEarnings() — 
+- data.toPoints(rows, field) — {date, <field>} rows -> [[date, value], ...], skipping rows where the field is null/undefined
+- data.latestOf(rows, field) — Last [date, value] point of toPoints(rows, field), or null when there is none
 
 ### dom.js(2)
 - dom.bindOnce(el) — One-time-bind guard: true on first call (marks el.dataset.built), false if el is null or already bound

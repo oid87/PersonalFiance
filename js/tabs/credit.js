@@ -421,9 +421,27 @@ function connectCharts() {
 // across separate instances (creditChart/delinqChart/bdcChart) it silently no-ops even when
 // connected via echarts.connect, so the crosshair is relayed manually: convert the hovered
 // x-axis value to a pixel position in each OTHER chart's own coordinate system and re-fire
-// showTip there. (dispatchAction({type:"showTip", dataIndex}) was tried first but triggers a
-// "Maximum call stack size exceeded" inside echarts' tooltip-marker builder on these series —
-// the x/y-position form goes through the same code path as a real mouse hover and avoids it.)
+// showTip there.
+//
+// ⚠️ Root cause correction (spec W2 follow-up, verified empirically): this used to be
+// attributed to "dispatchAction({type:'showTip', dataIndex}) triggers a stack overflow inside
+// echarts' tooltip-marker builder, and the x/y-position form avoids it" — that diagnosis was
+// wrong. The x/y-position form was ALREADY what's used here, and it still throws "Maximum
+// call stack size exceeded" on a real mouse hover: relaying showTip to `dst` makes `dst` fire
+// its own "updateAxisPointer", which (wired the same way) relays back to `src` synchronously,
+// with no guard — unbounded mutual recursion. Confirmed by removing the updateAxisPointer
+// listeners via chart.off() and re-dispatching the identical action: it then succeeds cleanly,
+// isolating the crash to this ping-pong rather than to ECharts/dataIndex/marker rendering.
+// `syncing` breaks the cycle: while relaying an event we're already inside, any nested
+// "updateAxisPointer" fired as a side effect of our own dispatch is ignored.
+let syncing = false;
+// Which chart instances already have the cross-sync listeners registered. activate() runs
+// again on every tab switch (module-level creditChart/delinqChart/bdcChart persist across
+// switches), so without this, wireCrossSync() would call .on(...) again each time and pile up
+// one more duplicate handler per switch. onThemeChange() disposes and recreates all three
+// chart instances, so the new instances are naturally absent from this set and get wired again.
+const wiredCharts = new WeakSet();
+
 function targetY(chart) {
   return chart.getHeight() * (chart === creditChart ? 0.3 : 0.5);
 }
@@ -432,23 +450,31 @@ function wireCrossSync() {
   const charts = [creditChart, delinqChart, bdcChart].filter(Boolean);
   if (charts.length < 2) return;
   for (const src of charts) {
+    if (wiredCharts.has(src)) continue;
+    wiredCharts.add(src);
     src.on("updateAxisPointer", event => {
+      if (syncing) return;
       const xInfo = (event.axesInfo || []).find(a => a.axisDim === "x");
       if (xInfo?.value == null) return;
-      for (const dst of charts) {
-        if (dst === src) continue;
-        const w = dst.getWidth();
-        let px = dst.convertToPixel({ xAxisIndex: 0 }, xInfo.value);
-        // Series with a shorter/lower-frequency history (e.g. quarterly delinquency data,
-        // or BDC data trailing off before "today") can map slightly past this chart's own
-        // canvas edge; showTip silently no-ops on an out-of-canvas x, leaving a stale
-        // crosshair from the previous hover. Clamp near-edge overshoot, hide anything further.
-        if (px == null || Number.isNaN(px) || px < -50 || px > w + 50) {
-          dst.dispatchAction({ type: "hideTip" });
-          continue;
+      syncing = true;
+      try {
+        for (const dst of charts) {
+          if (dst === src) continue;
+          const w = dst.getWidth();
+          let px = dst.convertToPixel({ xAxisIndex: 0 }, xInfo.value);
+          // Series with a shorter/lower-frequency history (e.g. quarterly delinquency data,
+          // or BDC data trailing off before "today") can map slightly past this chart's own
+          // canvas edge; showTip silently no-ops on an out-of-canvas x, leaving a stale
+          // crosshair from the previous hover. Clamp near-edge overshoot, hide anything further.
+          if (px == null || Number.isNaN(px) || px < -50 || px > w + 50) {
+            dst.dispatchAction({ type: "hideTip" });
+            continue;
+          }
+          px = Math.max(0, Math.min(px, w - 1));
+          dst.dispatchAction({ type: "showTip", x: px, y: targetY(dst) });
         }
-        px = Math.max(0, Math.min(px, w - 1));
-        dst.dispatchAction({ type: "showTip", x: px, y: targetY(dst) });
+      } finally {
+        syncing = false;
       }
     });
     src.getZr().on("globalout", () => {

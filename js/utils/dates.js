@@ -98,6 +98,46 @@ export function toWeekly(dailyData) {
   return [...byWeek.values()].sort((a, b) => a[0] < b[0] ? -1 : 1);
 }
 
+// Resample daily OHLCV rows into weekly OHLCV objects (週一=key；open=首日open、
+// high=max、low=min、close=末日close、volume=sum)；輸入 [[date,open,high,low,close,volume],...]
+// ascending，輸出每週物件 { weekStart, weekEndDate, open, high, low, close, volume, partial }，
+// partial 只有資料末端那一週且該週最後交易日不是週五(UTC)才為 true。原樣搬自
+// js/tabs/wkrev.js（qqqmacd.js 曾複製一份，現已改為 import 這裡）。
+export function toWeeklyOHLC(daily) {
+  // daily: [[date, open, high, low, close, volume], ...] ascending
+  const byWeek = new Map();
+  const order = [];
+  for (const [date, open, high, low, close, volume] of daily) {
+    const d = new Date(date + "T00:00:00Z");
+    const day = d.getUTCDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(d);
+    mon.setUTCDate(d.getUTCDate() + diff);
+    const key = mon.toISOString().slice(0, 10);
+    let w = byWeek.get(key);
+    if (!w) {
+      w = { weekStart: key, weekEndDate: date, open, high, low, close, volume: volume || 0 };
+      byWeek.set(key, w);
+      order.push(key);
+    } else {
+      w.high = Math.max(w.high, high);
+      w.low = Math.min(w.low, low);
+      w.close = close;
+      w.weekEndDate = date;
+      w.volume += volume || 0;
+    }
+  }
+  const weeks = order.map(k => byWeek.get(k)).sort((a, b) => a.weekStart < b.weekStart ? -1 : 1);
+  // partial: 只有「資料末端那一週」且該週最後交易日不是週五(UTC getUTCDay()===5) 才算
+  if (weeks.length) {
+    const last = weeks[weeks.length - 1];
+    const lastDow = new Date(last.weekEndDate + "T00:00:00Z").getUTCDay();
+    last.partial = lastDow !== 5;
+  }
+  for (let i = 0; i < weeks.length - 1; i++) weeks[i].partial = false;
+  return weeks;
+}
+
 export function toWeeklyHLC(dailyHLC) {
   const byWeek = new Map();
   for (const [date, high, low, close] of dailyHLC) {
