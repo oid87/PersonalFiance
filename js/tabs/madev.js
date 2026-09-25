@@ -7,6 +7,7 @@
 
 import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeMA } from '../utils/math.js';
+import { tsToLocalDate } from '../utils/dates.js';
 import { bindOnce } from '../utils/dom.js';
 
 const RANGE_DAYS = { '1Y': 365, '3Y': 365 * 3, '5Y': 365 * 5, '10Y': 365 * 10, 'MAX': null };
@@ -41,7 +42,7 @@ function compute(bars) {
   const maByDate = new Map(computeMA(pairs, maPeriod));
 
   const cutoff = RANGE_DAYS[range] == null ? null
-    : new Date(Date.now() - RANGE_DAYS[range] * 86400000).toISOString().slice(0, 10);
+    : tsToLocalDate(Date.now() - RANGE_DAYS[range] * 86400000);
   const view = cutoff == null ? bars : bars.filter(b => b.date >= cutoff);
 
   const dates = view.map(b => b.date);

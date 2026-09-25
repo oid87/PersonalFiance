@@ -8,7 +8,7 @@
 // utils/data.js 的 fetchJSON 讀 { data: [...] } payload。
 
 import { isLight, echartsBase, PALETTE } from '../utils/theme.js';
-import { fetchJSON } from '../utils/data.js';
+import { fetchJSON, toPoints, latestOf } from '../utils/data.js';
 
 const TAB_ID = 'semi_vs_spx_pe';
 let chart = null;
@@ -49,17 +49,6 @@ function computeRecessionIntervals(rows, sinceDate) {
   return intervals;
 }
 
-function toPoints(rows) {
-  return (rows ?? [])
-    .filter(r => r.fpe != null)
-    .map(r => [r.date, r.fpe]);
-}
-
-function latestOf(rows) {
-  const pts = toPoints(rows);
-  return pts.length ? pts[pts.length - 1] : null;
-}
-
 // fpe_harmonic 只從 2026-09-13 起才有(見 fetch_soxx/spy_valuation.py),
 // 找最後一筆有這個欄位的記錄,而不是強制用陣列最後一筆(可能還沒跑今日更新)
 function latestHarmonicOf(rows) {
@@ -70,8 +59,8 @@ function latestHarmonicOf(rows) {
 }
 
 function buildOption() {
-  const soxxPts = toPoints(soxxRows);
-  const spyPts = toPoints(spyRows);
+  const soxxPts = toPoints(soxxRows, 'fpe');
+  const spyPts = toPoints(spyRows, 'fpe');
   const areaData = (recAreas ?? []).map(([s, e]) => [
     { xAxis: s, itemStyle: { color: PALETTE.grid, opacity: 0.5 } },
     { xAxis: e },
@@ -124,8 +113,8 @@ function buildOption() {
 function renderNote() {
   const el = document.getElementById(`${TAB_ID}-latest`);
   if (!el) return;
-  const soxxLatest = latestOf(soxxRows);
-  const spyLatest = latestOf(spyRows);
+  const soxxLatest = latestOf(soxxRows, 'fpe');
+  const spyLatest = latestOf(spyRows, 'fpe');
   if (!soxxLatest || !spyLatest) {
     el.textContent = '最新一筆資料讀取失敗。';
     return;

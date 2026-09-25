@@ -1,4 +1,6 @@
-# CLAUDE.md — PersonalFiance
+# AGENTS.md — PersonalFiance
+
+> 本檔由 `CLAUDE.md` 自動產生（`python3 scripts/sync_agent_docs.py`），**勿直接編輯**；要改請改 `CLAUDE.md` 後重跑。Codex / ChatGPT 讀本檔與 `.agents/skills/`，Claude Code 讀 `CLAUDE.md` 與 `.claude/skills/`，內容相同。
 
 個人總經儀表板（長期願景：個人版財經 M 平方）。純前端 SPA：`index.html` + `js/boot.js` + `js/tabs/*.js`（ES module，數量以 `ls js/tabs/` 為準）+ ECharts (CDN)，無建置步驟。資料是 `data/*.json`，由 `scripts/fetch_*.py`（Python + yfinance/requests）抓取。本地預覽 `python -m http.server`。
 
@@ -51,7 +53,7 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 4. 主題色用 CSS 變數（`--bg/--panel/--border/--text/--muted`）；JS 內的色對/百分位/日期工具一律用 `js/utils/`（`PALETTE`/`math`/`dates`/`data`/`dom`，速查表見下方），別內聯 `tc("#hex","#hex")` 或自寫 percentile。控制項一次性綁定用 `dom.bindOnce(el)`，chip 單選群組用 `dom.chipPicker(host, attr, onPick)`（host 內混有別組 chip 時加 `{ onlyMatching: true }`），別手寫 `dataset.built` 或 `closest(".chip[data-…]")` 委派（`check_reuse` 會抓）。多選切換、已選取短路、多個 closest 的分派器不適用 `chipPicker`。
 5. ⚠️ **lint 對「還沒接進 boot.js 的新 tab 檔」完全不掃——含手動指定檔名也跳過**（刻意設計：避免掃到擱置死檔；2026-07-19 實測連塞違規進未接線檔、指名掃它都靜默 exit 0）。**唯一解法：先做第 2 步接線、再寫 tab 內容**——接線後 hook 與 lint 自動納管。順序反過來（寫完才接線）的話，接線後要記得整檔重掃一次 `python3 ../Financial_work/check_reuse.py js/tabs/<id>.js`。
 
-詳細程序與 ECharts 眉角（axisValue 毫秒、雙 grid 同步、itemStyle.color）見 `.claude/skills/add-tab/`；新增資料源用 `.claude/skills/fetch-script/`。
+詳細程序與 ECharts 眉角（axisValue 毫秒、雙 grid 同步、itemStyle.color）見 `.agents/skills/add-tab/`；新增資料源用 `.agents/skills/fetch-script/`。
 
 ### 前端測試與重構驗收
 
