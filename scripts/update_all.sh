@@ -43,6 +43,7 @@ $PYTHON fetch_margin_concentration.py || true
 $PYTHON fetch_taiwan_margin_ratio.py || true
 $PYTHON fetch_margin_costmap.py  || true
 $PYTHON fetch_tpex_margin.py   || true
+$PYTHON fetch_twse_mktcap.py   || true
 $PYTHON fetch_taiwan_investors.py || true
 $PYTHON fetch_taiwan_mktcap_anchor.py || true
 $PYTHON compute_taiwan_margin_mktcap.py || true

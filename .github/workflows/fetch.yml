@@ -371,6 +371,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_tpex_margin.py
 
+      - name: Fetch TWSE (上市) real market cap (股本週更+市值日出, 取代 K(t) 插值估算)
+        continue-on-error: true
+        run: python scripts/fetch_twse_mktcap.py
+
       - name: Fetch TDCC leveraged-ETF holder counts (集保股權分散, 00631L/00675L/0050)
         continue-on-error: true
         run: python scripts/fetch_tdcc_holders.py
