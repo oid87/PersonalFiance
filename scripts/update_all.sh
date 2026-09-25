@@ -33,7 +33,9 @@ $PYTHON fetch_taiwan_basis.py  || true
 $PYTHON fetch_taiwan_margin_total.py || true
 $PYTHON fetch_tdcc_holders.py  || true
 $PYTHON fetch_tw_daytrading.py || true
+$PYTHON fetch_margin_concentration.py || true
 $PYTHON fetch_taiwan_margin_ratio.py || true
+$PYTHON fetch_margin_costmap.py  || true
 $PYTHON fetch_tpex_margin.py   || true
 $PYTHON fetch_taiwan_investors.py || true
 $PYTHON fetch_taiwan_mktcap_anchor.py || true
@@ -73,6 +75,8 @@ $PYTHON fetch_usdtwd.py        || true
 $PYTHON compute_taiwan_stress.py || true
 $PYTHON fetch_umich.py         || true
 $PYTHON fetch_flows.py         || true
+$PYTHON fetch_qqq_sector_flows.py || true
+$PYTHON fetch_inflation_exp.py || true
 $PYTHON fetch_credit.py        || true
 $PYTHON fetch_bdc.py           || true
 $PYTHON fetch_tw_sector_flow.py || true
@@ -82,6 +86,7 @@ $PYTHON fetch_yield_curve.py   || true
 $PYTHON fetch_vix_term.py      || true
 $PYTHON fetch_real_rates.py    || true
 $PYTHON fetch_money_market.py  || true
+$PYTHON fetch_usdliq.py        || true
 $PYTHON fetch_central_banks.py || true
 $PYTHON fetch_infl_nowcast.py  || true
 $PYTHON fetch_cpi.py           || true
