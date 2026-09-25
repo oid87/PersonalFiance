@@ -86,6 +86,11 @@ ONLY = [d for d in os.environ.get("TWSE_MC_ONLY", "").split(",") if d]  # 指定
 
 SESS = requests.Session()
 
+# 門檻：防殘缺/異常回應被永久收錄成快照或市值列 —— 沒通過就跳過該次，等下次重試。
+MIN_SHARES_RATIO = 0.9  # 新股本快照檔數 ≥ 最近一份舊快照檔數的 90%
+MIN_SHARES_FIRST = 800  # 尚無任何舊快照時，新快照至少要有的檔數
+MIN_MATCH_RATIO = 0.9  # 逐日市值配對到的檔數 ≥ 所用股本快照檔數的 90%
+
 
 def is_etf(code: str) -> bool:
     return str(code).strip().startswith("00")
@@ -157,9 +162,18 @@ def ensure_weekly_snapshot() -> list[dict]:
     if not have_this_week:
         shares = fetch_shares()
         if shares:
-            snapshots.append({"date": today.isoformat(), "shares": shares})
-            save_snapshots(snapshots)
-            print(f"  [shares] new weekly snapshot {today.isoformat()}: {len(shares)} codes", flush=True)
+            if snapshots:
+                prev = max(snapshots, key=lambda s: s["date"])
+                min_ok = MIN_SHARES_RATIO * len(prev["shares"])
+            else:
+                min_ok = MIN_SHARES_FIRST
+            if len(shares) < min_ok:
+                print(f"  [shares] new snapshot only {len(shares)} codes (< {min_ok:.0f} required), "
+                      f"rejecting — reusing latest cached snapshot", flush=True)
+            else:
+                snapshots.append({"date": today.isoformat(), "shares": shares})
+                save_snapshots(snapshots)
+                print(f"  [shares] new weekly snapshot {today.isoformat()}: {len(shares)} codes", flush=True)
         else:
             print("  [shares] fetch failed, no snapshot added this run", flush=True)
     return sorted(snapshots, key=lambda s: s["date"])
@@ -216,7 +230,9 @@ def fetch_day(d_iso: str, snapshots: list[dict]) -> dict | None:
         return None
     shares = snap["shares"]
     caps = {c: closes[c] * shares[c] for c in closes if c in shares}
-    if not caps:
+    if len(caps) < MIN_MATCH_RATIO * len(shares):
+        print(f"  [mktcap] {d_iso}: matched {len(caps)}/{len(shares)} codes "
+              f"(< {MIN_MATCH_RATIO:.0%} of snapshot), skipping this day", flush=True)
         return None
     mktcap = sum(caps.values())
     mktcap_exetf = sum(v for c, v in caps.items() if not is_etf(c))
