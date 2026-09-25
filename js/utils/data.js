@@ -117,3 +117,16 @@ export async function loadEarnings() {
     state.loadedEarnings = j.data;
   } catch { /* Keep the last successful calendar when refresh fails. */ }
 }
+
+// {date, <field>} rows -> [[date, value], ...], skipping rows where the field is null/undefined.
+export function toPoints(rows, field) {
+  return (rows ?? [])
+    .filter(r => r[field] != null)
+    .map(r => [r.date, r[field]]);
+}
+
+// Last [date, value] point of toPoints(rows, field), or null when there is none.
+export function latestOf(rows, field) {
+  const pts = toPoints(rows, field);
+  return pts.length ? pts[pts.length - 1] : null;
+}

@@ -119,9 +119,10 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 
 Vercel（personal-fiance-nine.vercel.app）連 GitHub `main`，push 即自動部署。**所有 `data/*.json` 必須 commit 進 repo**，前端才 fetch 得到。
 
-## 協作模式(主模型通用:Fable/Opus/Sonnet)
+## 協作模式(主模型通用:Fable/Opus/Sonnet;Codex/ChatGPT 同一套)
 
 標準迴圈:讀 memory 入口與本檔 → 用 write-spec skill 寫 spec(驗收條件要可機械核對)→ 實作交 executor subagent(sonnet, effort medium)→ 驗收交 verifier subagent(sonnet, effort high)→ 新結論/眉角收錄 memory。
+- **Claude Code 與 Codex/ChatGPT 共用本 repo**:Claude 讀 `CLAUDE.md` + `.claude/skills/` + `.claude/agents/`;Codex 讀 `AGENTS.md` + `.agents/skills/` + `.codex/agents/`。**`CLAUDE.md` 與 `.claude/skills/` 是唯一來源**,`AGENTS.md` 與 `.agents/skills/` 由 `python3 scripts/sync_agent_docs.py` 產生、勿手改;改完本檔或 skill 一定要重跑(`scripts/tests/test_agent_docs.py` 會在不同步時失敗)。`.claude/` 在 `.gitignore` 裡、只存在本機;`.codex/agents/*.toml` 手動維護,與 `.claude/agents/*.md` 保持同義。
 - 主迴圈保持 context 乾淨:大量讀檔/盤點交 subagent,只收摘要。
 - 同一判斷被糾正第二次 → 寫進本檔;同一套步驟重複第三次 → 做成 skill。目前 skills:add-tab、fetch-script。
 - git:只 stage 該功能相關檔案,不要 git add -A;實作檔與 wiring 同一個 commit(教訓:twsectorflow 實作檔漏 add)。

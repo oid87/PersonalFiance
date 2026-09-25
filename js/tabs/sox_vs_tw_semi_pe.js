@@ -22,7 +22,7 @@
 // { data: [...] } payload。
 
 import { isLight, echartsBase, PALETTE } from '../utils/theme.js';
-import { fetchJSON } from '../utils/data.js';
+import { fetchJSON, toPoints, latestOf } from '../utils/data.js';
 
 const TAB_ID = 'sox_vs_tw_semi_pe';
 let chart = null;
@@ -37,17 +37,6 @@ async function loadAll() {
   ]);
   soxxRows = soxx;
   twSemiRows = twSemi;
-}
-
-function toPoints(rows, field) {
-  return (rows ?? [])
-    .filter(r => r[field] != null)
-    .map(r => [r.date, r[field]]);
-}
-
-function latestOf(rows, field) {
-  const pts = toPoints(rows, field);
-  return pts.length ? pts[pts.length - 1] : null;
 }
 
 function buildOption() {
