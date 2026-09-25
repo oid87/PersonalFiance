@@ -155,6 +155,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_flows.py
 
+      - name: Fetch QQQ sub-industry signed dollar volume ranking (Wikipedia NDX list + yfinance, free)
+        continue-on-error: true
+        run: python scripts/fetch_qqq_sector_flows.py
+
       - name: Fetch US breakeven inflation expectations (FRED T5YIE/T10YIE/T5YIFR, daily, free)
         continue-on-error: true
         run: python scripts/fetch_inflation_exp.py
