@@ -254,18 +254,28 @@ function renderBizChart() {
   }, { notMerge: true });
 }
 
-const MACRO_CHART_GROUP = "macro-tab";
-
-function connectMacroCharts() {
-  if (macroChart) macroChart.group = MACRO_CHART_GROUP;
-  if (bizChart) bizChart.group = MACRO_CHART_GROUP;
-  echarts.connect(MACRO_CHART_GROUP);
-}
-
 // echarts' axisPointer `link` only value-matches axes within ONE chart instance; macroChart
 // and bizChart are separate instances (and different frequency: daily vs monthly), so the
 // crosshair is relayed manually — see js/tabs/credit.js for the fuller writeup of why
 // dispatchAction({type:"showTip", x, y}) (position-based) is used instead of a dataIndex.
+//
+// ⚠️ Do NOT also put these charts in an echarts.connect(...) group (spec X2, verified
+// empirically): connect's own built-in axis-pointer sync competes with this manual relay.
+// When our relay calls dst.dispatchAction({type:"showTip", x, y}), dst fires its own
+// "updateAxisPointer"; because dst is connect-grouped with src, ECharts' internal group-sync
+// then re-broadcasts that pointer update to src by VALUE — and since macro (daily) and biz
+// (monthly) never share exact axis values, that re-broadcast round-trip ends by dispatching
+// hideTip on dst, immediately erasing the tooltip our relay just showed (confirmed by logging
+// every dispatchAction call: a "biz: showTip" from our relay is reliably followed by a
+// connect-only "macro: showTip" echo, then "macro: updateAxisPointer" / "macro: hideTip" /
+// "biz: updateAxisPointer" — with connect() removed the same hover sequence ends on a
+// visible, correctly-dated biz tooltip). Removing connect() does not affect the crosshair
+// sync itself since the manual relay below already computes cross-instance date matching.
+// connect() was ALSO the only thing propagating dataZoom (macroChart's slider/inside-zoom
+// drag) onto bizChart (which only has an "inside" zoom, no slider of its own) — removing
+// connect() without replacing that meant zooming macroChart no longer moved bizChart at all.
+// wireMacroCrossSync() below relays "dataZoom" the same way it relays the tooltip: manually,
+// with its own reentrancy guard.
 //
 // ⚠️ Reentrancy: relaying showTip to `dst` makes `dst` fire its own "updateAxisPointer",
 // which (being wired the same way) relays back to `src` synchronously — with no guard this
@@ -276,6 +286,10 @@ function connectMacroCharts() {
 // we're already inside, any nested "updateAxisPointer" fired as a side effect of our own
 // dispatch is ignored.
 let syncing = false;
+// Separate reentrancy guard for the dataZoom relay (see wireMacroCrossSync below) — kept
+// distinct from `syncing` (the tooltip guard) since a zoom drag and a tooltip hover can be
+// in flight at overlapping ticks and there's no reason to have one block the other.
+let syncingZoom = false;
 // Which chart instances already have the cross-sync listeners registered. activate() runs
 // again on every tab switch (module-level macroChart/bizChart persist across switches), so
 // without this, wireMacroCrossSync() would call .on(...) again each time and pile up one more
@@ -317,6 +331,31 @@ function wireMacroCrossSync() {
     src.getZr().on("globalout", () => {
       for (const dst of charts) if (dst !== src) dst.dispatchAction({ type: "hideTip" });
     });
+    // dataZoom (macroChart's slider drag or either chart's scroll/inside zoom) used to reach
+    // the sibling chart only via echarts.connect(); relay it manually the same way as the
+    // tooltip above. The event payload's range usually arrives in event.batch[0], but some
+    // dataZoom triggers (e.g. a toolbox/programmatic dispatch) omit batch entirely — fall back
+    // to reading the chart's own current dataZoom option in that case.
+    src.on("dataZoom", event => {
+      if (syncingZoom) return;
+      const range = event.batch?.[0] ?? event;
+      let { start, end } = range;
+      if (start == null || end == null) {
+        const dz = src.getOption().dataZoom?.[0];
+        start = dz?.start;
+        end = dz?.end;
+      }
+      if (start == null || end == null) return;
+      syncingZoom = true;
+      try {
+        for (const dst of charts) {
+          if (dst === src) continue;
+          dst.dispatchAction({ type: "dataZoom", start, end });
+        }
+      } finally {
+        syncingZoom = false;
+      }
+    });
   }
 }
 
@@ -325,7 +364,6 @@ export function activate() {
   if (!macroChart) macroChart = echarts.init(el, isLight() ? null : "dark");
   const bEl = document.getElementById("biz-chart");
   if (!bizChart && bEl) bizChart = echarts.init(bEl, isLight() ? null : "dark");
-  connectMacroCharts();
   wireMacroCrossSync();
   setTimeout(() => { macroChart.resize(); bizChart?.resize(); renderMacroTab(); renderBizChart(); }, 50);
 }
@@ -341,7 +379,6 @@ export function onThemeChange(light) {
     bizChart = bEl ? echarts.init(bEl, light ? null : "dark") : null;
     renderBizChart();
   }
-  connectMacroCharts();
   wireMacroCrossSync();
 }
 

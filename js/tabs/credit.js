@@ -408,15 +408,6 @@ function renderBDC(textClr, axisClr, gridClr, tipBg, tipBdr, cutoff) {
   }, { notMerge: true });
 }
 
-const CHART_GROUP = "credit-tab";
-
-function connectCharts() {
-  if (creditChart) creditChart.group = CHART_GROUP;
-  if (delinqChart) delinqChart.group = CHART_GROUP;
-  if (bdcChart) bdcChart.group = CHART_GROUP;
-  echarts.connect(CHART_GROUP);
-}
-
 // echarts' built-in axisPointer `link` only value-matches axes within ONE chart instance;
 // across separate instances (creditChart/delinqChart/bdcChart) it silently no-ops even when
 // connected via echarts.connect, so the crosshair is relayed manually: convert the hovered
@@ -434,7 +425,32 @@ function connectCharts() {
 // isolating the crash to this ping-pong rather than to ECharts/dataIndex/marker rendering.
 // `syncing` breaks the cycle: while relaying an event we're already inside, any nested
 // "updateAxisPointer" fired as a side effect of our own dispatch is ignored.
+//
+// ⚠️ Second root cause (spec X2, verified empirically): even after that recursion guard
+// landed (commit e997537e), the dst chart's tooltip DOM stayed `visibility:hidden；opacity:0`
+// on every real hover — the relay's showTip was never actually visible. Cause: these three
+// charts were ALSO put in an echarts.connect(...) group. connect() runs its own built-in
+// axis-pointer sync alongside this manual relay; when the relay calls
+// dst.dispatchAction({type:"showTip", x, y}), dst fires "updateAxisPointer", and because dst
+// is connect-grouped with src, ECharts' internal group-sync re-broadcasts that pointer update
+// to the other member(s) by VALUE. Since creditChart (daily) and delinqChart (quarterly) /
+// bdcChart never share exact axis values, that re-broadcast round-trip ends by dispatching
+// hideTip on dst, erasing the tooltip the relay just showed a moment earlier — confirmed by
+// logging every dispatchAction call (a relay-issued "showTip" is reliably followed by a
+// connect-only echo on the source chart, then hideTip on the destination) and by the fact
+// that removing connect() (grouping call removed entirely) makes the same hover sequence end
+// on a visible, correctly-dated dst tooltip with no other code change. Removing connect()
+// does not regress the crosshair sync itself: the manual relay below already does its own
+// cross-instance date matching independent of connect's group state. connect() was also the
+// only thing propagating dataZoom across these three instances (creditChart owns the shared
+// "inside" zoom via its own controls; delinqChart/bdcChart have no zoom UI of their own and
+// relied entirely on connect() to follow) — wireCrossSync() below relays "dataZoom" the same
+// way it relays the tooltip: manually, with its own reentrancy guard.
 let syncing = false;
+// Separate reentrancy guard for the dataZoom relay — kept distinct from `syncing` (the
+// tooltip guard) since a zoom drag and a tooltip hover can be in flight at overlapping ticks
+// and there's no reason to have one block the other.
+let syncingZoom = false;
 // Which chart instances already have the cross-sync listeners registered. activate() runs
 // again on every tab switch (module-level creditChart/delinqChart/bdcChart persist across
 // switches), so without this, wireCrossSync() would call .on(...) again each time and pile up
@@ -480,6 +496,29 @@ function wireCrossSync() {
     src.getZr().on("globalout", () => {
       for (const dst of charts) if (dst !== src) dst.dispatchAction({ type: "hideTip" });
     });
+    // dataZoom relay — see the comment above `syncingZoom`'s declaration. The event payload's
+    // range usually arrives in event.batch[0], but some triggers omit batch entirely — fall
+    // back to reading the chart's own current dataZoom option in that case.
+    src.on("dataZoom", event => {
+      if (syncingZoom) return;
+      const range = event.batch?.[0] ?? event;
+      let { start, end } = range;
+      if (start == null || end == null) {
+        const dz = src.getOption().dataZoom?.[0];
+        start = dz?.start;
+        end = dz?.end;
+      }
+      if (start == null || end == null) return;
+      syncingZoom = true;
+      try {
+        for (const dst of charts) {
+          if (dst === src) continue;
+          dst.dispatchAction({ type: "dataZoom", start, end });
+        }
+      } finally {
+        syncingZoom = false;
+      }
+    });
   }
 }
 
@@ -504,7 +543,6 @@ export async function activate() {
   if (!creditChart) creditChart = echarts.init(h1, isLight() ? null : "dark");
   if (!delinqChart) delinqChart = echarts.init(h2, isLight() ? null : "dark");
   if (h3 && !bdcChart) bdcChart = echarts.init(h3, isLight() ? null : "dark");
-  connectCharts();
   wireCrossSync();
   buildControls();
   try {
@@ -530,7 +568,6 @@ export function onThemeChange(light) {
     bdcChart.dispose();
     bdcChart = echarts.init(document.getElementById("crd-bdc-chart"), light ? null : "dark");
   }
-  connectCharts();
   wireCrossSync();
   if (spreadData) render();
 }
