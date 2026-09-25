@@ -4,7 +4,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
-import { chipPicker } from '../utils/dom.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const SUB_LINES = [
   { key: "walcl", name: "Fed 總資產 (WALCL)", color: "#58a6ff" },
@@ -180,9 +180,9 @@ function buildControls() {
   const rp = document.getElementById("netliq-range-picker");
   chipPicker(rp, "netliq-range", v => { range = v; render(); });
   const sub = document.getElementById("netliq-sub-toggles");
-  if (sub && !sub.dataset.built) {
-    sub.dataset.built = "1";
+  if (bindOnce(sub)) {
     sub.addEventListener("click", e => {
+      // check_reuse: keep — 多選切換(Set),只切被點那顆的 active;chipPicker 是單選
       const t = e.target.closest(".chip[data-netliq-sub]");
       if (!t) return;
       const key = t.dataset.netliqSub;

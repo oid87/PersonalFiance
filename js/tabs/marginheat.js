@@ -3,6 +3,7 @@
 //   資料：data/liquidity.json（margin[]，含 finra_margin_early.json 回補至 1997）+ data/SP500.json
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { chipPicker } from '../utils/dom.js';
 
 let chart = null;
 let forcedChart = null;
@@ -324,11 +325,8 @@ function ensureExtraDom() {
   `);
   domInjected = true;
 
-  document.getElementById('marginheat-unwind-toggle')?.addEventListener('click', (e) => {
-    const t = e.target.closest('.chip[data-unwind-mkt]');
-    if (!t) return;
-    unwindMarket = t.dataset.unwindMkt;
-    for (const c of e.currentTarget.querySelectorAll('.chip')) c.classList.toggle('active', c === t);
+  chipPicker(document.getElementById('marginheat-unwind-toggle'), 'unwind-mkt', v => {
+    unwindMarket = v;
     renderUnwind();
   });
 }

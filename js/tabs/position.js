@@ -416,8 +416,7 @@ function buildControls() {
   }
   const pickWire = (sel, attr, set) => {
     const host = document.getElementById(sel);
-    if (!host || host.dataset.built) return;
-    host.dataset.built = "1";
+    if (!bindOnce(host)) return;
     host.querySelectorAll(".chip").forEach(c => c.addEventListener("click", () => {
       host.querySelectorAll(".chip").forEach(e => e.classList.remove("active"));
       c.classList.add("active");

@@ -497,6 +497,7 @@ function onPanelInput(e) {
   renderMode();
 }
 function onPanelClick(e) {
+  // check_reuse: keep — 同一 handler 以多個 closest 分派(event/scen/act),active 由模板重繪,不是單選 chip 群組
   const ev = e.target.closest('.chip[data-event]');
   if (ev) {
     bt.event = ev.dataset.event;
@@ -504,6 +505,7 @@ function onPanelClick(e) {
     if (def && def.start) { bt.from = def.start; bt.to = ''; }
     renderPanel(); renderMode(); return;
   }
+  // check_reuse: keep — 同上:多 closest 分派器的一支,active 由 renderPanel 模板重繪
   const sc = e.target.closest('.chip[data-scen]');
   if (sc) { cr.scenario = sc.dataset.scen; renderPanel(); renderMode(); return; }
   const log = e.target.closest('[data-act="log"]');

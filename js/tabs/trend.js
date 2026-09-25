@@ -634,6 +634,7 @@ export async function toggleTrendFpe() {
 
 // ── Wire trend-tab controls ────────────────────────────────────
 document.getElementById("ma-picker")?.addEventListener("click", e => {
+  // check_reuse: keep — 多選切換(Set),只切被點那顆的 active;chipPicker 是單選
   const t = e.target.closest(".chip[data-ma]");
   if (!t) return;
   const p = +t.dataset.ma;

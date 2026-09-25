@@ -329,6 +329,7 @@ function onBodyClick(e) {
 }
 function setupEvents() {
   $('tools-nav').addEventListener('click', e => {
+    // check_reuse: keep — 分派給 switchSec() 由 setter 重繪,不直接切 classList;不是 chipPicker 形狀
     const c = e.target.closest('.chip[data-tools-sec]');
     if (c) switchSec(c.dataset.toolsSec);
   });

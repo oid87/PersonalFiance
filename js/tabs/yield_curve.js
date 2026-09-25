@@ -3,7 +3,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
-import { chipPicker } from '../utils/dom.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const SPREAD_LINES = [
   { key: "t10y2y", name: "10Y−2Y 利差", color: "#58a6ff" },
@@ -193,9 +193,9 @@ function buildControls() {
   const rp = document.getElementById("yc-range-picker");
   chipPicker(rp, "yc-range", v => { range = v; render(); });
   const sub = document.getElementById("yc-yield-toggles");
-  if (sub && !sub.dataset.built) {
-    sub.dataset.built = "1";
+  if (bindOnce(sub)) {
     sub.addEventListener("click", e => {
+      // check_reuse: keep — 多選切換(Set),只切被點那顆的 active;chipPicker 是單選
       const t = e.target.closest(".chip[data-yc-yield]");
       if (!t) return;
       const key = t.dataset.ycYield;

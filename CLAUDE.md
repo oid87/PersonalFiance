@@ -48,10 +48,17 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 1. `js/tabs/<id>.js` — export `init`（首次切入載入）、選用 `onThemeChange(light)`、`resize()`。**起手用 `js/scaffold/_template.js` 當範本**（已 import 四支 utils + echartsBase + loadSeries），別從舊 tab 複製起手。
 2. `js/boot.js` 三處：`import * as xTab`、加進 `registerAll([...])`、在 `CATEGORIES` 選一個分類加入 `{ id, label }`。
 3. `index.html` 加 `<section id="tab-<id>" class="tab-section" hidden>`（不用加 nav 按鈕，sub-nav 是動態渲染的）。
-4. 主題色用 CSS 變數（`--bg/--panel/--border/--text/--muted`）；JS 內的色對/百分位/日期工具一律用 `js/utils/`（`PALETTE`/`math`/`dates`/`data`，速查表見下方），別內聯 `tc("#hex","#hex")` 或自寫 percentile。
+4. 主題色用 CSS 變數（`--bg/--panel/--border/--text/--muted`）；JS 內的色對/百分位/日期工具一律用 `js/utils/`（`PALETTE`/`math`/`dates`/`data`/`dom`，速查表見下方），別內聯 `tc("#hex","#hex")` 或自寫 percentile。控制項一次性綁定用 `dom.bindOnce(el)`，chip 單選群組用 `dom.chipPicker(host, attr, onPick)`（host 內混有別組 chip 時加 `{ onlyMatching: true }`），別手寫 `dataset.built` 或 `closest(".chip[data-…]")` 委派（`check_reuse` 會抓）。多選切換、已選取短路、多個 closest 的分派器不適用 `chipPicker`。
 5. ⚠️ **lint 對「還沒接進 boot.js 的新 tab 檔」完全不掃——含手動指定檔名也跳過**（刻意設計：避免掃到擱置死檔；2026-07-19 實測連塞違規進未接線檔、指名掃它都靜默 exit 0）。**唯一解法：先做第 2 步接線、再寫 tab 內容**——接線後 hook 與 lint 自動納管。順序反過來（寫完才接線）的話，接線後要記得整檔重掃一次 `python3 ../Financial_work/check_reuse.py js/tabs/<id>.js`。
 
 詳細程序與 ECharts 眉角（axisValue 毫秒、雙 grid 同步、itemStyle.color）見 `.claude/skills/add-tab/`；新增資料源用 `.claude/skills/fetch-script/`。
+
+### 前端測試與重構驗收
+
+- 單元測試：`node --test $(find js -name '*.test.mjs')`（離線；CI 不跑）。
+- **前端重構的行為等價驗收用 `js/__tests__/ui_harness.cjs`**（Playwright 無頭瀏覽器，用法見檔頭）：逐 tab 點遍所有可見 `.chip`，每步記錄 chip active 狀態、每張 ECharts 的完整 series／axis 資料 sha1、整個 tab 的 `innerText` sha1、console 錯誤。流程：`git archive HEAD` 出基準樹 → **對基準跑兩次**（兩次不同的 tab 是不確定的，排除）→ 對工作目錄跑 → `cmp`。2026-09-25 C 包（`dom.js` 遷移 57 組 chip）即以此驗收。
+- 盲點：點擊當下被隱藏的 chip 會跳過（例：flows 切到 sector 視圖後，其他選單被藏起來）；hover 才出現的 UI（tooltip）不在範圍，要另寫探針（例：`dispatchAction({type:'showTip'})` 後讀 tooltip DOM）。
+- Playwright 不在 repo 依賴裡：`PLAYWRIGHT_MODULE` 指到本機 npx 快取的 `node_modules/playwright`（`ls ~/.npm/_npx/*/node_modules/playwright`）。
 
 <!-- JS_UTILS_CHEATSHEET_START -->
 ## js/utils 函式速查表(自動產生,勿手動編輯;來源:`../Financial_work/gen_cheatsheet.py`)
@@ -101,6 +108,10 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 - data.loadSeries(s) — 
 - data.ensureLoaded(key) — 
 - data.loadEarnings() — 
+
+### dom.js(2)
+- dom.bindOnce(el) — One-time-bind guard: true on first call (marks el.dataset.built), false if el is null or already bound
+- dom.chipPicker(host, attr, onPick, { onlyMatching = false } = {}) — Single-select chip group: toggles .active (all .chip in host, or onlyMatching), then onPick(value, chip)
 
 <!-- JS_UTILS_CHEATSHEET_END -->
 
