@@ -1,7 +1,9 @@
 // 波動率倍數 tab — 驗證「槓桿 ETF 已實現波動率 ≈ 倍數 × 標的」在各窗口是否穩定。
 // 資料：完全複用 data/leverage.json（etfs[].real vs underlyings[etf.underlying].data），
 // 不新增任何 fetch。前端算 log return 的 rolling std ratio，對照理論槓桿倍數。
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { tsToLocalDate } from '../utils/dates.js';
+import { bindOnce } from '../utils/dom.js';
 
 const WINDOWS = [5, 21, 63, 126, 252];
 const WINDOW_LABEL = { 5: '5日', 21: '21日(月)', 63: '63日(季)', 126: '126日(半年)', 252: '252日(年)' };
@@ -114,8 +116,7 @@ function computePair(etf) {
 // ── controls ──────────────────────────────────────────────────────────
 function buildPairSelect() {
   const sel = $('levvol-pair');
-  if (!sel || sel.dataset.built) return;
-  sel.dataset.built = '1';
+  if (!bindOnce(sel)) return;
   sel.innerHTML = BUNDLE.etfs.map(e =>
     `<option value="${e.id}" ${e.id === curId ? 'selected' : ''}>${e.id} / ${e.underlying} (${e.leverage}x)</option>`
   ).join('');
@@ -149,9 +150,9 @@ function renderTable(etf, r) {
 }
 
 function renderChart(etf, r) {
-  const axisClr = tc('#8b949e', '#57606a');
+  const axisClr = PALETTE.muted;
   const splitClr = tc('rgba(255,255,255,.06)', 'rgba(0,0,0,.07)');
-  const tipBg = tc('#161b22', '#ffffff'), tipBd = tc('#30363d', '#d0d7de'), tipTx = tc('#e6edf3', '#1f2328');
+  const tipBg = PALETTE.bg, tipBd = PALETTE.border, tipTx = PALETTE.text;
 
   const series = r.windows.map((w, idx) => ({
     name: `w=${w.w}`, type: 'line', data: w.series,
@@ -178,7 +179,7 @@ function renderChart(etf, r) {
       formatter(params) {
         if (!params.length) return '';
         const ax = params[0].axisValue;
-        const head = typeof ax === 'number' ? new Date(ax).toISOString().slice(0, 10) : ax;
+        const head = typeof ax === 'number' ? tsToLocalDate(ax) : ax;
         let html = `<div style="font-weight:600;margin-bottom:4px">${head}</div>`;
         for (const p of params) {
           const v = p.value && p.value[1];
