@@ -1,6 +1,6 @@
 # CLAUDE.md — PersonalFiance
 
-個人總經儀表板（長期願景：個人版財經 M 平方）。純前端 SPA：`index.html` + `js/boot.js` + `js/tabs/*.js`（ES module，目前 26 個 tab）+ ECharts (CDN)，無建置步驟。資料是 `data/*.json`，由 `scripts/fetch_*.py`（Python + yfinance/requests）抓取。本地預覽 `python -m http.server`。
+個人總經儀表板（長期願景：個人版財經 M 平方）。純前端 SPA：`index.html` + `js/boot.js` + `js/tabs/*.js`（ES module，數量以 `ls js/tabs/` 為準）+ ECharts (CDN)，無建置步驟。資料是 `data/*.json`，由 `scripts/fetch_*.py`（Python + yfinance/requests）抓取。本地預覽 `python -m http.server`。
 
 ## 資料更新管線（每天自動）
 
@@ -8,11 +8,20 @@ GitHub Actions `.github/workflows/fetch.yml` 每天自動跑、跑完 `git add d
 
 - **06:00 台北（週二–週六）** — cron `0 22 * * 1-5`（美股收盤後）
 - **18:00 台北（週一–週五）** — cron `0 10 * * 1-5`（台股收盤後）
-- 也可手動 `workflow_dispatch`，或本地跑 `scripts/update_all.sh`（git pull → 所有 fetch → commit/push）。
+- 另有 `.github/workflows/forward_pe.yml`：**13:00 台北（週一–週五）** cron `0 5 * * 1-5`，只跑 `fetch_forward_pe.py`（VOO / QQQ），不在 `fetch.yml` 裡。
+- 也可手動 `workflow_dispatch`。本地 `scripts/update_all.sh` = git pull → 所有 fetch → `validate_data.py`，**刻意不 commit / 不 push**（`data/` 只由 Action 單一寫入，避免雙寫分歧）；本地刷新的 `data/` 只供 preview，下次跑 `update_all.sh` 時會先被 `git checkout -- data/` 丟掉。
 
 每個 fetch 腳本：讀現有 `data/<x>.json` → 抓最新 → **idempotent 合併**（依日期，新蓋舊）→ 寫回。**新增資料來源時務必三處都加**：寫 `fetch_*.py` → 加進 `fetch.yml`（用 `continue-on-error: true`）→ 加進 `update_all.sh`。
 
-FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workflow step 已設 env），本地讀 repo 根 `.finmind_token` 或 `../Financial_work/.finmind_token`。沒設則匿名（低額度，單次每日呼叫通常仍可）。
+FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workflow step 已設 env），本地讀 repo 根 `.finmind_token` 或 `../Financial_work/.finmind_token`。沒設則匿名（低額度，單次每日呼叫通常仍可）。新腳本一律用 `_common.get_finmind_token()`，別再自寫查找。
+
+### scripts 共用模組（2026-09-25 建立）
+
+- `scripts/_common.py`：`get_finmind_token()`、`fetch_fred_csv(series_id, *, headers, timeout=30)`（回傳未 round 的 `[(date, float)]`，round／容器由呼叫端決定）、`load_rows_by_date(path)`（`{"data":[...]}` → `OrderedDict[date, row]`）。腳本直接 `import _common`，CI（repo 根跑 `python scripts/x.py`）與 `update_all.sh`（`cd scripts`）兩種呼叫都 resolve 得到，別加 `sys.path` hack。
+- `scripts/_breadth.py`：breadth 四支（`fetch_breadth{,_ndx,_tw50,_xlg}.py`）的共同核心 `run(get_tickers, out_path, min_coverage, label)`；各檔只留常數與取成分股／成員快取。
+- **刻意沒收斂**（寫法看似重複但語意不同，別硬套）：JSON 寫檔（序列化參數至少 10 種組合，改了就改輸出位元組）、User-Agent／Session／retry（每站 UA 與 backoff 不同）、`backfill_tw_valuation_finmind.py` 的 token 順序、`fetch_liquidity*.py` 與 `fetch_inflation_exp.py` 的 FRED 解析。
+- 測試：`python3 -m unittest discover -s scripts/tests`（離線；CI 不跑）。CI 用 Python 3.11、本地 miniconda 3.13 → 共用模組別用 3.12+ 語法。
+- ⚠️ **重構 fetch 腳本的等價驗收：改前改後輸出 `cmp` 相同 ≠ 等價。** 多數腳本有「資料夠新就跳過」（如 breadth 的 `FRESHNESS_DAYS`）或快取 TTL（如 `tw_sector_map_cache.json` 7 天），兩次都走 skip 分支時 `cmp` 必然相同、什麼都沒證明（2026-09-25 B2 首輪驗收即如此）。做法：在 scratchpad 建隔離的 `OLD/`、`NEW/` 兩棵樹（`scripts/` + `data/`，腳本的 ROOT 都由 `__file__` 推導），把輸入資料切掉最後 N 列或刪掉快取，逼腳本真的走重算／cache-miss 路徑，從 stdout 確認走到了，再 `cmp`。另外檢查產出檔的 `updated` 是今天、內容與 HEAD 不同，確定兩次都真的有寫檔。別在真 repo 的 `data/` 裡做這件事。
 
 ## Ground truth 原則
 
@@ -21,7 +30,7 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 - `ls js/tabs/` = 目前所有 tab 清單
 - `js/boot.js` 的 `CATEGORIES` 陣列 = 導覽結構（4 分類：sentiment／liquidity／position／analysis）；sub-nav 由 `renderSubNav()` 動態渲染，**`index.html` 沒有靜態 tab 按鈕**
 - `ls scripts/` = 所有抓取腳本
-- `.github/workflows/fetch.yml` = CI 實際跑的清單
+- `.github/workflows/fetch.yml` + `forward_pe.yml` = CI 實際跑的清單
 
 ## 不可變事實與陷阱
 
