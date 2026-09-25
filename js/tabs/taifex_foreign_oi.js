@@ -2,7 +2,8 @@
 //   正值=外資淨多、負值=淨空;是台股外資期貨部位方向的直接籌碼訊號
 //   資料：data/taifex_foreign_oi.json（fetch_taifex_foreign_oi.py 抓 TAIFEX 官方,免 key）
 
-import { isLight, tc, mob } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { chipPicker } from '../utils/dom.js';
 
 let chart = null;
 let range = "MAX";
@@ -21,6 +22,7 @@ function cutoffDate(key) {
   const d = new Date();
   const m = { "3M": 3, "6M": 6, "1Y": 12 }[key] ?? 999;
   d.setMonth(d.getMonth() - m);
+  // check_reuse: keep — 月制 key(3M/6M/1Y)+MAX 哨兵;dates.cutoffDate 是年制(1Y/3Y/5Y/10Y)、presetStart 沒有 3M 且未命中回 null,換過去會改行為
   return d.toISOString().slice(0, 10);
 }
 
@@ -69,11 +71,11 @@ function updateCards() {
 export function render() {
   if (!chart || !rows?.length) return;
 
-  const axisClr = tc("#8b949e", "#57606a");
+  const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
-  const tipBg   = tc("#161b22", "#ffffff");
-  const tipBdr  = tc("#30363d", "#d0d7de");
-  const textClr = tc("#c9d1d9", "#24292f");
+  const tipBg   = PALETTE.bg;
+  const tipBdr  = PALETTE.border;
+  const textClr = PALETTE.text2;
 
   updateCards();
 
@@ -132,16 +134,7 @@ export function render() {
 
 function buildControls() {
   const rp = document.getElementById("taifex-range-picker");
-  if (rp && !rp.dataset.built) {
-    rp.dataset.built = "1";
-    rp.addEventListener("click", e => {
-      const t = e.target.closest(".chip[data-taifex-range]");
-      if (!t) return;
-      range = t.dataset.taifexRange;
-      rp.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c === t));
-      render();
-    });
-  }
+  chipPicker(rp, "taifex-range", v => { range = v; render(); });
 }
 
 export async function activate() {
