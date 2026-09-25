@@ -20,6 +20,20 @@ const C = {
   shortDaily: "#3fb950", shortMA: "#e3b341",
 };
 
+// 拼接融資維持率:mm=[[date,ratio_all],...](taiwan_margin_ratio_mm.json,2004起、月頻回補),
+// daily=[[date,ratio],...](taiwan_margin_ratio.json,2022-12起、CI 逐日更新、口徑相同)。
+// 只取 mm 早於 daily 第一天的那段接在前面,重疊與之後一律用 daily(逐日檔是權威來源);
+// null/undefined 的 ratio_all 列跳過。任一來源為空陣列時回傳另一來源。
+export function spliceMarginRatio(mm, daily) {
+  const dailyRows = daily || [];
+  const mmRows = mm || [];
+  if (!dailyRows.length) return mmRows.filter(r => r[1] != null);
+  if (!mmRows.length) return dailyRows;
+  const firstDailyDate = dailyRows[0][0];
+  const mmHead = mmRows.filter(r => r[1] != null && r[0] < firstDailyDate);
+  return mmHead.concat(dailyRows);
+}
+
 // 簡單移動平均, rows=[[date,value],...] 升冪, 回傳同長度陣列 (前 window-1 筆為 null)
 function movingAvg(rows, window) {
   const out = [];
@@ -52,11 +66,19 @@ export async function init() {
     pc   = p.data;
     fut  = f.data;
     mar  = m.data;
-    mr   = [];                                  // 融資維持率(重建)，TWSE 回補中可能僅近期
-    try {
-      const rr = await fetch("data/taiwan_margin_ratio.json");
-      if (rr.ok) mr = ((await rr.json()).data || []).map(r => [r.date, r.ratio]);
-    } catch { /* optional — 缺檔不影響其他元件 */ }
+    // 融資維持率:逐日檔(2022-12起，CI 每天更新，權威)接上 mm 檔(2004-02起，月頻回補，ratio_all 口徑相同)。
+    // 兩個 fetch 平行、各自容錯，任一失敗不擋另一個；都失敗則 mr=[]（tab 不壞）。
+    const [dailyRatio, mmRatio] = await Promise.all([
+      fetch("data/taiwan_margin_ratio.json")
+        .then(r => (r.ok ? r.json() : null))
+        .then(j => (Array.isArray(j?.data) ? j.data.map(r => [r.date, r.ratio]) : []))
+        .catch(() => []),
+      fetch("data/taiwan_margin_ratio_mm.json")
+        .then(r => (r.ok ? r.json() : null))
+        .then(j => (Array.isArray(j?.data) ? j.data.map(r => [r.date, r.ratio_all]) : []))
+        .catch(() => []),
+    ]);
+    mr = spliceMarginRatio(mmRatio, dailyRatio);
 
     try {
       const mc = await fetch("data/taiwan_margin_mktcap.json");
