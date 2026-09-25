@@ -6,9 +6,14 @@
 // partial trailing week, empty input, cross-year week), and (b) proves the
 // new export is byte-for-byte identical to the old js/tabs/wkrev.js (pre-e997537e)
 // local function on both synthetic and real (data/QQQ.json) input.
+//
+// Spec Y (N4): the old function body no longer comes from a live `git show`
+// call (that made this test depend on git history and the local clone's
+// object store being reachable, e.g. in a `git archive` tree with no .git).
+// It is instead read from a pinned fixture file — see
+// fixtures/old_toWeeklyOHLC.js for provenance (exact commit SHA + line range).
 import assert from "node:assert/strict";
 import test from "node:test";
-import { execFileSync } from "node:child_process";
 import vm from "node:vm";
 import fs from "node:fs";
 import path from "node:path";
@@ -19,38 +24,17 @@ const { toWeeklyOHLC } = await import("../dates.js");
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 
-// ── extract the old (pre-refactor) toWeeklyOHLC body from wkrev.js at OLD_REV ──
-// Pinned to the parent of e997537e (the commit that moved it into utils/dates.js);
-// HEAD no longer contains the local copy.
-const OLD_REV = "e997537e^";
-function extractOldToWeeklyOHLC() {
-  const src = execFileSync("git", ["show", `${OLD_REV}:js/tabs/wkrev.js`], {
-    cwd: REPO_ROOT,
-    encoding: "utf8",
-  });
-  const startMarker = "function toWeeklyOHLC(daily) {";
-  const start = src.indexOf(startMarker);
-  assert.ok(start >= 0, `old toWeeklyOHLC not found in ${OLD_REV}:js/tabs/wkrev.js`);
-  // Balanced-brace scan from the opening `{` of the function body.
-  let i = start + startMarker.length - 1; // index of the opening brace
-  let depth = 0;
-  let end = -1;
-  for (; i < src.length; i++) {
-    if (src[i] === "{") depth++;
-    else if (src[i] === "}") {
-      depth--;
-      if (depth === 0) { end = i; break; }
-    }
-  }
-  assert.ok(end > start, "could not balance braces for old toWeeklyOHLC");
-  const fnSrc = src.slice(start, end + 1);
+// ── load the old (pre-refactor) toWeeklyOHLC body from the pinned fixture ──
+function loadOldToWeeklyOHLC() {
+  const fixturePath = path.join(__dirname, "fixtures", "old_toWeeklyOHLC.js");
+  const fnSrc = fs.readFileSync(fixturePath, "utf8");
   const sandbox = {};
   vm.createContext(sandbox);
   vm.runInContext(`${fnSrc}\nthis.toWeeklyOHLC = toWeeklyOHLC;`, sandbox);
   return sandbox.toWeeklyOHLC;
 }
 
-const oldToWeeklyOHLC = extractOldToWeeklyOHLC();
+const oldToWeeklyOHLC = loadOldToWeeklyOHLC();
 
 // ── fixtures ────────────────────────────────────────────────────────────
 // [date, open, high, low, close, volume]

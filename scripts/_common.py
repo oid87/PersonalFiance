@@ -99,9 +99,19 @@ def idempotent_merge(existing_path: Path, new_rows: list[dict], key_field: str =
     fetch scripts (fetch_credit.py, fetch_real_rates.py, fetch_vix_term.py,
     fetch_yield_curve.py, fetch_central_banks.py, fetch_money_market.py).
 
-    Missing file or any parse error -> start from empty. A row missing
-    key_field raises KeyError, aborting the merge (rows processed so far stay
-    in `existing`, but the exception propagates and nothing is returned)."""
+    Reading the existing file is wrapped in a single try/except: a missing
+    file, a JSON parse error, or an existing row missing key_field are all
+    swallowed by that except. In every case this stops reading further old
+    rows right where it failed, but any old rows already read before that
+    point stay in `existing` (only a truly missing file or an upfront JSON
+    parse error leaves `existing` empty) -- the merge then proceeds to apply
+    new_rows on top of whatever was salvaged. This is a different, more
+    lenient tolerance than load_rows_by_date's -- don't assume they behave
+    the same on malformed input.
+
+    A row in new_rows missing key_field is not caught: it raises KeyError,
+    and the function returns nothing (the exception propagates to the
+    caller)."""
     existing = {}
     if existing_path.exists():
         try:

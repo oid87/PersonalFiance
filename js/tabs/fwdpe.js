@@ -97,7 +97,13 @@ function fmtCoverage(v) {
 // validationNote 文案照抄 docs/forward_pe.md 對帳結果的既定語意，不改寫成更
 // 樂觀的說法：VOO 已對過 FactSet，QQQ 目前無外部來源可對帳。
 function updateCard(prefix, rows, validationNote) {
-  if (!rows || !rows.length) {
+  if (rows === null) {
+    setText(`fwdpe-${prefix}-val`, '—');
+    setText(`fwdpe-${prefix}-sub`, '載入失敗，重新切入可重試');
+    setText(`fwdpe-${prefix}-signal`, validationNote, PALETTE.muted);
+    return;
+  }
+  if (!rows.length) {
     setText(`fwdpe-${prefix}-val`, '—');
     setText(`fwdpe-${prefix}-sub`, '無資料');
     setText(`fwdpe-${prefix}-signal`, validationNote, PALETTE.muted);
@@ -129,11 +135,13 @@ function statusText() {
   const qStart = qN ? effDate(qqqRows[0]) : '—';
   const remain5y = n => Math.max(0, TRADING_DAYS_5Y - n);
   const remain10y = n => Math.max(0, TRADING_DAYS_10Y - n);
-  return (
-    `VOO ${vN} 個交易日資料點（序列起點 ${vStart}）· 距 5Y 均線尚需 ${remain5y(vN)} 個交易日、10Y 均線尚需 ${remain10y(vN)} 個　｜　` +
-    `QQQ ${qN} 個交易日資料點（序列起點 ${qStart}）· 距 5Y 均線尚需 ${remain5y(qN)} 個交易日、10Y 均線尚需 ${remain10y(qN)} 個　｜　` +
-    `序列剛開始累積，目前不足以做位階判斷`
-  );
+  const vPart = vooRows === null
+    ? 'VOO 載入失敗'
+    : `VOO ${vN} 個交易日資料點（序列起點 ${vStart}）· 距 5Y 均線尚需 ${remain5y(vN)} 個交易日、10Y 均線尚需 ${remain10y(vN)} 個`;
+  const qPart = qqqRows === null
+    ? 'QQQ 載入失敗'
+    : `QQQ ${qN} 個交易日資料點（序列起點 ${qStart}）· 距 5Y 均線尚需 ${remain5y(qN)} 個交易日、10Y 均線尚需 ${remain10y(qN)} 個`;
+  return `${vPart}　｜　${qPart}　｜　序列剛開始累積，目前不足以做位階判斷`;
 }
 
 // ── chart ────────────────────────────────────────────────────────────────

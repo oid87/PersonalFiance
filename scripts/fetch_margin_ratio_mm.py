@@ -82,7 +82,7 @@ def get_json(url, params, tries=4):
 def fetch_day(d_iso):
     ymd = d_iso.replace("-", "")
     mg = get_json(MARGN, {"response": "json", "date": ymd, "selectType": "ALL"})
-    if not mg or mg.get("stat") != "OK" or not mg.get("tables"):
+    if not mg or mg.get("stat") != "OK" or not mg.get("tables") or mg.get("date") != ymd:
         return None
     rows = max(mg["tables"], key=lambda t: len(t.get("data", [])))["data"]
     lots = {}
@@ -107,7 +107,7 @@ def fetch_day(d_iso):
 
     time.sleep(SLEEP)
     px = get_json(MINDEX, {"response": "json", "date": ymd, "type": "ALLBUT0999"})
-    if not px or px.get("stat") != "OK":
+    if not px or px.get("stat") != "OK" or px.get("date") != ymd:
         return None
     closes = {}
     for t in px.get("tables", []):

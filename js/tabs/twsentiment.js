@@ -20,7 +20,7 @@ const C = {
   shortDaily: "#3fb950", shortMA: "#e3b341",
 };
 
-// 拼接融資維持率:mm=[[date,ratio_all],...](taiwan_margin_ratio_mm.json,2004起、月頻回補),
+// 拼接融資維持率:mm=[[date,ratio_all],...](taiwan_margin_ratio_mm.json,歷史回補),
 // daily=[[date,ratio],...](taiwan_margin_ratio.json,2022-12起、CI 逐日更新、口徑相同)。
 // 只取 mm 早於 daily 第一天的那段接在前面,重疊與之後一律用 daily(逐日檔是權威來源);
 // null/undefined 的 ratio_all 列跳過。任一來源為空陣列時回傳另一來源。
