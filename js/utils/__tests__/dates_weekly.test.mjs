@@ -4,7 +4,7 @@
 // js/tabs/qqqmacd.js; both now import the single copy living in
 // js/utils/dates.js. This file: (a) exercises the basic behaviour (full week,
 // partial trailing week, empty input, cross-year week), and (b) proves the
-// new export is byte-for-byte identical to the old js/tabs/wkrev.js@HEAD
+// new export is byte-for-byte identical to the old js/tabs/wkrev.js (pre-e997537e)
 // local function on both synthetic and real (data/QQQ.json) input.
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -19,15 +19,18 @@ const { toWeeklyOHLC } = await import("../dates.js");
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 
-// ── extract the old (pre-refactor) toWeeklyOHLC body from HEAD's wkrev.js ──
+// ── extract the old (pre-refactor) toWeeklyOHLC body from wkrev.js at OLD_REV ──
+// Pinned to the parent of e997537e (the commit that moved it into utils/dates.js);
+// HEAD no longer contains the local copy.
+const OLD_REV = "e997537e^";
 function extractOldToWeeklyOHLC() {
-  const src = execFileSync("git", ["show", "HEAD:js/tabs/wkrev.js"], {
+  const src = execFileSync("git", ["show", `${OLD_REV}:js/tabs/wkrev.js`], {
     cwd: REPO_ROOT,
     encoding: "utf8",
   });
   const startMarker = "function toWeeklyOHLC(daily) {";
   const start = src.indexOf(startMarker);
-  assert.ok(start >= 0, "old toWeeklyOHLC not found in HEAD:js/tabs/wkrev.js");
+  assert.ok(start >= 0, `old toWeeklyOHLC not found in ${OLD_REV}:js/tabs/wkrev.js`);
   // Balanced-brace scan from the opening `{` of the function body.
   let i = start + startMarker.length - 1; // index of the opening brace
   let depth = 0;
@@ -113,7 +116,7 @@ test("toWeeklyOHLC: cross-year week (Mon Dec 30 2024 .. Fri Jan 3 2025) groups i
 });
 
 // ── old vs new: synthetic multi-year, multi-partial-week series ──────────
-test("toWeeklyOHLC: new export === old wkrev.js@HEAD function (synthetic series)", () => {
+test("toWeeklyOHLC: new export === old wkrev.js function (synthetic series)", () => {
   const daily = [];
   let d = new Date("2019-12-20T00:00:00Z"); // Fri, ahead of a Mon start
   let price = 100;
@@ -135,7 +138,7 @@ test("toWeeklyOHLC: new export === old wkrev.js@HEAD function (synthetic series)
 });
 
 // ── old vs new: real data/QQQ.json ───────────────────────────────────────
-test("toWeeklyOHLC: new export === old wkrev.js@HEAD function (real data/QQQ.json)", () => {
+test("toWeeklyOHLC: new export === old wkrev.js function (real data/QQQ.json)", () => {
   const qqqPath = path.join(REPO_ROOT, "data", "QQQ.json");
   const raw = JSON.parse(fs.readFileSync(qqqPath, "utf8"));
   const daily = (raw.data || []).map(r => [r.date, r.open, r.high, r.low, r.close, r.volume || 0]);
