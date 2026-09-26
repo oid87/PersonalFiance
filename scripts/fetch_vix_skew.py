@@ -198,7 +198,7 @@ def main() -> None:
     skew_now  = float(df.iloc[last_i]["skew"])
     spy_now   = float(df.iloc[last_i]["spy"])
 
-    seq_alert = (
+    seq_alert = bool(
         lb_last["sync_on"].any()
         and (vix_now / vix_peak_now - 1) < VIX_REV_THR
         and (skew_now / skew_peak_now - 1) > SKEW_HOLD_THR

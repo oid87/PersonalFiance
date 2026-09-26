@@ -43,6 +43,60 @@ def get_finmind_token() -> str:
     return ""  # anonymous (low rate limit, may still work for a single daily call)
 
 
+def get_fred_api_key() -> "str | None":
+    """FRED API key lookup: env FRED_API_KEY -> repo root .fred_api_key -> None.
+
+    An empty/whitespace-only env value (e.g. an unset GitHub secret, which the
+    workflow still passes through as "") is treated as absent, same as a
+    missing key -> callers fall back to the free fredgraph.csv endpoint."""
+    tok = os.environ.get("FRED_API_KEY", "").strip()
+    if tok:
+        return tok
+    p = ROOT / ".fred_api_key"
+    if p.exists():
+        tok = p.read_text().strip()
+        if tok:
+            return tok
+    return None
+
+
+class FredApiError(RuntimeError):
+    """Raised for FRED official-API failures, with the api_key scrubbed from
+    the message (requests' HTTPError message embeds the request URL, which
+    would otherwise leak the key into logs/exceptions)."""
+
+
+def fred_csv_text(series_id: str, *, headers: dict, timeout: int = 30) -> str:
+    """Return FRED series data as fredgraph.csv-format CSV text: header
+    "observation_date,<series_id>", one row per observation, values left as-is
+    (including "." for missing). Uses the official API (JSON) when
+    get_fred_api_key() returns a key, else falls back to the free
+    fredgraph.csv endpoint (both raise_for_status())."""
+    api_key = get_fred_api_key()
+    if api_key:
+        url = (
+            "https://api.stlouisfed.org/fred/series/observations"
+            f"?series_id={series_id}&api_key={api_key}&file_type=json"
+        )
+        try:
+            resp = requests.get(url, timeout=timeout, headers=headers)
+            resp.raise_for_status()
+        except requests.exceptions.RequestException as exc:
+            raise FredApiError(
+                f"FRED API request failed for series {series_id} (status "
+                f"{getattr(exc.response, 'status_code', '?')})"
+            ) from None
+        payload = resp.json()
+        lines = [f"observation_date,{series_id}"]
+        for obs in payload.get("observations", []):
+            lines.append(f"{obs.get('date', '')},{obs.get('value', '')}")
+        return "\n".join(lines) + "\n"
+    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+    resp = requests.get(url, timeout=timeout, headers=headers)
+    resp.raise_for_status()
+    return resp.text
+
+
 def fetch_fred_csv(series_id: str, *, headers: dict, timeout: int = 30) -> list[tuple[str, float]]:
     """Download one FRED series as CSV -> [(date, value), ...], sorted ascending.
 
@@ -50,11 +104,9 @@ def fetch_fred_csv(series_id: str, *, headers: dict, timeout: int = 30) -> list[
     not otherwise transformed — callers round / reshape as their own output
     format requires.
     """
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    resp = requests.get(url, timeout=timeout, headers=headers)
-    resp.raise_for_status()
+    text = fred_csv_text(series_id, headers=headers, timeout=timeout)
     rows: list[tuple[str, float]] = []
-    for row in csv.DictReader(io.StringIO(resp.text)):
+    for row in csv.DictReader(io.StringIO(text)):
         d = (row.get("observation_date") or row.get("DATE") or "").strip()
         v = (row.get(series_id) or "").strip()
         if not d or v in ("", "."):

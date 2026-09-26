@@ -22,7 +22,7 @@ from pathlib import Path
 
 import requests
 
-from _common import load_rows_by_date
+from _common import fred_csv_text, load_rows_by_date
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -39,11 +39,9 @@ SERIES = OrderedDict([
 
 
 def fetch_fred_csv(series_id: str) -> dict[str, float]:
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    resp = requests.get(url, timeout=30, headers=UA)
-    resp.raise_for_status()
+    text = fred_csv_text(series_id, headers=UA, timeout=30)
     by_date: dict[str, float] = {}
-    reader = csv.DictReader(io.StringIO(resp.text))
+    reader = csv.DictReader(io.StringIO(text))
     for row in reader:
         d = (row.get("observation_date") or "").strip()
         v = (row.get(series_id) or "").strip()

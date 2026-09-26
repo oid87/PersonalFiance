@@ -57,8 +57,20 @@ def load_existing() -> "OrderedDict[str, dict]":
     return load_rows_by_date(OUT)
 
 
+def load_existing_updated() -> "str | None":
+    """Read the "updated" field of the currently-committed nfci.json, if any."""
+    if not OUT.exists():
+        return None
+    try:
+        return json.loads(OUT.read_text()).get("updated")
+    except Exception:
+        return None
+
+
 def main() -> None:
     existing = load_existing()
+    existing_updated = load_existing_updated()
+    fetch_ok = True
     try:
         per_series = {}
         for sid, key in SERIES.items():
@@ -78,6 +90,7 @@ def main() -> None:
         if existing:
             print(f"  [NFCI] FAILED ({exc}); keeping {len(existing)} existing rows")
             fresh = OrderedDict()
+            fetch_ok = False
         else:
             raise
 
@@ -119,7 +132,7 @@ def main() -> None:
                  "decomposition only, not additive contributions. 0 = historical average "
                  "financial conditions; >0 tighter-than-average, <0 looser-than-average. "
                  "ANFCI = adjusted for economic conditions (separate line, not part of the sum)."),
-        "updated": date.today().isoformat(),
+        "updated": date.today().isoformat() if fetch_ok else (existing_updated or date.today().isoformat()),
         "data": data,
     }
     OUT.write_text(json.dumps(payload, ensure_ascii=False) + "\n")
