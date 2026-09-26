@@ -46,6 +46,8 @@ import pandas as pd
 import requests
 import yfinance as yf
 
+from _common import fred_csv_text
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -150,11 +152,9 @@ def build_tw() -> dict:
 # ─────────────────────────────────────────────────────────────────────────
 def fetch_fred_monthly_yoy(series_id: str) -> dict[str, float]:
     """FRED no-key CSV → {YYYY-MM-01: yoy%}. Level series, trailing pct_change(12)."""
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    resp = requests.get(url, timeout=30, headers=UA)
-    resp.raise_for_status()
+    text = fred_csv_text(series_id, headers=UA, timeout=30)
     by_month: dict[str, float] = {}
-    for row in csv.DictReader(io.StringIO(resp.text)):
+    for row in csv.DictReader(io.StringIO(text)):
         d = row.get("observation_date", "").strip()
         v = row.get(series_id, "").strip()
         if not d or v in (".", ""):
@@ -295,11 +295,9 @@ def fetch_jp_money() -> tuple[dict, dict, str]:
     note = ""
     m1_by_date, m2_by_date = {}, {}
     try:
-        url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MYAGM1JPM189S"
-        resp = requests.get(url, timeout=30, headers=UA)
-        resp.raise_for_status()
+        text = fred_csv_text("MYAGM1JPM189S", headers=UA, timeout=30)
         by_month = {}
-        for row in csv.DictReader(io.StringIO(resp.text)):
+        for row in csv.DictReader(io.StringIO(text)):
             d = row.get("observation_date", "").strip()
             v = row.get("MYAGM1JPM189S", "").strip()
             if not d or v in (".", ""):
@@ -315,11 +313,9 @@ def fetch_jp_money() -> tuple[dict, dict, str]:
         note += "M1=不可得(FRED MYAGM1JPM189S 抓取失敗)；"
 
     try:
-        url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=MYAGM2JPM189S"
-        resp = requests.get(url, timeout=30, headers=UA)
-        resp.raise_for_status()
+        text = fred_csv_text("MYAGM2JPM189S", headers=UA, timeout=30)
         by_month = {}
-        for row in csv.DictReader(io.StringIO(resp.text)):
+        for row in csv.DictReader(io.StringIO(text)):
             d = row.get("observation_date", "").strip()
             v = row.get("MYAGM2JPM189S", "").strip()
             if not d or v in (".", ""):

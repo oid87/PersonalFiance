@@ -8,3 +8,4 @@ venv/
 .claude/
 node_modules/
 .codex/hooks.json
+.fred_api_key

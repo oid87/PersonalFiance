@@ -145,6 +145,130 @@ class GetFinmindTokenTests(unittest.TestCase):
                 self.assertEqual(_common.get_finmind_token(), "")
 
 
+class GetFredApiKeyTests(unittest.TestCase):
+    def test_env_wins(self):
+        with tempfile.TemporaryDirectory() as d, \
+                patch.object(_common, "ROOT", Path(d)), \
+                patch.dict(os.environ, {"FRED_API_KEY": " envkey "}):
+            self.assertEqual(_common.get_fred_api_key(), "envkey")
+
+    def test_repo_root_file_used_when_no_env(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / ".fred_api_key").write_text("repokey\n")
+            with patch.object(_common, "ROOT", root), \
+                    patch.dict(os.environ, {}, clear=True):
+                self.assertEqual(_common.get_fred_api_key(), "repokey")
+
+    def test_empty_string_env_treated_as_missing(self):
+        # A GitHub secret that isn't set still comes through as env="" (not unset) —
+        # that must fall back the same as a genuinely absent key, not be used as one.
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            with patch.object(_common, "ROOT", root), \
+                    patch.dict(os.environ, {"FRED_API_KEY": ""}):
+                self.assertIsNone(_common.get_fred_api_key())
+
+    def test_all_missing_returns_none(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            with patch.object(_common, "ROOT", root), \
+                    patch.dict(os.environ, {}, clear=True):
+                self.assertIsNone(_common.get_fred_api_key())
+
+
+class FredCsvTextTests(unittest.TestCase):
+    def test_no_key_hits_fredgraph_csv(self):
+        csv_text = "observation_date,MYID\n2020-01-01,1.5\n"
+        with tempfile.TemporaryDirectory() as d, \
+                patch.object(_common, "ROOT", Path(d)), \
+                patch.dict(os.environ, {}, clear=True), \
+                patch("_common.requests.get", return_value=_fake_response(csv_text)) as mock_get:
+            text = _common.fred_csv_text("MYID", headers={"User-Agent": "x"})
+        self.assertEqual(text, csv_text)
+        args, kwargs = mock_get.call_args
+        self.assertIn("fred.stlouisfed.org/graph/fredgraph.csv?id=MYID", args[0])
+        self.assertEqual(kwargs["headers"], {"User-Agent": "x"})
+
+    def test_with_key_hits_official_api_with_file_type_json(self):
+        payload = {"observations": [
+            {"date": "2020-01-01", "value": "1.5"},
+            {"date": "2020-01-02", "value": "."},
+        ]}
+        resp = MagicMock()
+        resp.raise_for_status = MagicMock()
+        resp.json = MagicMock(return_value=payload)
+        with tempfile.TemporaryDirectory() as d, \
+                patch.object(_common, "ROOT", Path(d)), \
+                patch.dict(os.environ, {"FRED_API_KEY": "secretkey123"}), \
+                patch("_common.requests.get", return_value=resp) as mock_get:
+            text = _common.fred_csv_text("MYID", headers={"User-Agent": "x"})
+        args, kwargs = mock_get.call_args
+        self.assertIn("api.stlouisfed.org/fred/series/observations", args[0])
+        self.assertIn("file_type=json", args[0])
+        self.assertIn("series_id=MYID", args[0])
+        self.assertIn("api_key=secretkey123", args[0])
+        self.assertEqual(text, "observation_date,MYID\n2020-01-01,1.5\n2020-01-02,.\n")
+
+    def test_json_result_equivalent_to_csv_result_via_fetch_fred_csv(self):
+        """fetch_fred_csv() built on top of the JSON path (with key) must produce the
+        exact same [(date, value), ...] as the CSV path (no key) for equivalent input,
+        including skipping "." missing observations."""
+        csv_text = (
+            "observation_date,MYID\n"
+            "2020-01-01,1.5\n"
+            "2020-01-02,.\n"
+            "2020-01-03,2.25\n"
+        )
+        with tempfile.TemporaryDirectory() as d, \
+                patch.object(_common, "ROOT", Path(d)), \
+                patch.dict(os.environ, {}, clear=True), \
+                patch("_common.requests.get", return_value=_fake_response(csv_text)):
+            csv_rows = _common.fetch_fred_csv("MYID", headers={})
+
+        payload = {"observations": [
+            {"date": "2020-01-01", "value": "1.5"},
+            {"date": "2020-01-02", "value": "."},
+            {"date": "2020-01-03", "value": "2.25"},
+        ]}
+        resp = MagicMock()
+        resp.raise_for_status = MagicMock()
+        resp.json = MagicMock(return_value=payload)
+        with tempfile.TemporaryDirectory() as d, \
+                patch.object(_common, "ROOT", Path(d)), \
+                patch.dict(os.environ, {"FRED_API_KEY": "secretkey123"}), \
+                patch("_common.requests.get", return_value=resp):
+            json_rows = _common.fetch_fred_csv("MYID", headers={})
+
+        self.assertEqual(csv_rows, json_rows)
+        self.assertEqual(csv_rows, [("2020-01-01", 1.5), ("2020-01-03", 2.25)])
+
+    def test_api_error_message_does_not_contain_key(self):
+        import requests as requests_module
+
+        resp = MagicMock()
+        resp.status_code = 400
+        http_err = requests_module.exceptions.HTTPError(
+            "400 Client Error: Bad Request for url: "
+            "https://api.stlouisfed.org/fred/series/observations?series_id=MYID"
+            "&api_key=secretkey123&file_type=json"
+        )
+        http_err.response = resp
+
+        def _raise():
+            raise http_err
+
+        fake_resp = MagicMock()
+        fake_resp.raise_for_status = MagicMock(side_effect=_raise)
+        with tempfile.TemporaryDirectory() as d, \
+                patch.object(_common, "ROOT", Path(d)), \
+                patch.dict(os.environ, {"FRED_API_KEY": "secretkey123"}), \
+                patch("_common.requests.get", return_value=fake_resp):
+            with self.assertRaises(_common.FredApiError) as ctx:
+                _common.fred_csv_text("MYID", headers={})
+        self.assertNotIn("secretkey123", str(ctx.exception))
+
+
 class IdempotentMergeTests(unittest.TestCase):
     def test_missing_file_starts_from_empty(self):
         with tempfile.TemporaryDirectory() as d:

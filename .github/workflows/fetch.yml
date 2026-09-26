@@ -20,6 +20,8 @@ jobs:
   us:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 22 * * 1-5'
     runs-on: ubuntu-latest
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -282,6 +284,8 @@ jobs:
   tw:
     if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 10 * * 1-5'
     runs-on: ubuntu-latest
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
     steps:
       - uses: actions/checkout@v4
 

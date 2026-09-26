@@ -32,6 +32,8 @@ from pathlib import Path
 import pandas as pd
 import requests
 
+from _common import fred_csv_text
+
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(exist_ok=True)
@@ -57,12 +59,10 @@ def month_start(date_str: str) -> str:
 
 def fetch_fred_monthly(series_id: str) -> "OrderedDict[str, float]":
     """Return {YYYY-MM-01: value_in_billions}, keeping each month's LAST observation."""
-    url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
-    resp = requests.get(url, timeout=30, headers=UA)
-    resp.raise_for_status()
+    text = fred_csv_text(series_id, headers=UA, timeout=30)
     factor = UNIT_TO_B[series_id]
     by_month: "OrderedDict[str, float]" = OrderedDict()
-    for row in csv.DictReader(io.StringIO(resp.text)):
+    for row in csv.DictReader(io.StringIO(text)):
         d = row.get("observation_date", "").strip()
         v = row.get(series_id, "").strip()
         if not d or v in (".", ""):
