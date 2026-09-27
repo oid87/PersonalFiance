@@ -7,6 +7,7 @@ import { registerAll, switchTo, applyThemeAll, setupResizeHandler } from './swit
 import * as trendTab     from './tabs/trend.js';
 import * as pentagramTab from './tabs/pentagram.js';
 import * as macroTab     from './tabs/macro.js';
+import * as usmacroTab   from './tabs/usmacro.js';
 import * as corrTab      from './tabs/corr.js';
 import * as sectorTab    from './tabs/sector.js';
 import * as cashkingTab  from './tabs/cashking.js';
@@ -79,6 +80,7 @@ registerAll([
   { id: 'trend',     module: trendTab     },
   { id: 'pentagram', module: pentagramTab },
   { id: 'macro',     module: macroTab     },
+  { id: 'usmacro',   module: usmacroTab   },
   { id: 'corr',      module: corrTab      },
   { id: 'sector',    module: sectorTab    },
   { id: 'cashking',  module: cashkingTab  },
@@ -199,6 +201,7 @@ const CATEGORIES = [
       { id: 'trend',     label: '趨勢' },
       { id: 'pentagram', label: '五線譜' },
       { id: 'macro',     label: '宏觀' },
+      { id: 'usmacro',   label: '美國總經' },
       { id: 'twcrash',   label: '台股歷史股災' },
       { id: 'valuation', label: '估值' },
       { id: 'fwdpe',     label: 'Forward P/E 自建' },

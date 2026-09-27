@@ -31,6 +31,10 @@ jobs:
           cache: pip
           cache-dependency-path: scripts/requirements.txt
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.14.0"
+
       - name: Install deps
         run: pip install -r scripts/requirements.txt
 
@@ -259,6 +263,12 @@ jobs:
       - name: Fetch Taiwan semiconductor basket forward PE (self-built market-cap-weighted basket, yfinance)
         continue-on-error: true
         run: python scripts/fetch_tw_semi_valuation.py
+
+      - name: Fetch and capture US macro diagnostic
+        continue-on-error: true
+        run: |
+          set -e
+          bash scripts/run_us_macro_pipeline.sh
 
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
