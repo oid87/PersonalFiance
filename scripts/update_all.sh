@@ -106,9 +106,20 @@ log "fetch_stocks..."
 "$PYTHON" fetch_usrec.py         || true
 "$PYTHON" fetch_tw_jp_kr_gdp.py  || true
 "$PYTHON" fetch_tw_semi_valuation.py || true
+# Keep the archive on its first import, before its manifest is tracked.
+if git -C "$ROOT_DIR" ls-files --error-unmatch data/us_macro_archive/manifest.json >/dev/null 2>&1; then
+  git -C "$ROOT_DIR" clean -fdq -- data/us_macro_archive
+fi
+"$PYTHON" fetch_us_macro_diagnostic.py || log "⚠️ 美國總經來源抓取失敗，未更新診斷資料"
+"$PYTHON" validate_us_macro.py || log "⚠️ 美國總經資料封存驗證失敗"
 
 # 3. 資料完整性快檢（純警告；本地不 commit 所以不擋流程）
 cd "$ROOT_DIR"
+if command -v node >/dev/null 2>&1; then
+  node scripts/validate_us_macro_diagnostic_snapshots.mjs || log "⚠️ 美國總經快照與索引未通過驗證"
+else
+  log "⚠️ 未安裝 Node，美國總經快照與索引未驗證"
+fi
 "$PYTHON" scripts/validate_data.py || log "⚠️ 本地資料驗證有問題，請檢查 data/"
 
 # 4. 刻意不 commit / 不 push —— data/ 由 GitHub Action 單一負責發佈（單一寫入者）

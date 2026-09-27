@@ -167,6 +167,34 @@
     <div id="biz-chart" style="height:130px"></div>
   </section>
 
+  <section id="tab-usmacro" class="tab-section" hidden>
+    <style>
+      #tab-usmacro { color:var(--fg); padding:16px max(14px,3vw) 36px; }
+      #tab-usmacro .um-head {display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+      #tab-usmacro h2 {font-size:1.35rem;margin:0 0 7px}
+      #tab-usmacro h3 {font-size:1rem;margin:0 0 12px}
+      #tab-usmacro p {margin:5px 0;line-height:1.55}
+      #tab-usmacro .um-muted {color:var(--muted);font-size:.83rem}
+      #tab-usmacro .um-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:14px 0 22px}
+      #tab-usmacro .um-card {background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;min-width:0}
+      #tab-usmacro .um-card strong {font-size:1.05rem}
+      #tab-usmacro .um-pill {display:inline-block;padding:3px 8px;border-radius:20px;border:1px solid var(--border);font-size:.8rem;margin:2px 3px 2px 0}
+      #tab-usmacro details {margin-top:10px;color:var(--muted);font-size:.8rem;overflow-wrap:anywhere}
+      #tab-usmacro summary {cursor:pointer}
+      #tab-usmacro .um-chart {height:330px;width:100%;margin:12px 0}
+      #tab-usmacro .um-section {margin:24px 0}
+      #tab-usmacro a {color:var(--accent)}
+      #tab-usmacro .um-flow {display:flex;gap:9px;overflow-x:auto;padding:4px 0 14px}
+      #tab-usmacro .um-flow .um-card {min-width:180px;max-width:230px;flex:1}
+      #tab-usmacro .um-alert {border-left:3px solid var(--accent);padding:8px 12px;background:var(--panel);margin:10px 0}
+      #tab-usmacro .um-history-row {border-top:1px solid var(--border);padding:8px 0}
+      @media(max-width:600px) {#tab-usmacro {padding:12px 10px 28px} #tab-usmacro .um-chart{height:280px}}
+    </style>
+    <div class="um-head"><div><h2>美國總經診斷</h2><p class="um-muted">四組實體經濟指標、兩標的雙均線；方向門檻為尚未驗證的顯示規則。</p></div><div id="usmacro-meta" class="um-muted"></div></div>
+    <div id="usmacro-status" class="um-alert">載入中…</div>
+    <div id="usmacro-content"></div>
+  </section>
+
   <section id="tab-twcrash" class="tab-section" hidden>
     <div id="twcrash-chart" style="width:100%;height:460px"></div>
     <div id="twcrash-note" style="padding:8px 16px 24px;color:var(--muted);font-size:12px;line-height:1.6"></div>
