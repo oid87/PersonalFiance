@@ -347,7 +347,6 @@ function renderChannelMode() {
   const maLabel  = `MA${pentaMaPeriod}`;
   const ma125Chw = penta125Active ? computeCustomMA(allDaily, pentaMaPeriod).filter(r => r[0] >= fromDate) : null;
 
-  const s        = SERIES.find(x => x.key === pentaActiveTicker);
   const axisClr  = PALETTE.muted;
   const gridClr  = PALETTE.grid;
   const tipBg    = PALETTE.bg;
@@ -466,7 +465,7 @@ function renderChannelMode() {
     series: [
       { ...lineBase, name:chUpLbl,  data:upperW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#e91e63"}, itemStyle:{color:"#e91e63"} },
       { ...lineBase, name:chMidLbl, data:midW,   xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#9e9e9e",type:"dashed"}, itemStyle:{color:"#9e9e9e"} },
-      { ...lineBase, name:"價格",   data:priceW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.8,color:s.color}, itemStyle:{color:s.color} },
+      { ...lineBase, name:"價格",   data:priceW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.8,color:PALETTE.text}, itemStyle:{color:PALETTE.text} },
       { ...lineBase, name:chLoLbl,  data:lowerW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#1565c0"}, itemStyle:{color:"#1565c0"} },
       ...(ma125Chw ? [{ ...lineBase, name:maLabel, data:ma125Chw, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:2,color:"#ff9800"}, itemStyle:{color:"#ff9800"} }] : []),
       ...(vixIdxCh>=0 ? [{ ...lineBase, name:"VIX", data:vixDataCh, xAxisIndex:0, yAxisIndex:vixIdxCh, lineStyle:{width:1.5,color:"#f0883e",type:"dashed"}, itemStyle:{color:"#f0883e"}, areaStyle:{color:"rgba(240,136,62,0.06)"} }] : []),
@@ -539,7 +538,6 @@ export function renderPentagram() {
     badgeLabel   = `${zoneName}  ${deviationStr}`;
   }
 
-  const s        = SERIES.find(x => x.key === pentaActiveTicker);
   const axisClr  = PALETTE.muted;
   const gridClr  = PALETTE.grid;
   const tipBg    = PALETTE.bg;
@@ -630,7 +628,7 @@ export function renderPentagram() {
   const sTr = { ...lineBase, name:"趨勢線",   data:result.trend,  xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#9e9e9e"}, itemStyle:{color:"#9e9e9e"}, labelLayout:{moveOverlap:'shiftY'}, endLabel:mkEndLabelPt("#9e9e9e") };
   const sL1 = { ...lineBase, name:"恐懼",     data:result.lower1, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#64b5f6"}, itemStyle:{color:"#64b5f6"}, labelLayout:{moveOverlap:'shiftY'}, endLabel:mkEndLabelPt("#64b5f6") };
   const sL2 = { ...lineBase, name:"極度恐懼", data:result.lower2, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#1565c0"}, itemStyle:{color:"#1565c0"}, labelLayout:{moveOverlap:'shiftY'}, endLabel:mkEndLabelPt("#1565c0") };
-  const sPr = { ...lineBase, name:"價格",     data,               xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:s.color},   itemStyle:{color:s.color}, labelLayout:{moveOverlap:'shiftY'}, endLabel:mkEndLabelPt(s.color),
+  const sPr = { ...lineBase, name:"價格",     data,               xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:PALETTE.text}, itemStyle:{color:PALETTE.text}, labelLayout:{moveOverlap:'shiftY'}, endLabel:{ ...mkEndLabelPt(PALETTE.text), color:PALETTE.bg },
     markPoint: { silent:true, animation:false, data:[{ coord:[lastDate,lastPrice], symbol:"circle", symbolSize:10, itemStyle:{color:zoneClr,borderColor:"#fff",borderWidth:2}, label:{show:true, formatter:badgeLabel, position:badgePos, distance:8, color:"#fff", backgroundColor:zoneClr, borderRadius:4, padding:[3,8], fontSize:12, fontWeight:"bold"} }] }
   };
   let bandsSorted;
@@ -730,7 +728,7 @@ export function renderPentagram() {
         { ...lineBase, name:"樂活上緣",   data:chUpperPt, xAxisIndex:subGridIdxPt, yAxisIndex:subAxisYPt, lineStyle:{width:1.3,color:"#e91e63"}, itemStyle:{color:"#e91e63"} },
         { ...lineBase, name:chMidNamePt,  data:chMidPt,   xAxisIndex:subGridIdxPt, yAxisIndex:subAxisYPt, lineStyle:{width:1.3,color:"#9e9e9e",type:"dashed"}, itemStyle:{color:"#9e9e9e"} },
         { ...lineBase, name:"樂活下緣",   data:chLowerPt, xAxisIndex:subGridIdxPt, yAxisIndex:subAxisYPt, lineStyle:{width:1.3,color:"#1565c0"}, itemStyle:{color:"#1565c0"} },
-        { ...lineBase, name:"樂活收盤",   data:chPricePt, xAxisIndex:subGridIdxPt, yAxisIndex:subAxisYPt, lineStyle:{width:1.5,color:s.color}, itemStyle:{color:s.color} },
+        { ...lineBase, name:"樂活收盤",   data:chPricePt, xAxisIndex:subGridIdxPt, yAxisIndex:subAxisYPt, lineStyle:{width:1.5,color:PALETTE.text}, itemStyle:{color:PALETTE.text} },
       ] : []),
       ...(fpeSubPt ? [{ type:'line', name:'FPE', xAxisIndex:fpeGridIdxPt, yAxisIndex:fpeSubYPt, data:fpeDataPt, showSymbol:false, lineStyle:{width:1.5,color:'#58a6ff'}, itemStyle:{color:'#58a6ff'}, markLine:_fpeMarkLine(pentaActiveTicker) }] : []),
       ...(rsiDataPt.length ? [{ type:'line', name:'RSI', xAxisIndex:rsiGridIdxPt, yAxisIndex:rsiIdxPt, data:rsiDataPt, showSymbol:false, lineStyle:{width:1.5,color:'#a371f7'}, itemStyle:{color:'#a371f7'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:70,label:{formatter:'70',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:30,label:{formatter:'30',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} }] : []),
