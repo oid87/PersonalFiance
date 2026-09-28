@@ -3278,6 +3278,46 @@
     </div>
   </section>
 
+  <!-- ── 資金雷達 tab ──────────────────────────────────────────────── -->
+  <section id="tab-flowradar" class="tab-section" hidden>
+    <div class="controls controls--wrap">
+      <div class="picker-row picker-row--end" id="fr-symbol-picker">
+        <span class="chip active" data-fr-symbol="SPY">SPY</span>
+        <span class="chip" data-fr-symbol="QQQ">QQQ</span>
+      </div>
+      <div class="picker-row picker-row--end" id="fr-range-picker">
+        <span class="chip active" data-fr-range="3M">3M</span>
+        <span class="chip" data-fr-range="1Y">1Y</span>
+        <span class="chip" data-fr-range="3Y">3Y</span>
+      </div>
+    </div>
+    <div class="chart-h520" id="fr-radar-chart"></div>
+    <div class="note-muted" id="fr-dates">—</div>
+    <div id="fr-chart-darkpool" style="height:320px"></div>
+    <div id="fr-chart-short" style="height:320px"></div>
+    <div id="fr-chart-options" style="height:320px"></div>
+    <div id="fr-chart-technical" style="height:320px"></div>
+    <div id="fr-chart-skew" style="height:320px"></div>
+    <div class="status" id="fr-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 資金雷達怎麼看？</div>
+      <div class="info-panel-body">
+        <p>仿 Prospero.Ai 的五軸雷達，但用<b>可回測、無未來函數的免費代理指標</b>重建；這是代理指標，<b>不是 Prospero 的原始數值</b>。五軸皆 0–100，分數越高代表該面向越偏多／風險偏好越高。</p>
+        <table class="info-table">
+          <thead><tr><th>軸</th><th>來源</th><th>計算</th><th>方向</th></tr></thead>
+          <tbody>
+            <tr><td>暗池買盤</td><td>FINRA Reg SHO 每日 short volume</td><td>SVR=short volume/total volume 5日均，近3年百分位</td><td>越高分越高</td></tr>
+            <tr><td>空單壓力</td><td>FINRA 空單餘額(每月兩次)</td><td>days to cover，forward-fill 到每個交易日，近72次結算觀測百分位</td><td>越高分越低(取反)</td></tr>
+            <tr><td>期權情緒</td><td>Put/Call ratio(equity，全市場)</td><td>5日均，近3年百分位</td><td>越高分越低(取反)</td></tr>
+            <tr><td>技術面</td><td>S 自身收盤價</td><td>MA50/MA200/MACD訊號/RSI14 加權合成，本身即0–100</td><td>—</td></tr>
+            <tr><td>尾部風險</td><td>CBOE SKEW(全市場)</td><td>近3年百分位</td><td>越高分越低(取反)</td></tr>
+          </tbody>
+        </table>
+        <p class="note-muted">⚠️ <b>FINRA short volume ≠ 空單餘額</b>：short volume 多半是做市商對買單的避險，比率高通常代表買方主動，不是空頭在建倉。P/C 與 SKEW 是全市場指標，不分 SPY/QQQ。空單餘額與 P/C／SKEW 資料頻率較低，皆以最近一筆往前展延(forward-fill)顯示；展延超過一定天數視為過期，顯示為「–」。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 全球央行資產表 tab ────────────────────────────────────────── -->
   <section id="tab-central_banks" class="tab-section" hidden>
     <div class="controls controls--wrap">

@@ -152,6 +152,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_putcall.py
 
+      - name: Fetch FINRA Reg SHO short volume + consolidated short interest (SPY/QQQ)
+        continue-on-error: true
+        run: python scripts/fetch_finra_short.py
+
       - name: Fetch OFR Financial Stress Index (financialresearch.gov, daily, total + 5 categories)
         continue-on-error: true
         run: python scripts/fetch_fsi.py
