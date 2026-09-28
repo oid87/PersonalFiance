@@ -1,26 +1,24 @@
-import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
-
-let breadthChart     = null;
-let breadthData      = null;
-let breadthSpy       = {};   // { date: close }
-let breadthVixMap    = {};   // { date: value }
-let breadthFgMap     = {};   // { date: value }
-let breadthVixActive = false;
-let breadthFgActive  = false;
-let breadthRange     = "2Y";
-let breadthMaWin     = 50;   // 50 | 200 — 一次只看一條廣度線 + 指數同窗均線
-let breadthMaMap     = {};   // { 50: {date: ma}, 200: {...} } — 以完整 overlay 歷史計算
-let breadthPeakMap   = {};   // { 20: {date: 90交易日滾動高點}, 50: {...}, 200: {...} }
-let hbTriggers       = [];   // ["YYYY-MM-DD", ...] Hindenburg-style trigger dates
+import { initAdvancedPanel, advancedThemeChange, resizeAdvancedPanel } from './breadthAdvancedPanel.js';
+import { isLight, mob, PALETTE, echartsBase } from '../utils/theme.js';
+import { bindOnce, chipPicker } from '../utils/dom.js';
+import { buildBreadthContext, getBreadthDenominator } from './breadthSignals.mjs';
+import { evaluateEventStudy, HORIZONS } from '../utils/eventStudy.mjs';
 
 const UNIVERSE_CONFIG = {
-  SP500: { dataFile: "data/breadth.json",     overlayFile: "data/SPY.json", overlayName: "SPY", label: "S&P 500" },
-  NDX:   { dataFile: "data/breadth_ndx.json", overlayFile: "data/QQQ.json", overlayName: "QQQ", label: "Nasdaq-100" },
-  XLG:   { dataFile: "data/breadth_xlg.json", overlayFile: "data/XLG.json", overlayName: "XLG", label: "S&P 500 Top 50" },
-  TW50:  { dataFile: "data/breadth_tw50.json", overlayFile: "data/0050.TW.json", overlayName: "0050", label: "台灣50" },
+  SP500: { dataFile: 'data/breadth.json', overlayFile: 'data/SPY.json', overlayName: 'SPY', label: 'S&P 500' },
+  NDX: { dataFile: 'data/breadth_ndx.json', overlayFile: 'data/QQQ.json', overlayName: 'QQQ', label: 'Nasdaq-100' },
+  XLG: { dataFile: 'data/breadth_xlg.json', overlayFile: 'data/XLG.json', overlayName: 'XLG', label: '市值前50代理股票群' },
+  TW50: { dataFile: 'data/breadth_tw50.json', overlayFile: 'data/0050.TW.json', overlayName: '0050', label: '台灣50' },
 };
-let breadthUniverse = "SP500";
-let breadthCache    = {};
+const cache = new Map();
+const overlays = { VIX: { file: 'data/VIX.json', active: false, rows: null, error: null }, 'F&G': { file: 'data/fear_greed.json', active: false, rows: null, error: null } };
+let universe = 'SP500', maWindow = 50, range = '2Y', requestSequence = 0;
+let loaded = null, breadthChart = null, studyChart = null, study = null, selectedDate = null;
+const el = id => document.getElementById(id);
+const number = (value, digits = 2) => Number.isFinite(value) ? value.toFixed(digits) : '—';
+const percent = value => Number.isFinite(value) ? `${number(value)}%` : '—';
+const context = () => loaded?.contexts[maWindow];
+const cfg = () => UNIVERSE_CONFIG[universe];
 
 function breadthSignal(pct, is200) {
   if (pct == null) return { label: "—", color: "var(--muted)" };
@@ -53,449 +51,213 @@ function breadthMomentumSignal(diff) {
   return                { label: "波峰持平／走高",             color: "#3fb950" };
 }
 
-function computeMomentum(rows, peakMap, maWin) {
-  if (!rows.length || !peakMap) return null;
-  const lastIdx = rows.length - 1;
-  const peakNow = peakMap[rows[lastIdx].date];
-  const priorRow = rows[lastIdx - 90];
-  const peakPrior = priorRow ? peakMap[priorRow.date] : null;
-  if (peakNow == null || peakPrior == null) return null;
-  return { peakNow, peakPrior, diff: peakNow - peakPrior };
+
+async function readData(file) {
+  const response = await fetch(file, { cache: 'no-cache' });
+  if (!response.ok) throw new Error(`${file} HTTP ${response.status}`);
+  const json = await response.json();
+  if (!Array.isArray(json.data) || !json.data.length) throw new Error(`${file} 資料為空或格式錯誤`);
+  return json;
 }
 
-// Simplified Hindenburg-style trigger on S&P 500 constituents.
-// 真正版本用全 NYSE listed ~3000 檔 + McClellan Oscillator;這裡用 SPY 成分股當代理,所以叫 "Hindenburg-style"。
-// 條件:① 新高 > 2.2% × total ② 新低 > 2.2% × total ③ 不能一邊壓倒另一邊(max ≤ 2× min) ④ SPY 高於 50 交易日前(趨勢濾網)
-const HB_THRESHOLD       = 0.022;  // 2.2% of S&P500 ≈ 11 檔
-const HB_TREND_LOOKBACK  = 50;     // 交易日
-const HB_CLUSTER_WINDOW  = 30;     // 交易日內看叢集
-
-function isHindenburgDay(row, rowPrev50, spyMap) {
-  if (row.new_hi_count == null || row.new_lo_count == null) return false;
-  const total = row.hl_total || row.total;
-  if (!total) return false;
-  const hi = row.new_hi_count, lo = row.new_lo_count;
-  if (hi / total <= HB_THRESHOLD)        return false;
-  if (lo / total <= HB_THRESHOLD)        return false;
-  if (Math.max(hi, lo) > 2 * Math.min(hi, lo)) return false;
-  if (!rowPrev50) return false;
-  const spyNow  = spyMap[row.date];
-  const spyPrev = spyMap[rowPrev50.date];
-  if (spyNow == null || spyPrev == null) return false;
-  if (spyNow <= spyPrev) return false;
-  return true;
+function clearView() {
+  loaded = null; study = null; selectedDate = null;
+  breadthChart?.clear(); studyChart?.clear();
+  el('breadth-regime').textContent = '資料不足';
+  el('breadth-study-status').textContent = '等待股票群資料';
+  el('breadth-study-table').replaceChildren(); el('breadth-study-events').replaceChildren();
+  el('breadth-study-selection').textContent = '';
+  document.querySelectorAll('#breadth-top .bc-pct, #breadth-top .bc-count, #breadth-top .bc-signal').forEach(node => { node.textContent = '—'; });
 }
 
-function computeHindenburgTriggers(rows, spyMap) {
-  const out = [];
-  for (let i = HB_TREND_LOOKBACK; i < rows.length; i++) {
-    if (isHindenburgDay(rows[i], rows[i - HB_TREND_LOOKBACK], spyMap))
-      out.push(rows[i].date);
-  }
-  return out;
-}
-
-function hindenburgStatus(triggers, latestDate, rows) {
-  if (!triggers.length) return { label: "正常",      color: "var(--muted)", count: 0 };
-  // Count triggers in trailing HB_CLUSTER_WINDOW trading days from latestDate
-  const latestIdx  = rows.findIndex(r => r.date === latestDate);
-  const cutoffIdx  = Math.max(0, latestIdx - HB_CLUSTER_WINDOW);
-  const cutoffDate = rows[cutoffIdx].date;
-  const recent     = triggers.filter(d => d >= cutoffDate);
-  if (recent.length >= 2) return { label: `叢集 ${recent.length} 次`, color: "#f85149", count: recent.length };
-  if (recent.length === 1) return { label: "單次觸發", color: "#f0883e", count: 1 };
-  return { label: "30日內無觸發", color: "var(--muted)", count: 0 };
-}
-
-function rollingPeakMap(rows, field, window = 90) {
-  const m = {};
-  const buf = []; // 存最近 window 筆非 null 值
-  for (const row of rows) {
-    const v = row[field];
-    if (v != null) {
-      buf.push(v);
-      if (buf.length > window) buf.shift();
-    }
-    if (buf.length > 0) m[row.date] = Math.max(...buf);
-  }
-  return m;
-}
-
-async function loadUniverse(universe) {
-  if (!breadthCache[universe]) {
-    const cfg = UNIVERSE_CONFIG[universe];
-    const [bResp, overlayResp] = await Promise.all([
-      fetch(cfg.dataFile,    { cache: "no-cache" }),
-      fetch(cfg.overlayFile, { cache: "no-cache" }),
-    ]);
-    if (!bResp.ok) throw new Error(`HTTP ${bResp.status}`);
-    const data = await bResp.json();
-    const overlayJson = await overlayResp.json();
-    const overlay = {};
-    for (const r of overlayJson.data) overlay[r.date] = r.close;
-    // 指數自身均線:用完整 overlay 歷史算,才不會在短窗(1Y/2Y)開頭缺一段
-    const sorted = [...overlayJson.data].sort((a, b) => a.date < b.date ? -1 : 1);
-    const maMaps = {};
-    for (const win of [20, 50, 200]) {
-      const m = {};
-      let sum = 0;
-      for (let i = 0; i < sorted.length; i++) {
-        sum += sorted[i].close;
-        if (i >= win) sum -= sorted[i - win].close;
-        if (i >= win - 1) m[sorted[i].date] = sum / win;
-      }
-      maMaps[win] = m;
-    }
-    const peakMaps = {};
-    for (const win of [20, 50, 200]) {
-      peakMaps[win] = rollingPeakMap(data.data, `above${win}_pct`, 90);
-    }
-    breadthCache[universe] = { data, overlay, maMaps, peakMaps };
-  }
-  breadthUniverse = universe;
-  breadthData = breadthCache[universe].data;
-  breadthSpy  = breadthCache[universe].overlay;
-  breadthMaMap = breadthCache[universe].maMaps;
-  breadthPeakMap = breadthCache[universe].peakMaps;
-}
-
-function setBearCard(pct, count, total) {
-  document.getElementById("bc-bear-pct").textContent =
-    pct != null ? pct.toFixed(1) : "—";
-  document.getElementById("bc-bear-count").textContent =
-    count != null ? `${count} / ${total}` : "— / —";
-  const sig = breadthBearSignal(pct);
-  const el  = document.getElementById("bc-bear-signal");
-  el.textContent = sig.label;
-  el.style.color = sig.color;
-}
-
-function setMomentumCard(rows) {
-  const mom = computeMomentum(rows, breadthPeakMap[breadthMaWin], breadthMaWin);
-  const pctEl = document.getElementById("bc-mom-pct");
-  const countEl = document.getElementById("bc-mom-count");
-  const sigEl = document.getElementById("bc-mom-signal");
-  if (!pctEl) return;
-  if (!mom) {
-    pctEl.textContent = "—";
-    countEl.textContent = "— / —";
-    sigEl.textContent = "—";
-    return;
-  }
-  pctEl.textContent = mom.peakNow.toFixed(1);
-  countEl.textContent = `前90日高點 ${mom.peakPrior.toFixed(1)}%`;
-  const sig = breadthMomentumSignal(mom.diff);
-  sigEl.textContent = sig.label;
-  sigEl.style.color = sig.color;
-}
-
-function refreshBreadthView() {
-  const status = document.getElementById("breadth-status");
-  const rows   = breadthData.data;
-  const latest = rows[rows.length - 1];
-
-  function setCard(suffix, pct, count, total, is200) {
-    document.getElementById(`bc-${suffix}-pct`).textContent =
-      pct != null ? pct.toFixed(1) : "—";
-    document.getElementById(`bc-${suffix}-count`).textContent =
-      count != null ? `${count} / ${total}` : "— / —";
-    const sig = breadthSignal(pct, is200);
-    const el  = document.getElementById(`bc-${suffix}-signal`);
-    el.textContent  = sig.label;
-    el.style.color  = sig.color;
-  }
-  setCard("20",  latest.above20_pct,  latest.above20_count,  latest.total, false);
-  setCard("50",  latest.above50_pct,  latest.above50_count,  latest.total, false);
-  setCard("200", latest.above200_pct, latest.above200_count, latest.total, true);
-  setBearCard(latest.bear_pct, latest.bear_count, latest.bear_total);
-  setMomentumCard(rows);
-
-  // Compute Hindenburg-style triggers (needs SPY for trend filter)
-  hbTriggers = computeHindenburgTriggers(rows, breadthSpy);
-  const hlEl   = document.getElementById("bc-hl-count");
-  const hlPctEl= document.getElementById("bc-hl-pct");
-  const hlSigEl= document.getElementById("bc-hl-signal");
-  if (hlEl && latest.new_hi_count != null && latest.new_lo_count != null) {
-    const tot = latest.hl_total || latest.total;
-    hlEl.textContent    = `${latest.new_hi_count} / ${latest.new_lo_count}`;
-    hlPctEl.textContent = `${(latest.new_hi_count/tot*100).toFixed(1)}% / ${(latest.new_lo_count/tot*100).toFixed(1)}% · n=${tot}`;
-    const st = hindenburgStatus(hbTriggers, latest.date, rows);
-    hlSigEl.textContent = st.label;
-    hlSigEl.style.color = st.color;
-  } else if (hlEl) {
-    hlEl.textContent    = "— / —";
-    hlPctEl.textContent = "（資料更新中，CI 跑完後生效）";
-    hlSigEl.textContent = "—";
-  }
-
-  if (!breadthChart) {
-    breadthChart = echarts.init(
-      document.getElementById("breadth-chart"), isLight() ? null : "dark");
-  }
-  renderBreadthChart();
-  status.textContent =
-    `${UNIVERSE_CONFIG[breadthUniverse].label} 市場廣度 · ${rows.length} 個交易日 · 更新至 ${breadthData.updated}`;
-}
-
-export async function init() {
-  const status = document.getElementById("breadth-status");
-  if (breadthData) { renderBreadthChart(); return; }
-  status.textContent = "載入中…";
+async function selectUniverse(next) {
+  universe = next;
+  const sequence = ++requestSequence;
+  clearView();
+  el('breadth-status').textContent = `${cfg().label} 載入中…`;
+  el('breadth-retry').hidden = true;
   try {
-    await loadUniverse("SP500");
-
-    document.querySelectorAll("[data-breadth-range]").forEach(el => {
-      el.addEventListener("click", () => {
-        breadthRange = el.dataset.breadthRange;
-        document.querySelectorAll("[data-breadth-range]").forEach(e =>
-          e.classList.toggle("active", e.dataset.breadthRange === breadthRange));
-        renderBreadthChart();
-      });
-    });
-
-    document.querySelectorAll("[data-breadth-ma]").forEach(el => {
-      el.addEventListener("click", () => {
-        breadthMaWin = +el.dataset.breadthMa;
-        document.querySelectorAll("[data-breadth-ma]").forEach(e =>
-          e.classList.toggle("active", +e.dataset.breadthMa === breadthMaWin));
-        renderBreadthChart();
-        setMomentumCard(breadthData.data);
-      });
-    });
-
-    document.querySelectorAll("[data-breadth-universe]").forEach(el => {
-      el.addEventListener("click", async () => {
-        const u = el.dataset.breadthUniverse;
-        if (u === breadthUniverse) return;
-        document.querySelectorAll("[data-breadth-universe]").forEach(e =>
-          e.classList.toggle("active", e.dataset.breadthUniverse === u));
-        status.textContent = "載入中…";
-        try {
-          await loadUniverse(u);
-          refreshBreadthView();
-        } catch (err) {
-          status.textContent = `載入失敗：${err.message}`;
-        }
-      });
-    });
-
-    async function loadAndToggle(key, mapRef, file, btnId) {
-      const active = key === "VIX" ? breadthVixActive : breadthFgActive;
-      document.getElementById(btnId).classList.toggle("active", active);
-      if (active && Object.keys(mapRef).length === 0) {
-        try {
-          const r = await fetch(file, { cache: "no-cache" });
-          const j = await r.json();
-          for (const row of (j.data || []))
-            mapRef[row.date] = row.close !== undefined ? row.close : row.value;
-        } catch (e) { console.warn("breadth overlay load failed:", e); }
-      }
-      renderBreadthChart();
+    if (!cache.has(next)) {
+      const config = UNIVERSE_CONFIG[next];
+      const [data, pricesJson] = await Promise.all([readData(config.dataFile), readData(config.overlayFile)]);
+      const prices = pricesJson.data;
+      const contexts = Object.fromEntries([20, 50, 200].map(window => [window, buildBreadthContext(data.data, prices, window)]));
+      cache.set(next, { data, prices, contexts });
     }
-
-    document.getElementById("breadth-vix-toggle").addEventListener("click", () => {
-      breadthVixActive = !breadthVixActive;
-      loadAndToggle("VIX", breadthVixMap, "data/VIX.json", "breadth-vix-toggle");
-    });
-    document.getElementById("breadth-fg-toggle").addEventListener("click", () => {
-      breadthFgActive = !breadthFgActive;
-      loadAndToggle("F&G", breadthFgMap, "data/fear_greed.json", "breadth-fg-toggle");
-    });
-
-    refreshBreadthView();
-  } catch (err) {
-    status.textContent = `載入失敗：${err.message}`;
+    if (sequence !== requestSequence) return;
+    loaded = cache.get(next);
+    refreshView();
+  } catch (error) {
+    if (sequence !== requestSequence) return;
+    clearView();
+    el('breadth-status').textContent = `${cfg().label} 載入失敗：${error.message}`;
+    el('breadth-retry').hidden = false;
   }
+}
+
+function cutoff(key, date) {
+  if (key === 'MAX' || !date) return null;
+  const result = new Date(`${date}T00:00:00Z`);
+  result.setUTCFullYear(result.getUTCFullYear() - parseInt(key));
+  // check_reuse: keep — cutoff anchored to latestBreadthDate with UTC calendar-year subtraction; dates presets anchor to today and change study eligibility.
+  return result.toISOString().slice(0, 10);
+}
+
+function refreshStatus() {
+  if (!loaded) return;
+  const c = context();
+  const overlayStatus = Object.entries(overlays).filter(([, o]) => o.active).map(([name, o]) => `${name}：${o.error ? '載入失敗（再點兩次重試）' : o.rows ? o.rows.at(-1).date : '載入中'}`).join(' · ');
+  el('breadth-status').textContent = `${cfg().label}／${cfg().overlayName} · 卡片廣度日期 ${c.latestBreadthDate} · ETF最後日期 ${c.latestPriceDate} · 共同可用日期 ${c.commonDate ?? '—'}。兩者可能不同步。${overlayStatus}`;
+}
+
+function refreshView() {
+  if (!loaded) return;
+  const c = context(), latest = loaded.data.data.at(-1);
+  for (const window of [20, 50, 200]) {
+    const pct = latest[`above${window}_pct`], denominator = getBreadthDenominator(latest, window);
+    el(`bc-${window}-pct`).textContent = number(pct, 1);
+    el(`bc-${window}-count`).textContent = denominator === null ? '分母未記錄' : `${latest[`above${window}_count`] ?? '—'} / ${denominator}`;
+    const signal = breadthSignal(pct, window === 200);
+    el(`bc-${window}-signal`).textContent = signal.label; el(`bc-${window}-signal`).style.color = signal.color;
+  }
+  el('bc-bear-pct').textContent = number(latest.bear_pct, 1);
+  el('bc-bear-count').textContent = `${latest.bear_count ?? '—'} / ${latest.bear_total ?? '—'}`;
+  const bear = breadthBearSignal(latest.bear_pct);
+  el('bc-bear-signal').textContent = bear.label; el('bc-bear-signal').style.color = bear.color;
+  const mom = c.momentum, momentumSignal = breadthMomentumSignal(mom?.diff);
+  el('bc-mom-pct').textContent = number(mom?.peakNow, 1);
+  el('bc-mom-count').textContent = `前90交易日完整窗口高點 ${percent(mom?.peakPrior)}`;
+  el('bc-mom-signal').textContent = momentumSignal.label; el('bc-mom-signal').style.color = momentumSignal.color;
+  el('bc-hl-count').textContent = `${latest.new_hi_count ?? '—'} / ${latest.new_lo_count ?? '—'}`;
+  el('bc-hl-pct').textContent = latest.hl_total > 0 && Number.isFinite(latest.new_hi_count) && Number.isFinite(latest.new_lo_count) ? `${percent(latest.new_hi_count / latest.hl_total * 100)} / ${percent(latest.new_lo_count / latest.hl_total * 100)} · n=${latest.hl_total}` : '分母未記錄';
+  el('bc-hl-signal').textContent = `共同日期最近30交易日觸發 ${c.hindenburgRecentCount} 次（簡化版）`;
+  const current = c.current;
+  if (current?.ma == null || current.pct == null || current.close == null) el('breadth-regime').textContent = '現況對照：資料不足';
+  else {
+    const strongPrice = current.close > current.ma, strongBreadth = current.pct >= 50;
+    const label = current.close === current.ma ? `價格持平、廣度${strongBreadth ? '較強' : '較弱'}` : strongPrice ? strongBreadth ? '價格與廣度均強' : '價格強、廣度弱' : strongBreadth ? '價格弱、廣度較強' : '價格與廣度均弱';
+    el('breadth-regime').textContent = `${current.date} · ${cfg().overlayName} ${number(current.close)}／${maWindow}MA ${number(current.ma)}（${current.close === current.ma ? '持平' : strongPrice ? '上方' : '下方'}） · 廣度 ${percent(current.pct)}（${strongBreadth ? '多數 ≥50%' : '未達多數50%'}） · ${label}`;
+  }
+  refreshStatus(); renderStudy();
+}
+
+function renderStudy() {
+  if (!loaded) return;
+  const c = context(), horizon = +el('breadth-study-horizon').value;
+  study = evaluateEventStudy({ prices: loaded.prices, events: c.signals[el('breadth-study-signal').value], eligibleDates: c.eligibleDates, horizons: HORIZONS, from: cutoff(el('breadth-study-range').value, c.latestBreadthDate), pathHorizon: horizon });
+  if (!study.events.some(event => event.date === selectedDate)) selectedDate = null;
+  const stats = study.stats.find(row => row.horizon === horizon);
+  el('breadth-study-status').textContent = `原始事件 ${study.rawN}／20交易日冷卻後 ${study.keptN} · ${horizon}交易日有效 n=${stats.n} · 排除：未完成 ${stats.excluded.incomplete}、缺價 ${stats.excluded.missingPrice} · 重疊對數 ${stats.overlapPairs}/${stats.possiblePairs}。${stats.n < 10 ? '小樣本（n<10），結果可能不穩定。' : ''}資料軸為ETF有記錄的交易日，非完整交易所日曆。`;
+  const headings = ['交易日','有效n','平均報酬','中位報酬','上漲率','基準有效n','基準平均','基準中位','基準上漲率','平均報酬差（pp）','平均訊號日起最大虧損','最差訊號日起最大虧損','平均期間最大回撤','最差期間最大回撤'];
+  el('breadth-study-table').innerHTML = `<thead><tr>${headings.map(text => `<th>${text}</th>`).join('')}</tr></thead><tbody>${study.stats.map(s => `<tr data-horizon="${s.horizon}"><td>${s.horizon}</td><td>${s.n}</td>${[s.mean,s.median,s.winRate].map(value => `<td>${percent(value)}</td>`).join('')}<td>${s.baseline.n}</td>${[s.baseline.mean,s.baseline.median,s.baseline.winRate].map(value => `<td>${percent(value)}</td>`).join('')}<td>${s.mean == null || s.baseline.mean == null ? '—' : number(s.mean - s.baseline.mean)}</td>${[s.meanMaxLoss,s.worstMaxLoss,s.meanMdd,s.worstMdd].map(value => `<td>${percent(value)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+  el('breadth-study-events').innerHTML = `<thead><tr><th>訊號日期／選取</th><th>廣度</th><th>前日廣度</th><th>ETF收盤／均線</th><th>${horizon}交易日報酬</th><th>訊號日起最大虧損</th><th>期間最大回撤</th><th>完成狀態</th></tr></thead><tbody>${[...study.events].reverse().map(event => {
+    const outcome = event.outcomes[horizon];
+    return `<tr><td><button type="button" data-event-date="${event.date}" aria-pressed="${selectedDate === event.date}">${event.date}</button></td><td>${percent(event.pct)}</td><td>${percent(event.previousPct)}</td><td>${number(event.close)} / ${number(event.ma)}</td><td>${percent(outcome.forwardReturnPct)}</td><td>${percent(outcome.maxLossPct)}</td><td>${percent(outcome.mddPct)}</td><td>${outcome.status === 'complete' ? '已完成' : outcome.status === 'incomplete' ? '未完成' : '缺價'}${outcome.exitDate ? ` · ${outcome.exitDate}` : ''}</td></tr>`;
+  }).join('')}</tbody>`;
+  if (!study.events.length) el('breadth-study-events').innerHTML += '<caption>此條件與範圍無保留事件</caption>';
+  renderStudyChart(); renderBreadthChart();
+}
+
+function renderStudyChart() {
+  if (!study) return;
+  if (!studyChart) studyChart = echarts.init(el('breadth-study-chart'), isLight() ? null : 'dark');
+  const paths = study.paths, individual = paths.individual.find(path => path.date === selectedDate);
+  el('breadth-study-selection').textContent = individual ? `選取 ${individual.date}：${individual.complete ? '完整路徑' : '未完成或缺價，缺口後不補線'}；訊號日=100` : '點選下方事件日期查看個別路徑。';
+  studyChart.setOption(echartsBase({
+    title: { text: `固定完整樣本 n=${paths.n} · ${paths.horizon}交易日`, textStyle: { color: PALETTE.text, fontSize: 13 } },
+    tooltip: { confine: true },
+    graphic: paths.n ? [] : [{ type: 'text', left: 'center', top: '45%', style: { text: '無完整事件可計算分位帶', fill: PALETTE.muted } }],
+    grid: { top: 44, bottom: 58 },
+    xAxis: { data: paths.points.map(point => point.offset), name: '交易日', nameLocation: 'middle', nameGap: 30 }, yAxis: { scale: true, name: '訊號日=100' },
+    series: [
+      { name: 'P25底', type: 'line', stack: 'band', data: paths.points.map(p => p.p25), symbol: 'none', lineStyle: { opacity: 0 }, areaStyle: { opacity: 0 }, tooltip: { show: false } },
+      { name: 'P25–P75帶寬', type: 'line', stack: 'band', data: paths.points.map(p => p.p75 == null ? null : p.p75-p.p25), symbol: 'none', lineStyle: { opacity: 0 }, areaStyle: { color: '#58a6ff', opacity: 0.18 }, tooltip: { show: false } },
+      { name: '中位數', type: 'line', data: paths.points.map(p => p.median), symbol: 'none', lineStyle: { color: '#58a6ff', width: 2 } },
+      ...(individual ? [{ name: `${individual.date}${individual.complete ? '' : '（未完成／缺價）'}`, type: 'line', data: individual.values, connectNulls: false, symbol: 'none', lineStyle: { color: '#f0883e', width: 2 } }] : []),
+    ],
+  }), { notMerge: true });
 }
 
 export function renderBreadthChart() {
-  if (!breadthData || !breadthChart) return;
-  const axisClr = PALETTE.muted;
-  const gridClr = PALETTE.grid;
-  const tipBg   = PALETTE.bg;
-  const tipBdr  = PALETTE.border;
-  const tipText = PALETTE.text;
-
-  let rows = breadthData.data;
-  if (breadthRange !== "MAX") {
-    const years   = parseInt(breadthRange) || 2;
-    const cutoff  = new Date();
-    cutoff.setFullYear(cutoff.getFullYear() - years);
-    // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
-    const cutoffStr = cutoff.toISOString().slice(0, 10);
-    rows = rows.filter(r => r.date >= cutoffStr);
-  }
-
-  const dates    = rows.map(r => r.date);
-  const spyVals  = rows.map(r => breadthSpy[r.date]   != null ? +breadthSpy[r.date].toFixed(2)   : null);
-  const breadthVals = rows.map(r => {
-    const v = r[`above${breadthMaWin}_pct`];
-    return v != null ? v : null;
+  if (!loaded) return;
+  if (!breadthChart) breadthChart = echarts.init(el('breadth-chart'), isLight() ? null : 'dark');
+  const c = context(), start = cutoff(range, c.latestBreadthDate);
+  const sessions = c.sessions.filter(s => s.date >= loaded.data.data[0].date && s.date <= c.commonDate && (!start || s.date >= start));
+  const dates = sessions.map(s => s.date), dateSet = new Set(dates);
+  const priceMap = new Map(sessions.map(s => [s.date,s.close]));
+  const line = (name, data, axis, color, extra = {}) => ({ name, type: 'line', data, yAxisIndex: axis, symbol: 'none', connectNulls: false, lineStyle: { color, width: 1.7 }, ...extra });
+  const marker = (name, eventDates, symbol, color) => ({ name, type: 'scatter', data: eventDates.filter(d => dateSet.has(d)).map(d => [d, priceMap.get(d)]), yAxisIndex: 1, symbol, symbolSize: 16, itemStyle: { color } });
+  const overlaySeries = Object.entries(overlays).filter(([, o]) => o.active && o.rows).map(([name, o]) => {
+    const values = new Map(o.rows.map(row => [row.date, row.close ?? row.value]));
+    return line(name, dates.map(date => values.get(date) ?? null), 2, name === 'VIX' ? '#f0883e' : '#e3b341');
   });
-  const maSrc    = breadthMaMap[breadthMaWin] || {};
-  const maVals   = rows.map(r => maSrc[r.date] != null ? +maSrc[r.date].toFixed(2) : null);
-  const peakSrc  = breadthPeakMap[breadthMaWin] || {};
-  const peakVals = rows.map(r => peakSrc[r.date] != null ? +peakSrc[r.date].toFixed(2) : null);
-  const vixVals  = rows.map(r => breadthVixMap[r.date] != null ? +breadthVixMap[r.date].toFixed(2) : null);
-  const fgVals   = rows.map(r => breadthFgMap[r.date]  != null ? +breadthFgMap[r.date].toFixed(1)  : null);
-
-  // Hindenburg trigger markers: scatter on SPY line, filtered to visible range
-  const dateSet = new Set(dates);
-  const hbPoints = hbTriggers
-    .filter(d => dateSet.has(d) && breadthSpy[d] != null)
-    .map(d => [d, +breadthSpy[d].toFixed(2)]);
-
-  // ── build dynamic yAxis list ──────────────────────────────────
-  const yAxes = [
-    { // [0] left: breadth %
-      type: "value", min: 0, max: 100,
-      splitLine: { lineStyle: { color: gridClr } },
-      axisLine: { show: false },
-      axisLabel: { color: axisClr, fontSize: 11, formatter: v => v + "%" },
-    },
-    { // [1] right: SPY price
-      type: "value", position: "right", offset: 0,
-      splitLine: { show: false }, axisLine: { show: false }, axisTick: { show: false },
-      axisLabel: { color: "#a371f7", fontSize: 10, formatter: v => "$" + v },
-    },
-  ];
-  let overlayIdx = -1;
-  if (breadthVixActive || breadthFgActive) {
-    overlayIdx = yAxes.length;
-    yAxes.push({
-      type: "value", position: "right", offset: mob() ? 44 : 58,
-      scale: true,
-      splitLine: { show: false }, axisLine: { show: false }, axisTick: { show: false },
-      axisLabel: { show: false },
-    });
-  }
-
-  breadthChart.setOption({
-    backgroundColor: "transparent",
-    tooltip: {
-      trigger: "axis",
-      backgroundColor: tipBg, borderColor: tipBdr,
-      textStyle: { color: tipText, fontSize: 12 },
-      formatter(params) {
-        const d   = params[0].axisValue;
-        const row = rows[params[0].dataIndex];
-        let html  = `<div style="margin-bottom:4px;font-size:11px;color:${axisClr}">${d}</div>`;
-        for (const p of params) {
-          if (p.value == null) continue;
-          let val;
-          if (p.seriesName.startsWith(UNIVERSE_CONFIG[breadthUniverse].overlayName)) val = `$${p.value.toFixed(2)}`;
-          else if (p.seriesName === "VIX")   val = p.value.toFixed(1);
-          else if (p.seriesName === "F&G")   val = p.value.toFixed(0);
-          else                               val = `${p.value.toFixed(1)}%`;
-          html += `<div>${p.marker}${p.seriesName}: <b>${val}</b></div>`;
-        }
-        if (row) {
-          html +=
-            `<div style="margin-top:4px;font-size:11px;color:${axisClr}">` +
-            `20MA: ${row.above20_count ?? "—"}/${row.total} · 50MA: ${row.above50_count}/${row.total} · 200MA: ${row.above200_count ?? "—"}/${row.total}</div>`;
-          if (row.new_hi_count != null) {
-            const isHb = hbTriggers.includes(row.date);
-            html +=
-              `<div style="font-size:11px;color:${axisClr}">` +
-              `新高/新低: ${row.new_hi_count}/${row.new_lo_count}${isHb ? ` <span style="color:#f85149">⚠ 興登堡觸發</span>` : ""}</div>`;
-          }
-        }
-        return html;
-      },
-    },
-    grid: { top: 28, bottom: 36, left: mob() ? 48 : 56,
-            right: mob() ? 56 : (overlayIdx >= 0 ? 112 : 68) },
-    xAxis: {
-      type: "category", data: dates, boundaryGap: false,
-      axisLine: { lineStyle: { color: axisClr } },
-      axisTick: { show: false },
-      axisLabel: { color: axisClr, fontSize: 11 },
-    },
-    yAxis: yAxes,
-    series: [
-      {
-        name: UNIVERSE_CONFIG[breadthUniverse].overlayName,
-        type: "line", data: spyVals, smooth: 0.3, symbol: "none",
-        yAxisIndex: 1, z: 1,
-        lineStyle: { width: 1.2, color: "#a371f7", opacity: 0.6 },
-      },
-      {
-        name: `${UNIVERSE_CONFIG[breadthUniverse].overlayName} ${breadthMaWin}MA`,
-        type: "line", data: maVals, smooth: 0.3, symbol: "none",
-        yAxisIndex: 1, z: 2,
-        lineStyle: { width: 2, color: "#d2a8ff", type: "dashed" },
-      },
-      {
-        name: `${breadthMaWin}日均線以上`,
-        type: "line", data: breadthVals, smooth: 0.3, symbol: "none",
-        yAxisIndex: 0, z: 3,
-        lineStyle: { width: 2, color: breadthMaWin === 20 ? "#e3b341" : breadthMaWin === 200 ? "#3fb950" : "#58a6ff" },
-        areaStyle: { color: breadthMaWin === 20 ? "rgba(227,179,65,0.06)" : breadthMaWin === 200 ? "rgba(63,185,80,0.06)" : "rgba(88,166,255,0.08)" },
-        markLine: {
-          silent: true, symbol: "none",
-          data: [
-            // 15/25 = 深底/淺底(2022 深修正 vs 2025/4 後淺修正即反彈)；75/85 對稱鏡射，標示廣度過熱區間
-            { yAxis: 15, lineStyle: { type: "dashed", color: "rgba(248,81,73,0.5)",  width: 1 },
-              label: { formatter: "15% 深底", color: "#f85149", fontSize: 10, position: "insideEndTop" } },
-            { yAxis: 25, lineStyle: { type: "dashed", color: "rgba(240,136,62,0.5)", width: 1 },
-              label: { formatter: "25% 淺底", color: "#f0883e", fontSize: 10, position: "insideEndTop" } },
-            { yAxis: 50, lineStyle: { type: "dashed", color: "rgba(139,148,158,0.4)", width: 1 },
-              label: { formatter: "50%", color: axisClr,   fontSize: 10, position: "insideEndTop" } },
-            { yAxis: 75, lineStyle: { type: "dashed", color: "rgba(240,136,62,0.5)", width: 1 },
-              label: { formatter: "75% 過熱", color: "#f0883e", fontSize: 10, position: "insideEndTop" } },
-            { yAxis: 85, lineStyle: { type: "dashed", color: "rgba(63,185,80,0.5)",  width: 1 },
-              label: { formatter: "85% 極熱", color: "#3fb950",  fontSize: 10, position: "insideEndTop" } },
-          ],
-        },
-        markArea: {
-          silent: true,
-          data: [
-            [{ yAxis: 0,  itemStyle: { color: "rgba(248,81,73,0.06)" } }, { yAxis: 15  }],
-            [{ yAxis: 15, itemStyle: { color: "rgba(240,136,62,0.04)" } }, { yAxis: 25  }],
-            [{ yAxis: 75, itemStyle: { color: "rgba(240,136,62,0.04)" } }, { yAxis: 85  }],
-            [{ yAxis: 85, itemStyle: { color: "rgba(63,185,80,0.06)"  } }, { yAxis: 100 }],
-          ],
-        },
-      },
-      {
-        name: "90日滾動高點",
-        type: "line", data: peakVals, smooth: false, symbol: "none",
-        yAxisIndex: 0, z: 4,
-        lineStyle: { width: 1.5, color: "#8b949e", type: "dashed" },
-      },
-      ...(breadthVixActive ? [{
-        name: "VIX",
-        type: "line", data: vixVals, smooth: 0.3, symbol: "none",
-        yAxisIndex: overlayIdx, z: 2,
-        lineStyle: { width: 1.5, color: "#f0883e", type: "dashed" },
-        areaStyle: { color: "rgba(240,136,62,0.06)" },
-      }] : []),
-      ...(breadthFgActive ? [{
-        name: "F&G",
-        type: "line", data: fgVals, smooth: 0.3, symbol: "none",
-        yAxisIndex: overlayIdx, z: 2,
-        lineStyle: { width: 1.5, color: "#e3b341", type: "dashed" },
-        areaStyle: { color: "rgba(227,179,65,0.05)" },
-      }] : []),
-      ...(hbPoints.length ? [{
-        name: "興登堡觸發",
-        type: "scatter", data: hbPoints,
-        yAxisIndex: 1, z: 6,
-        symbol: "pin", symbolSize: 18,
-        itemStyle: { color: "#f85149", borderColor: "#fff", borderWidth: 1 },
-        tooltip: { show: true },
-      }] : []),
+  breadthChart.setOption(echartsBase({
+    dataZoom: [], grid: { top: 28, bottom: 36, left: mob() ? 44 : 56, right: mob() ? 52 : 68 },
+    tooltip: { confine: true, formatter(params) {
+      const entries = Array.isArray(params) ? params : [params];
+      const date = entries[0]?.axisValue ?? entries[0]?.value?.[0];
+      const session = sessions.find(s => s.date === date);
+      let html = `<b>${date ?? ''}</b>`;
+      for (const p of entries) {
+        const value = Array.isArray(p.value) ? p.value[1] : p.value;
+        if (!Number.isFinite(value)) continue;
+        html += `<div>${p.marker}${p.seriesName}: ${number(value, 2)}${p.seriesIndex === 2 || p.seriesIndex === 3 ? '%' : ''}</div>`;
+      }
+      if (session?.row) for (const window of [20,50,200]) {
+        const denominator = getBreadthDenominator(session.row, window);
+        html += `<div>${window}MA: ${session.row[`above${window}_count`] ?? '—'} / ${denominator ?? '分母未記錄'}</div>`;
+      }
+      return html;
+    } },
+    xAxis: { data: dates, boundaryGap: false },
+    yAxis: [
+      { type: 'value', min: 0, max: 100, axisLabel: { color: PALETTE.muted, formatter: '{value}%' }, splitLine: { lineStyle: { color: PALETTE.grid } } },
+      { type: 'value', position: 'right', scale: true, axisLabel: { color: PALETTE.muted }, splitLine: { show: false } },
+      { type: 'value', position: 'right', axisLabel: { show: false }, splitLine: { show: false } },
     ],
-  }, { notMerge: true });
+    series: [line(cfg().overlayName, sessions.map(s => s.close), 1, '#a371f7'),
+      line(`${cfg().overlayName} ${maWindow}MA`, sessions.map(s => s.ma), 1, '#d2a8ff', { lineStyle: { color: '#d2a8ff', type: 'dashed' } }),
+      line(`${maWindow}日均線以上`, sessions.map(s => s.pct), 0, '#58a6ff', { markLine: { silent: true, symbol: 'none', data: [15,25,50,75,85].map(yAxis => ({ yAxis, label: { formatter: `${yAxis}%` } })) } }),
+      line('90交易日完整滾動高點', dates.map(date => c.peakByDate[date]), 0, '#8b949e'),
+      ...overlaySeries, marker('興登堡觸發（簡化版）', c.hindenburgDates, 'pin', '#f85149'),
+      marker('研究保留訊號', study?.events.map(e => e.date) ?? [], 'triangle', '#e3b341')],
+  }), { notMerge: true });
+}
+
+async function toggleOverlay(name, button) {
+  const overlay = overlays[name]; overlay.active = !overlay.active;
+  button.classList.toggle('active', overlay.active);
+  if (overlay.active && !overlay.rows) {
+    overlay.error = null; refreshStatus();
+    try { overlay.rows = (await readData(overlay.file)).data; }
+    catch (error) { overlay.error = error.message; }
+  }
+  refreshStatus(); renderBreadthChart();
+}
+
+export async function init() {
+  initAdvancedPanel();
+  chipPicker(el('breadth-universe-picker'), 'breadth-universe', value => selectUniverse(value));
+  chipPicker(el('breadth-ma-picker'), 'breadth-ma', value => { maWindow = +value; refreshView(); });
+  chipPicker(el('breadth-range-picker'), 'breadth-range', value => { range = value; renderBreadthChart(); });
+  for (const id of ['breadth-study-signal','breadth-study-range','breadth-study-horizon']) if (bindOnce(el(id))) el(id).addEventListener('change', renderStudy);
+  if (bindOnce(el('breadth-study-events'))) el('breadth-study-events').addEventListener('click', event => {
+    const button = event.target.closest('button[data-event-date]');
+    if (!button) return;
+    selectedDate = button.dataset.eventDate;
+    el('breadth-study-events').querySelectorAll('button').forEach(node => node.setAttribute('aria-pressed', String(node === button)));
+    renderStudyChart();
+  });
+  for (const [name, id] of [['VIX','breadth-vix-toggle'],['F&G','breadth-fg-toggle']]) if (bindOnce(el(id))) el(id).addEventListener('click', () => toggleOverlay(name, el(id)));
+  if (bindOnce(el('breadth-retry'))) el('breadth-retry').addEventListener('click', () => selectUniverse(universe));
+  if (loaded) { refreshView(); resize(); return; }
+  await selectUniverse(universe);
 }
 
 export function onThemeChange(light) {
-  if (!breadthChart) return;
-  breadthChart.dispose();
-  breadthChart = echarts.init(document.getElementById("breadth-chart"), light ? null : "dark");
-  renderBreadthChart();
+  advancedThemeChange();
+  for (const chart of [breadthChart,studyChart]) chart?.dispose();
+  breadthChart = null; studyChart = null;
+  if (loaded) { renderBreadthChart(); renderStudyChart(); }
 }
-
-export function resize() {
-  breadthChart?.resize();
-}
+export function resize() { breadthChart?.resize(); studyChart?.resize(); resizeAdvancedPanel(); }

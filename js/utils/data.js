@@ -79,9 +79,9 @@ function parseSeriesRows(s, payload) {
 // (putcall.js: `j.total`/`j.equity` etc.) — those sites are NOT retrofitted
 // to fetchJSON in P0 and are documented here as divergent, not silently
 // unified.
-export async function fetchJSON(url) {
+export async function fetchJSON(url, { raw = false } = {}) {
   const j = await requestJSON(url, `fetchJSON (${url})`);
-  return j.data || j;
+  return raw ? j : j.data || j;
 }
 
 export function isDataFresh(data) {

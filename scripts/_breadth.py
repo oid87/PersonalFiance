@@ -132,10 +132,13 @@ def compute_breadth(price_df: pd.DataFrame, *, min_coverage: int) -> list[dict]:
         records.append({
             "date":           dt.strftime("%Y-%m-%d"),
             "above20_count":  a20,
+            "above20_total":  v20,
             "above20_pct":    round(a20 / v20 * 100, 1) if (v20 > 0 and a20 is not None) else None,
             "above50_count":  a50,
+            "above50_total":  v50,
             "above50_pct":    round(a50 / v50 * 100, 1),
             "above200_count": a200,
+            "above200_total": v200,
             "above200_pct":   round(a200 / v200 * 100, 1) if (v200 > 0 and a200 is not None) else None,
             "new_hi_count":   nh,
             "new_lo_count":   nl,
@@ -188,6 +191,8 @@ def run(*, get_tickers: Callable[[], list[str]], out_path: Path, min_coverage: i
         print(f"Full backfill: download from {start}")
 
     prices      = fetch_prices(tickers, start)
+    if prices.empty:
+        raise RuntimeError("No price data returned; preserving existing breadth file")
     all_records = compute_breadth(prices, min_coverage=min_coverage)
 
     new_records = (
@@ -199,6 +204,15 @@ def run(*, get_tickers: Callable[[], list[str]], out_path: Path, min_coverage: i
 
     payload = {
         "updated": today.isoformat(),
+        "schemaVersion": 2,
+        "meta": {
+            "label": label,
+            "priceBasis": "yfinance-auto-adjusted",
+            "constituentsBasis": "current-snapshot-backfill-mixed-vintages",
+            "lastDate": merged[-1]["date"] if merged else None,
+            "denominatorPolicy": "per-window-valid-count",
+            "legacyDenominators": "unknown-for-20-and-200",
+        },
         "data":    merged,
     }
     out_path.write_text(json.dumps(payload, ensure_ascii=False) + "\n")

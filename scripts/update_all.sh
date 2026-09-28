@@ -52,6 +52,7 @@ log "fetch_stocks..."
 "$PYTHON" fetch_taiwan_sector_index.py   || true
 "$PYTHON" fetch_yields.py        || true
 "$PYTHON" fetch_breadth.py       || true
+"$PYTHON" fetch_sp500_ad.py     || true
 "$PYTHON" fetch_breadth_ndx.py   || true
 "$PYTHON" fetch_breadth_xlg.py   || true
 "$PYTHON" fetch_breadth_tw50.py  || true
