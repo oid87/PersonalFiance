@@ -140,7 +140,8 @@ def main() -> None:
     note = (
         "Nasdaq-100 估值。fpe=forward（每日動態抓 QQQ 前10大持股權重 × 各股 NTM 加權算術平均，"
         "排除 PE>60x；NTM=(m/12)×當FY EPS+(12-m)/12×次FY EPS，追蹤 MacroMicro NASDAQ-100 Forward PE）；"
-        "tpe=trailing（QQQ ETF 實際 trailingPE）。歷史段（src=seed）為估計值。"
+        "tpe=trailing（QQQ ETF 實際 trailingPE）。歷史段（src=backfill）為後見回填："
+        "用事後已實現 EPS 回推，非當時共識，勿作位階判斷。"
     )
     merged = _valuation.write_daily_snapshot(OUT, today, entry, note)
     print(f"  Wrote {len(merged)} entries -> {OUT.name}  (src={src_label})")
