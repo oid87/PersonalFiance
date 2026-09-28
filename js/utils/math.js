@@ -85,6 +85,15 @@ export function zscore(arr, ddof = 0) {
   return arr.map(x => (x - m) / s);
 }
 
+// μ ± kσ 水平帶（σ 用母體標準差 ddof=0，與 numpy 預設相同）。values 至少 2 個有限數，否則回 null。
+export const SIGMA_KS = [0.5, 1, 1.5, 2];
+export function sigmaBands(values, ks = SIGMA_KS) {
+  const xs = values.filter(v => v != null && isFinite(v));
+  if (xs.length < 2) return null;
+  const mu = mean(xs), sd = std(xs, 0);
+  return { n: xs.length, mu, sd, bands: ks.map(k => ({ k, lo: mu - k * sd, hi: mu + k * sd })) };
+}
+
 export function computeMA(data, period) {
   const out = [];
   for (let i = period - 1; i < data.length; i++) {

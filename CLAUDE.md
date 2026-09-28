@@ -72,7 +72,7 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 - theme.PALETTE — Collapses the most common literal tc("#dark","#light") pairs repeated
 - theme.echartsBase(overrides = {}) — 
 
-### dates.js(12)
+### dates.js(13)
 - dates.tsToLocalDate(ts) — ECharts time-axis parses "YYYY-MM-DD" as local midnight, not UTC
 - dates.presetStart(preset) — 
 - dates.cutoffDate(key) — 「今天往回 N 年」的 range cutoff(key: 1Y/3Y/5Y/10Y/MAX,未命中回 3 年)。
@@ -84,14 +84,17 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 - dates.lookupLE(arr, date) — Binary search: last entry where arr[i][0] <= date
 - dates.toWeekly(dailyData) — 
 - dates.toWeeklyOHLC(daily) — Resample daily OHLCV rows into weekly OHLCV objects (週一=key；open=首日open、
+- dates.toMonthlyLast(points, { minObs = 1, today = new Date() — 把日頻 [[date, value|null], ...]（可未排序）重採樣成月頻，取每月最後一筆
 - dates.toWeeklyHLC(dailyHLC) — 
 
-### math.js(17)
+### math.js(19)
 - math.percentileRank(val, sortedAsc) — Binary-search rank of `val` within an ascending-sorted array
 - math.percentile(sortedAsc, p) — Inverse of percentileRank: value at fraction `p` (0–1) of an
 - math.mean(arr) — std uses ddof (delta degrees of freedom): divides by (n - ddof)
 - math.std(arr, ddof = 0) — 
 - math.zscore(arr, ddof = 0) — 
+- math.SIGMA_KS — μ ± kσ 水平帶（σ 用母體標準差 ddof=0，與 numpy 預設相同）。values 至少 2 個有限數，否則回 null。
+- math.sigmaBands(values, ks = SIGMA_KS) — 
 - math.computeMA(data, period) — 
 - math.toArithReturns(data) — 
 - math.pearsonCorr(x, y) — 
