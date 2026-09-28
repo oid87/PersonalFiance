@@ -115,6 +115,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_breadth.py
 
+      - name: Compute S&P 500 advance/decline (self-calculated)
+        continue-on-error: true
+        run: python scripts/fetch_sp500_ad.py
+
       - name: Compute Nasdaq-100 market breadth
         continue-on-error: true
         run: python scripts/fetch_breadth_ndx.py

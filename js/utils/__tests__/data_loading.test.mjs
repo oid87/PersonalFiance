@@ -52,6 +52,17 @@ test("invalid JSON is an explicit failure", async () => {
   await assert.rejects(() => dataModule.fetchJSON("bad.json"), /invalid JSON/);
 });
 
+test("fetchJSON preserves metadata only when raw is requested", async () => {
+  const payload = { meta: { source: "self-calculated" }, data: [{ date: "2026-09-25", advances: 329 }] };
+  globalThis.fetch = async () => ({ ok: true, json: async () => payload });
+  assert.deepEqual(await dataModule.fetchJSON("ad.json"), payload.data);
+  assert.deepEqual(await dataModule.fetchJSON("ad.json", { raw: false }), payload.data);
+  assert.deepEqual(await dataModule.fetchJSON("ad.json", { raw: true }), payload);
+  const noData = { source: "plain envelope" };
+  globalThis.fetch = async () => ({ ok: true, json: async () => noData });
+  assert.deepEqual(await dataModule.fetchJSON("plain.json"), noData);
+});
+
 test("missing, empty, and malformed series rows are rejected", async t => {
   for (const [name, payload, pattern] of [
     ["missing", {}, /missing or empty data rows/],
