@@ -75,6 +75,7 @@ import * as semiVsSpxPeTab   from './tabs/semi_vs_spx_pe.js';
 import * as twJpKrGdpTab     from './tabs/tw_jp_kr_gdp.js';
 import * as soxVsTwSemiPeTab from './tabs/sox_vs_tw_semi_pe.js';
 import * as marketstructureTab from './tabs/marketstructure.js';
+import * as flowradarTab     from './tabs/flowradar.js';
 
 registerAll([
   { id: 'trend',     module: trendTab     },
@@ -148,6 +149,7 @@ registerAll([
   { id: 'tw_jp_kr_gdp',     module: twJpKrGdpTab     },
   { id: 'sox_vs_tw_semi_pe', module: soxVsTwSemiPeTab },
   { id: 'marketstructure', module: marketstructureTab },
+  { id: 'flowradar',     module: flowradarTab     },
 ]);
 
 setupResizeHandler();
@@ -166,6 +168,7 @@ const CATEGORIES = [
       { id: 'flows',    label: '資金脈衝' },
       { id: 'banini',   label: '反指標(8zz)' },
       { id: 'putcall',  label: 'Put/Call' },
+      { id: 'flowradar', label: '資金雷達' },
     ]
   },
   {

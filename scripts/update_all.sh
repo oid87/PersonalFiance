@@ -76,6 +76,7 @@ log "fetch_stocks..."
 "$PYTHON" fetch_liquidity_leverage.py || true   # 多國融資超額×流動性 tab(依賴 liquidity/taiwan_money_supply/TWII/SPY/M2,須排在其後)
 "$PYTHON" fetch_vix_skew.py      || true
 "$PYTHON" fetch_putcall.py       || true
+"$PYTHON" fetch_finra_short.py   || true
 "$PYTHON" fetch_fsi.py           || true
 "$PYTHON" fetch_nfci.py          || true
 "$PYTHON" fetch_stlfsi_kcfsi.py  || true
