@@ -4,6 +4,7 @@ import { tsToLocalDate, toWeekly, toWeeklyHLC } from '../utils/dates.js';
 import { computeLinearRegression, computeChannelBands, computeRSI, computeKD, computeTDSetup } from '../utils/math.js';
 import { ensureLoaded, loadSeries } from '../utils/data.js';
 import { chipPicker } from '../utils/dom.js';
+import { pentaZone, lastBands, multiPeriodZones, computeDonchianBands, channelState, combinedSignal } from './pentagram_calc.mjs';
 
 let pentaChart        = null;
 let pentaActiveTicker = "VOO";
@@ -16,6 +17,8 @@ let penta125Active    = false;
 let pentaMaPeriod     = 125;
 let pentaWeekly       = false;
 let pentaFpeActive    = false;
+let pentaChType       = "boll";   // R5: 'boll' | 'donchian'
+let pentaChSubOn      = true;     // R5: 五線譜模式下方樂活子圖開關
 const pentaFpeCache   = {};
 const FPE_FILES       = { QQQ: "data/QQQ_valuation.json", SPY: "data/SPY_valuation.json", SOXX: "data/SOXX_valuation.json", "0050": "data/TW_valuation.json", TWII: "data/TW_valuation.json" };
 const FPE_MARKS       = { "0050": [{y:18,c:'#f0883e',l:'18x'},{y:15,c:'#ef4444',l:'15x'}], TWII: [{y:18,c:'#f0883e',l:'18x'},{y:15,c:'#ef4444',l:'15x'}] };
@@ -218,6 +221,91 @@ function computeCustomMA(dailyData, N) {
   return out;
 }
 
+// R5: 週 HLC 資料取法照既有 renderChannelMode（有逐日 HLC 用逐日 resample，否則退化用收盤價當高低）
+function _weeklyHLCFor(ticker, weekly) {
+  return loadedHLC[ticker] ? toWeeklyHLC(loadedHLC[ticker]) : weekly.map(r => [r[0], r[1], r[1], r[1]]);
+}
+
+// R5: 依目前 pentaChType 算樂活通道，統一回傳 {mid, upper, lower}（boll 的 ma20 對齊成 mid）
+function _channelBandsFor(ticker, weekly) {
+  if (pentaChType === "donchian") {
+    const hlc = _weeklyHLCFor(ticker, weekly);
+    const d = computeDonchianBands(hlc);
+    return { mid: d.mid, upper: d.upper, lower: d.lower };
+  }
+  const b = computeChannelBands(weekly);
+  return { mid: b.ma20, upper: b.upper, lower: b.lower };
+}
+
+// R4: 右端最新值標籤格式化 — 依量級取 0~2 位小數
+function _endLabelFmt(v) {
+  if (v == null || Number.isNaN(v)) return '';
+  const av = Math.abs(v);
+  const decimals = av >= 100 ? 0 : av >= 10 ? 1 : 2;
+  return v.toFixed(decimals);
+}
+
+const PENTA_TONE_COLOR = { warn: '#f85149', opportunity: '#3fb950', info: 'var(--muted)' };
+
+// R1: 摘要列各欄位「?」說明小圓鈕（白話文字，勿抄外站；不含回測機率數字）
+function _pentaQmark(text) {
+  const esc = text.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+  return `<span data-tooltip="${esc}" style="display:inline-block;width:14px;height:14px;line-height:13px;text-align:center;border-radius:50%;border:1px solid var(--border);color:var(--muted);font-size:10px;cursor:help;margin-left:3px;flex-shrink:0">?</span>`;
+}
+
+const PENTA_QTIPS = {
+  sentiment: '以線性迴歸趨勢線為中心，畫出 ±1σ/±2σ 通道，共五條線。價格位置對照：≥+2σ 極度貪婪、+1~+2σ 貪婪、±1σ 內中性、-1~-2σ 恐懼、≤-2σ 極度恐懼。偏離愈遠，愈可能出現均值回歸，但不代表一定會發生。',
+  multiPeriod: '同一標的，用不同回看期間（0.5Y/1.5Y/3.5Y/5Y）重算五線譜，情緒可能不同。多個週期同時偏向同一端時，訊號通常較強；週期之間分歧則代表訊號較弱、不宜過度解讀。',
+  channel: '以 20 週價格區間為通道：布林模式＝20週均線 ±2.5倍標準差；高低點模式＝前20週（不含本週）最高價／最低價。股價站上通道上緣視為突破，跌破下緣視為破位。合併判讀：五線譜極度貪婪＋突破樂活上緣→股價可能轉弱；僅五線譜極度貪婪但未突破→仍有機會再漲一段；五線譜極度恐懼＋跌破樂活下緣→底部訊號較強；僅五線譜極度恐懼但未跌破→底部訊號較弱。',
+};
+
+// R1: #penta-summary 摘要列 — 標的/價格/目前週期情緒/其他週期情緒/樂活通道狀態/合併訊號提示
+function renderPentaSummary() {
+  const host = document.getElementById("penta-summary");
+  if (!host) return;
+  const t = pentaActiveTicker;
+  const raw = t ? loaded[t] : null;
+  if (!t || !raw || !raw.length) {
+    host.innerHTML = `<span style="color:var(--muted)">—</span>`;
+    return;
+  }
+
+  const lastRow   = raw[raw.length - 1];
+  const priceStr  = lastRow[1].toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  const curData   = getPentaData();
+  const curReg    = curData.length ? computeLinearRegression(curData) : null;
+  const curBands  = lastBands(curReg);
+  const curZone   = (curBands && curData.length) ? pentaZone(curData[curData.length - 1][1], curBands) : null;
+
+  // check_reuse: keep — 與 getPentaData 的 cutoff 同源(UTC toISOString),換 dates.* 會讓多週期與主圖 cutoff 不一致
+  const today     = new Date().toISOString().slice(0, 10);
+  const mp       = multiPeriodZones(raw, ["0.5Y", "1.5Y", "3.5Y", "5Y"], today, { weekly: pentaWeekly });
+  const others    = mp.filter(m => m.period !== pentaPeriod);
+
+  const weeklyAll = toWeekly(raw);
+  const chBands   = weeklyAll.length ? _channelBandsFor(t, weeklyAll) : { mid: [], upper: [], lower: [] };
+  const lastClose = weeklyAll.length ? weeklyAll[weeklyAll.length - 1][1] : null;
+  const lastUpper = chBands.upper.length ? chBands.upper[chBands.upper.length - 1][1] : null;
+  const lastLower = chBands.lower.length ? chBands.lower[chBands.lower.length - 1][1] : null;
+  const chState   = channelState(lastClose, lastUpper, lastLower);
+
+  const signal    = curZone ? combinedSignal(curZone.key, chState.key) : null;
+
+  const othersHtml = others.map(m =>
+    `<span style="color:${m.zone ? m.zone.color : 'var(--muted)'};margin-right:8px">${m.period} ${m.zone ? m.zone.label : '—'}</span>`
+  ).join("");
+
+  host.innerHTML = `
+    <span><span style="color:var(--muted)">標的</span> <b>${t}</b></span>
+    <span><span style="color:var(--muted)">價格</span> <b>${priceStr}</b></span>
+    <span><span style="color:var(--muted)">市場情緒${_pentaQmark(PENTA_QTIPS.sentiment)}</span> <b style="color:${curZone ? curZone.color : 'var(--muted)'}">${curZone ? curZone.label : '—'}</b></span>
+    <span><span style="color:var(--muted)">其他週期情緒${_pentaQmark(PENTA_QTIPS.multiPeriod)}</span> ${othersHtml || '<span style="color:var(--muted)">—</span>'}</span>
+    <span><span style="color:var(--muted)">樂活通道${_pentaQmark(PENTA_QTIPS.channel)}</span> <b>${chState.label}</b></span>
+    ${signal ? `<div style="flex-basis:100%;color:${PENTA_TONE_COLOR[signal.tone] || 'var(--muted)'};font-size:12px">${signal.text}</div>` : ""}
+  `;
+}
+
 function renderChannelMode() {
   if (!pentaChart) return;
   const statusEl = document.getElementById("penta-status");
@@ -225,16 +313,18 @@ function renderChannelMode() {
   if (!pentaActiveTicker || !loaded[pentaActiveTicker]) {
     pentaChart.clear();
     statusEl.textContent = "← 選擇標的以顯示通道";
+    renderPentaSummary();
     return;
   }
 
   const allDaily = loaded[pentaActiveTicker];
   const weekly   = toWeekly(allDaily);
-  const bands    = computeChannelBands(weekly);
+  const bands    = _channelBandsFor(pentaActiveTicker, weekly);
 
-  if (!bands.ma20.length) {
+  if (!bands.mid.length) {
     statusEl.textContent = "數據不足";
     pentaChart.clear();
+    renderPentaSummary();
     return;
   }
 
@@ -247,9 +337,13 @@ function renderChannelMode() {
   const fromDate = d.toISOString().slice(0, 10);
 
   const priceW   = weekly.filter(r => r[0] >= fromDate);
-  const ma20w    = bands.ma20.filter(r => r[0] >= fromDate);
+  const midW     = bands.mid.filter(r => r[0] >= fromDate);
   const upperW   = bands.upper.filter(r => r[0] >= fromDate);
   const lowerW   = bands.lower.filter(r => r[0] >= fromDate);
+  const isDonCh  = pentaChType === "donchian";
+  const chUpLbl  = isDonCh ? "上緣 20週高" : "上軌 +2.5σ";
+  const chMidLbl = isDonCh ? "中線"        : "MA20";
+  const chLoLbl  = isDonCh ? "下緣 20週低" : "下軌 -2.5σ";
   const maLabel  = `MA${pentaMaPeriod}`;
   const ma125Chw = penta125Active ? computeCustomMA(allDaily, pentaMaPeriod).filter(r => r[0] >= fromDate) : null;
 
@@ -340,7 +434,7 @@ function renderChannelMode() {
       },
     },
     legend: {
-      data: ["上軌 +2.5σ","MA20","價格","下軌 -2.5σ",...(ma125Chw?[maLabel]:[]),...(vixIdxCh>=0?["VIX"]:[]),...(fgIdxCh>=0?["F&G"]:[]),...(fpeSubCh?["FPE"]:[])],
+      data: [chUpLbl,chMidLbl,"價格",chLoLbl,...(ma125Chw?[maLabel]:[]),...(vixIdxCh>=0?["VIX"]:[]),...(fgIdxCh>=0?["F&G"]:[]),...(fpeSubCh?["FPE"]:[])],
       textStyle: { color: tipText, fontSize: 13 }, top: 6,
     },
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
@@ -370,10 +464,10 @@ function renderChannelMode() {
       { type:"slider", height:18, bottom:14, xAxisIndex: fpeSubCh ? [0,1,2,3] : [0,1,2] },
     ],
     series: [
-      { ...lineBase, name:"上軌 +2.5σ", data:upperW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#e91e63"}, itemStyle:{color:"#e91e63"} },
-      { ...lineBase, name:"MA20",       data:ma20w,  xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#9e9e9e",type:"dashed"}, itemStyle:{color:"#9e9e9e"} },
-      { ...lineBase, name:"價格",       data:priceW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.8,color:s.color}, itemStyle:{color:s.color} },
-      { ...lineBase, name:"下軌 -2.5σ", data:lowerW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#1565c0"}, itemStyle:{color:"#1565c0"} },
+      { ...lineBase, name:chUpLbl,  data:upperW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#e91e63"}, itemStyle:{color:"#e91e63"} },
+      { ...lineBase, name:chMidLbl, data:midW,   xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#9e9e9e",type:"dashed"}, itemStyle:{color:"#9e9e9e"} },
+      { ...lineBase, name:"價格",   data:priceW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.8,color:s.color}, itemStyle:{color:s.color} },
+      { ...lineBase, name:chLoLbl,  data:lowerW, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#1565c0"}, itemStyle:{color:"#1565c0"} },
       ...(ma125Chw ? [{ ...lineBase, name:maLabel, data:ma125Chw, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:2,color:"#ff9800"}, itemStyle:{color:"#ff9800"} }] : []),
       ...(vixIdxCh>=0 ? [{ ...lineBase, name:"VIX", data:vixDataCh, xAxisIndex:0, yAxisIndex:vixIdxCh, lineStyle:{width:1.5,color:"#f0883e",type:"dashed"}, itemStyle:{color:"#f0883e"}, areaStyle:{color:"rgba(240,136,62,0.06)"} }] : []),
       ...(fgIdxCh>=0  ? [{ ...lineBase, name:"F&G", data:fgDataCh,  xAxisIndex:0, yAxisIndex:fgIdxCh,  lineStyle:{width:1.5,color:"#e3b341",type:"dashed"}, itemStyle:{color:"#e3b341"}, areaStyle:{color:"rgba(227,179,65,0.06)"} }] : []),
@@ -387,9 +481,11 @@ function renderChannelMode() {
     ],
   }, { notMerge: true });
 
+  const chDesc = isDonCh ? "前 20 週高低點（不含本週）" : "MA20 週線 ±2.5σ";
   statusEl.textContent =
-    `${pentaActiveTicker} 樂活通道 · ${pentaPeriod} · MA20 週線 ±2.5σ · ${weekly.length} 週完整歷史`;
+    `${pentaActiveTicker} 樂活通道 · ${pentaPeriod} · ${chDesc} · ${weekly.length} 週完整歷史`;
   attachDragMeasure(pentaChart);
+  renderPentaSummary();
 }
 
 export function renderPentagram() {
@@ -400,6 +496,7 @@ export function renderPentagram() {
   if (!pentaActiveTicker || !loaded[pentaActiveTicker]) {
     pentaChart.clear();
     statusEl.textContent = "← 選擇標的以顯示五線譜";
+    renderPentaSummary();
     return;
   }
 
@@ -409,6 +506,7 @@ export function renderPentagram() {
   if (!result) {
     statusEl.textContent = `數據不足`;
     pentaChart.clear();
+    renderPentaSummary();
     return;
   }
 
@@ -420,13 +518,10 @@ export function renderPentagram() {
   const lastTr    = result.trend [rLen - 1][1];
   const lastL1    = result.lower1[rLen - 1][1];
   const lastL2    = result.lower2[rLen - 1][1];
-  let zoneName, zoneClr;
-  if      (lastPrice >= lastU2) { zoneName = "超漲"; zoneClr = "#e91e63"; }
-  else if (lastPrice >= lastU1) { zoneName = "偏貴"; zoneClr = "#f06292"; }
-  else if (lastPrice >= lastTr) { zoneName = "偏強"; zoneClr = "#78909c"; }
-  else if (lastPrice >= lastL1) { zoneName = "偏弱"; zoneClr = "#64b5f6"; }
-  else if (lastPrice >= lastL2) { zoneName = "便宜"; zoneClr = "#1976d2"; }
-  else                          { zoneName = "超跌"; zoneClr = "#1565c0"; }
+  // R3: 5 級情緒改用 pentaZone（pentagram_calc.mjs）判定,取代舊的 6 級 超漲/偏貴/偏強/偏弱/便宜/超跌
+  const zone      = pentaZone(lastPrice, { u2: lastU2, u1: lastU1, tr: lastTr, l1: lastL1, l2: lastL2 });
+  const zoneName  = zone.label;
+  const zoneClr   = zone.color;
   const badgePos = lastPrice >= lastTr ? "bottom" : "top";
 
   const maLabelPt   = `MA${pentaMaPeriod}`;
@@ -472,11 +567,26 @@ export function renderPentagram() {
   const nRtPt     = rightAxesPt.length;
   const fpeDataPt = pentaFpeActive ? getPentaFpeData() : null;
   const fpeSubPt  = pentaFpeActive && !!fpeDataPt;
+  // R5: 樂活子圖 — 只在五線譜模式、pentaChSubOn 開時插一個新 grid,位置在主圖與 FPE 之間(FPE 關則在主圖與 RSI 之間)
+  const chSubPt   = pentaChSubOn;
+  const subGapPt  = chSubPt ? 1 : 0;
   const fpeGapPt  = fpeSubPt ? 1 : 0;
-  const fpeSubYPt = fpeSubPt ? 1 + nRtPt : -1;
-  const rsiIdxPt  = 1 + nRtPt + fpeGapPt;
-  const kdIdxPt   = 2 + nRtPt + fpeGapPt;
-  const gridRPt   = nRtPt === 0 ? (isMobPt ? 12 : 24) : nRtPt === 1 ? (isMobPt ? 38 : 58) : (isMobPt ? 65 : 105);
+  // grid(xAxis) 陣列上的位置(不含右軸,右軸只疊在 grid0 上不佔新 grid)
+  const subGridIdxPt = chSubPt ? 1 : -1;
+  const fpeGridIdxPt = 1 + subGapPt;
+  const rsiGridIdxPt = 1 + subGapPt + fpeGapPt;
+  const kdGridIdxPt  = 2 + subGapPt + fpeGapPt;
+  // yAxis 陣列上的位置(含右軸數量 nRtPt 的偏移)
+  const subAxisYPt = chSubPt ? 1 + nRtPt : -1;
+  const fpeSubYPt  = fpeSubPt ? 1 + nRtPt + subGapPt : -1;
+  const rsiIdxPt   = 1 + nRtPt + subGapPt + fpeGapPt;
+  const kdIdxPt    = 2 + nRtPt + subGapPt + fpeGapPt;
+  // R4: 只在沒有額外右軸(VIX/F&G 皆關)時顯示右端最新值標籤,主圖 right 要相應加寬避免裁切
+  const endLabelOnPt = nRtPt === 0;
+  const gridRPt   = endLabelOnPt ? (isMobPt ? 56 : 80) : nRtPt === 1 ? (isMobPt ? 38 : 58) : (isMobPt ? 65 : 105);
+  const mkEndLabelPt = clr => endLabelOnPt
+    ? { show:true, formatter: p => _endLabelFmt(p.value[1]), color:'#fff', backgroundColor:clr, borderRadius:4, padding:[2,6], fontSize:11 }
+    : { show:false };
 
   const wklyPt   = toWeekly(loaded[pentaActiveTicker] || []);
   const wHLCPt   = loadedHLC[pentaActiveTicker] ? toWeeklyHLC(loadedHLC[pentaActiveTicker]) : wklyPt.map(r => [r[0],r[1],r[1],r[1]]);
@@ -485,12 +595,22 @@ export function renderPentagram() {
   const tdInRgPt  = computeTDSetup(wklyPt).filter(p => p.date >= fromDatePt);
   const pmapPt    = new Map(wklyPt.map(r => [r[0], r[1]]));
 
+  // R5: 子圖資料 — 依 pentaChType 算樂活通道(全歷史算完再依週期裁切,與主圖 cutoff 一致)
+  const chBandsPt    = chSubPt ? _channelBandsFor(pentaActiveTicker, wklyPt) : null;
+  const chPricePt    = chSubPt ? wklyPt.filter(r => r[0] >= fromDatePt) : null;
+  const chMidPt      = chSubPt ? chBandsPt.mid.filter(r => r[0] >= fromDatePt) : null;
+  const chUpperPt    = chSubPt ? chBandsPt.upper.filter(r => r[0] >= fromDatePt) : null;
+  const chLowerPt    = chSubPt ? chBandsPt.lower.filter(r => r[0] >= fromDatePt) : null;
+  const chIsDonPt    = pentaChType === "donchian";
+  const chMidNamePt  = chIsDonPt ? "中線(高低點)" : "MA20(布林)";
+
   const priceAxisPt = { gridIndex:0, scale:true, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:12}, splitLine:{lineStyle:{color:gridClr}} };
   const rtAxWithGPt = rightAxesPt.map(a => ({ ...a, gridIndex: 0 }));
-  const fpeAxisPt   = fpeSubPt ? { gridIndex:1, name:'FPE', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#58a6ff',fontSize:9}, min:v=>Math.floor(v.min-1), max:v=>Math.ceil(v.max+1), axisLabel:{fontSize:9,color:'#58a6ff',formatter:v=>`${v}x`}, axisLine:{lineStyle:{color:'#58a6ff'}}, splitLine:{show:false} } : null;
-  const rsiAxisPt   = { gridIndex:1+fpeGapPt, min:0, max:100, name:'RSI', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#a371f7',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#a371f7'}, splitLine:{show:false} };
-  const kdAxisPt    = { gridIndex:2+fpeGapPt, min:0, max:100, name:'KD',  nameLocation:'start', nameGap:2, nameTextStyle:{color:'#f0883e',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#f0883e'}, splitLine:{show:false} };
-  const yAxisPt     = [priceAxisPt, ...rtAxWithGPt, ...(fpeAxisPt ? [fpeAxisPt] : []), rsiAxisPt, kdAxisPt];
+  const subAxisPt   = chSubPt ? { gridIndex:subGridIdxPt, name:'樂活', nameLocation:'end', nameGap:4, nameTextStyle:{color:axisClr,fontSize:9}, min:v=>Math.floor(v.min*0.98), max:v=>Math.ceil(v.max*1.02), splitNumber:2, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9}, splitLine:{show:false} } : null;
+  const fpeAxisPt   = fpeSubPt ? { gridIndex:fpeGridIdxPt, name:'FPE', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#58a6ff',fontSize:9}, min:v=>Math.floor(v.min-1), max:v=>Math.ceil(v.max+1), axisLabel:{fontSize:9,color:'#58a6ff',formatter:v=>`${v}x`}, axisLine:{lineStyle:{color:'#58a6ff'}}, splitLine:{show:false} } : null;
+  const rsiAxisPt   = { gridIndex:rsiGridIdxPt, min:0, max:100, name:'RSI', nameLocation:'start', nameGap:2, nameTextStyle:{color:'#a371f7',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#a371f7'}, splitLine:{show:false} };
+  const kdAxisPt    = { gridIndex:kdGridIdxPt, min:0, max:100, name:'KD',  nameLocation:'start', nameGap:2, nameTextStyle:{color:'#f0883e',fontSize:9}, axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:9,color:'#f0883e'}, splitLine:{show:false} };
+  const yAxisPt     = [priceAxisPt, ...rtAxWithGPt, ...(subAxisPt ? [subAxisPt] : []), ...(fpeAxisPt ? [fpeAxisPt] : []), rsiAxisPt, kdAxisPt];
 
   const mkTDPt = (items, pos, clr, c9) => {
     const norm = items.filter(p => p.count < 9);
@@ -505,12 +625,12 @@ export function renderPentagram() {
     ...mkTDPt(tdInRgPt.filter(p=>p.dir==='up'),   'bottom', '#f85149', '#f85149'),
   ];
 
-  const sU2 = { ...lineBase, name:"極度貪婪", data:result.upper2, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#e91e63"}, itemStyle:{color:"#e91e63"} };
-  const sU1 = { ...lineBase, name:"貪婪",     data:result.upper1, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#f48fb1"}, itemStyle:{color:"#f48fb1"} };
-  const sTr = { ...lineBase, name:"趨勢線",   data:result.trend,  xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#9e9e9e"}, itemStyle:{color:"#9e9e9e"} };
-  const sL1 = { ...lineBase, name:"恐懼",     data:result.lower1, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#64b5f6"}, itemStyle:{color:"#64b5f6"} };
-  const sL2 = { ...lineBase, name:"極度恐懼", data:result.lower2, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#1565c0"}, itemStyle:{color:"#1565c0"} };
-  const sPr = { ...lineBase, name:"價格",     data,               xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:s.color},   itemStyle:{color:s.color},
+  const sU2 = { ...lineBase, name:"極度貪婪", data:result.upper2, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#e91e63"}, itemStyle:{color:"#e91e63"}, labelLayout:{moveOverlap:'shiftY'}, endLabel:mkEndLabelPt("#e91e63") };
+  const sU1 = { ...lineBase, name:"貪婪",     data:result.upper1, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#f48fb1"}, itemStyle:{color:"#f48fb1"}, labelLayout:{moveOverlap:'shiftY'}, endLabel:mkEndLabelPt("#f48fb1") };
+  const sTr = { ...lineBase, name:"趨勢線",   data:result.trend,  xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#9e9e9e"}, itemStyle:{color:"#9e9e9e"}, labelLayout:{moveOverlap:'shiftY'}, endLabel:mkEndLabelPt("#9e9e9e") };
+  const sL1 = { ...lineBase, name:"恐懼",     data:result.lower1, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#64b5f6"}, itemStyle:{color:"#64b5f6"}, labelLayout:{moveOverlap:'shiftY'}, endLabel:mkEndLabelPt("#64b5f6") };
+  const sL2 = { ...lineBase, name:"極度恐懼", data:result.lower2, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:"#1565c0"}, itemStyle:{color:"#1565c0"}, labelLayout:{moveOverlap:'shiftY'}, endLabel:mkEndLabelPt("#1565c0") };
+  const sPr = { ...lineBase, name:"價格",     data,               xAxisIndex:0, yAxisIndex:0, lineStyle:{width:1.5,color:s.color},   itemStyle:{color:s.color}, labelLayout:{moveOverlap:'shiftY'}, endLabel:mkEndLabelPt(s.color),
     markPoint: { silent:true, animation:false, data:[{ coord:[lastDate,lastPrice], symbol:"circle", symbolSize:10, itemStyle:{color:zoneClr,borderColor:"#fff",borderWidth:2}, label:{show:true, formatter:badgeLabel, position:badgePos, distance:8, color:"#fff", backgroundColor:zoneClr, borderRadius:4, padding:[3,8], fontSize:12, fontWeight:"bold"} }] }
   };
   let bandsSorted;
@@ -557,17 +677,35 @@ export function renderPentagram() {
       textStyle: { color: tipText, fontSize: 13 }, top: 6,
     },
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
-    grid: fpeSubPt ? [
-      { left:isMobPt?45:72, right:gridRPt, top:48, bottom:'50%' },
-      { left:isMobPt?45:72, right:50, top:'53%', bottom:'38%' },
-      { left:isMobPt?45:72, right:50, top:'65%', bottom:'22%' },
-      { left:isMobPt?45:72, right:50, top:'81%', bottom:36 },
+    // R5: grid/xAxis 依「樂活子圖開/關 × FPE 開/關」四種組合展開,索引與 subGridIdxPt/fpeGridIdxPt/rsiGridIdxPt/kdGridIdxPt 對齊(見上方推導)
+    grid: chSubPt && fpeSubPt ? [
+      { left:isMobPt?45:72, right:gridRPt, top:48,    bottom:'56%' },
+      { left:isMobPt?45:72, right:50,      top:'47%', bottom:'41%' },
+      { left:isMobPt?45:72, right:50,      top:'61%', bottom:'30%' },
+      { left:isMobPt?45:72, right:50,      top:'72%', bottom:'18%' },
+      { left:isMobPt?45:72, right:50,      top:'84%', bottom:36 },
+    ] : chSubPt ? [
+      { left:isMobPt?45:72, right:gridRPt, top:48,    bottom:'47%' },
+      { left:isMobPt?45:72, right:50,      top:'56%', bottom:'31%' },
+      { left:isMobPt?45:72, right:50,      top:'72%', bottom:'18%' },
+      { left:isMobPt?45:72, right:50,      top:'84%', bottom:36 },
+    ] : fpeSubPt ? [
+      { left:isMobPt?45:72, right:gridRPt, top:48,    bottom:'50%' },
+      { left:isMobPt?45:72, right:50,      top:'53%', bottom:'38%' },
+      { left:isMobPt?45:72, right:50,      top:'65%', bottom:'22%' },
+      { left:isMobPt?45:72, right:50,      top:'81%', bottom:36 },
     ] : [
-      { left:isMobPt?45:72, right:gridRPt, top:48, bottom:'38%' },
-      { left:isMobPt?45:72, right:50, top:'65%', bottom:'22%' },
-      { left:isMobPt?45:72, right:50, top:'81%', bottom:36 },
+      { left:isMobPt?45:72, right:gridRPt, top:48,    bottom:'38%' },
+      { left:isMobPt?45:72, right:50,      top:'65%', bottom:'22%' },
+      { left:isMobPt?45:72, right:50,      top:'81%', bottom:36 },
     ],
-    xAxis: fpeSubPt ? [
+    xAxis: chSubPt && fpeSubPt ? [
+      { gridIndex:0, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+      { gridIndex:1, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+      { gridIndex:2, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+      { gridIndex:3, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
+      { gridIndex:4, type:"time", axisLine:{lineStyle:{color:axisClr}}, axisLabel:{fontSize:isMobPt?10:12}, splitLine:{show:false} },
+    ] : (chSubPt || fpeSubPt) ? [
       { gridIndex:0, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
       { gridIndex:1, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
       { gridIndex:2, type:"time", axisLabel:{show:false}, splitLine:{show:false} },
@@ -579,19 +717,26 @@ export function renderPentagram() {
     ],
     yAxis: yAxisPt,
     dataZoom: [
-      { type:"inside", xAxisIndex: fpeSubPt ? [0,1,2,3] : [0,1,2] },
-      { type:"slider", height:18, bottom:14, xAxisIndex: fpeSubPt ? [0,1,2,3] : [0,1,2] },
+      { type:"inside", xAxisIndex: (chSubPt&&fpeSubPt) ? [0,1,2,3,4] : (chSubPt||fpeSubPt) ? [0,1,2,3] : [0,1,2] },
+      { type:"slider", height:18, bottom:14, xAxisIndex: (chSubPt&&fpeSubPt) ? [0,1,2,3,4] : (chSubPt||fpeSubPt) ? [0,1,2,3] : [0,1,2] },
     ],
     series: [
       ...bandsSorted,
       ...(ma125DataPt ? [{ ...lineBase, name:maLabelPt, data:ma125DataPt, xAxisIndex:0, yAxisIndex:0, lineStyle:{width:2,color:"#ff9800"}, itemStyle:{color:"#ff9800"} }] : []),
       ...(vixIdxPt>=0 ? [{ ...lineBase, name:"VIX", data:vixDataPt, xAxisIndex:0, yAxisIndex:vixIdxPt, lineStyle:{width:1.5,color:"#f0883e",type:"dashed"}, itemStyle:{color:"#f0883e"}, areaStyle:{color:"rgba(240,136,62,0.06)"} }] : []),
       ...(fgIdxPt>=0  ? [{ ...lineBase, name:"F&G", data:fgDataPt,  xAxisIndex:0, yAxisIndex:fgIdxPt,  lineStyle:{width:1.5,color:"#e3b341",type:"dashed"}, itemStyle:{color:"#e3b341"}, areaStyle:{color:"rgba(227,179,65,0.06)"} }] : []),
-      ...(fpeSubPt ? [{ type:'line', name:'FPE', xAxisIndex:1, yAxisIndex:fpeSubYPt, data:fpeDataPt, showSymbol:false, lineStyle:{width:1.5,color:'#58a6ff'}, itemStyle:{color:'#58a6ff'}, markLine:_fpeMarkLine(pentaActiveTicker) }] : []),
-      ...(rsiDataPt.length ? [{ type:'line', name:'RSI', xAxisIndex:1+fpeGapPt, yAxisIndex:rsiIdxPt, data:rsiDataPt, showSymbol:false, lineStyle:{width:1.5,color:'#a371f7'}, itemStyle:{color:'#a371f7'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:70,label:{formatter:'70',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:30,label:{formatter:'30',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} }] : []),
+      // R5: 樂活子圖三線 + 週收盤,只在 chSubPt 開時加入;不進主 legend.data
+      ...(chSubPt ? [
+        { ...lineBase, name:"樂活上緣",   data:chUpperPt, xAxisIndex:subGridIdxPt, yAxisIndex:subAxisYPt, lineStyle:{width:1.3,color:"#e91e63"}, itemStyle:{color:"#e91e63"} },
+        { ...lineBase, name:chMidNamePt,  data:chMidPt,   xAxisIndex:subGridIdxPt, yAxisIndex:subAxisYPt, lineStyle:{width:1.3,color:"#9e9e9e",type:"dashed"}, itemStyle:{color:"#9e9e9e"} },
+        { ...lineBase, name:"樂活下緣",   data:chLowerPt, xAxisIndex:subGridIdxPt, yAxisIndex:subAxisYPt, lineStyle:{width:1.3,color:"#1565c0"}, itemStyle:{color:"#1565c0"} },
+        { ...lineBase, name:"樂活收盤",   data:chPricePt, xAxisIndex:subGridIdxPt, yAxisIndex:subAxisYPt, lineStyle:{width:1.5,color:s.color}, itemStyle:{color:s.color} },
+      ] : []),
+      ...(fpeSubPt ? [{ type:'line', name:'FPE', xAxisIndex:fpeGridIdxPt, yAxisIndex:fpeSubYPt, data:fpeDataPt, showSymbol:false, lineStyle:{width:1.5,color:'#58a6ff'}, itemStyle:{color:'#58a6ff'}, markLine:_fpeMarkLine(pentaActiveTicker) }] : []),
+      ...(rsiDataPt.length ? [{ type:'line', name:'RSI', xAxisIndex:rsiGridIdxPt, yAxisIndex:rsiIdxPt, data:rsiDataPt, showSymbol:false, lineStyle:{width:1.5,color:'#a371f7'}, itemStyle:{color:'#a371f7'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:70,label:{formatter:'70',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:30,label:{formatter:'30',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} }] : []),
       ...(kdDataPt.length ? [
-        { type:'line', name:'K', xAxisIndex:2+fpeGapPt, yAxisIndex:kdIdxPt, data:kdDataPt.map(r=>[r[0],r[1]]), showSymbol:false, lineStyle:{width:1.5,color:'#f0883e'}, itemStyle:{color:'#f0883e'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:80,label:{formatter:'80',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:20,label:{formatter:'20',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} },
-        { type:'line', name:'D', xAxisIndex:2+fpeGapPt, yAxisIndex:kdIdxPt, data:kdDataPt.map(r=>[r[0],r[2]]), showSymbol:false, lineStyle:{width:1.5,color:'#79c0ff',type:'dashed'}, itemStyle:{color:'#79c0ff'} },
+        { type:'line', name:'K', xAxisIndex:kdGridIdxPt, yAxisIndex:kdIdxPt, data:kdDataPt.map(r=>[r[0],r[1]]), showSymbol:false, lineStyle:{width:1.5,color:'#f0883e'}, itemStyle:{color:'#f0883e'}, markLine:{silent:true,symbol:['none','none'],animation:false,data:[{yAxis:80,label:{formatter:'80',fontSize:9},lineStyle:{color:'#f85149',type:'dashed',width:1,opacity:0.5}},{yAxis:20,label:{formatter:'20',fontSize:9},lineStyle:{color:'#3fb950',type:'dashed',width:1,opacity:0.5}}]} },
+        { type:'line', name:'D', xAxisIndex:kdGridIdxPt, yAxisIndex:kdIdxPt, data:kdDataPt.map(r=>[r[0],r[2]]), showSymbol:false, lineStyle:{width:1.5,color:'#79c0ff',type:'dashed'}, itemStyle:{color:'#79c0ff'} },
       ] : []),
       ...tdSeriesPt,
     ],
@@ -600,6 +745,7 @@ export function renderPentagram() {
   statusEl.textContent =
     `${pentaActiveTicker} 五線譜 · ${pentaPeriod} · 線性迴歸通道 · ${data.length} 筆${pentaWeekly ? "週" : "日"}線 · 目前：${zoneName}${deviationStr ? ` · ${maLabelPt} 乖離：${deviationStr}` : ""}`;
   attachDragMeasure(pentaChart);
+  renderPentaSummary();
 }
 
 export function renderPentaTickerPicker() {
@@ -664,6 +810,17 @@ chipPicker(document.getElementById("penta-period-picker"), "period", v => {
 
 chipPicker(document.getElementById("penta-mode-picker"), "mode", v => {
   pentaMode = v;
+  renderPentagram();
+});
+
+chipPicker(document.getElementById("penta-chtype-picker"), "chtype", v => {
+  pentaChType = v;
+  renderPentagram();
+});
+
+document.getElementById("penta-chsub-toggle")?.addEventListener("click", () => {
+  pentaChSubOn = !pentaChSubOn;
+  document.getElementById("penta-chsub-toggle").classList.toggle("active", pentaChSubOn);
   renderPentagram();
 });
 

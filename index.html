@@ -103,7 +103,11 @@
       <div id="penta-ticker-picker"></div>
       <div id="penta-mode-picker" style="display:flex;gap:4px;margin-left:12px;flex-shrink:0">
         <span class="chip active" data-mode="pentagram" data-tooltip="以均值為中心，顯示±1σ/±2σ通道位置">五線譜</span>
-        <span class="chip" data-mode="channel" data-tooltip="以滾動高低點為上下緣的價格通道">通道</span>
+        <span class="chip" data-mode="channel" data-tooltip="樂活通道：20 週價格通道，可切換布林 MA20±2.5σ／前 20 週高低點">通道</span>
+      </div>
+      <div id="penta-chtype-picker" style="display:flex;gap:4px;margin-left:8px;flex-shrink:0">
+        <span class="chip active" data-chtype="boll" data-tooltip="通道上下緣＝20週均線 ±2.5倍標準差">布林</span>
+        <span class="chip" data-chtype="donchian" data-tooltip="通道上下緣＝前20週（不含本週）最高價／最低價">高低點</span>
       </div>
       <span id="penta-vix-toggle" class="chip" style="margin-left:8px;flex-shrink:0" data-tooltip="疊加 VIX 恐慌指數（右軸，S&amp;P500 隱含波動率）">VIX</span>
       <span id="penta-vxn-toggle" class="chip ml-4-shrink0" data-tooltip="疊加 VXN NASDAQ-100 恐慌指數（右軸，對應 QQQ）">VXN</span>
@@ -111,6 +115,7 @@
       <span id="penta-weekly-toggle" class="chip ml-4-shrink0" data-tooltip="五線譜改用週線計算（資料點更少、噪音更低）">週線</span>
       <span id="penta-ma125-toggle" class="chip ml-4-shrink0" data-tooltip="自訂均線（預設125日，可手動調整天數）">MA</span><input id="penta-ma-period" type="number" min="5" max="999" value="125" readonly style="width:64px;margin-left:2px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--panel);color:var(--muted);font-size:13px;text-align:center;outline:none;cursor:default;pointer-events:none" />
       <span id="penta-fpe-toggle" class="chip ml-4-shrink0" data-tooltip="QQQ/SPY/SOXX/0050/TWII Forward PE 子面板（季度資料線性插值）">FPE</span>
+      <span id="penta-chsub-toggle" class="chip active ml-4-shrink0" data-tooltip="五線譜模式下方顯示樂活通道子圖">樂活</span>
       <div id="penta-period-picker" style="margin-left:auto;display:flex;gap:6px;flex-shrink:0">
         <span class="chip" data-period="0.5Y" data-tooltip="用近0.5年數據算均值/標準差，較敏感">短期 0.5Y</span>
         <span class="chip" data-period="1.5Y" data-tooltip="用近1.5年數據算均值/標準差，均衡參考">中期 1.5Y</span>
@@ -118,6 +123,7 @@
         <span class="chip" data-period="5Y" data-tooltip="用近5年數據算均值/標準差，超長期底部參考">超長期 5Y</span>
       </div>
     </div>
+    <div id="penta-summary" style="display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center;padding:10px 14px;margin:10px 0;background:var(--panel);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px"></div>
     <div id="penta-chart"></div>
     <div class="status" id="penta-status">← 選擇標的以顯示五線譜</div>
     <div class="info-panel">
