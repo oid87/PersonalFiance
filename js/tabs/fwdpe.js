@@ -11,10 +11,14 @@
 // ⚠️ 序列從 2026-09 才開始逐日累積，目前只有 1 個資料點——這是預期行為，不是
 // bug。UI（showSymbol、status 行）刻意設計成在只有 1 個點時也看得出「這條線剛
 // 開始長」，不要拿它做位階判斷。
+//
+// ⚠️ σ 帶門檻是 24 個完整月：自算序列現在還太短，滿 24 個完整月才自動畫出
+// μ±kσ markLine（見下 SIGMA_MIN_MONTHS），且只在單一標的顯示時畫（見 buildOption）。
 
 import { isLight, mob, PALETTE, echartsBase } from '../utils/theme.js';
-import { tsToLocalDate } from '../utils/dates.js';
+import { tsToLocalDate, toMonthlyLast } from '../utils/dates.js';
 import { bindOnce } from '../utils/dom.js';
+import { sigmaBands } from '../utils/math.js';
 
 const VOO_NTM_COLOR = '#58a6ff'; // 藍 — VOO NTM
 const VOO_FY2_COLOR = '#8bc4ff'; // 淡藍 — VOO FY2（虛線）
@@ -24,6 +28,10 @@ const QQQ_FY2_COLOR = '#f7b381'; // 淡橘 — QQQ FY2（虛線）
 // 5y / 10y 均線所需的最少交易日數（見 docs/forward_pe.md「四條硬規則」第 4 條）。
 const TRADING_DAYS_5Y = 1260;
 const TRADING_DAYS_10Y = 2520;
+
+// σ 帶樣本門檻：完整月（不含當月），自算序列累積到這個數才畫 σ 帶。
+const SIGMA_MIN_MONTHS = 24;
+const SIGMA_K_COLORS = { 0.5: "#58a6ff", 1: "#3fb950", 1.5: "#ef4444", 2: "#a371f7" };
 
 let chart = null;
 let vooRows = null; // [{date, ticker, price_asof, forward_pe_ntm, forward_pe_fy2, valid_ntm, valid_fy2, coverage_ntm, ...}, ...]
@@ -66,6 +74,18 @@ function sortByEffDate(rows) {
     const da = effDate(a), db = effDate(b);
     return da < db ? -1 : da > db ? 1 : 0;
   });
+}
+
+// NTM forward PE 的 μ±kσ 帶：月頻重採樣(去掉當月partial)，基期＝全部完整月
+// （這條序列沒有更長歷史可選，不做基期 chip）。未滿 SIGMA_MIN_MONTHS 個完整月
+// 時 sig 回 null，只回月數供 status 行顯示進度。
+function ntmSigma(rows) {
+  const points = rows.map(r => [effDate(r), r.valid_ntm ? r.forward_pe_ntm : null]);
+  const months = toMonthlyLast(points).filter(m => !m.partial);
+  return {
+    months: months.length,
+    sig: months.length >= SIGMA_MIN_MONTHS ? sigmaBands(months.map(m => m.value)) : null,
+  };
 }
 
 async function loadAll() {
@@ -141,7 +161,12 @@ function statusText() {
   const qPart = qqqRows === null
     ? 'QQQ 載入失敗'
     : `QQQ ${qN} 個交易日資料點（序列起點 ${qStart}）· 距 5Y 均線尚需 ${remain5y(qN)} 個交易日、10Y 均線尚需 ${remain10y(qN)} 個`;
-  return `${vPart}　｜　${qPart}　｜　序列剛開始累積，目前不足以做位階判斷`;
+  const vM = vooRows === null ? '—' : ntmSigma(vooRows).months;
+  const qM = qqqRows === null ? '—' : ntmSigma(qqqRows).months;
+  const sigmaPart = (vM !== '—' && qM !== '—' && vM >= SIGMA_MIN_MONTHS && qM >= SIGMA_MIN_MONTHS)
+    ? `σ 帶：已達 24 完整月，只顯示單一標的時畫出`
+    : `σ 帶：VOO ${vM}/24、QQQ ${qM}/24 完整月（滿 24 個完整月且只顯示單一標的時自動畫出）`;
+  return `${vPart}　｜　${qPart}　｜　${sigmaPart}　｜　序列剛開始累積，目前不足以做位階判斷`;
 }
 
 // ── chart ────────────────────────────────────────────────────────────────
@@ -167,6 +192,22 @@ function shortSeriesAxisSpan() {
     min: new Date(`${uniq[0]}T00:00:00`).getTime() - pad,
     max: new Date(`${uniq[uniq.length - 1]}T00:00:00`).getTime() + pad,
   };
+}
+
+// 9 條 markLine：μ 一條 + 4 個 k 各 ±1 條。格式同估值 tab（js/tabs/valuation.js）。
+function sigmaMarkLineData(sig) {
+  const data = [
+    { yAxis: sig.mu, lineStyle: { color: PALETTE.muted },
+      label: { formatter: `μ ${sig.mu.toFixed(2)}`, color: PALETTE.muted, position: 'insideEndTop' } },
+  ];
+  for (const b of sig.bands) {
+    const c = SIGMA_K_COLORS[b.k];
+    data.push({ yAxis: b.hi, lineStyle: { color: c },
+      label: { formatter: `+${b.k}σ ${b.hi.toFixed(2)}`, color: c, position: 'insideEndTop' } });
+    data.push({ yAxis: b.lo, lineStyle: { color: c },
+      label: { formatter: `−${b.k}σ ${b.lo.toFixed(2)}`, color: c, position: 'insideEndTop' } });
+  }
+  return data;
 }
 
 function buildOption() {
@@ -211,6 +252,25 @@ function buildOption() {
         lineStyle: { color: QQQ_FY2_COLOR, width: 1.5, type: 'dashed' },
       });
       legendNames.push('QQQ FY2');
+    }
+  }
+
+  // σ 帶：只在恰好一個標的顯示（showVoo !== showQqq）且該標的滿 24 完整月時畫。
+  // 同時顯示兩個標的時不畫（兩組各 9 條會糊成一團）；FY2 開關不影響（σ 只算 NTM）。
+  if (showVoo !== showQqq) {
+    const rows = showVoo ? vooRows : qqqRows;
+    const ntmName = showVoo ? 'VOO NTM' : 'QQQ NTM';
+    if (rows?.length) {
+      const { sig } = ntmSigma(rows);
+      if (sig) {
+        const ntmSeries = series.find(s => s.name === ntmName);
+        if (ntmSeries) {
+          ntmSeries.markLine = {
+            silent: true, symbol: 'none', lineStyle: { type: 'dashed', width: 1 }, label: { fontSize: 10 },
+            data: sigmaMarkLineData(sig),
+          };
+        }
+      }
     }
   }
 

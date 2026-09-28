@@ -9,9 +9,10 @@
 
 import { loaded } from '../state.js';
 import { isLight, tc, PALETTE } from '../utils/theme.js';
-import { tsToLocalDate } from '../utils/dates.js';
+import { tsToLocalDate, toMonthlyLast } from '../utils/dates.js';
 import { ensureLoaded } from '../utils/data.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
+import { sigmaBands, SIGMA_KS } from '../utils/math.js';
 
 // ── Per-ticker config ──────────────────────────────────────────────
 // 每個來源附 real（實際值算法）/ est（估計值依據），供 tooltip 標明「用什麼算的」
@@ -21,6 +22,7 @@ const VAL_TICKERS = [
     fwd:   { file: "data/SPY_valuation.json", field: "fpe", real: "前20大持股加權 forwardPE", est: "後見回填：用事後實現 EPS 回推，非當時共識，勿作位階判斷" },
     trail: { file: "data/SP500_PE.json",      field: "pe",  real: "multpl S&P500 實際本益比", est: "—" },
     refs: [ { v: 21, t: "21x 偏貴", c: "#f0883e" }, { v: 17, t: "17x 長均", c: "#3fb950" } ],
+    sigma: true,
   },
   {
     key: "QQQ", label: "QQQ", priceKey: "QQQ", priceLabel: "QQQ", color: "#f778ba",
@@ -50,6 +52,7 @@ const VAL_TICKERS = [
 
 const FWD_COLOR = "#58a6ff";   // forward 藍
 const TRL_COLOR = "#f0883e";   // trailing 橘
+const SIGMA_K_COLORS = { 0.5: "#58a6ff", 1: "#3fb950", 1.5: "#ef4444", 2: "#a371f7" };
 
 // 台股景氣對策信號（國發會）— 只在 0050 多加一層
 const BIZ_FILE = "data/taiwan_business_signal.json";
@@ -72,8 +75,11 @@ function fmtPrice(v) {
 let valChart  = null;
 let valTicker = "SPY";
 let valRange  = "5Y";
+let valSigma  = "10Y";   // σ 帶基期：OFF / MAX(全期) / 20Y / 10Y — 完整月數計，不用日曆日
 let compareMode = false;   // true = SOXX vs SPY 同圖比較模式，與 valTicker 單選互斥
 const fileCache = {};   // path -> data array
+
+const SIGMA_LABELS = { MAX: "全期", "20Y": "20Y", "10Y": "10Y" };
 
 // ── Data loading ───────────────────────────────────────────────────
 async function loadFile(path) {
@@ -169,8 +175,28 @@ function realFromDate(rows, field, estSrcs = ["seed"]) {
 // tooltip 用：記住目前各線的實際分界日
 let peRealFrom = { fwd: "0000", trl: "0000" };
 
+// trailing PE 的 μ±kσ 帶：月頻重採樣(去掉當月partial)後依 valSigma 取樣本窗口。
+// 樣本數以「完整月數」計，不用日曆日；sigmaBands 樣本不足(<2)時整個回 null。
+// 盈餘崩落期（如 2008-12～2009-09 S&P 500 trailing 59–124x）分母趨近 0，會把 σ 撐到失真；
+// 算 μ/σ 時排除高於此值的月份（基期仍以完整月數切，排除的月數寫進 status）
+const SIGMA_PE_CAP = 50;
+
+function trailSigma(trlRows, field) {
+  const points = (trlRows || []).filter(r => r[field] != null).map(r => [r.date, +r[field]]);
+  const months = toMonthlyLast(points).filter(m => !m.partial);
+  if (!months.length) return null;
+  let sample = months;
+  if (valSigma === "20Y") sample = months.slice(-240);
+  else if (valSigma === "10Y") sample = months.slice(-120);
+  if (!sample.length) return null;
+  const kept = sample.filter(m => m.value <= SIGMA_PE_CAP);
+  const bands = sigmaBands(kept.map(m => m.value));
+  if (!bands) return null;
+  return { ...bands, from: sample[0].month, to: sample.at(-1).month, excluded: sample.length - kept.length };
+}
+
 // ── Render ─────────────────────────────────────────────────────────
-function render(price, fwdFull, trlFull, bizRows, realFrom) {
+function render(price, fwdFull, trlFull, bizRows, realFrom, sig) {
   if (!valChart) return;
   const t = cfg();
   const BIZ_NAME = "景氣對策信號";
@@ -208,6 +234,17 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
     if (lf != null) parts.push(`Fwd PE ${lf.toFixed(1)}x`);
     if (lt != null) parts.push(`Trail PE ${lt.toFixed(1)}x`);
     if (lf != null && lt != null) parts.push(`折讓 ${((1 - lf / lt) * 100).toFixed(0)}%`);
+    if (sig && lt != null) {
+      const z = sig.sd ? (lt - sig.mu) / sig.sd : null;
+      if (z != null) {
+        const sign = z >= 0 ? "+" : "−";
+        const label = SIGMA_LABELS[valSigma] || valSigma;
+        parts.push(`Trail z ${sign}${Math.abs(z).toFixed(2)}σ（${label} 基期 ${sig.from}–${sig.to} · μ ${sig.mu.toFixed(2)} · σ ${sig.sd.toFixed(2)} · n=${sig.n}${sig.excluded ? `，排除 ${sig.excluded} 個 >${SIGMA_PE_CAP}x 月` : ""}）`);
+      }
+    }
+    if (!t.sigma && valSigma !== "OFF") {
+      parts.push("σ 帶僅 SPY（其他標的歷史為現今成分股回推或後見值，不畫）");
+    }
     if (showBiz) { const b = bizRows[bizRows.length - 1]; parts.push(`景氣 ${b.score} ${b.light}燈`); }
     statusEl.textContent = parts.join(" · ");
   }
@@ -236,7 +273,8 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
     { gridIndex: 1, name: "P/E", nameTextStyle: { color: axisClr, fontSize: 11 },
       axisLabel: { color: axisClr, fontSize: 11, formatter: v => `${v}x` },
       axisLine: { lineStyle: { color: axisClr } }, splitLine: { lineStyle: { color: gridClr } },
-      min: v => Math.max(0, Math.floor(v.min - 1)), max: v => Math.ceil(v.max + 1) },
+      min: v => Math.max(0, Math.floor(Math.min(v.min, sig ? sig.mu - 2 * sig.sd : Infinity) - 1)),
+      max: v => Math.ceil(Math.max(v.max, sig ? sig.mu + 2 * sig.sd : -Infinity) + 1) },
   ];
   if (showBiz) yAxis.push({
     gridIndex: 2, name: "景氣分數", nameTextStyle: { color: axisClr, fontSize: 11 },
@@ -279,14 +317,35 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
     lineStyle: { color: TRL_COLOR, width: 1.2, type: "dashed", opacity: 0.6 },
     itemStyle: { color: TRL_COLOR, opacity: 0.6 }, symbol: "none",
   });
-  series.push({   // PE reference levels
-    name: "_ref", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: [], symbol: "none",
-    markLine: {
-      silent: true, symbol: "none", lineStyle: { type: "dashed", width: 1 }, label: { fontSize: 10 },
-      data: t.refs.map(r => ({ yAxis: r.v, lineStyle: { color: r.c },
-        label: { formatter: r.t, color: r.c, position: "insideEndTop" } })),
-    },
-  });
+  if (sig) {
+    const sigLineData = [
+      { yAxis: sig.mu, lineStyle: { color: PALETTE.muted },
+        label: { formatter: `μ ${sig.mu.toFixed(2)}`, color: PALETTE.muted, position: "insideEndTop" } },
+    ];
+    for (const b of sig.bands) {
+      const kColor = SIGMA_K_COLORS[b.k];
+      sigLineData.push({ yAxis: b.hi, lineStyle: { color: kColor },
+        label: { formatter: `+${b.k}σ ${b.hi.toFixed(2)}`, color: kColor, position: "insideEndTop" } });
+      sigLineData.push({ yAxis: b.lo, lineStyle: { color: kColor },
+        label: { formatter: `−${b.k}σ ${b.lo.toFixed(2)}`, color: kColor, position: "insideEndTop" } });
+    }
+    series.push({   // μ±kσ bands
+      name: "_sigma", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: [], symbol: "none",
+      markLine: {
+        silent: true, symbol: "none", lineStyle: { type: "dashed", width: 1 }, label: { fontSize: 10 },
+        data: sigLineData,
+      },
+    });
+  } else {
+    series.push({   // PE reference levels
+      name: "_ref", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: [], symbol: "none",
+      markLine: {
+        silent: true, symbol: "none", lineStyle: { type: "dashed", width: 1 }, label: { fontSize: 10 },
+        data: t.refs.map(r => ({ yAxis: r.v, lineStyle: { color: r.c },
+          label: { formatter: r.t, color: r.c, position: "insideEndTop" } })),
+      },
+    });
+  }
 
   let bizSeriesIdx = -1;
   if (showBiz) {
@@ -483,7 +542,8 @@ async function refresh() {
       fwd: t.fwd   ? realFromDate(fwdRows, t.fwd.field, ["seed", "backfill"]) : "9999",
       trl: t.trail ? realFromDate(trlRows, t.trail.field) : "9999",
     };
-    render(price, fwd, trl, bizRows, realFrom);
+    const sig = (t.sigma && valSigma !== "OFF" && t.trail) ? trailSigma(trlRows, t.trail.field) : null;
+    render(price, fwd, trl, bizRows, realFrom, sig);
   } catch (e) {
     if (statusEl) statusEl.textContent = `載入失敗：${e.message}`;
   }
@@ -495,6 +555,7 @@ export async function activate() {
   if (!container) return;
   if (!valChart) valChart = echarts.init(container, null, { renderer: "canvas" });
   renderTickerPicker();
+  chipPicker(document.getElementById("val-sigma-picker"), "val-sigma", v => { valSigma = v; refresh(); });
   await refresh();
 }
 
