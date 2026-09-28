@@ -1,4 +1,4 @@
-"""Fetch Philadelphia Semiconductor Index (SOXX) forward PE from top-20 holdings.
+"""Fetch iShares Semiconductor ETF（SOXX，追蹤 NYSE Semiconductor Index，非 SOX）forward PE from top-20 holdings.
 
 Appends result to data/SOXX_valuation.json.
 
@@ -162,7 +162,7 @@ def main() -> None:
         entry["tpe"] = tpe
 
     note = (
-        "Philadelphia Semiconductor Index (SOXX) 估值。"
+        "iShares Semiconductor ETF（SOXX，追蹤 NYSE Semiconductor Index，非 SOX）估值。"
         "fpe=forward（前20大持股 NTM 加權算術平均，排除 PE>70x 或負 EPS；NTM=(m/12)×當FY+(12-m)/12×次FY）；"
         "fpe_harmonic=同一籃子的NTM加權調和平均（= total_weight/Σ(weight/PE)，等價市值加權聚合PE，"
         "不受少數高PE小權重成分股扭曲，只從2026-09-13起提供，之前日期無此欄位）；"

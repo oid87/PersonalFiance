@@ -138,6 +138,30 @@ export function toWeeklyOHLC(daily) {
   return weeks;
 }
 
+// 把日頻 [[date, value|null], ...]（可未排序）重採樣成月頻，取每月最後一筆
+// 非 null 值。null 值忽略（不計入該月的 n，也不會被當成該月最後一筆）。
+// n < minObs 的月份整月不輸出(不插值)。partial 標記「當月尚未走完」——凡是
+// 月頻統計(均值/分位數等)一律要排除 partial 月份，否則會把未走完的當月
+// 當成完整月份參與統計，扭曲結果。
+export function toMonthlyLast(points, { minObs = 1, today = new Date() } = {}) {
+  const byMonth = new Map(); // month -> { date, value, n }
+  for (const [date, value] of points) {
+    if (value == null) continue;
+    const month = date.slice(0, 7);
+    const cur = byMonth.get(month);
+    if (!cur || date > cur.date) {
+      byMonth.set(month, { date, value, n: (cur?.n ?? 0) + 1 });
+    } else {
+      cur.n += 1;
+    }
+  }
+  const curMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  return [...byMonth.entries()]
+    .filter(([, v]) => v.n >= minObs)
+    .map(([month, v]) => ({ month, date: v.date, value: v.value, n: v.n, partial: month === curMonth }))
+    .sort((a, b) => a.month < b.month ? -1 : a.month > b.month ? 1 : 0);
+}
+
 export function toWeeklyHLC(dailyHLC) {
   const byWeek = new Map();
   for (const [date, high, low, close] of dailyHLC) {

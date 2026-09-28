@@ -18,19 +18,19 @@ import { bindOnce, chipPicker } from '../utils/dom.js';
 const VAL_TICKERS = [
   {
     key: "SPY", label: "SPY / VOO", priceKey: "SPY", priceLabel: "SPY", color: "#a371f7",
-    fwd:   { file: "data/SPY_valuation.json", field: "fpe", real: "前20大持股加權 forwardPE", est: "FactSet/Yardeni 公開 forward PE" },
+    fwd:   { file: "data/SPY_valuation.json", field: "fpe", real: "前20大持股加權 forwardPE", est: "後見回填：用事後實現 EPS 回推，非當時共識，勿作位階判斷" },
     trail: { file: "data/SP500_PE.json",      field: "pe",  real: "multpl S&P500 實際本益比", est: "—" },
     refs: [ { v: 21, t: "21x 偏貴", c: "#f0883e" }, { v: 17, t: "17x 長均", c: "#3fb950" } ],
   },
   {
     key: "QQQ", label: "QQQ", priceKey: "QQQ", priceLabel: "QQQ", color: "#f778ba",
-    fwd:   { file: "data/QQQ_valuation.json", field: "fpe", real: "前20大持股 NTM 加權(排除>60x)", est: "Nasdaq-100 公開分析值" },
+    fwd:   { file: "data/QQQ_valuation.json", field: "fpe", real: "前20大持股 NTM 加權(排除>60x)", est: "後見回填：用事後實現 EPS 回推，非當時共識，勿作位階判斷" },
     trail: { file: "data/QQQ_valuation.json", field: "tpe", real: "QQQ ETF 實際 trailingPE", est: "歷史 Nasdaq-100 trailing 估計" },
     refs: [ { v: 21, t: "21x 底部帶", c: "#f0883e" }, { v: 20, t: "20x 熊底", c: "#ef4444" } ],
   },
   {
     key: "SOXX", label: "SOXX 半導體", priceKey: "SOXX", priceLabel: "SOXX", color: "#22d3ee",
-    fwd:   { file: "data/SOXX_valuation.json", field: "fpe", real: "前20大持股 NTM 加權(排除>70x)", est: "半導體公開分析值" },
+    fwd:   { file: "data/SOXX_valuation.json", field: "fpe", real: "前20大持股 NTM 加權(排除>70x)", est: "後見回填：用事後實現 EPS 回推，非當時共識，勿作位階判斷" },
     trail: { file: "data/SOXX_valuation.json", field: "tpe", real: "SOXX ETF 實際 trailingPE", est: "半導體產業 trailing 估計" },
     refs: [ { v: 20, t: "20x", c: "#f0883e" }, { v: 14, t: "14x 熊底", c: "#ef4444" } ],
   },
@@ -86,26 +86,34 @@ async function loadFile(path) {
 }
 
 // 24-month rolling average (O(n) sliding window on dense daily data)
+// data[i][1] 可能為 null(buildSeries 在大缺口斷線處插入的哨兵)：null 不計入 sum/cnt，
+// 視窗內全為 null 時輸出 null。
 function rollingAvg(data, monthsBack) {
   const result = [];
-  let j = 0, sum = 0;
+  let j = 0, sum = 0, cnt = 0;
   for (let i = 0; i < data.length; i++) {
-    sum += data[i][1];
+    if (data[i][1] != null) { sum += data[i][1]; cnt++; }
     const cutoff = new Date(data[i][0] + "T00:00:00Z");
     cutoff.setMonth(cutoff.getMonth() - monthsBack);
     // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
     const cutStr = cutoff.toISOString().slice(0, 10);
-    while (j <= i && data[j][0] < cutStr) { sum -= data[j][1]; j++; }
-    result.push([data[i][0], +((sum / (i - j + 1)).toFixed(3))]);
+    while (j <= i && data[j][0] < cutStr) {
+      if (data[j][1] != null) { sum -= data[j][1]; cnt--; }
+      j++;
+    }
+    result.push([data[i][0], cnt > 0 ? +((sum / cnt).toFixed(3)) : null]);
   }
   return result;
 }
+
+// 兩點間隔超過此天數就不插值，線在這裡斷開（避免把多年缺口畫成假趨勢）
+const MAX_INTERP_GAP_DAYS = 62;
 
 // pull a sparse [{date, <field>}] -> dense daily [[date, val]] via linear interp
 function buildSeries(rows, field) {
   const pts = (rows || [])
     .filter(r => r[field] != null && isFinite(r[field]))
-    .map(r => ({ date: r.date, v: +r[field] }));
+    .map(r => ({ date: r.date, v: +r[field], seed: r.src === "seed" }));
   if (pts.length === 0) return [];
   if (pts.length === 1) return [[pts[0].date, pts[0].v]];
   const out = [];
@@ -115,6 +123,14 @@ function buildSeries(rows, field) {
     const v1 = pts[i].v, v2 = pts[i + 1].v;
     const gap = Math.round((t2 - t1) / 86400000);
     if (gap <= 1) { out.push([pts[i].date, v1]); continue; }
+    // 兩端都是 seed（手填的稀疏錨點，如 MAGS 2023–2026）照舊插值；斷線只針對「該有資料卻缺」的序列
+    if (gap > MAX_INTERP_GAP_DAYS && !(pts[i].seed && pts[i + 1].seed)) {
+      out.push([pts[i].date, v1]);
+      // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
+      const dNext = new Date(t1 + 86400000).toISOString().slice(0, 10);
+      out.push([dNext, null]);
+      continue;
+    }
     for (let j = 0; j < gap; j++) {
       // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
       const d = new Date(t1 + j * 86400000).toISOString().slice(0, 10);
@@ -143,11 +159,11 @@ function cfg() { return VAL_TICKERS.find(t => t.key === valTicker) || VAL_TICKER
 //   "0000" → 全部實際（如 multpl SP500_PE 無 src）
 //   "9999" → 全部估計（只有 seed）
 //   其他   → 該日(含)起為實際，之前為估計
-function realFromDate(rows, field) {
+function realFromDate(rows, field, estSrcs = ["seed"]) {
   if (!rows || !rows.length) return "9999";
   const hasSrc = rows.some(r => r.src !== undefined);
   if (!hasSrc) return "0000";
-  const real = rows.find(r => r[field] != null && r.src && r.src !== "seed");
+  const real = rows.find(r => r[field] != null && r.src && !estSrcs.includes(r.src));
   return real ? real.date : "9999";
 }
 // tooltip 用：記住目前各線的實際分界日
@@ -235,12 +251,12 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
     const real = dense.filter(p => p[0] >= rf);
     const out = [];
     if (est.length) out.push({
-      name, type: "line", xAxisIndex: 1, yAxisIndex: 1, data: est, z,
+      name, type: "line", xAxisIndex: 1, yAxisIndex: 1, data: est, z, connectNulls: false,
       lineStyle: { color, width: 1.6, type: "dashed", opacity: 0.5 },
       itemStyle: { color, opacity: 0.5 }, symbol: "none",
     });
     if (real.length) out.push({
-      name, type: "line", xAxisIndex: 1, yAxisIndex: 1, data: real, z,
+      name, type: "line", xAxisIndex: 1, yAxisIndex: 1, data: real, z, connectNulls: false,
       lineStyle: { color, width: 1.8 }, itemStyle: { color },
       showSymbol: real.length < 8, symbol: "circle", symbolSize: 5,
     });
@@ -254,12 +270,12 @@ function render(price, fwdFull, trlFull, bizRows, realFrom) {
   if (fwdD.length) series.push(...pePair("Forward PE", fwdD, FWD_COLOR, 3, peRealFrom.fwd));
   if (trlD.length) series.push(...pePair("Trailing PE", trlD, TRL_COLOR, 2, peRealFrom.trl));
   if (fwdAvgD.length) series.push({
-    name: "Forward PE 24M均", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: fwdAvgD, z: 2,
+    name: "Forward PE 24M均", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: fwdAvgD, z: 2, connectNulls: false,
     lineStyle: { color: FWD_COLOR, width: 1.2, type: "dashed", opacity: 0.6 },
     itemStyle: { color: FWD_COLOR, opacity: 0.6 }, symbol: "none",
   });
   if (trlAvgD.length) series.push({
-    name: "Trailing PE 24M均", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: trlAvgD, z: 2,
+    name: "Trailing PE 24M均", type: "line", xAxisIndex: 1, yAxisIndex: 1, data: trlAvgD, z: 2, connectNulls: false,
     lineStyle: { color: TRL_COLOR, width: 1.2, type: "dashed", opacity: 0.6 },
     itemStyle: { color: TRL_COLOR, opacity: 0.6 }, symbol: "none",
   });
@@ -392,9 +408,9 @@ function renderCompare(soxxFull, spyFull, soxxCfg, spyCfg) {
   }];
 
   const series = [
-    { name: soxxCfg.label, type: "line", xAxisIndex: 0, yAxisIndex: 0, data: soxxD,
+    { name: soxxCfg.label, type: "line", xAxisIndex: 0, yAxisIndex: 0, data: soxxD, connectNulls: false,
       lineStyle: { color: soxxCfg.color, width: 1.8 }, itemStyle: { color: soxxCfg.color }, symbol: "none", z: 3 },
-    { name: spyCfg.label, type: "line", xAxisIndex: 0, yAxisIndex: 0, data: spyD,
+    { name: spyCfg.label, type: "line", xAxisIndex: 0, yAxisIndex: 0, data: spyD, connectNulls: false,
       lineStyle: { color: spyCfg.color, width: 1.8 }, itemStyle: { color: spyCfg.color }, symbol: "none", z: 3 },
   ];
 
@@ -464,7 +480,7 @@ async function refresh() {
     const fwd = t.fwd   ? buildSeries(fwdRows, t.fwd.field)   : [];
     const trl = t.trail ? buildSeries(trlRows, t.trail.field) : [];
     const realFrom = {
-      fwd: t.fwd   ? realFromDate(fwdRows, t.fwd.field)   : "9999",
+      fwd: t.fwd   ? realFromDate(fwdRows, t.fwd.field, ["seed", "backfill"]) : "9999",
       trl: t.trail ? realFromDate(trlRows, t.trail.field) : "9999",
     };
     render(price, fwd, trl, bizRows, realFrom);
