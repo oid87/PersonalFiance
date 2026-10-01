@@ -1,7 +1,7 @@
 {
   "source": "FRED (BLS CPI sub-indexes CUSR0000*/CPI*SL; Cleveland Fed MEDCPIM158SFRBCLE/TRMMEANCPIM158SFRBCLE; Atlanta Fed CORESTICKM159SFRBATL/FLEXCPIM159SFRBATL; DGS10/DGS2/T10YIE); BLS official API (CUSR0000SETE/SETD/SEGB — motor vehicle insurance/maintenance, personal care services; not mirrored on FRED); release_dates from ALFRED (St. Louis Fed release-date mirror of BLS CPI schedule); weight from BLS Relative Importance Table 1 (2024 Weights, relative importance December 2025, CPI-U — https://www.bls.gov/cpi/tables/relative-importance/2025.htm, extracted via browser since bls.gov HTML pages 403 this environment's direct requests).",
   "note": "contrib_pp 為 weight×MoM 的一階近似，與 BLS 官方 chained 貢獻度會有小幅差異。Median/Trimmed/Sticky/Flex 四條為年化月增率(%)非指數，不要再對其計算 MoM。mom/yoy 皆採 BLS 季節調整後(SA)數列計算（自身對自身 12 個月前比較），未另抓 NSA 版本；與 BLS 官方慣用『月增看 SA、年增看 NSA』的口徑相比，yoy 數值可能有 <0.2pp 的細微差異（已用 2026-06 實測值核對，headline mom -0.42%/yoy 3.46%、core mom -0.02%/yoy 2.57%、shelter mom 0.12%，與預期量級相符）。weight vintage：BLS Relative Importance Table 1，2024 Weights、relative importance as of December 2025（CPI-U），每年約 1-2 月 BLS 發布新表時需手動更新 WEIGHTS 這個 dict。汽車保險(SETE)/汽車維修(SETD)/個人照護服務(SEGB) 三項在 FRED 上查無對應序列，改走 BLS 官方 API 直接抓取（與其餘分項同為 BLS 官方發布的實際指數，僅資料來源管道不同，非推算值）。components 內各項彼此重疊（headline ⊃ core ⊃ core_goods、services_ex_energy ⊃ services_ex_rent、energy 也算在 headline 內），不可直接相加算貢獻度瀑布。decomposition 才是互斥分解（能源/食品/核心商品/住房/核心服務扣住房五塊），parts[].contrib_pp 加上 residual_pp 應精確等於 headline_mom；residual_pp 是一階近似與權重 vintage 造成的誤差，誠實輸出、不塞進任一塊。",
-  "updated": "2026-09-30",
+  "updated": "2026-10-01",
   "components": [
     {
       "key": "headline",
@@ -36991,7 +36991,13 @@
     },
     {
       "date": "2026-09-29",
+      "dgs10": 5.26,
+      "dgs2": 4.89,
       "t10yie": 2.35
+    },
+    {
+      "date": "2026-09-30",
+      "t10yie": 2.36
     }
   ],
   "release_dates": [
