@@ -70,7 +70,7 @@ function buildOption() {
         showSymbol: true,
         symbolSize: 6,
         itemStyle: { color: '#22d3ee' },
-        lineStyle: { width: 1.6 },
+        lineStyle: { width: 2.5 },
       },
       {
         name: '台灣半導體籃子 forward P/E(調和平均)',
@@ -79,7 +79,7 @@ function buildOption() {
         showSymbol: true,
         symbolSize: 6,
         itemStyle: { color: '#f0883e' },
-        lineStyle: { width: 1.6 },
+        lineStyle: { width: 2.5 },
       },
       {
         name: 'SOX forward P/E(算術平均,歷史脈絡)',
@@ -87,7 +87,7 @@ function buildOption() {
         data: soxxArithPts,
         showSymbol: false,
         itemStyle: { color: '#22d3ee' },
-        lineStyle: { width: 1, type: 'dashed', opacity: 0.5 },
+        lineStyle: { width: 2, type: 'dashed', opacity: 1 },
       },
       {
         name: '台灣半導體籃子 forward P/E(算術平均,歷史脈絡)',
@@ -95,7 +95,7 @@ function buildOption() {
         data: twSemiArithPts,
         showSymbol: false,
         itemStyle: { color: '#f0883e' },
-        lineStyle: { width: 1, type: 'dashed', opacity: 0.5 },
+        lineStyle: { width: 2, type: 'dashed', opacity: 1 },
       },
     ],
   });

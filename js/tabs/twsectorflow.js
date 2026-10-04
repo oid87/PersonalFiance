@@ -2,6 +2,7 @@
 // A: 板塊指數（正規化至100）  B: 外資累積淨買超（萬張）  雙線 sparkline × 18 板塊
 
 import { isLight, tc, mob } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 const KEYS = [
   "semiconductor","finance","e_components","telecom","computer",
@@ -25,16 +26,15 @@ let charts    = {};
 let sortBy    = '1W';
 let inited    = false;
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (flowData && indexData) return;
-  const [fRes, iRes] = await Promise.all([
-    fetch('data/tw_sector_flow.json',   { cache: 'no-cache' }),
-    fetch('data/taiwan_sector_index.json', { cache: 'no-cache' }),
+  const [nextFlow, nextIndex] = await Promise.all([
+    requestJSON('data/tw_sector_flow.json', { signal: context.signal }),
+    requestJSON('data/taiwan_sector_index.json', { signal: context.signal }),
   ]);
-  if (!fRes.ok) throw new Error(`tw_sector_flow.json: HTTP ${fRes.status}`);
-  if (!iRes.ok) throw new Error(`taiwan_sector_index.json: HTTP ${iRes.status}`);
-  flowData  = await fRes.json();
-  indexData = await iRes.json();
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+  flowData = nextFlow;
+  indexData = nextIndex;
 }
 
 function cutDate1Y() {
@@ -80,6 +80,10 @@ function buildCard(key, light) {
   return div;
 }
 
+export function buildSectorAxis(indexRows = [], flowRows = []) {
+  return [...new Set([...indexRows, ...flowRows].map(row => row[0]))].sort();
+}
+
 function renderChart(key, light) {
   const el = document.getElementById(`sf-chart-${key}`);
   if (!el) return;
@@ -95,6 +99,7 @@ function renderChart(key, light) {
 
   let cum = 0;
   const cumFlow = flowRows.map(([d, v]) => { cum += v; return [d, cum]; });
+  const axisDates = buildSectorAxis(idxNorm, cumFlow);
 
   if (charts[key]) charts[key].dispose();
   const ec = echarts.init(el, light ? null : 'dark', { renderer: 'svg' });
@@ -107,7 +112,7 @@ function renderChart(key, light) {
     animation: false,
     grid: { top: 4, bottom: 18, left: 34, right: 36 },
     xAxis: {
-      type: 'category', show: true, boundaryGap: false,
+      type: 'category', data: axisDates, show: true, boundaryGap: false,
       axisLine: { show: false }, axisTick: { show: false },
       axisLabel: { show: false },
     },
@@ -145,6 +150,7 @@ function renderChart(key, light) {
         lineStyle: { width: 1.5, color: FLOW_COLOR },
         markLine: cumFlow.length ? {
           symbol: 'none', silent: true,
+          label: { show: false },
           lineStyle: { type: 'dashed', color: '#888', width: 0.5, opacity: 0.6 },
           data: [{ yAxis: 0, yAxisIndex: 1 }],
         } : undefined,
@@ -193,9 +199,9 @@ function render(light) {
   if (status && updated) status.textContent = `外資日頻（TWSE T86）+ 板塊指數 | 更新：${updated}`;
 }
 
-export function init() {
-  if (inited) return;
-  inited = true;
+export async function init(context = {}) {
+  if (!inited) {
+    inited = true;
 
   document.getElementById('sf-sort-1w')?.addEventListener('click', () => {
     sortBy = '1W';
@@ -210,12 +216,16 @@ export function init() {
     if (flowData && indexData) render(isLight());
   });
 
-  loadAll()
-    .then(() => render(isLight()))
-    .catch(err => {
-      const s = document.getElementById('sf-status');
-      if (s) s.textContent = `載入失敗：${err.message}`;
-    });
+  }
+  try {
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+    render(isLight());
+  } catch (err) {
+    const s = document.getElementById('sf-status');
+    if (s) s.textContent = `載入失敗：${err.message}`;
+    throw err;
+  }
 }
 
 export function onThemeChange(light) {
@@ -227,3 +237,4 @@ export function onThemeChange(light) {
 export function resize() {
   Object.values(charts).forEach(c => c?.resize());
 }
+export function getCharts() { return Object.values(charts).filter(Boolean); }
