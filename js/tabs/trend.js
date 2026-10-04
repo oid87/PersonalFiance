@@ -592,8 +592,14 @@ async function loadCustomTicker(rawSymbol) {
 }
 
 // ── Tab module API ─────────────────────────────────────────────
-export function activate() {
-  setTimeout(() => chart.resize(), 50);
+export async function activate(context = {}) {
+  await Promise.all(SERIES.filter(s => active.has(s.key)).map(s => loadSeries(s, context)));
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  await new Promise(resolve => setTimeout(resolve, 50));
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  chart.resize();
+  renderSeriesPicker();
+  render();
 }
 
 export function onThemeChange(light) {
@@ -717,3 +723,5 @@ if (dateTo) {
   dateTo.value = new Date().toISOString().slice(0, 10);
   dateTo.max   = dateTo.value;
 }
+
+export function getCharts() { return chart ? [chart] : []; }
