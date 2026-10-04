@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "yahoo-finance2": "^2.13.3"
+  },
+  "scripts": {
+    "test": "python3 scripts/run_checks.py --js-only"
   }
 }
