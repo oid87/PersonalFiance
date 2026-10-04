@@ -1,17 +1,24 @@
 // Calculations for the trend tab. Inputs and helper functions are supplied by the caller.
 export function interpFpe(arr) {
-  if (!arr || arr.length < 2) return arr.map(r => [r.date, r.fpe]);
+  // Input zero is missing (Product Sprint 1). Finite negatives retain their
+  // existing behavior; this is an endpoint validity check, not a new PE model.
+  const value = v => typeof v === 'number' && Number.isFinite(v) && v !== 0 ? v : null;
+  if (!arr) return [];
+  if (arr.length < 2) return arr.map(r => [r.date, value(r.fpe)]);
   const out = [];
   for (let i = 0; i < arr.length - 1; i++) {
-    const t1 = new Date(arr[i].date + "T00:00:00Z").getTime(), v1 = arr[i].fpe;
-    const t2 = new Date(arr[i + 1].date + "T00:00:00Z").getTime(), v2 = arr[i + 1].fpe;
+    const t1 = new Date(arr[i].date + "T00:00:00Z").getTime(), v1 = value(arr[i].fpe);
+    const t2 = new Date(arr[i + 1].date + "T00:00:00Z").getTime(), v2 = value(arr[i + 1].fpe);
     const gap = Math.round((t2 - t1) / 86400000);
     for (let j = 0; j < gap; j++) {
       // check_reuse: keep — UTC 建構與 UTC 日期鍵切片相配；本地軸日期轉換會偏移一天。
-      out.push([new Date(t1 + j * 86400000).toISOString().slice(0, 10), +(v1 + (v2 - v1) * (j / gap)).toFixed(3)]);
+      const interpolated = v1 !== null && v2 !== null
+        ? +(v1 + (v2 - v1) * (j / gap)).toFixed(3)
+        : j === 0 ? v1 : null;
+      out.push([new Date(t1 + j * 86400000).toISOString().slice(0, 10), interpolated]);
     }
   }
-  out.push([arr[arr.length - 1].date, arr[arr.length - 1].fpe]);
+  out.push([arr[arr.length - 1].date, value(arr[arr.length - 1].fpe)]);
   return out;
 }
 

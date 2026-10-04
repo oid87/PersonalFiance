@@ -357,6 +357,104 @@ async function run(options = {}) {
       ['390px trend focus/Escape dimensions', async () => { const b = page.getByRole('button', { name: '趨勢圖表：放大或還原' }); await b.click(); await frame(); const focused = await geometry('trend'); await page.keyboard.press('Escape'); await frame(); noResidue(await cleanState()); return { focused, restored: await geometry('trend') }; }],
     ] },
   ];
+  const fpeFixtures = JSON.parse(fs.readFileSync(path.join(ROOT, 'js/__tests__/fixtures/trend-fpe-endpoints.json'), 'utf8'));
+  function fpeCases(label, mixed) {
+    let before, focused;
+    const seriesState = () => page.evaluate(() => {
+      const c = echarts.getInstanceByDom(document.getElementById('chart')), o = c.getOption();
+      const fpe = o.series.find(s => s.name === 'QQQ FPE');
+      return { fpe: fpe && { data: fpe.data, connectNulls: fpe.connectNulls },
+        nonFPE: o.series.filter(s => s.name !== 'QQQ FPE').map(s => ({ name: s.name, data: s.data, markArea: s.markArea, markLine: s.markLine })),
+        selectedMA: [...document.querySelectorAll('#ma-picker .active')].map(e => +e.dataset.ma) };
+    });
+    async function hover(date) {
+      await page.evaluate(date => {
+        const c = echarts.getInstanceByDom(document.getElementById('chart'));
+        const x = c.convertToPixel({ xAxisIndex: 0 }, new Date(date + 'T00:00:00Z').getTime());
+        const y = c.getHeight() * 0.4;
+        c.dispatchAction({ type: 'showTip', x, y });
+      }, date); await frame();
+      return page.evaluate(() => {
+        const host = document.getElementById('chart');
+        const tooltip = [...host.querySelectorAll('div')].find(e => { const style = getComputedStyle(e); return style.position === 'absolute' && style.visibility === 'visible' && e.innerText.includes('QQQ'); });
+        return tooltip?.innerText || '';
+      });
+    }
+    return [
+      [label + ' FPE actual series/endpoint fixtures and non-FPE regression', async () => {
+        await page.locator('#date-from').fill('2024-01-01'); await page.locator('#date-from').dispatchEvent('change');
+        await page.locator('#date-to').fill('2024-02-25'); await page.locator('#date-to').dispatchEvent('change');
+        for (const n of [20, 50, 150, 200]) await page.locator(`#ma-picker [data-ma="${n}"]`).click();
+        before = await seriesState();
+        const signals = await page.evaluate(async () => { const t = await import('/js/tabs/trend.js'); t.renderSignalPanel(); return document.getElementById('signal-panel').innerText; });
+        await page.locator('#trend-fpe-toggle').click(); await page.waitForFunction(() => echarts.getInstanceByDom(document.getElementById('chart')).getOption().series.some(s => s.name === 'QQQ FPE')); await frame();
+        const actual = await seriesState(); assert(actual.fpe?.connectNulls === false, 'FPE connectNulls must be false');
+        assert(same(actual.nonFPE, before.nonFPE) && same(actual.selectedMA, [20, 50, 150, 200]), 'FPE changed other series or MA selection');
+        const signalAfter = await page.evaluate(async () => { const t = await import('/js/tabs/trend.js'); t.renderSignalPanel(); return document.getElementById('signal-panel').innerText; });
+        assert(signalAfter === signals, 'Fixed MA200/signals changed');
+        if (!mixed) assert(same(actual.fpe.data, [['2024-01-02', 20.001], ['2024-01-03', 21.042], ['2024-01-04', 22.083], ['2024-01-05', 23.1234]]), 'Complete valid fixture changed original UTC/rounding results');
+        else {
+          const byDate = new Map(actual.fpe.data);
+          for (const d of ['2024-01-05', '2024-01-08', '2024-01-09', '2024-01-15', '2024-01-16', '2024-01-17', '2024-01-23', '2024-01-24', '2024-01-25', '2024-02-08', '2024-02-09', '2024-02-14', '2024-02-15', '2024-02-20', '2024-02-21']) assert(byDate.get(d) === null, 'Invalid endpoint interval is not null: ' + d);
+          assert(byDate.get('2024-01-10') === 24 && byDate.get('2024-01-18') === 26 && byDate.get('2024-02-01') === -3 && byDate.get('2024-02-05') === -6, 'Valid/negative observations lost');
+          assert(actual.fpe.data.every(([, v]) => v === null || typeof v === 'number' && Number.isFinite(v)), 'Malformed/nonfinite series values');
+        }
+        return { actualFPE: actual.fpe, otherSeriesHash: hash(JSON.stringify(actual.nonFPE)), fixedSignalsUnchanged: true, selectedMA: actual.selectedMA };
+      }],
+      [label + ' FPE rendered polyline breaks and actual hover', async () => {
+        const pathEvidence = await page.evaluate(() => {
+          const c = echarts.getInstanceByDom(document.getElementById('chart')), model = c.getModel().getSeriesByName('QQQ FPE')[0];
+          const view = c._chartsViews.find(v => v.__model === model), line = view?._polyline;
+          if (!line) return null;
+          const commands = [];
+          line.buildPath({ moveTo(x, y) { commands.push(['M', x, y]); }, lineTo(x, y) { commands.push(['L', x, y]); }, bezierCurveTo(...args) { commands.push(['C', ...args]); } }, line.shape);
+          return { commands, connectNulls: line.shape.connectNulls, renderedPoints: [...line.shape.points] };
+        });
+        assert(pathEvidence && pathEvidence.commands.some(c => c[0] === 'L'), 'No rendered FPE stroke');
+        const moves = pathEvidence.commands.filter(c => c[0] === 'M').length;
+        assert(mixed ? moves > 1 : moves === 1, 'Rendered FPE path failed segment policy');
+        const validTip = await hover(mixed ? '2024-01-11' : '2024-01-03');
+        assert(validTip.includes('QQQ FPE') && validTip.includes(mixed ? '24.5' : '21.042'), 'Valid hover value absent: ' + validTip);
+        const missingTips = [];
+        if (mixed) for (const date of ['2024-01-05', '2024-01-16', '2024-01-24', '2024-02-09', '2024-02-15', '2024-02-21']) {
+          const tip = await hover(date); assert(tip.includes(date), 'Hover did not target gap date: ' + date + ': ' + tip);
+          assert(!/QQQ FPE:\s*(?!—)[\d-]/.test(tip), 'Fabricated FPE hover in gap: ' + tip); missingTips.push({ date, text: tip });
+        }
+        await page.screenshot({ path: path.join(out, label.replace(/[^a-z0-9]/gi, '-') + '-fpe.png'), fullPage: true });
+        await page.evaluate(() => echarts.getInstanceByDom(document.getElementById('chart')).dispatchAction({ type: 'hideTip' }));
+        return { pathEvidence, moves, validTip, missingTips };
+      }],
+      [label + ' FPE zoom/legend/focus/Escape and viewport', async () => {
+        await page.evaluate(() => { const c = echarts.getInstanceByDom(document.getElementById('chart')); c.dispatchAction({ type: 'dataZoom', start: 5, end: 95 }); c.dispatchAction({ type: 'legendUnSelect', name: 'QQQ FPE' }); });
+        await frame(); const prior = await snap('chart');
+        const b = page.getByRole('button', { name: '趨勢圖表：放大或還原' }); await b.click(); await frame(); focused = await snap('chart');
+        assert(prior.id === focused.id && prior.financialHash === focused.financialHash && same(prior.zoom, focused.zoom) && same(prior.legend, focused.legend), 'FPE focus changed state/data');
+        await geometry('trend'); await page.keyboard.press('Escape'); await frame(); const restored = await snap('chart');
+        assert(focused.id === restored.id && focused.financialHash === restored.financialHash && same(focused.zoom, restored.zoom) && same(focused.legend, restored.legend), 'FPE Escape changed state/data');
+        noResidue(await cleanState()); await geometry('trend');
+        return { prior, focused, restored };
+      }],
+      [label + ' FPE route/theme/toggle preserve series and fixed signals', async () => {
+        const original = await seriesState();
+        await page.evaluate(() => { location.hash = '#tab=stressdash'; }); await chartReady('stressdash');
+        await page.evaluate(() => { location.hash = '#tab=trend'; }); await chartReady('trend');
+        assert(same(await seriesState(), original), 'FPE route return changed series');
+        await page.locator('#theme-btn').click(); await frame(); assert(same(await seriesState(), original), 'FPE theme changed series');
+        await page.locator('#theme-btn').click(); await frame();
+        for (let i = 0; i < 4; i++) { await page.locator('#trend-fpe-toggle').click(); await frame(); const now = await seriesState();
+          assert((!!now.fpe) === (i % 2 === 1), 'FPE toggle state leaked');
+          assert(same(now.nonFPE, before.nonFPE) && same(now.selectedMA, [20, 50, 150, 200]), 'FPE toggle changed other series');
+        }
+        assert(same(await seriesState(), original), 'Repeated FPE toggle changed series');
+        return { preserved: true, selectedMA: original.selectedMA };
+      }],
+    ];
+  }
+  phases.push(
+    { name: 'fpe-valid', tab: 'trend', fpeFixture: fpeFixtures.valid, cases: fpeCases('desktop-valid', false) },
+    { name: 'fpe-gaps', tab: 'trend', fpeFixture: fpeFixtures.mixed, cases: fpeCases('desktop-gaps', true) },
+    { name: 'fpe-mobile', tab: 'trend', mobile: true, fpeFixture: fpeFixtures.mixed, cases: fpeCases('390px-gaps', true) },
+  );
   if (options.selfTestFailure) phases[0].cases.push(['controlled failure evidence self-test', async () => { assert(false, 'Intentional harness-only assertion; product files unchanged'); }]);
   report.plannedScenarios = phases.flatMap(p => p.cases.map(c => c[0])).concat(['current checkout HTTP identity', 'zero console errors/warnings/pageerrors/request failures']);
   const completed = new Set();
@@ -369,7 +467,7 @@ async function run(options = {}) {
     report.runtime.binary = playwright.chromium.executablePath();
     assert(fs.existsSync(report.runtime.binary), 'Chromium runtime missing. Inspect existing installation; when authorized run npx playwright install chromium. No implicit install was attempted.');
     server = await startServer(ROOT); report.sourceIdentity.url = server.url;
-    const critical = ['index.html', 'js/boot.js', 'js/navigation.js', 'js/tabs/trend.js', 'js/tabs/stressdash.js', 'js/utils/chartFocus.js', 'css/main.css', 'css/chart-focus.css', 'css/dashboard-layout.css'];
+    const critical = ['index.html', 'js/boot.js', 'js/navigation.js', 'js/tabs/trend.js', 'js/tabs/trend_calc.mjs', 'js/tabs/stressdash.js', 'js/utils/chartFocus.js', 'css/main.css', 'css/chart-focus.css', 'css/dashboard-layout.css'];
     for (const relative of critical) { const response = await fetch(server.url + '/' + relative), body = Buffer.from(await response.arrayBuffer()), disk = fs.readFileSync(path.join(ROOT, relative));
       assert(response.ok && hash(body) === hash(disk), 'Initial HTTP identity mismatch: ' + relative); report.sourceIdentity.servedFiles.push({ path: relative, httpSha256: hash(body), diskSha256: hash(disk) }); }
     browser = await playwright.chromium.launch({ headless: true, chromiumSandbox: true,
@@ -392,6 +490,13 @@ async function run(options = {}) {
           const responseStage = stage;
           pending.push((async () => {
             const item = { stage: responseStage, url: response.url(), status: response.status(), path: decodeURIComponent(url.pathname).replace(/^\//, '') || 'index.html' };
+            if (phase.fpeFixture && item.path === 'data/QQQ_valuation.json') {
+              const body = await response.body(), expected = JSON.stringify({ data: phase.fpeFixture });
+              item.httpSha256 = hash(body); item.fixtureSha256 = hash(expected); item.equal = item.httpSha256 === item.fixtureSha256;
+              item.identityKind = 'declared in-memory FPE endpoint fixture; no data file mutation';
+              report.sourceIdentity.syntheticResponses ||= []; report.sourceIdentity.syntheticResponses.push(item);
+              assert(item.status === 200 && item.equal, 'FPE synthetic response identity mismatch'); return;
+            }
             try { const bytes = await response.body(); item.httpSha256 = hash(bytes); item.diskSha256 = hash(fs.readFileSync(path.join(ROOT, item.path))); item.equal = item.httpSha256 === item.diskSha256; }
             catch (error) { item.error = error.message; item.equal = false; }
             report.sourceIdentity.responses.push(item);
@@ -401,6 +506,7 @@ async function run(options = {}) {
           if (request.method() !== 'GET' || (url.origin !== server.url && request.url() !== 'https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js')) {
             report.requests.push({ stage, type: 'unexpected', method: request.method(), url: request.url() }); return route.abort();
           }
+          if (phase.fpeFixture && url.origin === server.url && url.pathname === '/data/QQQ_valuation.json') return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: phase.fpeFixture }) });
           return route.continue();
         });
         await page.addInitScript(() => { window.__smokeKeys = []; document.addEventListener('keydown', e => window.__smokeKeys.push({ key: e.key, metaKey: e.metaKey, ctrlKey: e.ctrlKey, isComposing: e.isComposing, keyCode: e.keyCode, isTrusted: e.isTrusted, target: e.target.id }), true); });
@@ -435,6 +541,7 @@ async function run(options = {}) {
     await test('current checkout HTTP identity', async () => {
       const responses = report.sourceIdentity.responses; assert(responses.length > 0, 'No application HTTP responses');
       const bad = responses.filter(r => r.status !== 200 || !r.equal || r.error); assert(!bad.length, 'Local response identity failures: ' + JSON.stringify(bad));
+      assert(report.sourceIdentity.syntheticResponses?.length === 3 && report.sourceIdentity.syntheticResponses.every(r => r.status === 200 && r.equal), 'Declared FPE fixture responses missing or mismatched');
       const loaded = new Set(responses.map(r => r.path));
       for (const file of [...critical, 'data/QQQ.json', 'data/SPY.json']) assert(loaded.has(file), 'Critical source/data was not loaded by browser: ' + file);
       return { checkedLocalResponses: responses.length, criticalFiles: critical, loadedData: [...loaded].filter(f => f.startsWith('data/')) };
