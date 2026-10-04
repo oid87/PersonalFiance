@@ -235,17 +235,19 @@ function buildControls() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById(`${TAB_ID}-chart`);
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   buildControls();
   const status = document.getElementById(`${TAB_ID}-status`);
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
     render();
   } catch (e) {
     if (status) status.textContent = `載入失敗：${e.message}`;
+    throw e;
   }
 }
 
@@ -257,3 +259,4 @@ export function onThemeChange(light) {
 }
 
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }

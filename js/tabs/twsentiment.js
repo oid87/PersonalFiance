@@ -650,3 +650,4 @@ export function onThemeChange(light) {
 }
 
 export function resize() { chart?.resize(); gauge?.resize(); forcedChart?.resize(); mcChart?.resize(); basisChart?.resize(); chipsChart?.resize(); }
+export function getCharts() { return [chart, gauge, forcedChart, mcChart, basisChart, chipsChart].filter(Boolean); }

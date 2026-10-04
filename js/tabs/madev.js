@@ -284,28 +284,31 @@ function buildControls() {
   });
 }
 
-async function refresh() {
+async function refresh(context = {}) {
   const status = document.getElementById('madev-status');
   try {
-    const bars = await loadData(ticker);
+    const bars = await loadData(ticker, context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     computed = compute(bars);
     render(computed);
     updateBadges(computed);
   } catch (e) {
+    computed = null;
+    delete cache[ticker];
     if (status) status.textContent = `載入失敗：${e.message}`;
-    console.error('[madev] load failed', e);
+    if (context.signal || context.isCurrent) throw e;
   }
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('madev-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   else chart.resize();
   buildControls();
   if (computed) { render(computed); updateBadges(computed); return; }
-  await refresh();
+  await refresh(context);
 }
 export function onThemeChange(light) {
   if (!chart) return;
@@ -314,3 +317,4 @@ export function onThemeChange(light) {
   if (computed) { render(computed); updateBadges(computed); }
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }
