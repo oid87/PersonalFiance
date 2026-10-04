@@ -968,3 +968,13 @@
 #breadth-advanced-panel button[aria-pressed="true"] { outline:2px solid #58a6ff; }
 @media(max-width:600px) { #breadth-advanced-panel { margin:16px 8px; padding:10px; } #breadth-advanced-panel .advanced-chart { height:280px; } }
 
+/* R2 mobile content sizing and effective file-label touch target. */
+@media (max-width: 600px), (max-height: 500px) {
+  #tab-cashking .controls { flex-wrap: wrap; }
+  #tab-cashking #ck-desc { flex: 0 0 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+}
+@media (pointer: coarse) {
+  #breadth-advanced-panel label:has(#breadth-advanced-file) {
+    display: inline-flex; align-items: center; min-height: 44px; box-sizing: border-box;
+  }
+}
