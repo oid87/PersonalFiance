@@ -267,15 +267,93 @@ async function run(options = {}) {
       }],
     ];
   }
+  function ma150Cases(label) {
+    let base, all, changed;
+    const chip = n => page.locator(`#ma-picker [data-ma="${n}"]`);
+    const maState = () => page.evaluate(() => {
+      const c = echarts.getInstanceByDom(document.getElementById('chart')), o = c.getOption();
+      return { selected: [...document.querySelectorAll('#ma-picker .active')].map(e => +e.dataset.ma),
+        names: o.series.map(s => s.name), legendData: o.legend[0].data,
+        nonMA: o.series.filter(s => !s.name.startsWith('__ma_')).map(s => ({ name: s.name, data: s.data })),
+        signal: document.getElementById('signal-panel').innerText };
+    });
+    return [
+      [label + ' MA150 default OFF and existing defaults', async () => {
+        base = await maState();
+        assert(same(await page.locator('#ma-picker [data-ma]').evaluateAll(es => es.map(e => +e.dataset.ma)), [20, 50, 150, 200]), 'Unexpected MA periods');
+        assert(!base.selected.length && !base.names.some(n => n.startsWith('__ma_')), 'MA default changed');
+        return { ...base, nonMA: hash(JSON.stringify(base.nonMA)) };
+      }],
+      [label + ' MA150 ON/OFF multi-select oracle and no duplicate/state leak', async () => {
+        assert(base, 'Default baseline missing');
+        await chip(150).click(); await frame();
+        const oracle = await page.evaluate(async () => {
+          const { loaded } = await import('/js/state.js');
+          const input = loaded.QQQ, c = echarts.getInstanceByDom(document.getElementById('chart'));
+          const ma = c.getOption().series.find(s => s.name === '__ma_QQQ_150');
+          const expected = new Map(input.slice(149).map((row, i) => [row[0], +(input.slice(i, i + 150).reduce((sum, r) => sum + r[1], 0) / 150).toFixed(4)]));
+          return { count: ma?.data.length, correct: !!ma?.data.length && ma.data.every(([date, value]) => expected.get(date) === value), firstFullDate: input[149][0] };
+        });
+        assert(oracle.correct, 'Rendered MA150 differs from independent full-history oracle');
+        await chip(150).click(); await frame();
+        assert(!(await maState()).names.includes('__ma_QQQ_150'), 'MA150 did not disappear');
+        for (const n of [20, 50, 150, 200]) { await chip(n).click(); await frame(); }
+        all = await maState();
+        assert(same(all.selected, [20, 50, 150, 200]), 'Multi-select failed');
+        assert(all.names.filter(n => n.startsWith('__ma_QQQ_')).length === 4, 'Incorrect MA series count');
+        assert(!all.legendData.some(n => n.startsWith('__ma_')), 'Existing hidden MA legend policy changed');
+        for (let i = 0; i < 6; i++) { await chip(150).click(); await frame(); const s = await maState();
+          assert(new Set(s.names).size === s.names.length, 'Duplicate series');
+          assert(s.names.includes('__ma_QQQ_150') === (i % 2 === 1), 'Toggle state leaked');
+          assert(same(s.nonMA, base.nonMA) && s.signal === base.signal, 'Non-MA series or fixed signals changed');
+        }
+        return { oracle, selected: all.selected, seriesNames: all.names, nonMAUnchanged: true, signalsUnchanged: true };
+      }],
+      [label + ' MA150 keyboard toggle preserves zoom and legend', async () => {
+        await page.evaluate(() => { const c = echarts.getInstanceByDom(document.getElementById('chart')); c.dispatchAction({ type: 'dataZoom', start: 24, end: 83 }); c.dispatchAction({ type: 'legendUnSelect', name: 'QQQ' }); });
+        await frame(); changed = await snap('chart');
+        await chip(150).focus(); await page.keyboard.press('Enter'); await frame();
+        await page.keyboard.press('Space'); await frame(); const after = await snap('chart');
+        assert(same(changed.zoom, after.zoom) && same(changed.legend, after.legend), 'MA toggle reset zoom/legend');
+        assert(same((await maState()).selected, [20, 50, 150, 200]), 'Keyboard did not restore selection');
+        return { before: changed, after };
+      }],
+      [label + ' MA150 controls fit and chart remains usable', async () => {
+        const result = await geometry('trend');
+        const controls = await page.locator('#ma-picker').evaluate(host => {
+          const rect = e => { const r = e.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height }; };
+          return { rect: rect(host), scrollWidth: host.scrollWidth, clientWidth: host.clientWidth, chips: [...host.children].map(rect), viewport: innerWidth };
+        });
+        assert(controls.scrollWidth <= controls.clientWidth + 1 && controls.rect.left >= -1 && controls.rect.right <= controls.viewport + 1, 'MA control overflow/clipping');
+        for (let i = 0; i < controls.chips.length; i++) {
+          const a = controls.chips[i]; assert(a.left >= controls.rect.left - 1 && a.right <= controls.rect.right + 1 && a.top >= controls.rect.top - 1 && a.bottom <= controls.rect.bottom + 1, 'MA chip clipped');
+          for (const b of controls.chips.slice(i + 1)) assert(a.right <= b.left + 1 || b.right <= a.left + 1 || a.bottom <= b.top + 1 || b.bottom <= a.top + 1, 'MA controls overlap');
+        }
+        assert(result.host.rect.height >= 200, 'Chart viewport unreasonably compressed');
+        return { controls, chart: result.host };
+      }],
+      [label + ' MA150 route re-entry and theme keep selection', async () => {
+        const before = await maState();
+        await page.evaluate(() => { location.hash = '#tab=stressdash'; }); await chartReady('stressdash');
+        await page.evaluate(() => { location.hash = '#tab=trend'; }); await chartReady('trend');
+        assert(same(await maState(), before), 'Same-document return lost selections/data/signals');
+        await page.locator('#theme-btn').click(); await frame();
+        assert(same(await maState(), before), 'Theme lost selections/data/signals');
+        await page.locator('#theme-btn').click(); await frame();
+        return { selected: before.selected, nonMAUnchanged: true, signalsUnchanged: true };
+      }],
+    ];
+  }
   const phases = [
     { name: 'guards', tab: 'trend', cases: guardCases() },
     { name: 'ime', tab: 'trend', cases: imeCases() },
-    { name: 'desktop-trend', tab: 'trend', cases: [['desktop trend overflow/clipping', () => geometry('trend')], ...chartCases('trend')] },
+    { name: 'desktop-trend', tab: 'trend', cases: [['desktop trend overflow/clipping', () => geometry('trend')], ...ma150Cases('desktop'), ...chartCases('trend')] },
     { name: 'desktop-stress', tab: 'stressdash', cases: [['desktop stress three columns and clipping', () => geometry('stressdash', 3)], ...chartCases('stressdash')] },
     { name: 'mobile', tab: 'stressdash', mobile: true, cases: [
       ['390px stress single column and clipping', () => geometry('stressdash', 1)],
       ['390px stress focus/Escape dimensions', async () => { const b = page.getByRole('button', { name: '金融壓力圖表：放大或還原' }); await b.click(); await frame(); const focused = await geometry('stressdash'); await page.keyboard.press('Escape'); await frame(); noResidue(await cleanState()); return { focused, restored: await geometry('stressdash', 1) }; }],
       ['390px trend overflow/clipping', async () => { await page.evaluate(() => { location.hash = '#tab=trend'; }); await chartReady('trend'); return geometry('trend'); }],
+      ...ma150Cases('390px'),
       ['390px trend focus/Escape dimensions', async () => { const b = page.getByRole('button', { name: '趨勢圖表：放大或還原' }); await b.click(); await frame(); const focused = await geometry('trend'); await page.keyboard.press('Escape'); await frame(); noResidue(await cleanState()); return { focused, restored: await geometry('trend') }; }],
     ] },
   ];

@@ -13,6 +13,7 @@ import {
 } from '../utils/math.js';
 import { loadSeries, ensureLoaded } from '../utils/data.js';
 import { chipPicker } from '../utils/dom.js';
+import { captureChartState, restoreChartState } from '../utils/chartLifecycle.js';
 
 const chartEl = document.getElementById("chart");
 let chart = echarts.init(chartEl, null); // light by default
@@ -330,7 +331,7 @@ export function render() {
     const MA_SKIP = new Set(["F&G", "VIX"]);
     for (const s of [...SERIES, ...customSeries]) {
       if (!active.has(s.key) || !loaded[s.key] || MA_SKIP.has(s.key)) continue;
-      for (const period of [20, 50, 200]) {
+      for (const period of [20, 50, 150, 200]) {
         if (!maActive.has(period)) continue;
         const maData   = computeMA(loaded[s.key], period);
         const filtered = filterRange(maData);
@@ -647,7 +648,9 @@ document.getElementById("ma-picker")?.addEventListener("click", e => {
   if (maActive.has(p)) maActive.delete(p); else maActive.add(p);
   document.querySelectorAll("#ma-picker .chip[data-ma]").forEach(el =>
     el.classList.toggle("active", maActive.has(+el.dataset.ma)));
+  const chartState = captureChartState(chart);
   render();
+  restoreChartState(chart, chartState);
 });
 
 (function () {
