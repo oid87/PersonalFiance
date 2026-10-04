@@ -26,6 +26,7 @@ import json
 import os
 import time
 from collections import OrderedDict
+from datetime import date, timedelta
 from pathlib import Path
 
 import requests
@@ -143,6 +144,55 @@ def load_rows(path: Path) -> list:
         return json.loads(path.read_text()).get("data", [])
     except Exception:
         return []
+
+
+def load_existing_object(path: Path) -> dict:
+    """Whole-object cache policy: missing or any read/parse error returns {}."""
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except Exception:
+        return {}
+
+
+def load_strict_rows_by_date(path: Path) -> dict[str, dict]:
+    """All-or-nothing date map, unlike the more permissive load_rows_by_date."""
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text())
+        return {row["date"]: row for row in payload.get("data", []) if row.get("date")}
+    except Exception:
+        return {}
+
+
+def weekday_dates(start: date, end: date):
+    """Inclusive Monday-Friday iterator; no exchange-holiday calendar."""
+    day = start
+    while day <= end:
+        if day.weekday() < 5:
+            yield day
+        day += timedelta(days=1)
+
+
+def stratified_missing_weekdays(have: set[str], floor: str, ceiling: str | None,
+                                today: date) -> list[str]:
+    """Missing weekdays, newest first within strides 32,16,8,4,2,1."""
+    days = []
+    day = date.fromisoformat(ceiling) if ceiling else today
+    floor_day = date.fromisoformat(floor)
+    while day >= floor_day:
+        if day.weekday() < 5 and day.isoformat() not in have:
+            days.append(day.isoformat())
+        day -= timedelta(days=1)
+    out, taken = [], set()
+    for stride in (32, 16, 8, 4, 2, 1):
+        for index, iso in enumerate(days):
+            if index % stride == 0 and iso not in taken:
+                taken.add(iso)
+                out.append(iso)
+    return out
 
 
 def idempotent_merge(existing_path: Path, new_rows: list[dict], key_field: str = "date") -> list[dict]:

@@ -126,11 +126,7 @@ def fetch_shortvol_day(d: date) -> "dict | None":
 
 
 def business_days(start: date, end: date):
-    d = start
-    while d <= end:
-        if d.weekday() < 5:
-            yield d
-        d += timedelta(days=1)
+    yield from _common.weekday_dates(start, end)
 
 
 def run_shortvol() -> int:

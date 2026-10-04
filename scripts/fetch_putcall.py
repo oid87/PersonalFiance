@@ -34,6 +34,7 @@ import time
 from collections import OrderedDict
 from datetime import date, datetime, timedelta
 from pathlib import Path
+import _common
 
 import requests
 
@@ -108,11 +109,7 @@ def fetch_occ_day(d: date) -> tuple[float | None, float | None]:
 
 
 def business_days(start: date, end: date):
-    d = start
-    while d <= end:
-        if d.weekday() < 5:
-            yield d
-        d += timedelta(days=1)
+    yield from _common.weekday_dates(start, end)
 
 
 def main() -> None:

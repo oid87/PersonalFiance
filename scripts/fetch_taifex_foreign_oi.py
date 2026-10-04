@@ -29,6 +29,7 @@ import json
 import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
+import _common
 
 import requests
 from bs4 import BeautifulSoup
@@ -133,12 +134,7 @@ def fetch_day(dt: date) -> tuple[str, int | None]:
 
 
 def trading_dates(start: date, end: date) -> list[date]:
-    out, d = [], start
-    while d <= end:
-        if d.weekday() < 5:
-            out.append(d)
-        d += timedelta(days=1)
-    return out
+    return list(_common.weekday_dates(start, end))
 
 
 def load_existing() -> dict[str, int]:
