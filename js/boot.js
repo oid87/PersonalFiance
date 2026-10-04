@@ -3,6 +3,7 @@ import { isLight } from './utils/theme.js';
 import { isDataFresh, ensureLoaded } from './utils/data.js';
 import { chipPicker } from './utils/dom.js';
 import { initSharedUI } from './utils/ui.js';
+import { initChartFocus } from './utils/chartFocus.js';
 import { registerAll, switchTo, applyThemeAll, setupResizeHandler } from './switcher.js';
 import { registryEntries } from './navigation-catalog.mjs';
 import { initNavigation } from './navigation.js';
@@ -40,6 +41,7 @@ decorateLoad(entriesById.get('trend'), module => ({
 registerAll(entries);
 setupResizeHandler();
 initSharedUI();
+initChartFocus();
 
 function applyTheme(light) {
   document.body.classList.toggle('light', light);
