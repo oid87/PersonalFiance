@@ -1,0 +1,2941 @@
+{
+  "version": 1,
+  "source_count": 87,
+  "sources": [
+    {
+      "script": "scripts/compute_sentiment.py",
+      "outputs": [
+        "data/sentiment.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_stocks.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/sentiment.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "composite",
+            "credit_pct",
+            "safety_pct",
+            "trend_pct",
+            "vix_pct"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/compute_taiwan_margin_mktcap.py",
+      "outputs": [
+        "data/taiwan_margin_mktcap.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_taiwan_margin_total.py",
+        "scripts/fetch_taiwan_mktcap_anchor.py",
+        "scripts/fetch_stocks.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_margin_mktcap.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "k_interp",
+            "margin_billion",
+            "mktcap_billion_est",
+            "ratio",
+            "twii_close"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/compute_taiwan_sentiment.py",
+      "outputs": [
+        "data/taiwan_sentiment.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_stocks.py",
+        "scripts/fetch_taiwan_pcratio.py",
+        "scripts/fetch_taiwan_fut_inst.py",
+        "scripts/fetch_taiwan_margin_total.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_sentiment.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "composite",
+            "lev",
+            "pc",
+            "retail",
+            "trend"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/compute_taiwan_stress.py",
+      "outputs": [
+        "data/taiwan_stress.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_stocks.py",
+        "scripts/fetch_usdtwd.py",
+        "scripts/fetch_taiwan_margin_ratio.py",
+        "scripts/fetch_taiwan_fut_inst.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_stress.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "composite",
+            "eqvol",
+            "foreign",
+            "fx",
+            "margin",
+            "twii"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_aaii.py",
+      "outputs": [
+        "data/aaii.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/aaii.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "bear",
+            "bull",
+            "neutral",
+            "spread"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_banini.py",
+      "outputs": [
+        "data/banini_reverse_indicator.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/banini_reverse_indicator.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_bdc.py",
+      "outputs": [
+        "data/bdc_nav.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/bdc_nav.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "ARCC",
+            "BXSL",
+            "FSK",
+            "MAIN",
+            "OBDC",
+            "avg",
+            "avg4"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_breadth.py",
+      "outputs": [
+        "data/breadth.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/breadth.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "above200_count",
+            "above200_pct",
+            "above200_total",
+            "above20_count",
+            "above20_pct",
+            "above20_total",
+            "above50_count",
+            "above50_pct",
+            "above50_total",
+            "bear_count",
+            "bear_pct",
+            "bear_total",
+            "hl_total",
+            "new_hi_count",
+            "new_lo_count",
+            "total"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_breadth_ndx.py",
+      "outputs": [
+        "data/breadth_ndx.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/breadth_ndx.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "above200_count",
+            "above200_pct",
+            "above200_total",
+            "above20_count",
+            "above20_pct",
+            "above20_total",
+            "above50_count",
+            "above50_pct",
+            "above50_total",
+            "bear_count",
+            "bear_pct",
+            "bear_total",
+            "hl_total",
+            "new_hi_count",
+            "new_lo_count",
+            "total"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_breadth_tw50.py",
+      "outputs": [
+        "data/breadth_tw50.json",
+        "data/tw50_members.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/breadth_tw50.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "above200_count",
+            "above200_pct",
+            "above200_total",
+            "above20_count",
+            "above20_pct",
+            "above20_total",
+            "above50_count",
+            "above50_pct",
+            "above50_total",
+            "bear_count",
+            "bear_pct",
+            "bear_total",
+            "hl_total",
+            "new_hi_count",
+            "new_lo_count",
+            "total"
+          ]
+        },
+        "data/tw50_members.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_breadth_xlg.py",
+      "outputs": [
+        "data/breadth_xlg.json",
+        "data/xlg_members.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/breadth_xlg.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "above200_count",
+            "above200_pct",
+            "above200_total",
+            "above20_count",
+            "above20_pct",
+            "above20_total",
+            "above50_count",
+            "above50_pct",
+            "above50_total",
+            "bear_count",
+            "bear_pct",
+            "bear_total",
+            "hl_total",
+            "new_hi_count",
+            "new_lo_count",
+            "total"
+          ]
+        },
+        "data/xlg_members.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_bullbear.py",
+      "outputs": [
+        "data/bullbear.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/bullbear.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_cape.py",
+      "outputs": [
+        "data/CAPE.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/CAPE.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "value"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_cboe_putcall.py",
+      "outputs": [
+        "data/cboe_putcall.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/cboe_putcall.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_central_banks.py",
+      "outputs": [
+        "data/central_banks.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/central_banks.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "boj",
+            "ecb",
+            "fed"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_cftc_positions.py",
+      "outputs": [
+        "data/cftc_positions.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/cftc_positions.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_cpi.py",
+      "outputs": [
+        "data/cpi.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/cpi.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_credit.py",
+      "outputs": [
+        "data/credit_spread.json",
+        "data/delinquency.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/credit_spread.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "hy",
+            "ig"
+          ]
+        },
+        "data/delinquency.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "credit_card",
+            "real_estate"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_earnings.py",
+      "outputs": [
+        "data/earnings.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/earnings.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date",
+            "ticker",
+            "type"
+          ],
+          "required_fields": [
+            "date",
+            "ticker",
+            "type"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": []
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_fear_greed.py",
+      "outputs": [
+        "data/fear_greed.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/fear_greed.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "value"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_finra_short.py",
+      "outputs": [
+        "data/finra_shortvol.json",
+        "data/finra_short_interest.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/finra_shortvol.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "QQQ_sv",
+            "QQQ_tv",
+            "SPY_sv",
+            "SPY_tv"
+          ]
+        },
+        "data/finra_short_interest.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "QQQ_dtc",
+            "QQQ_si",
+            "SPY_dtc",
+            "SPY_si"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_flows.py",
+      "outputs": [
+        "data/flows.json"
+      ],
+      "frequency": "us_and_tw_sessions",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/flows.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_forward_pe.py",
+      "outputs": [
+        "data/forward_pe_{ticker}.jsonl",
+        "data/chart_{ticker}.json"
+      ],
+      "frequency": "weekday_13_taipei",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "forward_pe"
+      ],
+      "status": "independent_schedule",
+      "output_contracts": {
+        "data/forward_pe_{ticker}.jsonl": {
+          "profile": "forward_pe_jsonl",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date",
+            "ticker"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        },
+        "data/chart_{ticker}.json": {
+          "profile": "forward_pe_chart",
+          "key_fields": [],
+          "required_fields": [
+            "labels",
+            "datasets",
+            "meta"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_fsi.py",
+      "outputs": [
+        "data/fsi.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/fsi.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "adv",
+            "credit",
+            "em",
+            "equity",
+            "fsi",
+            "funding",
+            "safe",
+            "us",
+            "vol"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_gdp_productivity.py",
+      "outputs": [
+        "data/us_gdp_productivity_decomp.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/us_gdp_productivity_decomp.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_infl_nowcast.py",
+      "outputs": [
+        "data/infl_nowcast.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/infl_nowcast.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "core_cpi_mom",
+            "core_cpi_yoy",
+            "core_pce_mom",
+            "core_pce_yoy",
+            "cpi_mom",
+            "cpi_yoy",
+            "pce_mom",
+            "pce_yoy"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_inflation_exp.py",
+      "outputs": [
+        "data/inflation_exp.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/inflation_exp.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "be10y",
+            "be5y",
+            "fwd5y5y"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_investor_conf.py",
+      "outputs": [
+        "data/earnings.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/earnings.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date",
+            "ticker",
+            "type"
+          ],
+          "required_fields": [
+            "date",
+            "ticker",
+            "type"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": []
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_leverage.py",
+      "outputs": [
+        "data/leverage.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/leverage.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_liquidity.py",
+      "outputs": [
+        "data/liquidity.json",
+        "data/finra_margin_early.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/liquidity.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        },
+        "data/finra_margin_early.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "cash",
+            "debit"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_liquidity_leverage.py",
+      "outputs": [
+        "data/liquidity_leverage.json"
+      ],
+      "frequency": "us_and_tw_sessions",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_stocks.py",
+        "scripts/fetch_liquidity.py",
+        "scripts/fetch_taiwan_margin_total.py",
+        "scripts/fetch_taiwan_money_supply.py",
+        "scripts/fetch_yields.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/liquidity_leverage.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_mags_valuation.py",
+      "outputs": [
+        "data/MAGS_valuation.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/MAGS_valuation.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "fpe",
+            "tpe"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_margin_cn.py",
+      "outputs": [
+        "data/margin_global_cn.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/margin_global_cn.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date",
+            "exchange"
+          ],
+          "required_fields": [
+            "date",
+            "exchange"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "margin_balance",
+            "margin_buy",
+            "short_balance"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_margin_concentration.py",
+      "outputs": [
+        "data/margin_concentration.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/margin_concentration.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_margin_cost.py",
+      "outputs": [
+        "data/margin_cost.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/margin_cost.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "effr",
+            "ffr",
+            "iorb",
+            "sofr",
+            "sofr99",
+            "sofr_iorb_spread"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_margin_costmap.py",
+      "outputs": [
+        "data/margin_costmap.json",
+        "data/margin_costmap_raw.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/margin_costmap.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        },
+        "data/margin_costmap_raw.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_margin_jp.py",
+      "outputs": [
+        "data/margin_global_jp.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/margin_global_jp.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "margin_balance",
+            "margin_shares",
+            "negotiable_shares",
+            "negotiable_value",
+            "short_balance",
+            "short_shares",
+            "standardized_shares"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_margin_kr.py",
+      "outputs": [
+        "data/margin_global_kr.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/margin_global_kr.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "kosdaq_balance",
+            "kospi_balance",
+            "margin_balance"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_margin_ratio_mm.py",
+      "outputs": [
+        "data/taiwan_margin_ratio_mm.json"
+      ],
+      "frequency": "manual",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [],
+      "status": "manual_research",
+      "output_contracts": {
+        "data/taiwan_margin_ratio_mm.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "collateral_all_yi",
+            "collateral_exetf_yi",
+            "margin_yi",
+            "n",
+            "n_etf",
+            "ratio_all",
+            "ratio_exetf"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_margin_us.py",
+      "outputs": [
+        "data/margin_global_us.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/margin_global_us.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "unit_metadata": {
+            "field": "note",
+            "contains": "USD millions"
+          },
+          "numeric_fields": [
+            "margin_balance"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_money_market.py",
+      "outputs": [
+        "data/money_market.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/money_market.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "effr",
+            "iorb",
+            "sofr",
+            "sofr_iorb"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_net_liquidity.py",
+      "outputs": [
+        "data/net_liquidity.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/net_liquidity.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "net_liq",
+            "rrp",
+            "tga",
+            "walcl"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_nfci.py",
+      "outputs": [
+        "data/nfci.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/nfci.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "anfci",
+            "credit",
+            "leverage",
+            "nfci",
+            "risk"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_putcall.py",
+      "outputs": [
+        "data/putcall.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/putcall.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_qqq_sector_flows.py",
+      "outputs": [
+        "data/qqq_sector_flows.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/qqq_sector_flows.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_qqq_valuation.py",
+      "outputs": [
+        "data/QQQ_valuation.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/QQQ_valuation.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "fpe",
+            "tpe"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_real_rates.py",
+      "outputs": [
+        "data/real_rates.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/real_rates.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "dfii10",
+            "dfii30",
+            "dfii5"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_sector_holdings.py",
+      "outputs": [
+        "data/sector_holdings.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/sector_holdings.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_soxx_valuation.py",
+      "outputs": [
+        "data/SOXX_valuation.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/SOXX_valuation.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "fpe",
+            "fpe_harmonic",
+            "tpe"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_sp500_ad.py",
+      "outputs": [
+        "data/sp500_ad.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/sp500_ad.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "advances",
+            "declines",
+            "total",
+            "unchanged"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_sp500_pe.py",
+      "outputs": [
+        "data/SP500_PE.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/SP500_PE.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "pe"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_spy_valuation.py",
+      "outputs": [
+        "data/SPY_valuation.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/SPY_valuation.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "fpe",
+            "fpe_harmonic",
+            "tpe"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_stlfsi_kcfsi.py",
+      "outputs": [
+        "data/stlfsi_kcfsi.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/stlfsi_kcfsi.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "kcfsi",
+            "stlfsi4"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_stocks.py",
+      "outputs": [
+        "data/{stock_stem}.json"
+      ],
+      "frequency": "us_and_tw_sessions",
+      "required": true,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/{stock_stem}.json": {
+          "profile": "ohlcv",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taifex_foreign_oi.py",
+      "outputs": [
+        "data/taifex_foreign_oi.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taifex_foreign_oi.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "tx_foreign_net_oi"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_basis.py",
+      "outputs": [
+        "data/taiwan_basis.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_basis.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "basis",
+            "basis_pct",
+            "futures",
+            "spot"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_business_signal.py",
+      "outputs": [
+        "data/taiwan_business_signal.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_business_signal.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "score"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_fut_inst.py",
+      "outputs": [
+        "data/taiwan_fut_inst.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_fut_inst.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "dealer_net",
+            "foreign_net",
+            "inst_net",
+            "retail_net",
+            "trust_net"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_investors.py",
+      "outputs": [
+        "data/taiwan_investors.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_investors.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "foreign",
+            "foreign_cum"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_margin_ratio.py",
+      "outputs": [
+        "data/taiwan_margin_ratio.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_margin_ratio.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "collateral_yi",
+            "margin_yi",
+            "n",
+            "ratio"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_margin_total.py",
+      "outputs": [
+        "data/taiwan_margin_total.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_margin_total.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "unit_metadata": {
+            "field": "note",
+            "contains": "億元"
+          },
+          "numeric_fields": [
+            "margin_lots",
+            "margin_money",
+            "short_lots"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_mktcap_anchor.py",
+      "outputs": [
+        "data/taiwan_mktcap_anchors.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_mktcap_anchors.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_money_supply.py",
+      "outputs": [
+        "data/taiwan_money_supply.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_money_supply.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_opt_inst.py",
+      "outputs": [
+        "data/taiwan_opt_inst.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_opt_inst.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "call_dealer",
+            "call_foreign",
+            "call_trust",
+            "put_dealer",
+            "put_foreign",
+            "put_trust"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_pcratio.py",
+      "outputs": [
+        "data/taiwan_pcratio.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_pcratio.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "oi_pc",
+            "vol_pc"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_retail_ls.py",
+      "outputs": [
+        "data/taiwan_retail_ls.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_retail_ls.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "mtx_close",
+            "mtx_ratio",
+            "mtx_retail_net",
+            "mtx_total_oi",
+            "mtx_volume",
+            "tmf_close",
+            "tmf_ratio",
+            "tmf_retail_net",
+            "tmf_total_oi",
+            "tmf_volume"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_sector_index.py",
+      "outputs": [
+        "data/taiwan_sector_index.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/taiwan_sector_index.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tdcc_holders.py",
+      "outputs": [
+        "data/tdcc_holders.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tdcc_holders.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tpex_margin.py",
+      "outputs": [
+        "data/tpex_margin.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tpex_margin.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "collateral_all_yi",
+            "collateral_exetf_yi",
+            "margin_lots",
+            "mktcap_exetf_yi",
+            "mktcap_yi",
+            "n",
+            "n_etf",
+            "short_lots"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tw_daytrading.py",
+      "outputs": [
+        "data/tw_daytrading.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tw_daytrading.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "amount",
+            "amount_ratio",
+            "shares_ratio"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tw_jp_kr_gdp.py",
+      "outputs": [
+        "data/tw_jp_kr_gdp_growth.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tw_jp_kr_gdp_growth.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tw_sector_flow.py",
+      "outputs": [
+        "data/tw_sector_flow.json",
+        "data/tw_sector_map_cache.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tw_sector_flow.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        },
+        "data/tw_sector_map_cache.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tw_semi_valuation.py",
+      "outputs": [
+        "data/tw_semi_valuation.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tw_semi_valuation.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "coverage_pct",
+            "fpe",
+            "fpe_harmonic"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tw_valuation.py",
+      "outputs": [
+        "data/TW_valuation.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/TW_valuation.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "fpe",
+            "tpe"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_twse_mktcap.py",
+      "outputs": [
+        "data/twse_mktcap.json",
+        "data/twse_shares_snapshots.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/twse_mktcap.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "mktcap_exetf_yi",
+            "mktcap_yi",
+            "n",
+            "n_etf"
+          ]
+        },
+        "data/twse_shares_snapshots.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_umich.py",
+      "outputs": [
+        "data/umich.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/umich.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_us_macro_diagnostic.py",
+      "outputs": [
+        "data/us_macro_diagnostic.json",
+        "data/us_macro_archive/manifest.json",
+        "data/us_macro_archive/observations/**/*.jsonl",
+        "data/us_macro_diagnostic_snapshots/**/*.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled_macro_pipeline",
+      "output_contracts": {
+        "data/us_macro_diagnostic.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        },
+        "data/us_macro_archive/manifest.json": {
+          "profile": "macro_archive",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        },
+        "data/us_macro_archive/observations/**/*.jsonl": {
+          "profile": "forward_pe_jsonl",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date",
+            "ticker"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        },
+        "data/us_macro_diagnostic_snapshots/**/*.json": {
+          "profile": "macro_snapshot",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_usdliq.py",
+      "outputs": [
+        "data/usdliq.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/usdliq.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_usdtwd.py",
+      "outputs": [
+        "data/usdtwd.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/usdtwd.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "close"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_usrec.py",
+      "outputs": [
+        "data/USREC.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/USREC.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "usrec"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_vix_skew.py",
+      "outputs": [
+        "data/vix_skew.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/vix_skew.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_vix_term.py",
+      "outputs": [
+        "data/vix_term.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/vix_term.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "ts_ratio",
+            "vix",
+            "vix3m",
+            "vix6m",
+            "vix9d"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_wsj_pe.py",
+      "outputs": [
+        "data/WSJ_PE.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/WSJ_PE.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date",
+            "ticker"
+          ],
+          "required_fields": [
+            "date",
+            "ticker"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "fpe",
+            "tpe",
+            "yld"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_yield_curve.py",
+      "outputs": [
+        "data/yield_curve.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/yield_curve.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "dgs10",
+            "dgs2",
+            "dgs30",
+            "dgs3mo",
+            "dgs5",
+            "t10y2y",
+            "t10y3m"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_yields.py",
+      "outputs": [
+        "data/US10Y.json",
+        "data/US2Y.json",
+        "data/M2.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/US10Y.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "value"
+          ]
+        },
+        "data/US2Y.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "value"
+          ]
+        },
+        "data/M2.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "value"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/prep_relstrength.py",
+      "outputs": [
+        "data/relstrength.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_stocks.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/relstrength.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "qqq",
+            "ratio",
+            "spy"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/prep_vxnvix.py",
+      "outputs": [
+        "data/vxnvix.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_stocks.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/vxnvix.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "spread",
+            "vix",
+            "vxn"
+          ]
+        }
+      }
+    }
+  ]
+}
