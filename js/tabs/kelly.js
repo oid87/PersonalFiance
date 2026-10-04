@@ -297,26 +297,29 @@ function render(res) {
 }
 
 // ── controls / lifecycle ─────────────────────────────────────────────
-async function refresh() {
+async function refresh(context = {}) {
   const status = document.getElementById('kelly-status');
   try {
-    const bars = await loadData();
-    computed = compute(bars);
+    const bars = await loadData(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    const next = compute(bars);
+    computed = next;
     render(computed);
     updateBadges(computed);
   } catch (e) {
     if (status) status.textContent = `載入失敗：${e.message}`;
     console.error('[kelly] load failed', e);
+    throw e;
   }
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('kelly-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   else chart.resize();
   if (computed) { render(computed); updateBadges(computed); return; }
-  await refresh();
+  await refresh(context);
 }
 export function onThemeChange(light) {
   if (!chart) return;
@@ -325,3 +328,4 @@ export function onThemeChange(light) {
   if (computed) { render(computed); updateBadges(computed); }
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }

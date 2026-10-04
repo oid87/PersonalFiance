@@ -284,24 +284,28 @@ async function loadTicker(key) {
   return cache[key];
 }
 
-async function refresh() {
+async function refresh(context = {}, propagate = false) {
   const status = document.getElementById("wkrev-status");
+  const key = ticker;
   try {
-    const { weeks, sig } = await loadTicker(ticker);
+    const loaded = await loadTicker(key, context);
+    if (!loaded || key !== ticker || context.signal?.aborted || context.isCurrent?.() === false) return;
+    const { weeks, sig } = loaded;
     render(weeks, sig);
     renderTable(buildWinRateRows(weeks, sig));
   } catch (e) {
     if (status) status.textContent = `載入失敗：${e.message}`;
+    if (propagate) throw e;
   }
 }
 
 // ── lifecycle ──────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("wkrev-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
-  await refresh();
+  await refresh(context, true);
 }
 export function onThemeChange(light) {
   if (!chart) return;
@@ -310,3 +314,4 @@ export function onThemeChange(light) {
   if (cache[ticker]) render(cache[ticker].weeks, cache[ticker].sig);
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }

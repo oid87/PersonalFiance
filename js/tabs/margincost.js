@@ -422,7 +422,7 @@ function buildControls() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const h1 = document.getElementById('mc-chart');
   const h2 = document.getElementById('mc-dd-chart');
   if (!h1 || !h2) return;
@@ -430,24 +430,25 @@ export async function activate() {
   if (!chartDD) chartDD = echarts.init(h2, isLight() ? null : 'dark');
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => {
-      chartRate?.resize(); chartDD?.resize();
-      renderRateChart();
-      renderDrawdownSection().catch(e2 => {
-        const s = document.getElementById('mc-dd-status');
-        if (s) s.textContent = '載入失敗：' + (e2.message || e2);
-        console.error('[margincost] drawdown load failed', e2);
-      });
-    }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    chartRate?.resize(); chartDD?.resize();
+    renderRateChart();
+    await renderDrawdownSection(context).catch(e2 => {
+      const s = document.getElementById('mc-dd-status');
+      if (s) s.textContent = '回撤對照暫缺：' + (e2.message || e2);
+      console.error('[margincost] drawdown load failed', e2);
+    });
   } catch (e) {
     const s = document.getElementById('mc-status');
     if (s) s.textContent = '載入失敗：' + (e.message || e);
     console.error('[margincost] load failed', e);
+    throw e;
   }
 }
 
-export function onThemeChange(light) {
+export async function onThemeChange(light) {
   if (chartRate) {
     chartRate.dispose();
     chartRate = echarts.init(document.getElementById('mc-chart'), light ? null : 'dark');
@@ -458,7 +459,10 @@ export function onThemeChange(light) {
   }
   if (mcData) {
     renderRateChart();
-    renderDrawdownSection().catch(() => {});
+    await renderDrawdownSection().catch(e => {
+      const s = document.getElementById('mc-dd-status');
+      if (s) s.textContent = '回撤對照暫缺：' + (e.message || e);
+    });
   }
 }
 
@@ -466,3 +470,4 @@ export function resize() {
   chartRate?.resize();
   chartDD?.resize();
 }
+export function getCharts() { return [chartRate, chartDD].filter(Boolean); }

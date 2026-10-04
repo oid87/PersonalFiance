@@ -211,17 +211,21 @@ function render() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('marginconc-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    chart?.resize(); render();
+    if (state.twiiUnavailable) document.getElementById('marginconc-status').textContent += ' · TWII對照暫缺';
   } catch (e) {
     const s = document.getElementById('marginconc-status');
     if (s) s.textContent = '載入失敗：' + (e.message || e);
     console.error('[marginconc] load failed', e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -232,3 +236,4 @@ export function onThemeChange(light) {
 }
 export function resize() { chart?.resize(); }
 export { render };
+export function getCharts() { return chart ? [chart] : []; }

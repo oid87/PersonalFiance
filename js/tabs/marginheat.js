@@ -513,29 +513,33 @@ async function renderUnwind() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('marginheat-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   ensureExtraDom();
   try {
-    await loadAll();
-    setTimeout(() => {
-      chart?.resize();
-      render();
-      const fcHost = document.getElementById('marginheat-freecredit-chart');
-      if (fcHost && !freecreditChart) freecreditChart = echarts.init(fcHost, isLight() ? null : 'dark');
-      renderFreeCredit();
-      freecreditChart?.resize();
-      renderUnwind().then(() => unwindChart?.resize());
-    }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    chart?.resize();
+    render();
+    const fcHost = document.getElementById('marginheat-freecredit-chart');
+    if (fcHost && !freecreditChart) freecreditChart = echarts.init(fcHost, isLight() ? null : 'dark');
+    renderFreeCredit();
+    freecreditChart?.resize();
+    await renderUnwind();
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    unwindChart?.resize();
   } catch (e) {
+    rows = freecreditRows = usDebitSeries = null;
     const s = document.getElementById('marginheat-status');
     if (s) s.textContent = '載入失敗：' + (e.message || e);
     console.error('[marginheat] load failed', e);
+    throw e;
   }
 }
-export function onThemeChange(light) {
+export async function onThemeChange(light) {
   if (!chart) return;
   chart.dispose();
   chart = echarts.init(document.getElementById('marginheat-chart'), light ? null : 'dark');
@@ -551,7 +555,8 @@ export function onThemeChange(light) {
   const unwindHost = document.getElementById('marginheat-unwind-chart');
   if (unwindHost && (usDebitSeries || twMarginSeries)) {
     unwindChart = echarts.init(unwindHost, light ? null : 'dark');
-    renderUnwind();
+    await renderUnwind();
   }
 }
 export function resize() { chart?.resize(); forcedChart?.resize(); freecreditChart?.resize(); unwindChart?.resize(); }
+export function getCharts() { return [chart, forcedChart, freecreditChart, unwindChart].filter(Boolean); }

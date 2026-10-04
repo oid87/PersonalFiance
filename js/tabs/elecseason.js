@@ -278,7 +278,7 @@ function renderAll() {
 }
 
 // ── lifecycle ──────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const hostA = document.getElementById('elecseason-chart-a');
   const hostB = document.getElementById('elecseason-chart-b');
   const hostC = document.getElementById('elecseason-chart-c');
@@ -288,10 +288,12 @@ export async function activate() {
   if (!chartB) chartB = echarts.init(hostB, darkTheme);
   if (!chartC) chartC = echarts.init(hostC, darkTheme);
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
     renderAll();
   } catch (e) {
     console.error('[elecseason] load failed', e);
+    throw e;
   }
 }
 
@@ -304,3 +306,4 @@ export function resize() {
   chartB?.resize();
   chartC?.resize();
 }
+export function getCharts() { return [chartA, chartB, chartC].filter(Boolean); }

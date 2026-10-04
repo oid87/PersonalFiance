@@ -556,19 +556,21 @@ function buildControls() {
   });
 }
 
-async function refresh() {
+async function refresh(context = {}) {
   const status = document.getElementById('struct-status');
   try {
-    const bars = await loadData();
+    const bars = await loadData(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     render(bars);
   } catch (e) {
+    allBars = null;
     if (status) status.textContent = `載入失敗：${e.message}`;
-    console.error('[struct] load failed', e);
+    if (context.signal || context.isCurrent) throw e;
   }
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function init() {
+export async function init(context = {}) {
   const host = document.getElementById('struct-chart');
   const vhost = document.getElementById('struct-vpvr');
   if (!host || !vhost) return;
@@ -578,7 +580,7 @@ export async function init() {
   else vpvrChart.resize();
   buildControls();
   if (allBars) { render(allBars); return; }
-  await refresh();
+  await refresh(context);
 }
 export function onThemeChange(light) {
   if (chart) {
@@ -592,3 +594,4 @@ export function onThemeChange(light) {
   if (allBars) render(allBars);
 }
 export function resize() { chart?.resize(); vpvrChart?.resize(); }
+export function getCharts() { return [chart, vpvrChart].filter(Boolean); }

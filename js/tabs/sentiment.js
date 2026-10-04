@@ -253,3 +253,4 @@ export function resize() {
   sentChart?.resize();
   sentGaugeChart?.resize();
 }
+export function getCharts() { return [sentChart, sentGaugeChart].filter(Boolean); }

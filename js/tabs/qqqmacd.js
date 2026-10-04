@@ -310,24 +310,28 @@ async function loadTicker(key) {
   return cache[key];
 }
 
-async function refresh() {
+async function refresh(context = {}, propagate = false) {
   const status = document.getElementById("qqqmacd-status");
+  const key = ticker;
   try {
-    const { weeks, dif, dea, ma20, ma50, res } = await loadTicker(ticker);
+    const loaded = await loadTicker(key, context);
+    if (!loaded || key !== ticker || context.signal?.aborted || context.isCurrent?.() === false) return;
+    const { weeks, dif, dea, ma20, ma50, res } = loaded;
     render(weeks, dif, dea, ma20, ma50, res);
     renderTables(res);
   } catch (e) {
     if (status) status.textContent = `載入失敗：${e.message}`;
+    if (propagate) throw e;
   }
 }
 
 // ── lifecycle ──────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("qqqmacd-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
-  await refresh();
+  await refresh(context, true);
 }
 export function onThemeChange(light) {
   if (!chart) return;
@@ -336,3 +340,4 @@ export function onThemeChange(light) {
   if (cache[ticker]) render(cache[ticker].weeks, cache[ticker].dif, cache[ticker].dea, cache[ticker].ma20, cache[ticker].ma50, cache[ticker].res);
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }

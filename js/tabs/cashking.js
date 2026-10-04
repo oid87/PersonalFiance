@@ -250,17 +250,19 @@ function renderBounceSection() {
   section.style.display = rows.length ? "block" : "none";
 }
 
-export async function init() {
+export async function init(context = {}) {
   if (ckInited) { renderCKTab(); renderBounceSection(); return; }
   const statusEl = document.getElementById("ck-status");
   statusEl.textContent = "載入中…";
   try {
-    await loadCKData();
-    ckInited = true;
+    await loadCKData(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
     renderCKTab();
     renderBounceSection();
+    ckInited = true;
   } catch (e) {
     statusEl.textContent = `載入失敗：${e.message}`;
+    throw e;
   }
 }
 
@@ -290,3 +292,4 @@ chipPicker(document.getElementById("ck-window-picker"), "ck-window", v => {
   ckWindow = +v;
   if (ckInited) renderCKTab();
 });
+export function getCharts() { return []; }
