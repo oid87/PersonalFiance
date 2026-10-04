@@ -14,6 +14,7 @@ import {
 import { loadSeries, ensureLoaded } from '../utils/data.js';
 import { chipPicker } from '../utils/dom.js';
 import { captureChartState, restoreChartState } from '../utils/chartLifecycle.js';
+import { interpFpe } from './trend_calc.mjs';
 
 const chartEl = document.getElementById("chart");
 let chart = echarts.init(chartEl, null); // light by default
@@ -25,22 +26,6 @@ let ddZoneActive    = false;
 let sigZoneActive   = false;
 let trendFpeActive  = false;
 let trendFpeData    = null;
-
-function _interpFpe(arr) {
-  if (!arr || arr.length < 2) return arr.map(r => [r.date, r.fpe]);
-  const out = [];
-  for (let i = 0; i < arr.length - 1; i++) {
-    const t1 = new Date(arr[i].date + "T00:00:00Z").getTime(), v1 = arr[i].fpe;
-    const t2 = new Date(arr[i+1].date + "T00:00:00Z").getTime(), v2 = arr[i+1].fpe;
-    const gap = Math.round((t2 - t1) / 86400000);
-    for (let j = 0; j < gap; j++) {
-      // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
-      out.push([new Date(t1 + j * 86400000).toISOString().slice(0,10), +(v1 + (v2-v1)*(j/gap)).toFixed(3)]);
-    }
-  }
-  out.push([arr[arr.length-1].date, arr[arr.length-1].fpe]);
-  return out;
-}
 
 const dateFrom = document.getElementById("date-from");
 const dateTo   = document.getElementById("date-to");
@@ -416,12 +401,13 @@ export function render() {
   }
 
   if (fpeYIdx >= 0 && trendFpeData) {
-    const fpeInterp = _interpFpe(trendFpeData);
+    const fpeInterp = interpFpe(trendFpeData);
     series.push({
       name: "QQQ FPE", type: "line",
       data: filterRange(fpeInterp),
       yAxisIndex: fpeYIdx,
       showSymbol: false,
+      connectNulls: false,
       lineStyle: { color: "#58a6ff", width: 1.5 },
       itemStyle: { color: "#58a6ff" },
       emphasis: { focus: "series" },
