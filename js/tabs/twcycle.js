@@ -1,10 +1,12 @@
 // 景氣燈號 tab — 國發會景氣對策信號（9 項構成項加總 9–45 分 → 五燈），月頻 1984+。
 // 定位：循環位置的「環境理解」，非交易訊號。資料 data/taiwan_business_signal.json。
 import { isLight, tc, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 let chart = null;
 let raw = null;                 // taiwan_business_signal.json: {data:[{date,score,light}], latest, updated}
 let rangePreset = "10";         // 年
+let controlsBound = false;
 
 // 五燈：分數區間 + 顏色 + 狀態（由分數反推，較 light 字串穩定）
 const BANDS = [
@@ -16,24 +18,31 @@ const BANDS = [
 ];
 const bandOf = s => BANDS.find(b => s >= b.lo && s <= b.hi) || BANDS[2];
 
-export async function init() {
+export async function init(context = {}) {
   const status = document.getElementById("twcycle-status");
-  if (raw) { renderAll(); return; }
+  if (raw) { if (context.signal?.aborted || context.isCurrent?.() === false) return; renderAll(); return; }
   status.textContent = "載入中…";
   try {
-    raw = await fetch("data/taiwan_business_signal.json").then(r => r.json());
-    document.querySelectorAll("[data-twcycle-range]").forEach(el =>
+    const next = await requestJSON("data/taiwan_business_signal.json", { signal: context.signal });
+    if (!Array.isArray(next?.data) || !next.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.score))) { clearRequestCache("data/taiwan_business_signal.json"); throw new Error("Business cycle: missing required rows"); }
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    raw = next;
+    if (!controlsBound) {
+      controlsBound = true;
+      document.querySelectorAll("[data-twcycle-range]").forEach(el =>
       el.addEventListener("click", () => {
         rangePreset = el.dataset.twcycleRange;
         document.querySelectorAll("[data-twcycle-range]").forEach(e =>
           e.classList.toggle("active", e.dataset.twcycleRange === rangePreset));
         renderChart();
       }));
+    }
     renderAll();
     status.textContent =
       `國發會景氣對策信號 · ${raw.data.length} 個月（${raw.data[0].date.slice(0,7)}起）· 更新至 ${raw.updated}`;
   } catch (err) {
     status.textContent = `載入失敗：${err.message}`;
+    throw err;
   }
 }
 
@@ -133,3 +142,4 @@ export function onThemeChange(light) {
 }
 
 export function resize() { chart?.resize(); }
+export function getCharts() { return [chart].filter(Boolean); }

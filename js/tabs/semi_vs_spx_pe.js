@@ -8,7 +8,7 @@
 // utils/data.js 的 fetchJSON 讀 { data: [...] } payload。
 
 import { isLight, echartsBase, PALETTE } from '../utils/theme.js';
-import { fetchJSON, toPoints, latestOf } from '../utils/data.js';
+import { requestJSON, toPoints, latestOf } from '../utils/data.js';
 
 const TAB_ID = 'semi_vs_spx_pe';
 let chart = null;
@@ -19,16 +19,16 @@ let recAreas = null;   // [[startDate, endDate], ...]
 // 兩檔資料涵蓋範圍的較早起點,USREC 衰退區間只取這之後的,避免畫出資料涵蓋不到的灰底
 const SINCE_DATE = '2004-10-01';
 
-async function loadAll() {
-  if (soxxRows && spyRows && recAreas) return; // 首次切入才載入
+async function loadAll(context = {}) {
+  if (soxxRows && spyRows && recAreas) return;
   const [soxx, spy, usrec] = await Promise.all([
-    fetchJSON('data/SOXX_valuation.json'),
-    fetchJSON('data/SPY_valuation.json'),
-    fetchJSON('data/USREC.json'),
+    requestJSON('data/SOXX_valuation.json', { signal: context.signal }),
+    requestJSON('data/SPY_valuation.json', { signal: context.signal }),
+    requestJSON('data/USREC.json', { signal: context.signal }),
   ]);
-  soxxRows = soxx;
-  spyRows = spy;
-  recAreas = computeRecessionIntervals(usrec, SINCE_DATE);
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  const areas = computeRecessionIntervals(usrec.data, SINCE_DATE);
+  soxxRows = soxx.data; spyRows = spy.data; recAreas = areas;
 }
 
 // USREC 是月頻 0/1 序列,轉成連續衰退區間 [startDate, endDate]
@@ -134,16 +134,18 @@ function renderNote() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById(`${TAB_ID}-chart`);
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     chart.setOption(buildOption(), { notMerge: true });
     renderNote();
   } catch (e) {
-    console.error(`[${TAB_ID}] load failed`, e);
+    soxxRows = null; spyRows = null; recAreas = null;
+    throw e;
   }
 }
 
@@ -155,3 +157,5 @@ export function onThemeChange(_light) {
 export function resize() {
   chart?.resize();
 }
+
+export function getCharts() { return chart ? [chart] : []; }

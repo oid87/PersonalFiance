@@ -12,6 +12,7 @@
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 const SP_COLOR  = "#f778ba";
 const HY_COLOR  = "#f85149";
@@ -39,15 +40,15 @@ let delinqData = null;   // [{date, credit_card, real_estate}]
 let sp500Data  = null;   // [[date, close]]
 let recessions = null;   // [{start, end}]
 let bdcData    = null;   // [{date, ARCC, OBDC, BXSL, FSK, MAIN, avg, avg4}]
+let unavailableOptional = [];
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (spreadData) return;
   const get = async (path, opt = false) => {
     try {
-      const r = await fetch(path, { cache: "no-cache" });
-      if (!r.ok) { if (opt) return null; throw new Error(`${path}: HTTP ${r.status}`); }
-      return await r.json();
-    } catch (e) { if (opt) return null; throw e; }
+      const value = await requestJSON(path, { signal: context.signal });
+      return value;
+    } catch (e) { if (opt && !context.signal?.aborted) { console.warn(`[credit] optional ${path}`, e); return null; } throw e; }
   };
   const [cs, y10, y2, sp, um, dl, bdc] = await Promise.all([
     get("data/credit_spread.json"),
@@ -59,6 +60,7 @@ async function loadAll() {
     get("data/bdc_nav.json", true),
   ]);
 
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
   spreadData = cs?.data ?? [];
 
   const y2Map = new Map((y2?.data ?? []).map(r => [r.date, r.value]));
@@ -67,9 +69,12 @@ async function loadAll() {
     .map(r => ({ date: r.date, spread: +(r.value - y2Map.get(r.date)).toFixed(3) }));
 
   delinqData = dl?.data ?? [];
-  sp500Data  = (sp?.data ?? []).map(r => [r.date, r.close]);
+  sp500Data = (sp?.data ?? []).map(r => [r.date, r.close]);
   recessions = (um?.recessions ?? []).filter(r => r.end >= "1990-01-01");
-  bdcData    = bdc?.data ?? [];
+  bdcData = bdc?.data ?? [];
+  unavailableOptional = [
+    !sp && 'SP500', !um && '衰退區間', !dl && '逾期率', !bdc && 'BDC P/NAV',
+  ].filter(Boolean);
 }
 
 function dateLabel(firstParam) {
@@ -535,7 +540,7 @@ function buildControls() {
   }
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const h1 = document.getElementById("crd-chart");
   const h2 = document.getElementById("crd-delinq-chart");
   const h3 = document.getElementById("crd-bdc-chart");
@@ -546,12 +551,17 @@ export async function activate() {
   wireCrossSync();
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { creditChart?.resize(); delinqChart?.resize(); bdcChart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    creditChart?.resize(); delinqChart?.resize(); bdcChart?.resize(); render();
+    const status = document.getElementById('crd-status');
+    if (status && unavailableOptional.length) status.textContent = `部分來源暫不可用：${unavailableOptional.join('、')}`;
   } catch (e) {
     const s = document.getElementById("crd-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[credit] load failed", e);
+    throw e;
   }
 }
 
@@ -577,3 +587,4 @@ export function resize() {
   delinqChart?.resize();
   bdcChart?.resize();
 }
+export function getCharts() { return [creditChart, delinqChart, bdcChart].filter(Boolean); }

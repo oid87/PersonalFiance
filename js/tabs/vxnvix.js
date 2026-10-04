@@ -3,6 +3,7 @@
 //   資料：data/vxnvix.json（scripts/prep_vxnvix.py 由本地 VIX.json/VXN.json 對齊產生，免 key）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { cutoffDate } from '../utils/dates.js';
 import { chipPicker } from '../utils/dom.js';
 
@@ -12,11 +13,11 @@ let chart = null;
 let range = "3Y";
 let payload = null; // full parsed json: { data, percentile_90, percentile_95, current, updated }
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (payload) return;
-  const r = await fetch("data/vxnvix.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const j = await r.json();
+  const url = "data/vxnvix.json";
+  const j = await requestJSON(url, { signal: context.signal });
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
   payload = j;
 }
 
@@ -163,18 +164,21 @@ function buildControls() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("vxnvix-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    chart?.resize(); render();
   } catch (e) {
     const s = document.getElementById("vxnvix-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[vxnvix] load failed", e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -184,3 +188,5 @@ export function onThemeChange(light) {
   if (payload) render();
 }
 export function resize() { chart?.resize(); }
+
+export function getCharts() { return [chart].filter(Boolean); }
