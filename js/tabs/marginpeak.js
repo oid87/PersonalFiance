@@ -1,22 +1,12 @@
 // 融資峰值 tab — FINRA Margin Debt YoY% 峰值/高檔 vs SPX(^GSPC)/QQQ 後續表現
-//   命題（Tom Lee/Fundstrat）：margin debt YoY >50% 或 YoY 見頂 → S&P500 consolidate；
-//   本 tab 對照 SPX 與 QQQ 反應是否不同（QQQ 短中期先噴、12m 才回吐）。
+//   以固定規則回顧融資 YoY 高檔／峰值後的價格表現，非可交易訊號。
 //   資料：data/liquidity.json（margin[]）+ data/SP500.json + data/QQQ.json，全現成 JSON，不另開 fetch。
 //
-// 對拍基準（沙盒 python: ../Financial_work/margin_yoy_spy_qqq.py，已人工複核）：
-//   訊號A(>50%首破)中位數 SPX 1m/3m/6m/12m = 1.0/2.0/-1.0/-10.1；QQQ = 3.4/11.2/9.0/-4.8
-//   訊號B(局部峰值>30%)中位數 SPX = -2.5/-0.1/-1.0/11.4；QQQ = -0.7/-0.4/5.1/11.7
-//   基率（1999-04~2025-06 全樣本月中位數，hardcode 不在 JS 重算）：
-//     SPX 1m/3m/6m/12m ≈ 1.2/2.8/5.2/10.8；QQQ ≈ 1.5/4.9/8.7/17.2
+// Methodology and fixed reference window: docs/marginpeak-methodology.md.
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
-import { percentile, mean } from '../utils/math.js';
+import { HORIZONS, COLS, detectSignalA, detectSignalB, computeSignalRow, groupMedians, groupCounts, computeBaseline, buildEventStudyPure, EVENT_STUDY_WINDOW_TD, BASELINE_VERSION, BASELINE_START_MONTH, BASELINE_END_MONTH } from './marginpeak_calc.mjs';
 
-const HORIZONS = { '1m': 21, '3m': 63, '6m': 126, '12m': 252 };
-const BASELINE = {
-  SPX: { '1m': 1.2, '3m': 2.8, '6m': 5.2, '12m': 10.8 },
-  QQQ: { '1m': 1.5, '3m': 4.9, '6m': 8.7, '12m': 17.2 },
-};
 
 let chart = null;
 let state = null; // { dates, yoyData, absData, spxData, qqqData, sigA, sigB, medA, medB, curYoy, curDate }
@@ -24,94 +14,6 @@ let idxSel = 'QQQ';   // 顯示哪個指數（SPX / QQQ，一次一個）
 let marginMode = 'yoy'; // 紅線意義：'yoy' = Margin Debt YoY%；'abs' = 融資餘額絕對值($B)
 let viewMode = 'table'; // 'table' = 現有中位數對拍表格＋雙軸圖；'eventstudy' = 融資見頂事件研究 percentile band
 
-// 事件研究視窗長度（交易日）。投影片 x 軸大約到 220+ 天，這裡抓 ~12 個月的交易日數當上限；
-// 資料量不夠支撐更長窗口時，各相對位置樣本數自然遞減（見 buildEventStudy 的 filter(v => v != null)）。
-const EVENT_STUDY_WINDOW_TD = 252;
-
-// ── date helpers ─────────────────────────────────────────────────────
-// margin 日期是 'YYYY-MM-01'；python 用 PeriodIndex('M').to_timestamp('M') 取月底當 anchor，
-// 這裡對齊同一邏輯：月底 = 該月最後一天。
-function monthEnd(dateStr) {
-  const y = +dateStr.slice(0, 4), m = +dateStr.slice(5, 7);
-  // check_reuse: keep — UTC 建構的時間戳轉日期鍵,slice 與建構端同為 UTC 故自洽;tsToLocalDate 是給 ECharts 本地午夜 axisValue 用的,換過去反而會差一天
-  return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10);
-}
-function daysBetween(a, b) {
-  return (new Date(b + 'T00:00:00Z') - new Date(a + 'T00:00:00Z')) / 86400000;
-}
-
-// ── forward return（貼齊 ≤ 月底最近交易日為錨，往後 td 個交易日）──────
-// 對拍 lab.fwd_ret：anchor = 最近 ≤ dt 的交易日；future 取 anchor 之後第 td 個交易日。
-function findAnchorIdx(series, targetDate) {
-  let lo = 0, hi = series.length - 1, res = -1;
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1;
-    if (series[mid].date <= targetDate) { res = mid; lo = mid + 1; } else hi = mid - 1;
-  }
-  return res;
-}
-function fwdRet(series, anchorIdx, td) {
-  if (anchorIdx < 0) return null;
-  const targetIdx = anchorIdx + td;
-  if (targetIdx >= series.length) return null;
-  return +(((series[targetIdx].close / series[anchorIdx].close) - 1) * 100).toFixed(2);
-}
-
-function median(vals) {
-  if (!vals.length) return null;
-  const s = [...vals].sort((a, b) => a - b);
-  const m = s.length;
-  return m % 2 ? s[(m - 1) / 2] : (s[m / 2 - 1] + s[m / 2]) / 2;
-}
-
-// ── signal detection（對拍 margin_yoy_spy_qqq.py sig50 / peaks）──────
-function detectSignalA(yoySeries) {
-  const out = [];
-  let lastDate = null;
-  for (const r of yoySeries) {
-    if (r.yoy > 50) {
-      if (!lastDate || daysBetween(lastDate, r.date) > 365) {
-        out.push(r);
-        lastDate = r.date;
-      }
-    }
-  }
-  return out;
-}
-// 對拍注意：python 在「含前12個月NaN的完整月序列」上跑 range(6, len(yoy)-6)，
-// NaN 被 pandas max() 自動忽略；yoySeries（本檔）已經把前12個月NaN砍掉，
-// 所以邊界要往前clip到0而非再退6格，否則會漏掉序列開頭附近的訊號（例：1998-04）。
-function detectSignalB(yoySeries) {
-  const out = [];
-  const n = yoySeries.length;
-  for (let i = 0; i <= n - 7; i++) {
-    const v = yoySeries[i].yoy;
-    if (v == null || v <= 30) continue;
-    let windowMax = -Infinity;
-    for (let j = Math.max(0, i - 6); j <= i + 6; j++) windowMax = Math.max(windowMax, yoySeries[j].yoy);
-    if (v === windowMax) out.push(yoySeries[i]);
-  }
-  return out;
-}
-
-function computeSignalRow(sig, spxSeries, qqqSeries) {
-  const anchor = monthEnd(sig.date);
-  const spxIdx = findAnchorIdx(spxSeries, anchor);
-  const qqqIdx = findAnchorIdx(qqqSeries, anchor);
-  const row = { signal: sig.date.slice(0, 7), yoy: +sig.yoy.toFixed(1) };
-  for (const [hk, td] of Object.entries(HORIZONS)) {
-    row[`SPX_${hk}`] = fwdRet(spxSeries, spxIdx, td);
-    row[`QQQ_${hk}`] = fwdRet(qqqSeries, qqqIdx, td);
-  }
-  return row;
-}
-
-const COLS = ['SPX_1m', 'SPX_3m', 'SPX_6m', 'SPX_12m', 'QQQ_1m', 'QQQ_3m', 'QQQ_6m', 'QQQ_12m'];
-function groupMedians(rows) {
-  const out = {};
-  for (const k of COLS) out[k] = median(rows.map(r => r[k]).filter(v => v != null));
-  return out;
-}
 
 // ── data load ────────────────────────────────────────────────────────
 async function loadAll() {
@@ -171,39 +73,13 @@ async function loadAll() {
     // 事件研究模式用：完整每日序列（非月頻近似），可對齊到真實交易日
     spxDaily: spxSeries, qqqDaily: qqqSeries,
     medA: groupMedians(sigA), medB: groupMedians(sigB),
+    countA: groupCounts(sigA), countB: groupCounts(sigB),
+    baseline: computeBaseline(spxSeries, qqqSeries),
     curYoy: last?.yoy ?? null, curDate: last?.date ?? null,
   };
 }
 
-// ── event study（融資 YoY 局部峰值 t=0 → SPX/QQQ rebase=100 percentile band）──
-// 沿用 detectSignalB 的局部峰值事件，錨點對齊邏輯與 computeSignalRow 相同
-// （monthEnd + findAnchorIdx，貼齊 ≤ 月底最近交易日），往後取真實交易日精度
-// （非月頻近似），滿足投影片「Days」x 軸語意。
-function buildEventStudy(idxKey) {
-  const series = idxKey === 'QQQ' ? state.qqqDaily : state.spxDaily;
-  const eventDates = state.sigBDates;
-  const paths = [];
-  for (const d of eventDates) {
-    const anchorIdx = findAnchorIdx(series, monthEnd(d));
-    if (anchorIdx < 0) continue;
-    const base = series[anchorIdx].close;
-    if (!base) continue;
-    const path = new Array(EVENT_STUDY_WINDOW_TD + 1).fill(null);
-    for (let i = 0; i <= EVENT_STUDY_WINDOW_TD; i++) {
-      const p = series[anchorIdx + i];
-      if (p) path[i] = (p.close / base) * 100;
-    }
-    paths.push(path);
-  }
-  const meanArr = [], p25Arr = [], p75Arr = [];
-  for (let i = 0; i <= EVENT_STUDY_WINDOW_TD; i++) {
-    const vals = paths.map(p => p[i]).filter(v => v != null).sort((a, b) => a - b);
-    meanArr.push(vals.length ? +mean(vals).toFixed(2) : null);
-    p25Arr.push(vals.length ? +percentile(vals, 0.25).toFixed(2) : null);
-    p75Arr.push(vals.length ? +percentile(vals, 0.75).toFixed(2) : null);
-  }
-  return { meanArr, p25Arr, p75Arr, n: paths.length };
-}
+function buildEventStudy(idxKey) { return buildEventStudyPure(idxKey, state); }
 
 // ── table ────────────────────────────────────────────────────────────
 function fmtPct(v) {
@@ -215,32 +91,40 @@ function rowHtml(r) {
   return `<tr><td>${r.signal}</td><td>${r.yoy.toFixed(1)}%</td>` +
     COLS.map(k => `<td>${fmtPct(r[k])}</td>`).join('') + `</tr>`;
 }
-function medianRowHtml(med, label) {
+function medianRowHtml(med, counts, label) {
   return `<tr style="border-top:2px solid var(--border);font-weight:600"><td colspan="2">${label}</td>` +
-    COLS.map(k => `<td>${fmtPct(med[k])}</td>`).join('') + `</tr>`;
+    COLS.map(k => `<td>${fmtPct(med[k])}<small style="display:block">事件 n=${counts[k]}</small></td>`).join('') + `</tr>`;
 }
 function baselineRowHtml() {
-  const row = { SPX_1m: BASELINE.SPX['1m'], SPX_3m: BASELINE.SPX['3m'], SPX_6m: BASELINE.SPX['6m'], SPX_12m: BASELINE.SPX['12m'],
-                QQQ_1m: BASELINE.QQQ['1m'], QQQ_3m: BASELINE.QQQ['3m'], QQQ_6m: BASELINE.QQQ['6m'], QQQ_12m: BASELINE.QQQ['12m'] };
-  return `<tr style="color:var(--muted)"><td colspan="2">基率（1999-04~2025-06 全樣本月中位數）</td>` +
-    COLS.map(k => `<td>${fmtPct(row[k])}</td>`).join('') + `</tr>`;
+  const { medians, counts, months } = state.baseline;
+  return `<tr style="color:var(--muted)"><td colspan="2">基準中位報酬<br>${BASELINE_START_MONTH}～${BASELINE_END_MONTH}（${months} 個候選月）</td>` +
+    COLS.map(k => `<td>${fmtPct(medians[k])}<small style="display:block">基準 n=${counts[k]}</small></td>`).join('') + `</tr>`;
 }
 
 function renderTable() {
   const host = document.getElementById('marginpeak-table');
   if (!host || !state) return;
-  const head = `<thead><tr><th>訊號月</th><th>YoY%</th>
-      <th>SPX 1m</th><th>SPX 3m</th><th>SPX 6m</th><th>SPX 12m</th>
-      <th>QQQ 1m</th><th>QQQ 3m</th><th>QQQ 6m</th><th>QQQ 12m</th></tr></thead>`;
+  const head = `<thead><tr><th>事件月</th><th>YoY%</th>` +
+    COLS.map(k => {
+      const [asset, horizon] = k.split('_');
+      return `<th title="${horizon}：月底 anchor 後 +${HORIZONS[horizon]} 個價格觀測；並非曆月報酬。raw close，不含股息。">${asset} ${horizon}</th>`;
+    }).join('') + `</tr></thead>`;
 
-  const bodyA = state.sigA.map(rowHtml).join('') + medianRowHtml(state.medA, '中位數') + baselineRowHtml();
-  const bodyB = state.sigB.map(rowHtml).join('') + medianRowHtml(state.medB, '中位數') + baselineRowHtml();
+  const bodyA = state.sigA.map(rowHtml).join('') + medianRowHtml(state.medA, state.countA, '事件中位報酬') + baselineRowHtml();
+  const bodyB = state.sigB.map(rowHtml).join('') + medianRowHtml(state.medB, state.countB, '事件中位報酬') + baselineRowHtml();
 
+  const methods = document.getElementById('marginpeak-methodology');
+  if (methods) methods.innerHTML = `
+    <p style="margin:8px 0;color:var(--muted)">描述性歷史研究，以事件月月底以前最後一筆可用價格為 anchor；使用 SPX（^GSPC）／QQQ raw close，報酬不含股息。1／3／6／12m 代表 +21／63／126／252 個價格觀測，並非曆月報酬。</p>
+    <p style="margin:8px 0;color:var(--muted)">基準中位報酬不是上漲機率。固定參考 anchor window ${BASELINE_START_MONTH}～${BASELINE_END_MONTH}，版本 ${BASELINE_VERSION}，不自動滾動，未宣稱經過最佳化；未來價格可超過此窗口。基準 n 與事件 n 分別計算，各資產／horizon 排除無 anchor 或未完成期間的結果，不補值、不推估。</p>
+    <p style="margin:8px 0;color:var(--muted)">價格資料截至 SPX ${state.spxDaily.at(-1)?.date ?? 'N/A'}／QQQ ${state.qqqDaily.at(-1)?.date ?? 'N/A'}。事件樣本使用可用融資歷史，不限於基準窗口；以下列出各群實際事件月份。樣本可能重疊，n 不代表獨立實驗次數。</p>
+    <p style="margin:8px 0;color:var(--muted)">A：融資 YoY &gt;50%，距上次入選 &gt;365 曆日；非真正穿越判斷。B：YoY &gt;30%，且為前後6筆 YoY 觀測最高；同值峰值可重複入選。</p>
+    <p style="margin:4px 0;color:var(--muted)">B 是 retrospective／ex-post 事後研究：需未來 6 筆 YoY 觀測才能辨識，連續月資料約 6 個月，實際可用時間還取決於資料發布。anchor 保留峰值月，不是確認月；不得視為峰值月當時可交易訊號。</p>
+  `;
   host.innerHTML = `
-    <p style="margin:8px 0;color:var(--muted)">Margin YoY &gt;50% 之後 SPX 中期停滯、QQQ 先噴後回吐；峰值屬短期盤整訊號非崩盤（2000 除外）。樣本極小，參考劇本非統計 edge。</p>
-    <h4 style="margin:12px 0 4px">訊號A・margin YoY 首次突破 50%（12個月去重）</h4>
+    <h4 style="margin:12px 0 4px">事件A・融資 YoY &gt;50%</h4>
     <table class="info-table">${head}<tbody>${bodyA}</tbody></table>
-    <h4 style="margin:16px 0 4px">訊號B・局部峰值（&gt;30% 且為前後6個月最高）</h4>
+    <h4 style="margin:16px 0 4px">事件B・局部峰值（&gt;30%）</h4>
     <table class="info-table">${head}<tbody>${bodyB}</tbody></table>
   `;
 }
@@ -384,18 +268,28 @@ function renderEventStudyChart() {
   const idxClr  = idxSel === 'QQQ' ? '#58a6ff' : PALETTE.text;
   const bandClr = '#e3b341';
 
-  const { meanArr, p25Arr, p75Arr, n } = buildEventStudy(idxSel);
+  const { meanArr, p25Arr, p75Arr, counts, n } = buildEventStudy(idxSel);
   const xData = meanArr.map((_, i) => i);
+  // Expose every t, including all-null tails where ECharts may omit a tooltip.
+  const countRanges = [];
+  for (let i = 0; i < counts.length; i++) {
+    const last = countRanges.at(-1);
+    if (last && last.n === counts[i]) last.end = i;
+    else countRanges.push({ start: i, end: i, n: counts[i] });
+  }
+  const countText = countRanges.map(r => `t=${r.start}${r.end === r.start ? '' : '～' + r.end}：n=${r.n}`).join('；');
 
   const status = document.getElementById('marginpeak-status');
   if (status) status.textContent =
-    `融資峰值事件研究：${idxSel} 事件後走勢分佈（rebase=100）· 基於 ${state.sigBDates.length} 次局部峰值事件 / ${n} 次可對齊足夠交易日資料`;
+    `融資峰值事件研究：${idxSel} 事件後走勢分佈（rebase=100）· 基於 ${state.sigBDates.length} 次局部峰值事件 / ${n} 次可建立 t=0 路徑（完整期間樣本數見 hover）`;
 
   const note = document.getElementById('marginpeak-eventstudy-note');
   if (note) note.textContent =
-    `以 detectSignalB（融資 YoY 局部峰值，前後6個月最高且 >30%）偵測到的 ${state.sigBDates.length} 次事件為 t=0，` +
-    `對齊各事件月底最近交易日（真實交易日精度，非月頻近似），往後最多 ${EVENT_STUDY_WINDOW_TD} 個交易日的 ${idxSel} 收盤價 rebase 成 100，` +
-    `畫出 Mean／25th／75th percentile 帶狀圖。樣本數隨事件距今天數增加而遞減（近期事件尚未走完整個視窗）。`;
+    `以融資 YoY 局部峰值（前後6筆 YoY 觀測最高且 >30%）的 ${state.sigBDates.length} 次事件為 t=0（峰值月），` +
+    `對齊峰值月月底以前最後一筆可用價格，往後最多 ${EVENT_STUDY_WINDOW_TD} 個價格觀測的 ${idxSel} raw close rebase 成 100；` +
+    `畫出 Mean／25th／75th percentile。每個相對觀測的事件 n 見 hover，未完成尾段不補值。` +
+    `這是 retrospective／ex-post 事後研究，需未來 6 筆 YoY 觀測才能辨識，實際可用時間取決於發布，不能視為峰值月可交易訊號；事件不限於固定基準窗口。` +
+    `逐觀測事件樣本數：${countText}。n=0 時統計為 N/A。`;
 
   chart.setOption({
     backgroundColor: 'transparent', animation: false,
@@ -404,7 +298,7 @@ function renderEventStudyChart() {
       backgroundColor: tipBg, borderColor: tipBdr, textStyle: { color: textClr, fontSize: 12 },
       formatter(params) {
         const d = params[0]?.axisValue ?? '';
-        let html = `<div style="font-weight:600;margin-bottom:4px">第 ${d} 個交易日</div>`;
+        let html = `<div style="font-weight:600;margin-bottom:4px">第 ${d} 個價格觀測</div><div>事件 n=${counts[+d] ?? 0}</div><div>t=0 為峰值月月底 anchor；非曆月 horizon</div>`;
         for (const p of params) {
           if (p.value == null) continue;
           html += `<div>${p.marker}${p.seriesName}: <b>${(+p.value).toFixed(1)}</b></div>`;
@@ -457,6 +351,8 @@ function renderEventStudyChart() {
 function toggleViewDom() {
   const tableWrap = document.getElementById('marginpeak-table')?.parentElement;
   const note = document.getElementById('marginpeak-eventstudy-note');
+  const methods = document.getElementById('marginpeak-methodology');
+  if (methods) methods.style.display = viewMode === 'eventstudy' ? 'none' : '';
   if (tableWrap) tableWrap.style.display = viewMode === 'eventstudy' ? 'none' : '';
   if (note) note.style.display = viewMode === 'eventstudy' ? '' : 'none';
 }
@@ -496,6 +392,10 @@ function ensureViewModeUI() {
       `<span style="color:var(--muted);font-size:12px;margin-left:8px">檢視</span>
        <span id="marginpeak-view-table" class="chip active" data-view="table">表格</span>
        <span id="marginpeak-view-eventstudy" class="chip" data-view="eventstudy">事件研究</span>`);
+  }
+  const tableWrap = document.getElementById('marginpeak-table')?.parentElement;
+  if (tableWrap && !document.getElementById('marginpeak-methodology')) {
+    tableWrap.insertAdjacentHTML('beforebegin', '<div id="marginpeak-methodology" style="padding:8px 16px;line-height:1.6"></div>');
   }
   const chartHost = document.getElementById('marginpeak-chart');
   if (chartHost && !document.getElementById('marginpeak-eventstudy-note')) {
