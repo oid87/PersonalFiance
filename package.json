@@ -3,7 +3,8 @@
     "yahoo-finance2": "^2.13.3"
   },
   "scripts": {
-    "test": "python3 scripts/run_checks.py --js-only"
+    "test": "python3 scripts/run_checks.py --js-only",
+    "test:browser": "node scripts/browser_smoke.cjs"
   },
   "devDependencies": {
     "playwright": "1.58.0"
