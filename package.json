@@ -4,5 +4,8 @@
   },
   "scripts": {
     "test": "python3 scripts/run_checks.py --js-only"
+  },
+  "devDependencies": {
+    "playwright": "1.58.0"
   }
 }
