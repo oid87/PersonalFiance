@@ -6,6 +6,8 @@
 //            ⑤ 美股 Total Put/Call Ratio（OCC+CBOE 拼接，2006起）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
+import { rangeStart as calcRangeStart, mainChartModel, termStructureModel, putCallModel, complacencyModel } from './vixskew_calc.mjs';
 
 let chart   = null;
 let tsChart = null;
@@ -14,19 +16,25 @@ let cxChart = null;
 let vsData  = null;
 let pcData  = null;
 let vsRange = "5Y";
+let controlsBound = false;
 
 // ── public ───────────────────────────────────────────────────────────────────
 
-export async function init() {
+export async function init(context = {}) {
   const status = document.getElementById("vs-status");
-  if (vsData) { renderAll(); return; }
+  if (vsData && pcData) { if (context.signal?.aborted || context.isCurrent?.() === false) return; renderAll(); return; }
   status.textContent = "載入中…";
   try {
-    const r = await fetch("data/vix_skew.json", { cache: "no-cache" });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    vsData = await r.json();
+    const next = await requestJSON("data/vix_skew.json", { signal: context.signal });
+    if (!Array.isArray(next?.history) || !next.history.length || !Array.isArray(next?.signals)) {
+      clearRequestCache("data/vix_skew.json"); throw new Error("VIX-SKEW: missing required history/signals");
+    }
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    vsData = next;
 
-    document.querySelectorAll("[data-vs-range]").forEach(el =>
+    if (!controlsBound) {
+      controlsBound = true;
+      document.querySelectorAll("[data-vs-range]").forEach(el =>
       el.addEventListener("click", () => {
         vsRange = el.dataset.vsRange;
         document.querySelectorAll("[data-vs-range]")
@@ -35,6 +43,7 @@ export async function init() {
         renderTSChart();
         renderPCChart();
       }));
+    }
 
     renderAll();
     status.textContent =
@@ -42,19 +51,24 @@ export async function init() {
   } catch (err) {
     status.textContent = `載入失敗：${err.message}`;
     console.error("[vixskew]", err);
+    throw err;
   }
 
   const tsStatus = document.getElementById("vts-status");
   const pcStatus = document.getElementById("pc-status");
   try {
-    const r = await fetch("data/putcall.json", { cache: "no-cache" });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    pcData = await r.json();
+    const nextPc = await requestJSON("data/putcall.json", { signal: context.signal });
+    if (!Array.isArray(nextPc?.total) || !nextPc.total.length || !Array.isArray(nextPc?.equity)) {
+      clearRequestCache("data/putcall.json"); throw new Error("Put/Call: missing rows");
+    }
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    pcData = nextPc;
     renderPCChart();
     if (pcStatus)
       pcStatus.textContent =
         `美股 Put/Call · ${pcData.total.length} 個交易日 · 更新至 ${pcData.updated}`;
   } catch (err) {
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw err;
     if (pcStatus) pcStatus.textContent = `載入失敗：${err.message}`;
     console.error("[vixskew:putcall]", err);
   }
@@ -77,6 +91,7 @@ export function onThemeChange() {
 }
 
 export function resize() { chart?.resize(); tsChart?.resize(); pcChart?.resize(); cxChart?.resize(); }
+export function getCharts() { return [chart, tsChart, pcChart, cxChart].filter(Boolean); }
 
 // ── render helpers ────────────────────────────────────────────────────────────
 
@@ -90,12 +105,8 @@ function renderAll() {
 }
 
 function rangeStart(key) {
-  if (key === "all") return "1900-01-01";
-  const y = { "3Y": 3, "5Y": 5, "10Y": 10, "20Y": 20 }[key] ?? 5;
-  const d = new Date();
-  d.setFullYear(d.getFullYear() - y);
-  // check_reuse: keep — 本地 range cutoff 變體:preset key 集合/MAX 哨兵/未命中預設與 dates.presetStart、dates.cutoffDate 皆不同,換過去會改行為
-  return d.toISOString().slice(0, 10);
+  // check_reuse: keep — 本地 range cutoff 變體:all 哨兵及預設年數與 dates.presetStart、dates.cutoffDate 不同。
+  return calcRangeStart(key, new Date());
 }
 
 function retColor(v) {
@@ -169,52 +180,10 @@ function chip(on, label) {
 function renderChart() {
   if (!vsData) return;
 
-  const from  = rangeStart(vsRange);
-  const rows  = vsData.history.filter(r => r.d >= from);
-  if (rows.length < 10) return;
-
-  const dates   = rows.map(r => r.d);
-  const dateSet = new Set(dates);
-
-  // SPY normalised to % change from window start
-  const spyBase = rows[0].sp;
-  const spyData = rows.map(r =>
-    r.sp != null ? +((r.sp / spyBase - 1) * 100).toFixed(2) : null);
-
-  // VIX and SKEW absolute
-  const vixData  = rows.map(r => r.v  != null ? +r.v.toFixed(1)  : null);
-  const skewData = rows.map(r => r.sk != null ? +r.sk.toFixed(1) : null);
-
-  // Divergence score bars (orange=positive/bearish, green=negative)
-  const divData = rows.map(r =>
-    r.ds != null
-      ? { value: +r.ds.toFixed(1), itemStyle: { color: r.ds > 0 ? "#f0883e" : "#3fb950" } }
-      : null);
-
-  // Signals within this range
-  const sigs = vsData.signals.filter(s => s.date >= from && dateSet.has(s.date));
-  const dateIdx = Object.fromEntries(dates.map((d, i) => [d, i]));
-
-  const sigSpy = sigs.map(s => {
-    const y = spyData[dateIdx[s.date]];
-    return y != null ? { value: [s.date, y], name: s.date,
-      label: { show: false }, tooltip: { formatter: () =>
-        `<b>⚠️ 序列信號 ${s.date}</b><br>VIX ${s.vix}（距峰 ${s.vix_drop}%）<br>SKEW ${s.skew}（距峰 ${s.skew_hold}%）<br>` +
-        `趨勢反轉：${s.bear_trend?"是":"否"}<br>` +
-        `3M 後 SPY：${s.ret_63d != null ? (s.ret_63d > 0 ? "+" : "") + s.ret_63d + "%" : "—"}` } } : null;
-  }).filter(Boolean);
-
-  const sigVix = sigs.map(s => {
-    const y = vixData[dateIdx[s.date]];
-    return y != null ? { value: [s.date, y] } : null;
-  }).filter(Boolean);
-
-  // Y ranges
-  const vValid  = vixData.filter(v => v != null);
-  const skValid = skewData.filter(v => v != null);
-  const vixMax  = Math.ceil(Math.max(...vValid, 40)  / 10) * 10;
-  const skMin   = Math.floor((Math.min(...skValid) - 5) / 10) * 10;
-  const skMax   = Math.ceil( (Math.max(...skValid) + 5) / 10) * 10;
+  const model = mainChartModel(vsData.history, vsData.signals, rangeStart(vsRange));
+  if (!model) return;
+  const { rows, dates, spyData, vixData, skewData, divData,
+    sigSpy, sigVix, vixMax, skMin, skMax } = model;
 
   const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)");
@@ -374,23 +343,7 @@ function renderTSChart() {
   const rows = (vsData.term_structure || []).filter(r => r.date >= rangeStart(vsRange));
   if (rows.length < 10) { el.innerHTML = ""; return; }
 
-  const dates   = rows.map(r => r.date);
-  const vixData = rows.map(r => r.vix   != null ? +r.vix.toFixed(2)   : null);
-  const v3mData = rows.map(r => r.vix3m != null ? +r.vix3m.toFixed(2) : null);
-  const tsData  = rows.map(r => r.ts_ratio != null ? +r.ts_ratio.toFixed(3) : null);
-
-  // Contiguous backwardation (ts_ratio > 1) date ranges → markArea shading
-  const backAreas = [];
-  let segStart = null;
-  for (let i = 0; i < rows.length; i++) {
-    const on = rows[i].ts_ratio != null && rows[i].ts_ratio > 1;
-    if (on && segStart === null) segStart = dates[i];
-    if (!on && segStart !== null) {
-      backAreas.push([{ xAxis: segStart }, { xAxis: dates[i - 1] }]);
-      segStart = null;
-    }
-  }
-  if (segStart !== null) backAreas.push([{ xAxis: segStart }, { xAxis: dates[dates.length - 1] }]);
+  const { dates, vixData, v3mData, tsData, backAreas } = termStructureModel(rows);
 
   const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)");
@@ -462,44 +415,13 @@ function renderTSChart() {
 
 // ── 美股 Total Put/Call Ratio ────────────────────────────────────────────────
 
-function rollingMean(arr, win) {
-  const out = new Array(arr.length).fill(null);
-  let sum = 0, cnt = 0;
-  const q = [];
-  for (let i = 0; i < arr.length; i++) {
-    const v = arr[i];
-    q.push(v);
-    if (v != null) { sum += v; cnt++; }
-    if (q.length > win) {
-      const old = q.shift();
-      if (old != null) { sum -= old; cnt--; }
-    }
-    out[i] = cnt >= Math.min(win, 5) ? +(sum / cnt).toFixed(3) : null;
-  }
-  return out;
-}
-
-function percentile(sorted, p) {
-  if (!sorted.length) return null;
-  const idx = Math.min(sorted.length - 1, Math.max(0, Math.floor(p * (sorted.length - 1))));
-  return sorted[idx];
-}
 
 function renderPCChart() {
   const el = document.getElementById("pc-chart");
   if (!el || !pcData || !pcData.total || !pcData.total.length) return;
 
-  const allRows = pcData.total;
-  const allPcSorted = allRows.map(r => r.pc).filter(v => v != null).slice().sort((a, b) => a - b);
-  const p10 = percentile(allPcSorted, 0.10);
-  const p90 = percentile(allPcSorted, 0.90);
-
-  const rows = allRows.filter(r => r.date >= rangeStart(vsRange));
+  const { rows, dates, pcVals, ma20, p10, p90 } = putCallModel(pcData.total, rangeStart(vsRange));
   if (rows.length < 10) { el.innerHTML = ""; return; }
-
-  const dates  = rows.map(r => r.date);
-  const pcVals = rows.map(r => r.pc != null ? +r.pc.toFixed(3) : null);
-  const ma20   = rollingMean(pcVals, 20);
 
   const axisClr = PALETTE.muted;
   const gridClr = tc("rgba(255,255,255,0.06)", "rgba(0,0,0,0.06)");
@@ -573,88 +495,18 @@ const CX_HORIZONS      = [21, 63, 126]; // 1M / 3M / 6M 交易日
 // trailing 2年滾動百分位：只看 [i-window+1 .. i]（含 i），不用未來資料。
 // 定義 = count(窗口內 <= 當前值) / 窗口內筆數 * 100 —— 簡化版
 // pandas `rolling.rank(pct=True)*100`（未做 tie 平均排名，spec 允許此簡化）。
-function cxRollingPctRank(arr, window, minPeriods) {
-  const out = new Array(arr.length).fill(null);
-  for (let i = 0; i < arr.length; i++) {
-    const lo = Math.max(0, i - window + 1);
-    const v = arr[i];
-    let n = 0, countLE = 0;
-    for (let j = lo; j <= i; j++) {
-      n++;
-      if (arr[j] <= v) countLE++;
-    }
-    out[i] = n >= minPeriods ? (countLE / n) * 100 : null;
-  }
-  return out;
-}
-
-// 同 python lab.dedupe_signals：排序後與前一保留訊號相差 <gapDays 曆日則跳過。
-function cxDedupeSignals(idxList, dates, gapDays) {
-  const out = [];
-  let lastMs = null;
-  for (const i of idxList) {
-    const ms = new Date(dates[i]).getTime();
-    if (lastMs === null || (ms - lastMs) / 86400000 >= gapDays) {
-      out.push(i);
-      lastMs = ms;
-    }
-  }
-  return out;
-}
-
-function cxSummarize(vals) {
-  if (!vals.length) return { n: 0, mean: null, median: null, winrate: null };
-  const sorted = [...vals].sort((a, b) => a - b);
-  const mean = vals.reduce((s, v) => s + v, 0) / vals.length;
-  const mid  = Math.floor(sorted.length / 2);
-  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-  const winrate = (vals.filter(v => v > 0).length / vals.length) * 100;
-  return { n: vals.length, mean, median, winrate };
-}
 
 function renderComplacency() {
   const el     = document.getElementById("cx-chart");
   const status = document.getElementById("cx-status");
   if (!el || !vsData) return;
 
-  // 1. 平行陣列（過濾 sk 或 sp 任一為 null/NaN 的列）
-  const rows  = vsData.history.filter(r => r.sk != null && r.sp != null);
-  const dates = rows.map(r => r.d);
-  const sk    = rows.map(r => r.sk);
-  const sp    = rows.map(r => r.sp);
-  const n     = sk.length;
-  if (n < CX_MIN_PERIODS + 10) { if (status) status.textContent = "資料不足"; return; }
-
-  // 2. 2年滾動百分位（trailing only，無未來函數）
-  const skPct = cxRollingPctRank(sk, CX_WINDOW, CX_MIN_PERIODS);
-
-  // 3. 訊號：百分位 <=10（最低十分位），gap 30 曆日去重
-  const rawIdx = [];
-  for (let i = 0; i < n; i++) {
-    if (skPct[i] != null && skPct[i] <= CX_PCT_THRESHOLD) rawIdx.push(i);
-  }
-  const sigIdx = cxDedupeSignals(rawIdx, dates, CX_GAP_DAYS);
-
-  // 4-6. 前向報酬（right-censoring 丟棄不補）+ baseline，每個 horizon 一組
-  const result = {};
-  for (const td of CX_HORIZONS) {
-    const sigVals = [];
-    for (const i of sigIdx) {
-      if (i + td < n) sigVals.push((sp[i + td] / sp[i] - 1) * 100);
-    }
-    const baseVals = [];
-    for (let i = 0; i < n; i++) {
-      if (i + td < n) baseVals.push((sp[i + td] / sp[i] - 1) * 100);
-    }
-    const sigStat  = cxSummarize(sigVals);
-    const baseStat = cxSummarize(baseVals);
-    const diff = (sigStat.mean != null && baseStat.mean != null) ? sigStat.mean - baseStat.mean : null;
-    result[td] = { signal: sigStat, baseline: baseStat, diff };
-  }
-
-  // 現值全史百分位（非滾動，僅供標註，不進訊號判定）
-  const curSk = sk[n - 1];
-  const curPctFull = (sk.filter(v => v <= curSk).length / n) * 100;
+  const model = complacencyModel(vsData.history, {
+    window: CX_WINDOW, minPeriods: CX_MIN_PERIODS, pctThreshold: CX_PCT_THRESHOLD,
+    gapDays: CX_GAP_DAYS, horizons: CX_HORIZONS,
+  });
+  if (!model) { if (status) status.textContent = "資料不足"; return; }
+  const { sigIdx, result, curSk, curPctFull } = model;
 
   console.log("[vixskew:complacency] n_signals=" + sigIdx.length,
     JSON.stringify(Object.fromEntries(CX_HORIZONS.map(td => [td, result[td]]))),
