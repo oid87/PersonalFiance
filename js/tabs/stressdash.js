@@ -18,7 +18,7 @@
 // 定位「環境理解」非交易訊號。
 
 import { loadedHLC } from '../state.js';
-import { ensureLoaded, fetchJSON } from '../utils/data.js';
+import { ensureLoaded, requestJSON, clearRequestCache } from '../utils/data.js';
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate, toWeeklyHLC, lookupLE } from '../utils/dates.js';
 import { computeMA } from '../utils/math.js';
@@ -51,26 +51,31 @@ let kcfsiMA20Pairs   = null;
 const weeklyCache = {}; // ticker -> [[date, open, high, low, close], ...] (derived from toWeeklyHLC)
 
 // ── load ─────────────────────────────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   if (nfciAnfci) return;
-  const [nfciRows, stressRows] = await Promise.all([
-    fetchJSON("data/nfci.json"),
-    fetchJSON("data/stlfsi_kcfsi.json"),
+  const [nfciPayload, stressPayload] = await Promise.all([
+    requestJSON("data/nfci.json", { signal: context.signal }),
+    requestJSON("data/stlfsi_kcfsi.json", { signal: context.signal }),
   ]);
-  nfciAnfci   = nfciRows ?? [];
-  stlfsiKcfsi = stressRows ?? [];
+  const nextNfci = nfciPayload.data;
+  const nextStress = stressPayload.data;
 
-  nfciPairs     = nfciAnfci.map(r => [r.date, r.nfci]);
-  nfciMA20Pairs = computeMA(nfciPairs, 20);
-  nfciMA50Pairs = computeMA(nfciPairs, 50);
+  const nextNfciPairs = nextNfci.map(r => [r.date, r.nfci]);
+  const nextNfciMA20 = computeMA(nextNfciPairs, 20);
+  const nextNfciMA50 = computeMA(nextNfciPairs, 50);
 
-  stlfsiPairs     = stlfsiKcfsi.filter(r => r.stlfsi4 != null).map(r => [r.date, r.stlfsi4]);
-  stlfsiMA20Pairs = computeMA(stlfsiPairs, 20);
+  const nextStlfsiPairs = nextStress.filter(r => r.stlfsi4 != null).map(r => [r.date, r.stlfsi4]);
+  const nextStlfsiMA20 = computeMA(nextStlfsiPairs, 20);
 
-  kcfsiPairs     = stlfsiKcfsi.filter(r => r.kcfsi != null).map(r => [r.date, r.kcfsi]);
-  kcfsiMA20Pairs = computeMA(kcfsiPairs, 20);
+  const nextKcfsiPairs = nextStress.filter(r => r.kcfsi != null).map(r => [r.date, r.kcfsi]);
+  const nextKcfsiMA20 = computeMA(nextKcfsiPairs, 20);
 
-  await Promise.all(TICKERS.map(k => ensureLoaded(k)));
+  await Promise.all(TICKERS.map(k => ensureLoaded(k, context)));
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+  nfciAnfci = nextNfci; stlfsiKcfsi = nextStress;
+  nfciPairs = nextNfciPairs; nfciMA20Pairs = nextNfciMA20; nfciMA50Pairs = nextNfciMA50;
+  stlfsiPairs = nextStlfsiPairs; stlfsiMA20Pairs = nextStlfsiMA20;
+  kcfsiPairs = nextKcfsiPairs; kcfsiMA20Pairs = nextKcfsiMA20;
 }
 
 // toWeeklyHLC only carries [date, high, low, close] — no open (loadedHLC never
@@ -386,18 +391,21 @@ function buildControls() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("stressdash-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    chart?.resize(); render();
   } catch (e) {
     const s = document.getElementById("stressdash-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[stressdash] load failed", e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -407,3 +415,4 @@ export function onThemeChange(light) {
   if (nfciAnfci) render();
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return [chart].filter(Boolean); }

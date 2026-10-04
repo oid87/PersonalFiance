@@ -6,6 +6,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 const TICKERS = [
   { key: 'semi', label: '半導體 (SOXX+SMH)', unit: '$', color: '#1a3a6b', colorDark: '#3987e5' },
@@ -24,6 +25,7 @@ let showVIX = false;
 let rawData = null;
 let fgWeekly = null;   // Map<date, avgFG>
 let vixWeekly = null;  // Map<date, closeVIX>
+let unavailableOptional = [];
 
 // ── QQQ 板塊資金流向榜（sub-view）───────────────────────────────────────
 const SECTOR_WINDOWS = { '1d': '當日', '5d': '5 日', '20d': '20 日' };
@@ -32,25 +34,27 @@ let sectorWindow = '1d';
 let sectorData = null;
 let sectorLoadPromise = null;
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (rawData) return;
-  const r = await fetch('data/flows.json', { cache: 'no-cache' });
-  if (!r.ok) throw new Error(`flows.json: HTTP ${r.status}`);
-  rawData = await r.json();
-
-  const [fgRes, vixRes] = await Promise.all([
-    fetch('data/fear_greed.json', { cache: 'no-cache' }).catch(() => null),
-    fetch('data/VIX.json', { cache: 'no-cache' }).catch(() => null),
+  const next = await requestJSON('data/flows.json', { signal: context.signal });
+  const optional = async path => {
+    try {
+      const value = await requestJSON(path, { signal: context.signal });
+      if (!Array.isArray(value?.data) || !value.data.length) { clearRequestCache(path); throw new Error(`${path}: missing rows`); }
+      return value.data;
+    } catch (e) {
+      if (context.signal?.aborted || context.isCurrent?.() === false) throw e;
+      console.warn(`[flows] optional ${path}`, e); return null;
+    }
+  };
+  const [fgRows, vixRows] = await Promise.all([
+    optional('data/fear_greed.json'), optional('data/VIX.json'),
   ]);
-
-  if (fgRes?.ok) {
-    const fgJson = await fgRes.json();
-    fgWeekly = dailyToWeeklyAvg(fgJson.data ?? [], 'value');
-  }
-  if (vixRes?.ok) {
-    const vixJson = await vixRes.json();
-    vixWeekly = dailyToWeeklyLast(vixJson.data ?? [], 'close');
-  }
+  const nextFg = fgRows ? dailyToWeeklyAvg(fgRows, 'value') : null;
+  const nextVix = vixRows ? dailyToWeeklyLast(vixRows, 'close') : null;
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+  rawData = next; fgWeekly = nextFg; vixWeekly = nextVix;
+  unavailableOptional = [!fgRows && '恐懼貪婪', !vixRows && 'VIX'].filter(Boolean);
 }
 
 function dailyToWeeklyAvg(rows, field) {
@@ -175,7 +179,7 @@ function render() {
 
   const status = document.getElementById('flows-status');
   if (status) status.textContent =
-    `${ticker.label} 週頻簽名成交量 · ${rows.length} 週（${range}）· 紅＝歷史最大正向 · 橘＝歷史最大負向`;
+    `${ticker.label} 週頻簽名成交量 · ${rows.length} 週（${range}）· 紅＝歷史最大正向 · 橘＝歷史最大負向${unavailableOptional.length ? ` · 部分來源暫不可用：${unavailableOptional.join('、')}` : ''}`;
 
   // ── y axes ──
   const yAxis = [
@@ -309,17 +313,17 @@ function escapeHtml(s) {
   })[c]);
 }
 
-async function loadSectorData() {
+async function loadSectorData(context = {}) {
   if (sectorData) return;
   if (!sectorLoadPromise) {
-    sectorLoadPromise = fetch('data/qqq_sector_flows.json', { cache: 'no-cache' })
-      .then(r => {
-        if (!r.ok) throw new Error(`qqq_sector_flows.json: HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(j => { sectorData = j; });
+    sectorLoadPromise = requestJSON('data/qqq_sector_flows.json', { signal: context.signal })
+      .then(j => {
+        return j;
+      }).catch(e => { sectorLoadPromise = null; throw e; });
   }
-  await sectorLoadPromise;
+  const next = await sectorLoadPromise;
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+  sectorData = next;
 }
 
 function renderSectorRank() {
@@ -374,21 +378,17 @@ function renderSectorRank() {
   }
 }
 
-function applyView() {
+async function applyView(context = {}) {
   const tsHost = document.getElementById('flows-timeseries-view');
   const secHost = document.getElementById('flows-sector-view');
   if (tsHost) tsHost.hidden = view !== 'timeseries';
   if (secHost) secHost.hidden = view !== 'sector';
   if (view === 'timeseries') {
-    setTimeout(() => { chart?.resize(); }, 30);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    chart?.resize();
   } else {
-    loadSectorData()
-      .then(renderSectorRank)
-      .catch(e => {
-        const status = document.getElementById('flows-sector-status');
-        if (status) status.textContent = '載入失敗：' + (e.message || e);
-        console.error('[flows] sector load failed', e);
-      });
+    await loadSectorData(context);
+    renderSectorRank();
   }
 }
 
@@ -415,25 +415,31 @@ function buildControls() {
   }
 
   const vp = document.getElementById('flows-view-picker');
-  chipPicker(vp, 'flows-view', v => { view = v; applyView(); });
+  chipPicker(vp, 'flows-view', v => { view = v; void applyView().catch(e => {
+    const status = document.getElementById('flows-sector-status');
+    if (status) status.textContent = '載入失敗：' + (e.message || e);
+    console.error('[flows] sector load failed', e);
+  }); });
   const swp = document.getElementById('flows-sector-window-picker');
   chipPicker(swp, 'flows-sector-window', v => { sectorWindow = v; renderSectorRank(); });
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('flows-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   buildControls();
-  applyView();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await applyView(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+    chart?.resize(); render();
   } catch (e) {
     const s = document.getElementById('flows-status');
     if (s) s.textContent = '載入失敗：' + (e.message || e);
     console.error('[flows] load failed', e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -445,3 +451,4 @@ export function onThemeChange(light) {
   if (view === 'sector' && sectorData) renderSectorRank();
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return [chart].filter(Boolean); }

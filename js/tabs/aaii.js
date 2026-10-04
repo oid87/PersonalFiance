@@ -3,7 +3,9 @@
 // + 完整週度歷史對照表。AAII 為週頻，其餘為日頻，依日期向前對齊。
 // S&P 500 用指數(^GSPC, 1987起)而非 SPY ETF(2000起)，以便對齊 AAII 1987 起點。
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 import { tsToLocalDate, lookupLE } from '../utils/dates.js';
+import { bindOnce } from '../utils/dom.js';
 
 let aaiiChart   = null;
 let aaii        = null;   // {data:[{date,bull,neutral,bear,spread}], updated}
@@ -15,38 +17,45 @@ const C = {
   bull: "#3fb950", neutral: "#8b949e", bear: "#f85149", net: "#e3b341",
 };
 
-export async function init() {
+export async function init(context = {}) {
   const status = document.getElementById("aaii-status");
   if (aaii) { renderAll(); return; }
   status.textContent = "載入中…";
   try {
-    const [aResp, spResp, fgResp, vixResp, vixEResp] = await Promise.all([
-      fetch("data/aaii.json"),
-      fetch("data/SP500.json"),       // S&P 500 index (^GSPC) — history back to 1987, unlike SPY ETF (2000)
-      fetch("data/fear_greed.json"),
-      fetch("data/VIX.json"),         // modern VIX, 2000+ (shared with other tabs, untouched)
-      fetch("data/VIX_early.json"),   // ^VXO 1986-89 + ^VIX 1990-99 — extends VIX panel back to 1987
+    const [nextAaii, sp, fg, vix, vixE] = await Promise.all([
+      requestJSON("data/aaii.json", { signal: context.signal }),
+      requestJSON("data/SP500.json", { signal: context.signal }),
+      requestJSON("data/fear_greed.json", { signal: context.signal }),
+      requestJSON("data/VIX.json", { signal: context.signal }),
+      requestJSON("data/VIX_early.json", { signal: context.signal }).catch(error => {
+        if (/HTTP 404/.test(error.message)) return { data: [] };
+        throw error;
+      }),
     ]);
-    aaii = await aResp.json();
-    const sp = await spResp.json(), fg = await fgResp.json(), vix = await vixResp.json();
-    const vixE = vixEResp.ok ? await vixEResp.json() : { data: [] };
-    spArr = sp.data.map(r => [r.date, r.close]);
-    fgArr  = fg.data.map(r => [r.date, r.value]);
-    // stitch: VIX_early (1986-1999) ahead of VIX.json (2000+) → continuous 1986→now
-    vixArr = vixE.data.map(r => [r.date, r.close]).concat(vix.data.map(r => [r.date, r.close]));
-
-    document.querySelectorAll("[data-aaii-range]").forEach(el =>
+    for (const [path, rows] of [["aaii", nextAaii?.data], ["SP500", sp?.data],
+      ["fear_greed", fg?.data], ["VIX", vix?.data], ["VIX_early", vixE?.data]]) {
+      if (!Array.isArray(rows) || (path !== "VIX_early" && !rows.length)) throw new Error(`${path}: missing data rows`);
+    }
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    const nextSp = sp.data.map(r => [r.date, r.close]);
+    const nextFg = fg.data.map(r => [r.date, r.value]);
+    const nextVix = vixE.data.map(r => [r.date, r.close]).concat(vix.data.map(r => [r.date, r.close]));
+    aaii = nextAaii; spArr = nextSp; fgArr = nextFg; vixArr = nextVix;
+    document.querySelectorAll("[data-aaii-range]").forEach(el => {
+      if (!bindOnce(el)) return;
       el.addEventListener("click", () => {
         rangePreset = el.dataset.aaiiRange;
         document.querySelectorAll("[data-aaii-range]").forEach(e =>
           e.classList.toggle("active", e.dataset.aaiiRange === rangePreset));
         renderChart(); renderTable();
-      }));
-
+      });
+    });
     renderAll();
     status.textContent = `AAII 散戶調查 ${aaii.data.length} 週 · 更新至 ${aaii.updated}`;
   } catch (err) {
+    aaii = null;
     status.textContent = `載入失敗：${err.message}`;
+    throw err;
   }
 }
 
@@ -247,3 +256,5 @@ export function onThemeChange(light) {
 }
 
 export function resize() { aaiiChart?.resize(); }
+
+export function getCharts() { return aaiiChart ? [aaiiChart] : []; }

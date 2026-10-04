@@ -3,6 +3,7 @@
 // self_result 是本頁自算的方向判定，非原作者公式（原作者未公開其成功率計算方法）。
 // 資料 data/banini_reverse_indicator.json，靜態快照，非逐日累積時序。
 import { isLight, tc, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 
 let chartTimeline = null;
 let chartBreakdown = null;
@@ -21,18 +22,22 @@ const RESULT_LABEL = {
   no_data: "無資料",
 };
 
-export async function init() {
+export async function init(context = {}) {
   const status = document.getElementById("banini-status");
   if (raw) { renderAll(); return; }
   status.textContent = "載入中…";
   try {
-    raw = await fetch("data/banini_reverse_indicator.json").then(r => r.json());
+    const next = await requestJSON('data/banini_reverse_indicator.json', { signal: context.signal });
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    raw = next;
     renderAll();
     status.textContent =
       `共 ${raw.data.length} 筆預測 · ${raw.upstream_range.from.slice(0,10)} ~ ${raw.upstream_range.to.slice(0,10)} · 更新至 ${raw.updated} · ` +
       `來源：banini-tracker by cablate (https://github.com/cablate/banini-tracker)`;
   } catch (err) {
+    raw = null;
     status.textContent = `載入失敗：${err.message}`;
+    throw err;
   }
 }
 
@@ -181,3 +186,4 @@ export function resize() {
   chartTimeline?.resize();
   chartBreakdown?.resize();
 }
+export function getCharts() { return [chartTimeline, chartBreakdown].filter(Boolean); }

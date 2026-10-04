@@ -8,15 +8,19 @@
 // 直接用 utils/data.js 的 fetchJSON 讀整份 payload。
 
 import { isLight, echartsBase, PALETTE } from '../utils/theme.js';
-import { fetchJSON } from '../utils/data.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 const TAB_ID = 'gdp_productivity_decomp';
 let chart = null;
 let payload = null; // { updated, note, periods }
 
-async function loadAll() {
-  if (payload) return; // 首次切入才載入
-  payload = await fetchJSON('data/us_gdp_productivity_decomp.json');
+async function loadAll(context = {}) {
+  if (payload) return;
+  const url = "data/us_gdp_productivity_decomp.json";
+  const j = await requestJSON(url, { signal: context.signal });
+  if (!(Array.isArray(j?.periods) && j.periods.some(p => typeof p?.period === 'string' && [p.gdp_cagr,p.productivity_cagr,p.labor_force_cagr].some(Number.isFinite)))) { clearRequestCache(url); throw new Error("gdp_productivity_decomp: missing required data"); }
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+  payload = j;
 }
 
 function buildOption() {
@@ -72,16 +76,18 @@ function renderNote() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById(`${TAB_ID}-chart`);
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
     chart.setOption(buildOption(), { notMerge: true });
     renderNote();
   } catch (e) {
     console.error(`[${TAB_ID}] load failed`, e);
+    throw e;
   }
 }
 
@@ -93,3 +99,5 @@ export function onThemeChange(_light) {
 export function resize() {
   chart?.resize();
 }
+
+export function getCharts() { return [chart].filter(Boolean); }

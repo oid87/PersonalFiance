@@ -12,6 +12,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { chipPicker } from '../utils/dom.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 let excessChart = null;
 let yoyChart = null;
@@ -21,19 +22,20 @@ let showForeign = true;  // TW-only overlay
 
 let llData = null;        // full liquidity_leverage.json
 let investors = null;     // [[date, foreign, foreign_cum], ...] — TW only, reused from taiwan_investors.json
+let investorsUnavailable = false;
 
 const MARKET_LABEL = { tw: "台灣", us: "美國", jp: "日本" };
 const M1_FIELD = { tw: "m1b_yoy", us: "m1_yoy", jp: "m1_yoy" };
 const M1_LABEL = { tw: "M1B 年增率", us: "M1 年增率", jp: "M1 年增率" };
 
-async function loadAll() {
+async function loadAll(context = {}) {
+  if (llData) return;
   const fetchJson = async (path, optional = false) => {
     try {
-      const r = await fetch(path, { cache: "no-cache" });
-      if (!r.ok) { if (optional) return null; throw new Error(`${path}: HTTP ${r.status}`); }
-      return await r.json();
+      const value = await requestJSON(path, { signal: context.signal });
+      return value;
     } catch (e) {
-      if (optional) { console.warn(`[liquidity] optional load failed: ${path}`, e); return null; }
+      if (optional && !context.signal?.aborted) { console.warn(`[liquidity] optional load failed: ${path}`, e); return null; }
       throw e;
     }
   };
@@ -42,8 +44,11 @@ async function loadAll() {
     fetchJson("data/liquidity_leverage.json"),
     fetchJson("data/taiwan_investors.json", true),
   ]);
+  const nextInvestors = (inv?.data ?? []).map(r => [r.date, r.foreign, r.foreign_cum]);
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
   llData = ll;
-  investors = (inv?.data ?? []).map(r => [r.date, r.foreign, r.foreign_cum]);
+  investors = nextInvestors;
+  investorsUnavailable = !inv;
 }
 
 function rows() {
@@ -280,27 +285,31 @@ function renderAll() {
     parts.push(`範圍 ${llRange}`);
     const note = llData?.[market]?.note;
     if (note) parts.push(note);
+    if (investorsUnavailable) parts.push('部分來源暫不可用：外資買超');
     statusEl.textContent = parts.join(" · ");
   }
 }
 
-async function initOnce() {
+async function initOnce(context = {}) {
   if (llData) return;
-  await loadAll();
+  await loadAll(context);
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const elTop = document.getElementById("liquidity-chart");
   const elBottom = document.getElementById("liquidity-yoy-chart");
   if (!excessChart && elTop) excessChart = echarts.init(elTop, isLight() ? null : "dark");
   if (!yoyChart && elBottom) yoyChart = echarts.init(elBottom, isLight() ? null : "dark");
   try {
-    await initOnce();
-    setTimeout(() => { excessChart?.resize(); yoyChart?.resize(); renderAll(); }, 50);
+    await initOnce(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    excessChart?.resize(); yoyChart?.resize(); renderAll();
   } catch (e) {
     const s = document.getElementById("liquidity-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[liquidity] load failed", e);
+    throw e;
   }
 }
 
@@ -314,6 +323,7 @@ export function onThemeChange(light) {
 }
 
 export function resize() { excessChart?.resize(); yoyChart?.resize(); }
+export function getCharts() { return [excessChart, yoyChart].filter(Boolean); }
 
 // === Event wiring ===
 chipPicker(document.getElementById("ll-market-picker"), "ll-mkt", v => {
