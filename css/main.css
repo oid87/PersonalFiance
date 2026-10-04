@@ -1,4 +1,6 @@
 @import url("./navigation.css");
+@import url("./chart-focus.css");
+@import url("./dashboard-layout.css");
     :root {
       --bg: #0e1117;
       --panel: #161b22;

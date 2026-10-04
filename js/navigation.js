@@ -47,6 +47,63 @@ export function visibleDialogGeometry(viewport) {
   };
 }
 
+function editingTarget(target) {
+  return Boolean(target?.isContentEditable ||
+    target?.closest?.('input, textarea, select, [contenteditable]:not([contenteditable="false"]), [role="textbox"]'));
+}
+
+// One entry point for the existing dialog; keyboard opening must retain its origin.
+export function bindScreenSearchControls({ document, dialog, search, openButton, closeButton,
+  prepareDialog, updateDialogViewport }) {
+  let returnFocus = openButton;
+
+  function openDialog(origin) {
+    if (!dialog.open) {
+      returnFocus = origin || openButton;
+      prepareDialog();
+      dialog.showModal();
+      updateDialogViewport();
+    }
+    search.focus();
+  }
+
+  function closeDialog(focusTarget = returnFocus) {
+    if (!dialog.open) return;
+    dialog.close();
+    (focusTarget?.isConnected ? focusTarget : openButton)?.focus();
+  }
+
+  openButton.title = '全部畫面（⌘K / Ctrl+K）';
+  openButton.setAttribute('aria-keyshortcuts', 'Meta+K Control+K');
+  openButton.addEventListener('click', () => openDialog(openButton));
+  closeButton.addEventListener('click', () => closeDialog());
+  document.addEventListener('keydown', event => {
+    if (event.defaultPrevented || event.isComposing || event.keyCode === 229 ||
+        event.altKey || event.shiftKey || event.repeat ||
+        !(event.metaKey || event.ctrlKey) || event.key?.toLowerCase() !== 'k') return;
+    const targets = event.composedPath?.() || [event.target];
+    const active = document.activeElement;
+    // The search itself may be refocused; other editors retain their shortcuts.
+    if ([...targets, active].some(target => target !== search && editingTarget(target))) return;
+    const modals = document.querySelectorAll('dialog[open], [role="dialog"][aria-modal="true"]');
+    if ([...modals].some(other => other !== dialog && !other.hidden && !other.closest?.('[hidden]'))) return;
+    event.preventDefault();
+    openDialog(active);
+  });
+  dialog.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !event.defaultPrevented &&
+        !event.isComposing && event.keyCode !== 229) {
+      event.preventDefault();
+      closeDialog();
+    }
+  });
+  dialog.addEventListener('cancel', event => {
+    event.preventDefault();
+    closeDialog();
+  });
+  return closeDialog;
+}
+
 function chipRange(chip) {
   if (!chip?.classList.contains('chip')) return null;
   for (const attr of chip.attributes) {
@@ -260,11 +317,6 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
     results.scrollTop = 0;
   }
 
-  function closeDialog(focusTarget = openButton) {
-    dialog.close();
-    focusTarget?.focus();
-  }
-
   function updateDialogViewport() {
     if (!dialog.open) return;
     const geometry = visibleDialogGeometry(visualViewport);
@@ -280,26 +332,15 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
   }
 
   categorySelect.addEventListener('change', () => chooseCategory(categorySelect.value));
-  openButton.addEventListener('click', () => {
-    search.value = '';
-    shareInput.hidden = true;
-    shareStatus.textContent = '';
-    renderResults();
-    dialog.showModal();
-    updateDialogViewport();
-    results.scrollTop = 0;
-    search.focus();
-  });
-  closeButton.addEventListener('click', () => closeDialog());
-  dialog.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      closeDialog();
-    }
-  });
-  dialog.addEventListener('cancel', event => {
-    event.preventDefault();
-    closeDialog();
+  const closeDialog = bindScreenSearchControls({
+    document, dialog, search, openButton, closeButton, updateDialogViewport,
+    prepareDialog() {
+      search.value = '';
+      shareInput.hidden = true;
+      shareStatus.textContent = '';
+      renderResults();
+      results.scrollTop = 0;
+    },
   });
   search.addEventListener('input', renderResults);
   clearButton.addEventListener('click', () => {
