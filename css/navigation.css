@@ -1,0 +1,129 @@
+    /* ── Navigation ──────────────────────────────────────────────── */
+    :root { --cat-bar-h: 0px; }
+    body { padding-bottom: env(safe-area-inset-bottom); }
+    .navigation-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+    .cat-bar { display: flex; flex: 1; flex-wrap: wrap; gap: 4px; min-width: 0; }
+    .cat-btn, #all-screens-btn, #screen-dialog button, #category-select {
+      font: inherit;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .cat-btn { padding: 7px 12px; font-size: 13px; white-space: nowrap; }
+    .cat-btn:hover, #all-screens-btn:hover, #screen-dialog button:hover { border-color: var(--accent); }
+    .cat-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    #all-screens-btn { padding: 8px 14px; white-space: nowrap; flex-shrink: 0; }
+    .mobile-category-label, #category-select { display: none; }
+    :is(.cat-btn, .sub-btn, #all-screens-btn, #category-select, #screen-dialog button, #screen-search):focus-visible {
+      outline: 3px solid var(--accent);
+      outline-offset: 2px;
+    }
+    #screen-dialog {
+      width: min(620px, calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+      height: min(780px, calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+      padding: 20px;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 24px 64px #0007;
+      overflow: hidden;
+    }
+    #screen-dialog[open] { display: flex; flex-direction: column; }
+    #screen-dialog::backdrop { background: #0009; }
+    .screen-dialog-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 12px; margin-bottom: 16px; }
+    .screen-dialog-header h2 { margin: 0; font-size: 20px; }
+    #screen-dialog-close, #screen-search-clear { padding: 7px 10px; }
+    #screen-dialog label { display: block; margin-bottom: 6px; font-size: 13px; color: var(--muted); }
+    .screen-search-row { display: flex; flex-shrink: 0; gap: 8px; }
+    #screen-search {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 12px;
+      font: inherit;
+      color: var(--text);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    #screen-result-count { color: var(--muted); font-size: 13px; margin: 12px 0; flex-shrink: 0; }
+    #screen-results { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+    .screen-result-group { margin: 0 0 16px; }
+    .screen-result-group h3 { font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+    #screen-dialog .screen-result {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin: 2px 0;
+      padding: 9px 12px;
+      font-size: 14px;
+    }
+
+    /* ── Sub-nav (scrollable pill bar below header) ──────────────── */
+    .sub-nav {
+      display: flex;
+      padding: 0 16px;
+      gap: 6px;
+      overflow-x: auto;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      height: 44px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      flex-shrink: 0;
+    }
+    .sub-nav::-webkit-scrollbar { display: none; }
+    .sub-btn {
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 20px;
+      color: var(--muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 5px 14px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: color .15s, background .15s, border-color .15s;
+    }
+    .sub-btn:hover { color: var(--text); }
+    .sub-btn.active { background: var(--accent); color: #fff; }
+
+    .screen-dialog-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    #screen-favorites-only[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+    #screen-favorites-only [aria-hidden="true"] { margin-left: 4px; }
+    #screen-share-status { margin: 0 0 6px; font-size: 13px; color: var(--muted); flex-shrink: 0; }
+    #screen-share-status:empty { display: none; }
+    #screen-share-url {
+      width: 100%; min-width: 0; min-height: 44px; margin-bottom: 6px; padding: 8px;
+      border: 1px solid var(--border); border-radius: 8px; color: var(--text); background: var(--panel);
+      font: inherit; flex-shrink: 0;
+    }
+    #screen-share-url[hidden] { display: none; }
+    .screen-result-row { display: flex; align-items: stretch; gap: 6px; }
+    #screen-dialog .screen-result-row .screen-result { width: auto; flex: 1; min-width: 0; }
+    #screen-dialog .screen-favorite { flex: 0 0 44px; min-height: 44px; font-size: 18px; }
+    #screen-dialog .screen-favorite[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+    #screen-dialog.viewport-compact { padding: 8px; }
+    #screen-dialog.viewport-compact .screen-dialog-header { margin-bottom: 4px; }
+    #screen-dialog.viewport-compact .screen-dialog-header h2 { font-size: 16px; white-space: nowrap; }
+    #screen-dialog.viewport-compact .screen-dialog-actions { gap: 4px; }
+    #screen-dialog.viewport-compact .screen-dialog-actions button { min-width: 44px; min-height: 44px; padding: 4px; font-size: 12px; }
+    #screen-dialog.viewport-compact #screen-favorites-only { width: 44px; }
+    #screen-dialog.viewport-compact .screen-favorites-label { display: none; }
+    #screen-dialog.viewport-compact #screen-favorites-only [aria-hidden="true"] { margin: 0; font-size: 18px; }
+    #screen-dialog.viewport-compact > label[for="screen-search"] {
+      position: absolute; width: 1px; height: 1px; overflow: hidden;
+      clip-path: inset(50%); white-space: nowrap;
+    }
+    #screen-dialog.viewport-compact #screen-result-count { margin: 4px 0; }
+    #screen-dialog.viewport-compact .screen-result-group { margin-bottom: 8px; }
