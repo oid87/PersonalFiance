@@ -7,11 +7,54 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from check_pipeline import check, route_sequences
+from source_contracts import expand_contracts, stock_stems
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class PipelineTest(unittest.TestCase):
+    def fixture_root(self, root):
+        scripts = root / 'scripts'
+        scripts.mkdir()
+        for path in (ROOT / 'scripts').glob('*.py'):
+            if path.name.startswith(('fetch_', 'prep_', 'compute_')):
+                (scripts / path.name).symlink_to(path)
+        for name in ('source_manifest.json', 'update_all.sh', 'run_us_macro_pipeline.sh'):
+            (scripts / name).write_bytes((ROOT / 'scripts' / name).read_bytes())
+        workflow = root / '.github/workflows'
+        workflow.mkdir(parents=True)
+        for name in ('fetch.yml', 'forward_pe.yml'):
+            (workflow / name).write_bytes((ROOT / '.github/workflows' / name).read_bytes())
+
+    def test_manifest_matches_all_routes(self):
+        self.assertEqual(check(ROOT), [])
+        routes = route_sequences(ROOT)
+        self.assertEqual(routes['forward_pe'], ['fetch_forward_pe.py'] * 2)
+        self.assertNotIn('fetch_margin_ratio_mm.py', sum(routes.values(), []))
+        contracts, required = expand_contracts(ROOT, json.loads((ROOT / 'scripts/source_manifest.json').read_text()))
+        self.assertEqual(len(stock_stems(ROOT)), 41)
+        self.assertEqual(len(required), 41)
+        self.assertEqual(contracts['QQQ.json']['profile'], 'ohlcv')
+
+    def test_new_unwired_source_is_detected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.fixture_root(root)
+            (root / 'scripts/fetch_unwired.py').write_text('# synthetic fixture\n')
+            self.assertIn('source inventory mismatch', '\n'.join(check(root)))
+
+    def test_dependency_order_regression_is_detected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            self.fixture_root(root)
+            path = root / 'scripts/source_manifest.json'
+            manifest = json.loads(path.read_text())
+            entry = next(e for e in manifest['sources'] if e['script'] == 'scripts/fetch_aaii.py')
+            entry['depends_on'] = ['scripts/fetch_yields.py']
+            path.write_text(json.dumps(manifest))
+            self.assertIn('runs after', '\n'.join(check(root)))
+
     def test_dry_run_never_invokes_git_or_fetch(self):
         with tempfile.TemporaryDirectory() as temp:
             bin_dir = Path(temp)
