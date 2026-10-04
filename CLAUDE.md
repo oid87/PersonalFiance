@@ -9,9 +9,9 @@ GitHub Actions `.github/workflows/fetch.yml` 每天自動跑、跑完 `git add d
 - **06:00 台北（週二–週六）** — cron `0 22 * * 1-5`（美股收盤後）
 - **18:00 台北（週一–週五）** — cron `0 10 * * 1-5`（台股收盤後）
 - 另有 `.github/workflows/forward_pe.yml`：**13:00 台北（週一–週五）** cron `0 5 * * 1-5`，只跑 `fetch_forward_pe.py`（VOO / QQQ），不在 `fetch.yml` 裡。
-- 也可手動 `workflow_dispatch`。本地 `scripts/update_all.sh` = git pull → 所有 fetch（`fetch_forward_pe.py` 除外，只由 `forward_pe.yml` 跑）→ `validate_data.py`，**刻意不 commit / 不 push**（`data/` 只由 Action 單一寫入，避免雙寫分歧）；本地刷新的 `data/` 只供 preview，下次跑 `update_all.sh` 時會先被 `git checkout -- data/` 丟掉。
+- 也可手動 `workflow_dispatch`。本地 `scripts/update_all.sh` = 所有 fetch（`fetch_forward_pe.py` 除外，只由 `forward_pe.yml` 跑）→ `validate_data.py`，**不 commit / 不 push、不切分支、不丟棄本地 data、不自動 pull**。`--dry-run` 只列步驟；明確指定 `--sync-data` 才在 main 且 data 無已追蹤／未追蹤變動時執行 `git pull --ff-only origin main`。本地資料只供 preview，仍由 Action 發佈。
 
-每個 fetch 腳本：讀現有 `data/<x>.json` → 抓最新 → **idempotent 合併**（依日期，新蓋舊）→ 寫回。**新增資料來源時務必三處都加**：寫 `fetch_*.py` → 加進 `fetch.yml`（用 `continue-on-error: true`）→ 加進 `update_all.sh`。
+每個 fetch 腳本：讀現有 `data/<x>.json` → 抓最新 → **idempotent 合併**（依日期，新蓋舊）→ 寫回。**新增資料來源時同步登錄** `scripts/source_manifest.json`（輸出、profile、路由、依賴）與實際 workflow／本地入口；生產來源加進 `fetch.yml` 及 `update_all.sh`，獨立排程／手動來源明確列例外。`scripts/check_pipeline.py` 驗路由與依賴，`scripts/validate_data.py` 驗資料契約；詳見 `docs/source-contracts.md`。
 
 FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workflow step 已設 env），本地讀 repo 根 `.finmind_token` 或 `../Financial_work/.finmind_token`。沒設則匿名（低額度，單次每日呼叫通常仍可）。新腳本一律用 `_common.get_finmind_token()`，別再自寫查找。
 
@@ -22,7 +22,7 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 - `scripts/_valuation.py`：valuation 系列共用的 `ntm_pe(sym, *, throttle, retries=3)`、`weighted_means(pairs)`（算術＋調和）、`write_daily_snapshot(out_path, today, entry, note)`；各檔自己的 HOLDINGS、cap、`MIN_STOCKS`、coverage 算法留在原檔。
 - **刻意沒收斂**（寫法看似重複但語意不同，別硬套）：JSON 寫檔（序列化參數至少 10 種組合，改了就改輸出位元組）、各檔的 User-Agent／headers（每站不同，有的站會擋 bot UA）、依狀態碼分流或兩種 backoff 公式並存的重試迴圈（`fetch_margin_concentration`、`fetch_margin_costmap`、`fetch_taifex_foreign_oi`、`fetch_taiwan_sector_index`、`fetch_tw_sector_flow`、`get_json` 系列，以及 `_breadth.py` 的 chunk 迴圈）、`fetch_tw_valuation.py` 的寫檔尾段、`backfill_tw_valuation_finmind.py` 的 token 順序、`fetch_liquidity*.py` 與 `fetch_inflation_exp.py` 的 FRED 解析。
 - 重試邏輯的重構：即時實跑幾乎走不到重試分支，位元組比對驗不到。要用 `git show HEAD:` 取出舊版，在同一組假資料（patch `yfinance.Ticker` 與 `time.sleep`）下比對回傳值、呼叫次數、sleep 秒數序列（2026-09-25 V 包做法）。
-- 測試：`python3 -m unittest discover -s scripts/tests`（離線；CI 不跑）。CI 用 Python 3.11、本地 miniconda 3.13 → 共用模組別用 3.12+ 語法。
+- 測試：`python3 -m unittest discover -s scripts/tests`（離線；`.github/workflows/checks.yml` 會執行）。CI 用 Python 3.11、本地 miniconda 3.13 → 共用模組別用 3.12+ 語法。
 - ⚠️ **重構 fetch 腳本的等價驗收：改前改後輸出 `cmp` 相同 ≠ 等價。** 多數腳本有「資料夠新就跳過」（如 breadth 的 `FRESHNESS_DAYS`）或快取 TTL（如 `tw_sector_map_cache.json` 7 天），兩次都走 skip 分支時 `cmp` 必然相同、什麼都沒證明（2026-09-25 B2 首輪驗收即如此）。做法：在 scratchpad 建隔離的 `OLD/`、`NEW/` 兩棵樹（`scripts/` + `data/`，腳本的 ROOT 都由 `__file__` 推導），把輸入資料切掉最後 N 列或刪掉快取，逼腳本真的走重算／cache-miss 路徑，從 stdout 確認走到了，再 `cmp`。另外檢查產出檔的 `updated` 是今天、內容與 HEAD 不同，確定兩次都真的有寫檔。別在真 repo 的 `data/` 裡做這件事。
 
 ## Ground truth 原則
