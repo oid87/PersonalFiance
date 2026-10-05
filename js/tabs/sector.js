@@ -292,8 +292,10 @@ function showLineChart(key) {
   if (market === "us") {
     const holdings = (liveHoldings && liveHoldings[key]) || SECTOR_HOLDINGS[key];
     if (holdings) {
+      const loaded = !!(liveHoldings && liveHoldings[key]);
       holdingsHTML = `<div style="margin-top:12px;border-top:1px solid ${bd};padding-top:10px">
         <div style="font-size:12px;color:${mut};margin-bottom:6px">前十大持股</div>
+        <div data-sector-holdings-source="${loaded ? "loaded" : "fallback"}" style="font-size:11px;color:${mut};margin-bottom:6px">${loaded ? "Loaded holdings · 已載入持股清單" : "Fallback holdings · 專案內建清單"}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">${holdings.map(h =>
           `<a href="${googleUrl(h.sym)}" target="_blank" rel="noopener noreferrer"
               style="font-size:12px;padding:3px 8px;border:1px solid ${bd};border-radius:6px;
