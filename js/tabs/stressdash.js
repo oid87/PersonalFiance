@@ -23,6 +23,7 @@ import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate, toWeeklyHLC, lookupLE } from '../utils/dates.js';
 import { computeMA } from '../utils/math.js';
 import { chipPicker } from '../utils/dom.js';
+import { preserveChartState } from '../utils/chartLifecycle.js';
 
 const TICKERS = ["SPY", "QQQ", "SOXX"];
 const NFCI_COLOR    = "#d2a8ff";
@@ -39,6 +40,11 @@ let range      = "3Y";
 // ── module-level data state ────────────────────────────────────────────
 let nfciAnfci    = null;  // raw data/nfci.json rows [{date, nfci, anfci, risk, credit, leverage}]
 let stlfsiKcfsi  = null;  // raw data/stlfsi_kcfsi.json rows [{date, stlfsi4, kcfsi}]
+let optionalUnavailable = false;
+let activeContext = {};
+let activationGeneration = 0;
+let optionalRetry = null;
+const OPTIONAL_PATH = "data/stlfsi_kcfsi.json";
 
 let nfciPairs     = null; // [date, nfci][] full history, ascending
 let nfciMA20Pairs = null;
@@ -51,31 +57,64 @@ let kcfsiMA20Pairs   = null;
 const weeklyCache = {}; // ticker -> [[date, open, high, low, close], ...] (derived from toWeeklyHLC)
 
 // ── load ─────────────────────────────────────────────────────────────
-async function loadAll(context = {}) {
-  if (nfciAnfci) return;
-  const [nfciPayload, stressPayload] = await Promise.all([
-    requestJSON("data/nfci.json", { signal: context.signal }),
-    requestJSON("data/stlfsi_kcfsi.json", { signal: context.signal }),
-  ]);
-  const nextNfci = nfciPayload.data;
-  const nextStress = stressPayload.data;
-
-  const nextNfciPairs = nextNfci.map(r => [r.date, r.nfci]);
-  const nextNfciMA20 = computeMA(nextNfciPairs, 20);
-  const nextNfciMA50 = computeMA(nextNfciPairs, 50);
-
-  const nextStlfsiPairs = nextStress.filter(r => r.stlfsi4 != null).map(r => [r.date, r.stlfsi4]);
-  const nextStlfsiMA20 = computeMA(nextStlfsiPairs, 20);
-
-  const nextKcfsiPairs = nextStress.filter(r => r.kcfsi != null).map(r => [r.date, r.kcfsi]);
-  const nextKcfsiMA20 = computeMA(nextKcfsiPairs, 20);
-
-  await Promise.all(TICKERS.map(k => ensureLoaded(k, context)));
+function requireCurrent(context) {
   if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
-  nfciAnfci = nextNfci; stlfsiKcfsi = nextStress;
-  nfciPairs = nextNfciPairs; nfciMA20Pairs = nextNfciMA20; nfciMA50Pairs = nextNfciMA50;
-  stlfsiPairs = nextStlfsiPairs; stlfsiMA20Pairs = nextStlfsiMA20;
-  kcfsiPairs = nextKcfsiPairs; kcfsiMA20Pairs = nextKcfsiMA20;
+}
+
+function validDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  // check_reuse: keep — schema validation requires a UTC calendar round-trip, not a local chart-axis date.
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function validateRows(payload, fields, required = false) {
+  if (!Array.isArray(payload?.data) || (required && !payload.data.length) ||
+      !payload.data.every(row => validDate(row?.date) && fields.every(field =>
+        (!required && row[field] == null) || Number.isFinite(row[field])))) {
+    throw new Error("Financial stress source: invalid rows");
+  }
+  return payload.data;
+}
+
+async function loadOptional(context, force = false) {
+  requireCurrent(context);
+  try {
+    const payload = await requestJSON(OPTIONAL_PATH, { signal: context.signal, force });
+    requireCurrent(context);
+    return { rows: validateRows(payload, ["stlfsi4", "kcfsi"]), unavailable: false };
+  } catch (error) {
+    requireCurrent(context);
+    if (error.name === "AbortError") throw error;
+    clearRequestCache(OPTIONAL_PATH);
+    return { rows: [], unavailable: true };
+  }
+}
+
+function applyOptional({ rows, unavailable }) {
+  stlfsiKcfsi = rows;
+  optionalUnavailable = unavailable;
+  stlfsiPairs = rows.filter(r => r.stlfsi4 != null).map(r => [r.date, r.stlfsi4]);
+  stlfsiMA20Pairs = computeMA(stlfsiPairs, 20);
+  kcfsiPairs = rows.filter(r => r.kcfsi != null).map(r => [r.date, r.kcfsi]);
+  kcfsiMA20Pairs = computeMA(kcfsiPairs, 20);
+}
+
+async function loadAll(context) {
+  if (nfciAnfci) return null;
+  const [nfciPayload, optional] = await Promise.all([
+    requestJSON("data/nfci.json", { signal: context.signal }),
+    loadOptional(context),
+  ]);
+  requireCurrent(context);
+  let rows;
+  try { rows = validateRows(nfciPayload, ["nfci"], true); }
+  catch (error) { clearRequestCache("data/nfci.json"); throw error; }
+  const pairs = rows.map(r => [r.date, r.nfci]);
+  const ma20 = computeMA(pairs, 20), ma50 = computeMA(pairs, 50);
+  await Promise.all(TICKERS.map(k => ensureLoaded(k, context)));
+  requireCurrent(context);
+  return { rows, pairs, ma20, ma50, optional };
 }
 
 // toWeeklyHLC only carries [date, high, low, close] — no open (loadedHLC never
@@ -127,6 +166,15 @@ function updateCards() {
                : nSig.sig,
     nSig.clr);
 
+  if (optionalUnavailable) {
+    for (const id of ["stlfsi", "kcfsi"]) {
+      setText(`stressdash-${id}-val`, "Unavailable", "var(--muted)");
+      setText(`stressdash-${id}-sub`, "資料暫不可用", "var(--muted)");
+      setText(`stressdash-${id}-signal`, "無法判斷壓力", "var(--muted)");
+    }
+    return;
+  }
+
   const lastStl   = stlfsiPairs[stlfsiPairs.length - 1];
   const lastStlMA = stlfsiMA20Pairs[stlfsiMA20Pairs.length - 1];
   const sSig = levelSignal(lastStl?.[1]);
@@ -146,6 +194,64 @@ function updateCards() {
     lastKc && lastKcMA ? (lastKc[1] > lastKcMA[1] ? `▲ 高於 MA20（${lastKcMA[1].toFixed(2)}）· ${kSig.sig}` : `▼ 低於 MA20（${lastKcMA[1].toFixed(2)}）· ${kSig.sig}`)
                        : kSig.sig,
     kSig.clr);
+}
+
+let statusSummary = "";
+
+function retryIsCurrent(generation, context) {
+  return generation === activationGeneration && !context.signal?.aborted &&
+    context.isCurrent?.() !== false && document.getElementById("tab-stressdash")?.hidden !== true;
+}
+
+function updateStatus() {
+  const status = document.getElementById("stressdash-status");
+  if (!status) return;
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+  status.setAttribute("aria-busy", String(Boolean(optionalRetry)));
+  if (!optionalUnavailable) { status.textContent = statusSummary; return; }
+  let message = status.querySelector("#stressdash-optional-status");
+  let retry = status.querySelector("#stressdash-optional-retry");
+  if (!message || !retry) {
+    status.textContent = "";
+    message = document.createElement("span");
+    message.id = "stressdash-optional-status";
+    retry = document.createElement("button");
+    retry.id = "stressdash-optional-retry";
+    retry.type = "button"; retry.className = "chip";
+    retry.setAttribute("aria-label", "重試 STLFSI4 / KCFSI 資料");
+    retry.addEventListener("click", () => { void retryOptional(); });
+    status.append(message, " ", retry);
+  }
+  message.textContent = `${statusSummary} · STLFSI4 / KCFSI Unavailable，無法判斷其壓力；NFCI 與價格仍可查看。`;
+  retry.disabled = Boolean(optionalRetry);
+  retry.textContent = optionalRetry ? "重試中…" : "重試";
+}
+
+async function retryOptional() {
+  const generation = activationGeneration, context = activeContext;
+  if (optionalRetry || !optionalUnavailable || !retryIsCurrent(generation, context)) return;
+  const attempt = {};
+  optionalRetry = attempt;
+  updateStatus();
+  const retryContext = {
+    signal: context.signal,
+    isCurrent: () => optionalRetry === attempt && retryIsCurrent(generation, context),
+  };
+  try {
+    const next = await loadOptional(retryContext, true);
+    requireCurrent(retryContext);
+    optionalRetry = null;
+    // Capture interactions immediately before repaint, including changes made while loading.
+    await preserveChartState(getCharts, () => { applyOptional(next); render(); });
+  } catch (error) {
+    if (error.name !== "AbortError") throw error;
+  } finally {
+    if (optionalRetry === attempt) {
+      optionalRetry = null;
+      if (retryIsCurrent(generation, context)) updateStatus();
+    }
+  }
 }
 
 // ── summary table ────────────────────────────────────────────────────
@@ -257,9 +363,9 @@ export function render() {
   const kcfsiView2 = kcfsiPairs.filter(r => r[0] >= cut).map(r => [r[0], +r[1].toFixed(3)]);
   const kcfsiMA20View2 = kcfsiMA20Pairs.filter(r => r[0] >= cut).map(r => [r[0], +r[1].toFixed(3)]);
 
-  const status = document.getElementById("stressdash-status");
-  if (status) status.textContent =
+  statusSummary =
     `${ticker} 週K × NFCI/STLFSI4/KCFSI · ${dates1.length} 週（${range}）· 來源 FRED NFCI/STLFSI4/KCFSI`;
+  updateStatus();
 
   const L = mob() ? 40 : 52, R = mob() ? 46 : 60;
   const grid = [
@@ -394,14 +500,27 @@ function buildControls() {
 export async function activate(context = {}) {
   const host = document.getElementById("stressdash-chart");
   if (!host) return;
+  const generation = ++activationGeneration;
+  activeContext = context;
+  optionalRetry = null;
+  const currentContext = { signal: context.signal, isCurrent: () => generation === activationGeneration && context.isCurrent?.() !== false };
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll(context);
+    const next = await loadAll(currentContext);
     await new Promise(resolve => requestAnimationFrame(resolve));
-    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    requireCurrent(currentContext);
+    if (next) {
+      nfciAnfci = next.rows;
+      nfciPairs = next.pairs; nfciMA20Pairs = next.ma20; nfciMA50Pairs = next.ma50;
+      applyOptional(next.optional);
+    }
     chart?.resize(); render();
   } catch (e) {
+    if (e.name === "AbortError") throw e;
+    if (generation !== activationGeneration) throw e;
+    // A failed first render must remain retryable rather than cache partial tab state.
+    nfciAnfci = null;
     const s = document.getElementById("stressdash-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[stressdash] load failed", e);
