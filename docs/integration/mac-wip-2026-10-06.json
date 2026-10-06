@@ -1,0 +1,1681 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-06",
+  "source": "/Users/orangembpm2/work/code/personal_financial/PersonalFiance",
+  "remote": "github.com/oid87/PersonalFiance",
+  "original_branch": "main",
+  "base_HEAD": "77cf005d2a279c284015d47dedc9d746cc29bb98",
+  "base_tree": "7fb48ab0109cf92f4f2906736cf442ccb281329e",
+  "target_branch": "agent/pf-wip-integration-2026-10-06",
+  "original_wip_counts": {
+    "modified": 185,
+    "untracked": 31,
+    "staged": 0,
+    "total": 216
+  },
+  "selected_wip": 45,
+  "deferred_wip": 171,
+  "classification": [
+    {
+      "path": ".agents/skills/fetch-script/SKILL.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Rolls back baseline source routing and failure-policy guidance; preserve local ignored authoring counterpart."
+    },
+    {
+      "path": ".github/workflows/fetch.yml",
+      "kind": "engineering",
+      "decision": "defer",
+      "reason": "Changes daily pipeline failure semantics; provenance/intent unresolved."
+    },
+    {
+      "path": "AGENTS.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Generated guidance rolls back newer baseline wording; defer with CLAUDE.md."
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Rolls back baseline knowledge map; defer reconciliation."
+    },
+    {
+      "path": "CLAUDE.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Rolls back newer baseline guidance; do not change current instructions during WIP integration."
+    },
+    {
+      "path": "CURRENT_STATE.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Historical 2026-10-04 snapshot and stale HEAD/counts; not current integration state."
+    },
+    {
+      "path": "PROJECT_CONTEXT.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Rolls back newer baseline engineering snapshot; defer reconciliation."
+    },
+    {
+      "path": "README.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Historical knowledge-document rollback; defer reconciliation."
+    },
+    {
+      "path": "css/main.css",
+      "kind": "engineering",
+      "decision": "defer",
+      "reason": "Coherent trend WIP conflicts with baseline FPE zero rule/MA150 tests; 14 new failures plus baseline wiring failure. Defer complete feature rather than weaken tests."
+    },
+    {
+      "path": "data/0050.TW.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/AAPL.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/AMZN.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/BTC.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/GCF.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/GLD.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/GOOGL.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/HYG.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/KS11.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/LQD.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/M2.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/MAGS.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/MAGS_valuation.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/META.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/MSFT.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/N225.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/NVDA.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/QQQ.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/QQQ_valuation.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/SOXX.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/SOXX_valuation.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/SP500.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/SP500_PE.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/SPY.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/SPY_valuation.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/SSE.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/SZSE.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/TLT.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/TSLA.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/TWII.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/TW_valuation.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/US10Y.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/US2Y.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/USREC.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/VIX.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/VOO.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/VVIX.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/VXN.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/WSJ_PE.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLB.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLC.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLE.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLF.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLG.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLI.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLK.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLP.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLRE.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLU.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLV.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/XLY.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/aaii.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/banini_reverse_indicator.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/bdc_nav.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/breadth.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/breadth_ndx.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/breadth_tw50.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/breadth_xlg.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/bullbear.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/cboe_putcall.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/central_banks.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/cftc_positions.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/cpi.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/credit_spread.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/delinquency.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/earnings.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/fear_greed.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/finra_short_interest.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/finra_shortvol.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/flows.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/fsi.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/infl_nowcast.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/inflation_exp.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/leverage.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/liquidity.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/liquidity_leverage.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/margin_concentration.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/margin_cost.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/margin_costmap.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/margin_costmap_raw.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/margin_global_kr.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/margin_global_us.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/money_market.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/net_liquidity.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/nfci.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/putcall.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/qqq_sector_flows.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/real_rates.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/relstrength.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/sector_holdings.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/sentiment.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/sp500_ad.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/stlfsi_kcfsi.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taifex_foreign_oi.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_basis.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_business_signal.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_fut_inst.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_investors.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_margin_mktcap.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_margin_ratio.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_margin_total.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_money_supply.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_opt_inst.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_pcratio.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_retail_ls.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_sector_index.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_sentiment.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/taiwan_stress.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/tdcc_holders.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/tpex_margin.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/tw_daytrading.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/tw_jp_kr_gdp_growth.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/tw_sector_flow.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/tw_sector_map_cache.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/tw_semi_valuation.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/twse_mktcap.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/twse_shares_snapshots.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/umich.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_gdp_productivity_decomp.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/manifest.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2021/54f80b40ea49740cef44b6ad4b79b9dbff30bbedc007bf61c6944f337b8f5123.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2021/e1d436491a412a10bea824eb07377634b160ebd9e022dd19ab812c683d1b1253.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2022/2891ae6f4572604c8f3d9772fe05924fb8e188e76c13cafd2812fe6d02225597.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2022/a0df54d513e68af098486d8c5cddc41af9732ddea4a92593c77abed60abf60a3.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2023/9a27842f945c6054a1eeb567e93568ffab47600ef01aa345c48327ea5e9e3041.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2023/a875bbbfd11f07d052b401580cf460d72ddd4e1f4c81f04efde09576ca8016a1.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2024/0a6a7881615fc269b6b538355e0d9fdba7b0c95f79c454bff575fbfc0c1a56ba.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2024/13a9dbd03d0d8e02ebd37c0f9e3d0c13b7440502975730c994d1af3317e4b784.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2025/3b0a1d3eeac5b9c6bbcd0e97555306c9280a9bc90af1b504764c99781a9325c9.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2025/9a6dae0a9f600623fa890adf8c83d8abf57d64ad991c3130d34124435e6de275.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2026/39870436a2a43ba18312ec3b638c390c8c3e96c8a008708bceee3bc292b4eba4.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/DSPIC96/2026/53e7c9552dc8d64c2a7740c2bdd3fe042844581bdb8ecc360e39a2765a397adb.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/PAYEMS/2026/78d9b0458d231cf785ced171ce1a2ee6ad2fed3e16ce0ed1846acf1d7b58a13e.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_archive/observations/UNRATE/2026/e19abceddd4b25ec6951321ff9887085186604dcd84e747d9ef60c66da350d1c.jsonl",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/us_macro_diagnostic.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/usdliq.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/usdtwd.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/vix_skew.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/vix_term.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/vxnvix.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "data/yield_curve.json",
+      "kind": "data-refresh/archive/cache",
+      "decision": "defer",
+      "reason": "Daily refresh or macro observations not committed as feature; preserve bytes locally, provenance not certified"
+    },
+    {
+      "path": "docs/calculations-four.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Optional verbatim legacy-provenance group: excerpt triggers staged diff-check (new blank line at EOF). Preserve exact oracle bytes/hash locally; no source trim or check weakening. Standalone marginpeak test does not depend on this group."
+    },
+    {
+      "path": "docs/calculations-three.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Describes complete trend wrapper extraction deferred in this integration; historical snapshot not current candidate."
+    },
+    {
+      "path": "docs/migration-a.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Historical multi-page acceptance includes deferred trend/sector, external artifact dependencies; defer reconciliation."
+    },
+    {
+      "path": "docs/migration-b.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Historical acceptance claims 21-page state, not present candidate/current test evidence; defer reconciliation."
+    },
+    {
+      "path": "docs/migration-c.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Historical acceptance includes deferred levvol and external artifact links; defer reconciliation."
+    },
+    {
+      "path": "docs/ndx_sox_forward_pe_discussion.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Unrelated future research/spec with unresolved provenance/scope; retain locally, do not start implementation."
+    },
+    {
+      "path": "docs/ndx_sox_forward_pe_spec.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Unrelated future research/spec with unresolved provenance/scope; retain locally, do not start implementation."
+    },
+    {
+      "path": "docs/numeric-repair-a.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Historical acceptance includes deferred sector, must reconcile scope before publication."
+    },
+    {
+      "path": "docs/numeric-validation-b.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "References browser test deferred for personal runtime/preview assumptions; reconcile before publication."
+    },
+    {
+      "path": "docs/pe_sigma_bands_spec.md",
+      "kind": "documentation",
+      "decision": "defer",
+      "reason": "Unrelated future research/spec with unresolved provenance/scope; retain locally, do not start implementation."
+    },
+    {
+      "path": "docs/references/vela-adoption-plan.md",
+      "kind": "documentation",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "docs/references/vela.md",
+      "kind": "documentation",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "docs/source-contracts.md",
+      "kind": "documentation",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "index.html",
+      "kind": "engineering",
+      "decision": "defer",
+      "reason": "Coherent trend WIP conflicts with baseline FPE zero rule/MA150 tests; 14 new failures plus baseline wiring failure. Defer complete feature rather than weaken tests."
+    },
+    {
+      "path": "js/__tests__/fixtures/calculations-four/manifest.json",
+      "kind": "test/fixture",
+      "decision": "defer",
+      "reason": "Optional verbatim legacy-provenance group: excerpt triggers staged diff-check (new blank line at EOF). Preserve exact oracle bytes/hash locally; no source trim or check weakening. Standalone marginpeak test does not depend on this group."
+    },
+    {
+      "path": "js/__tests__/fixtures/calculations-four/marginpeak-legacy.txt",
+      "kind": "test/fixture",
+      "decision": "defer",
+      "reason": "Optional verbatim legacy-provenance group: excerpt triggers staged diff-check (new blank line at EOF). Preserve exact oracle bytes/hash locally; no source trim or check weakening. Standalone marginpeak test does not depend on this group."
+    },
+    {
+      "path": "js/__tests__/fixtures/calculations-three/README.md",
+      "kind": "test/fixture",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/__tests__/marginpeak_calc.test.mjs",
+      "kind": "test/fixture",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/__tests__/trend_calc.test.mjs",
+      "kind": "test/fixture",
+      "decision": "defer",
+      "reason": "Coherent trend WIP conflicts with baseline FPE zero rule/MA150 tests; 14 new failures plus baseline wiring failure. Defer complete feature rather than weaken tests."
+    },
+    {
+      "path": "js/__tests__/trend_ma.test.mjs",
+      "kind": "test/fixture",
+      "decision": "defer",
+      "reason": "Coherent trend WIP conflicts with baseline FPE zero rule/MA150 tests; 14 new failures plus baseline wiring failure. Defer complete feature rather than weaken tests."
+    },
+    {
+      "path": "js/tabs/banini.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/breadth.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/bullbear.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/cashking.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/cpi.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/credit.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/elecseason.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/emfsi.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/flowradar.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/flows.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/kelly.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/levvol.js",
+      "kind": "engineering",
+      "decision": "defer",
+      "reason": "WIP reverses HEAD loading/abort/retry safeguards; keep baseline lifecycle until reviewed with regression evidence."
+    },
+    {
+      "path": "js/tabs/liquidity.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/macro.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/madev.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/marginconc.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/margincost.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/marginglobal.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/marginheat.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/marginmap.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/marginpeak.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/marginpeak_calc.mjs",
+      "kind": "engineering",
+      "decision": "defer",
+      "reason": "Removes exported HORIZONS still imported by marginpeak.js; retain baseline pure module and new independent regression test."
+    },
+    {
+      "path": "js/tabs/naaim.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/putcall.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/qqqmacd.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/roc4.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/sector.js",
+      "kind": "engineering",
+      "decision": "defer",
+      "reason": "Regresses baseline truthy-empty/falsy holdings fallback contract (sector_holdings test)."
+    },
+    {
+      "path": "js/tabs/semi_vs_spx_pe.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/sentiment.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/sox_vs_tw_semi_pe.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/struct.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/trend.js",
+      "kind": "engineering",
+      "decision": "defer",
+      "reason": "Coherent trend WIP conflicts with baseline FPE zero rule/MA150 tests; 14 new failures plus baseline wiring failure. Defer complete feature rather than weaken tests."
+    },
+    {
+      "path": "js/tabs/trend_calc.mjs",
+      "kind": "engineering",
+      "decision": "defer",
+      "reason": "Coherent trend WIP conflicts with baseline FPE zero rule/MA150 tests; 14 new failures plus baseline wiring failure. Defer complete feature rather than weaken tests."
+    },
+    {
+      "path": "js/tabs/twchips.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/twsectorflow.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/twsentiment.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/usdliq.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/usmacro.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/valuation.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/vxnvix.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/wave.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "js/tabs/wkrev.js",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "scripts/fetch_margin_costmap.py",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "scripts/smoke_tabs.cjs",
+      "kind": "engineering",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    },
+    {
+      "path": "scripts/tests/numeric_validation_b.test.mjs",
+      "kind": "test/fixture",
+      "decision": "defer",
+      "reason": "Personal absolute Playwright fallback, fixed external preview port, not offline runner; preserve locally."
+    },
+    {
+      "path": "scripts/tests/test_repair_portability.py",
+      "kind": "test/fixture",
+      "decision": "selected",
+      "reason": "Reviewed WIP source/test/fixture/documentation; staged exact original bytes only after final gates."
+    }
+  ],
+  "selected_fingerprints": [
+    {
+      "path": "docs/references/vela-adoption-plan.md",
+      "sha256": "363f76b4ad87386da377b65df68ef6b9fac46c85c57c0ae59aad8441aecc38af",
+      "mode": 420
+    },
+    {
+      "path": "docs/references/vela.md",
+      "sha256": "9f9c61e8a724f88a74a490b734c75e2b0dc10006e237bfd12db374422cb86abc",
+      "mode": 420
+    },
+    {
+      "path": "docs/source-contracts.md",
+      "sha256": "4958f729e41ceb89622842402320c91bf00c5c7dbd8a054e33155e6b05b29b09",
+      "mode": 420
+    },
+    {
+      "path": "js/__tests__/fixtures/calculations-three/README.md",
+      "sha256": "c571931053c0e2241761a504bdd531df9c1e3165b7a0348db850d34bc98a0831",
+      "mode": 420
+    },
+    {
+      "path": "js/__tests__/marginpeak_calc.test.mjs",
+      "sha256": "e497cefd42821e8221d61dea0a15727d7c59a8f898d66946a9e3bde917dc79d2",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/banini.js",
+      "sha256": "8766e46295eb50c70f26057f3112d816cc7a25fc0ac571b343c892aeff9534b9",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/breadth.js",
+      "sha256": "c6b3d10848a41eb12f07fcc175a19d27ce280650672871c2423d25f6d931e4fa",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/bullbear.js",
+      "sha256": "a4fe4d512c40e0de2a5df7eb2b9be860d4e16526b9678ee54ce1ce2240738ef9",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/cashking.js",
+      "sha256": "d3fa0c5c9bc05c64ecfd80de76ac2891d3c016db129879c83944c2cd49c95b28",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/cpi.js",
+      "sha256": "c2d91b5a94c170638d1cc6770ad84e8c38706e75f09d2f52a5247361ae961c54",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/credit.js",
+      "sha256": "2d8c70a92a9357714889f0c36da5c0c0954f627c20c92980922b6b6ef4f1f296",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/elecseason.js",
+      "sha256": "2f6bbfd21801b1d67dd2a17b9f74a2d076f924d8fe78830bc7d9c37c15becd47",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/emfsi.js",
+      "sha256": "1a39804d410434e4b2250a3eb9d4017aea624a4584ec4ff2fc4ddf96be57e903",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/flowradar.js",
+      "sha256": "44027099b88892b8de09b421e8c5edb7353c6725f0a37d6ff0e7fa4c879ce0b6",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/flows.js",
+      "sha256": "23f5d3474ac803a5a2c395f7dfc7bc7c37b0e6198c17c97a7fc280a79c7f7891",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/kelly.js",
+      "sha256": "4470bf069ec6d25bc787dd6735fc7cca421d85d80969be927df7fd8a9dff0ffd",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/liquidity.js",
+      "sha256": "bead959aba14f80d21cc4274fd7d1ef5cf730c30172b304ee977b1bffa267448",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/macro.js",
+      "sha256": "b8ea8b461b5d9610754440b9f801bd2a1a5421f2a94ed4fd001f72bb13c7ec5f",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/madev.js",
+      "sha256": "eb508ff5eba5fef45577ddae39ba09873f02ef18649ae09c2046beea871be886",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/marginconc.js",
+      "sha256": "f9bccd0a79388d3dba7960755ecffa440eb04af26c4d4a3c9bb552d7273e5231",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/margincost.js",
+      "sha256": "206d99e52e98a1981ec1f759810fb17929ba9ad8a0c176d62c45550a77614599",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/marginglobal.js",
+      "sha256": "902b8c832eee2a0fc11e23d50c315d6ce1c22be90e0896702d4d24d57fca8b51",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/marginheat.js",
+      "sha256": "af40fe7e35e49b55f8681d6557e76592c480535bec9434a4fced61541493e51a",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/marginmap.js",
+      "sha256": "c651b2ee597d9916ee2badde4e65aae38156a11be4b35898b43f7e37ca6c221a",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/marginpeak.js",
+      "sha256": "3aaaaff794f5141f23f17d6c67b34edb61a94a5a77a46e8cb0b393cd666ef0ae",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/naaim.js",
+      "sha256": "99bec6cfe947a12a3baefbb6dd742a51ef1b042dfb27648568006d7e46d5ae79",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/putcall.js",
+      "sha256": "979a3e8be905dcfdbd6cc50a483af384c960af2d402691c94daed14def797921",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/qqqmacd.js",
+      "sha256": "0f70129fd5dfe043fae180851bda15b72955ccbda61acc6c504eaa9423ef15f2",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/roc4.js",
+      "sha256": "a10b4d53a81c779848e177329e28e1a4c99038cb30e0f74d7b99ff459664e629",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/semi_vs_spx_pe.js",
+      "sha256": "dbccf6afd8dc3cf2c5f01f029875d6ebab4542e4566b658cc872b3fd3f3f06c4",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/sentiment.js",
+      "sha256": "789d523adf2f8859f26b55b4ae9af83636dec9dc4276d1289c68cd062242244a",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/sox_vs_tw_semi_pe.js",
+      "sha256": "5f92b1e8d91824337132899bc6dac374f7e4ac426c58368ffed335edd424d220",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/struct.js",
+      "sha256": "83ead3fde740ec71dfbc58bbd58494fa8a95b85ae0d68e6056f0669a2cec5377",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/twchips.js",
+      "sha256": "f85f28a2fa5ed8cfa805ffe165f7251d49bd72c6dacb8b07c86442cbfd2d47a4",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/twsectorflow.js",
+      "sha256": "dde4c3d6a83f203ff2c417bf049706a6b082e65c0179169b1c46c15359ae5cdf",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/twsentiment.js",
+      "sha256": "2acf9112149e3b1ee1a585f1ac1341bb1d1f2c371f50b4be4d05ebae0720f856",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/usdliq.js",
+      "sha256": "6297b6844c3e131ffa1503dc50b0efccdafc47108095bdf041afc1317853edf5",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/usmacro.js",
+      "sha256": "0016161a857b3d98c61a19abf074321796d8f14d793a91f44502e2a31bc24a4f",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/valuation.js",
+      "sha256": "633d7700c4c2066ebbf0dacf7347ed1e73e08206485eef98a558e2be101906fd",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/vxnvix.js",
+      "sha256": "6034a5b0ee73523c8bb7469e768328fddd38848b32bdd093aefe1667646c27fb",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/wave.js",
+      "sha256": "d5112f13153adbfc4f45e70910206124654d39d92b5bdc8eac188a8ba7a3cb45",
+      "mode": 420
+    },
+    {
+      "path": "js/tabs/wkrev.js",
+      "sha256": "0f788beb20ed2ac273a99ff74f7d3713d5454cfdb7ec3f30ea37ffb6248ef2d7",
+      "mode": 420
+    },
+    {
+      "path": "scripts/fetch_margin_costmap.py",
+      "sha256": "7b6db2874d7f7593479b2fe5c916462a61518c16bb56a361f7fcbe024da969f4",
+      "mode": 420
+    },
+    {
+      "path": "scripts/smoke_tabs.cjs",
+      "sha256": "418a4b84f137a3f964da6a5ecedc9f6f5a358d7b0e627f0ebee0d7ef49f86984",
+      "mode": 420
+    },
+    {
+      "path": "scripts/tests/test_repair_portability.py",
+      "sha256": "ebb8734dbe0af5d62fc738526cb93e698ab2f2772a39e710c195f9c63625b1fe",
+      "mode": 420
+    }
+  ],
+  "preservation": {
+    "archive_sha256": "f1b075d1e1dda63893798760c0c28f9dbd1f164ca032efba5ebbcd08383f0e75",
+    "bundle_sha256": "9bb478e9f200f5a422d0dc9248411fca684009d569b25c7880c8ed2c57f7f1d9",
+    "deletions": [],
+    "entry_count": 16352,
+    "inventory_before_sha256": "25078e95439c3a64c2a19a6b8f9635b91a8520e7fb71b88036dea9b26bed86ac",
+    "original_HEAD": "77cf005d2a279c284015d47dedc9d746cc29bb98",
+    "original_branch": "main",
+    "original_tree": "7fb48ab0109cf92f4f2906736cf442ccb281329e",
+    "original_unchanged": true,
+    "product_before_sha256": "f3b3a96f012f378db78dd687a210f5635e87c34777dec49981d1c7637551b7bb",
+    "restore_equal": true,
+    "restore_note": "Default tar extraction rejected absolute venv symlink; own local trusted archive extracted with fully_trusted; restored-only lchmod reinstated six symlink permissions (0755). Complete inventory equality verified. Absolute interpreter target is external runtime dependency, not bundled.",
+    "restored_entry_count": 16352,
+    "source": "/Users/orangembpm2/work/code/personal_financial/PersonalFiance"
+  },
+  "runtime": {
+    "python": "3.13.2",
+    "node": "25.4.0",
+    "playwright": "1.58.0",
+    "chromium": "145.0.7632.6"
+  },
+  "checks": [
+    {
+      "command": "python3 scripts/run_checks.py",
+      "tree": "isolated baseline",
+      "exit": 0,
+      "python_pass": 148,
+      "js_pass": 317,
+      "js_fail": 0
+    },
+    {
+      "command": "python3 scripts/run_checks.py",
+      "tree": "initial 65-path candidate",
+      "exit": 1,
+      "python_pass": 151,
+      "js_pass": 317,
+      "js_fail": 16,
+      "resolution": "Deferred complete conflicting trend feature/source/test/HTML/CSS and sector.js; no baseline tests edited/skipped, no assertions relaxed."
+    },
+    {
+      "command": "python3 scripts/run_checks.py",
+      "tree": "final candidate (baseline data)",
+      "exit": 0,
+      "python_pass": 151,
+      "js_pass": 321,
+      "js_fail": 0,
+      "skipped": 0
+    },
+    {
+      "command": "node --experimental-vm-modules <local production link verifier> <candidate>",
+      "exit": 0,
+      "production_modules": 84
+    },
+    {
+      "command": "python3 scripts/validate_data.py",
+      "exit": 0,
+      "root_json_files": 140
+    },
+    {
+      "command": "python3 scripts/validate_forward_pe.py",
+      "exit": 0
+    },
+    {
+      "command": "fixed-clock affected-page browser comparison",
+      "baseline_runs": 2,
+      "cases_per_run": 37,
+      "candidate_pass": 37,
+      "baseline_deterministic": true,
+      "normal_console_errors_warnings_pageerrors": 0,
+      "http_disk_hash_mismatches": 0,
+      "intentional_difference": "marginmap axisLabel rotate45->0/hideOverlap and readable event notes; all series data unchanged."
+    },
+    {
+      "command": "PLAYWRIGHT_MODULE=<existing local module> node scripts/browser_smoke.cjs --output <new local dir>",
+      "exit": 0,
+      "status": "PASS",
+      "passed": 51,
+      "total": 51,
+      "consoleErrors": 0,
+      "consoleWarnings": 0,
+      "pageErrors": 0,
+      "failedScenarios": [],
+      "exitCode": 0
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts/tests -p test_repair_portability.py",
+      "tree": "original Mac working directory",
+      "exit": 0,
+      "pass": 4
+    },
+    {
+      "command": "git diff --cached --check",
+      "tree": "exact outgoing index",
+      "exit": 0
+    }
+  ],
+  "secret_scan": {
+    "coverage": "All 1120 outgoing index blobs checked with structured patterns and exact known local credential matching; one pre-existing test sentinel reviewed. Initial tracked/untracked scan covered 1115+31 files.",
+    "findings": "One pre-existing test dummy literal in scripts/tests/test_us_macro_pipeline.py; reviewed test-generated sentinel, not a credential. No known local credential match or structured secret match in selected WIP.",
+    "limitation": "Heuristics cannot prove absence of all possible secrets."
+  },
+  "fixture_provenance": "Four local calculation-four excerpt SHA256 values match the deferred manifest. Optional new manifest/marginpeak excerpt/docs group deferred due verbatim fixture trailing-blank-line diff-check; no byte trimming/check weakening. Independent marginpeak unit test uses synthetic inputs, no fixture dependency. calculation-three README documents tracked baseline oracle files.",
+  "local_backup_directory": "/Users/orangembpm2/work/code/personal_financial/qa-artifacts/mac-wip-integration-2026-10-06",
+  "local_backup_upload": false,
+  "limitations": [
+    "Node 22 unavailable locally; previously reported stressdash CI failure remains unresolved/unverified, no fixes/skips/assertion changes. Python3.11 CI not executed.",
+    "Affected-page normal-data comparison is desktop Chromium at fixed clock. It does not establish all chip/optional-failure/abort races for 37 pages; portable interaction suite covers trend/stressdash desktop and mobile.",
+    "Native macOS IME, physical Safari/touch and screen reader not verified.",
+    "External absolute venv interpreter not bundled; no ACL/xattr preservation equivalence claim.",
+    "Local copies of .git/worktrees may contain original absolute registrations: do not prune/repair during restore.",
+    "Historical Vela adoption report is dated provenance already referenced by baseline docs, not a current checkout/test guarantee.",
+    "Cloud must fetch, review ancestry/secret/data boundaries and integrate separately. Mac does not merge Cloud/main or start Phase0/Phase1."
+  ],
+  "cloud_review_findings": [
+    {
+      "priority": "P2",
+      "path": "js/tabs/emfsi.js",
+      "line": 295,
+      "finding": "Stale activation catch unconditionally clears module state/global FSI/TWII cache and writes status; verify timeout -> immediate retry and shared-request concurrency before Cloud merge."
+    },
+    {
+      "priority": "P2",
+      "path": "js/tabs/marginglobal.js",
+      "line": 90,
+      "finding": "Abort caught as ordinary error with console logging/global URL cache clear; verify cancellation/reentry and older consumer cleanup versus shared request."
+    },
+    {
+      "priority": "P2",
+      "path": "js/tabs/usmacro.js",
+      "line": 76,
+      "finding": "Optional unavailable source logs console.warn; normal-data zero-warning evidence does not cover this branch. Verify partial state, retry and expected warning in fault injection."
+    }
+  ],
+  "staged_candidate_equality": {
+    "index_paths": 1120,
+    "all_index_blobs_equal_tested_candidate": true
+  }
+}

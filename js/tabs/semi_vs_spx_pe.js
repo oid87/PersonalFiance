@@ -8,7 +8,7 @@
 // utils/data.js 的 fetchJSON 讀 { data: [...] } payload。
 
 import { isLight, echartsBase, PALETTE } from '../utils/theme.js';
-import { fetchJSON, toPoints, latestOf } from '../utils/data.js';
+import { requestJSON, toPoints, latestOf } from '../utils/data.js';
 
 const TAB_ID = 'semi_vs_spx_pe';
 let chart = null;
@@ -19,16 +19,30 @@ let recAreas = null;   // [[startDate, endDate], ...]
 // 兩檔資料涵蓋範圍的較早起點,USREC 衰退區間只取這之後的,避免畫出資料涵蓋不到的灰底
 const SINCE_DATE = '2004-10-01';
 
-async function loadAll() {
-  if (soxxRows && spyRows && recAreas) return; // 首次切入才載入
+async function loadAll(context = {}) {
+  if (soxxRows && spyRows && recAreas) return;
   const [soxx, spy, usrec] = await Promise.all([
-    fetchJSON('data/SOXX_valuation.json'),
-    fetchJSON('data/SPY_valuation.json'),
-    fetchJSON('data/USREC.json'),
+    requestJSON('data/SOXX_valuation.json', { signal: context.signal }),
+    requestJSON('data/SPY_valuation.json', { signal: context.signal }),
+    requestJSON('data/USREC.json', { signal: context.signal }),
   ]);
-  soxxRows = soxx;
-  spyRows = spy;
-  recAreas = computeRecessionIntervals(usrec, SINCE_DATE);
+  for (const [path, payload] of [['SOXX_valuation', soxx], ['SPY_valuation', spy], ['USREC', usrec]]) {
+    if (!Array.isArray(payload?.data) || !payload.data.length) throw new Error(`${path}: missing data rows`);
+  }
+  const validDate = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  for (const [path, payload] of [['SOXX_valuation', soxx], ['SPY_valuation', spy]]) {
+    if (!payload.data.some(r => Number.isFinite(r?.fpe)) ||
+        !payload.data.every(r => validDate(r?.date) &&
+        (r.fpe == null || Number.isFinite(r.fpe)) &&
+        (r.fpe_harmonic == null || Number.isFinite(r.fpe_harmonic)) &&
+        (r.tpe == null || Number.isFinite(r.tpe)))) throw new Error(`${path}: invalid numeric row`);
+  }
+  if (!usrec.data.every(r => validDate(r?.date) && (r.usrec === 0 || r.usrec === 1))) {
+    throw new Error('USREC: invalid recession row');
+  }
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  const areas = computeRecessionIntervals(usrec.data, SINCE_DATE);
+  soxxRows = soxx.data; spyRows = spy.data; recAreas = areas;
 }
 
 // USREC 是月頻 0/1 序列,轉成連續衰退區間 [startDate, endDate]
@@ -134,16 +148,18 @@ function renderNote() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById(`${TAB_ID}-chart`);
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     chart.setOption(buildOption(), { notMerge: true });
     renderNote();
   } catch (e) {
-    console.error(`[${TAB_ID}] load failed`, e);
+    soxxRows = null; spyRows = null; recAreas = null;
+    throw e;
   }
 }
 
@@ -155,3 +171,5 @@ export function onThemeChange(_light) {
 export function resize() {
   chart?.resize();
 }
+
+export function getCharts() { return chart ? [chart] : []; }

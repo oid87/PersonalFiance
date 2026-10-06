@@ -4,6 +4,7 @@
 //   資料：data/infl_nowcast.json（fetch_infl_nowcast.py 解析 Cleveland Fed HTML table,免 key）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 // 最新月的四個 YoY 預估 + 2% Fed 目標參考
 const YOY = [
@@ -16,11 +17,13 @@ const YOY = [
 let chart = null;
 let payload = null;
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (payload) return;
-  const r = await fetch("data/infl_nowcast.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  payload = await r.json();
+  const url = "data/infl_nowcast.json";
+  const j = await requestJSON(url, { signal: context.signal });
+  if (!(Array.isArray(j?.data) && j.data.some(r => typeof r?.date === 'string' && [r.cpi_yoy,r.core_cpi_yoy,r.pce_yoy,r.core_pce_yoy].some(Number.isFinite)))) { clearRequestCache(url); throw new Error("infl_nowcast: missing required data"); }
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+  payload = j;
 }
 
 function setText(id, txt, color) {
@@ -116,17 +119,20 @@ export function render() {
   }, { notMerge: true });
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("nowc-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    chart?.resize(); render();
   } catch (e) {
     const s = document.getElementById("nowc-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[infl_nowcast] load failed", e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -136,3 +142,5 @@ export function onThemeChange(light) {
   if (payload) render();
 }
 export function resize() { chart?.resize(); }
+
+export function getCharts() { return [chart].filter(Boolean); }

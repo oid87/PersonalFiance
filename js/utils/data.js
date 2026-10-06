@@ -2,26 +2,90 @@ import { loaded, loadedHLC, loadedVol, SERIES, state } from '../state.js';
 
 const REQUEST_TIMEOUT_MS = 15_000;
 
-async function requestJSON(url, label = url) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  try {
-    const response = await fetch(url, { cache: "no-cache", signal: controller.signal });
-    if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`);
-    try {
-      return await response.json();
-    } catch (err) {
-      throw new Error(`${label}: invalid JSON`, { cause: err });
-    }
-  } catch (err) {
-    if (controller.signal.aborted) {
-      throw new Error(`${label}: request timed out after ${REQUEST_TIMEOUT_MS}ms`, { cause: err });
-    }
-    if (err?.message?.startsWith(`${label}:`)) throw err;
-    throw new Error(`${label}: ${err?.message || err}`, { cause: err });
-  } finally {
-    clearTimeout(timer);
+const requestCache = new Map();
+const requestsBySignal = new WeakMap();
+const canonicalURL = url => new URL(url, globalThis.document?.baseURI || globalThis.location?.href || "http://localhost/").href;
+const clonePayload = value => structuredClone(value);
+
+function trackRequest(signal, key, entry) {
+  if (!signal) return;
+  let touched = requestsBySignal.get(signal);
+  if (!touched) { touched = new Map(); requestsBySignal.set(signal, touched); }
+  touched.set(key, entry);
+}
+
+// An activation may reject after a syntactically valid but unusable JSON body.
+// Discard only entries it used, and never delete a newer retry's replacement.
+export function clearRequestCacheForSignal(signal) {
+  const touched = signal && requestsBySignal.get(signal);
+  if (!touched) return;
+  for (const [key, entry] of touched) {
+    if (requestCache.get(key) === entry) requestCache.delete(key);
   }
+  requestsBySignal.delete(signal);
+}
+
+export function clearRequestCache(url) {
+  if (url === undefined) requestCache.clear();
+  else requestCache.delete(canonicalURL(url));
+}
+
+function consumerResult(promise, signal) {
+  if (!signal) return promise.then(clonePayload);
+  if (signal.aborted) return Promise.reject(signal.reason || new DOMException("Request aborted", "AbortError"));
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(signal.reason || new DOMException("Request aborted", "AbortError"));
+    signal.addEventListener("abort", abort, { once: true });
+    promise.then(value => resolve(clonePayload(value)), reject)
+      .finally(() => signal.removeEventListener("abort", abort));
+  });
+}
+
+export function requestJSON(url, { signal, force = false, ttlMs = 300_000, timeoutMs = REQUEST_TIMEOUT_MS, label = url } = {}) {
+  if (signal?.aborted) return Promise.reject(signal.reason || new DOMException("Request aborted", "AbortError"));
+  const key = canonicalURL(url);
+  const previous = requestCache.get(key);
+  if (!force && previous?.value !== undefined && Date.now() < previous.expiresAt) {
+    trackRequest(signal, key, previous);
+    return consumerResult(Promise.resolve(previous.value), signal);
+  }
+  if (!force && previous?.pending) {
+    trackRequest(signal, key, previous);
+    return consumerResult(previous.pending, signal);
+  }
+
+  const generation = (previous?.generation || 0) + 1;
+  const controller = new AbortController();
+  const entry = { generation, pending: null, value: undefined, expiresAt: 0 };
+  requestCache.set(key, entry);
+  trackRequest(signal, key, entry);
+  const pending = (async () => {
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, { cache: "no-cache", signal: controller.signal });
+      if (!response.ok) throw new Error(`${label}: HTTP ${response.status}`);
+      let payload;
+      try { payload = await response.json(); }
+      catch (err) { throw new Error(`${label}: invalid JSON`, { cause: err }); }
+      if (controller.signal.aborted) throw new DOMException("Request aborted", "AbortError");
+      return payload;
+    } catch (err) {
+      if (controller.signal.aborted) throw new Error(`${label}: request timed out after ${timeoutMs}ms`, { cause: err });
+      if (err?.message?.startsWith(`${label}:`)) throw err;
+      throw new Error(`${label}: ${err?.message || err}`, { cause: err });
+    } finally { clearTimeout(timer); }
+  })();
+  entry.pending = pending;
+  pending.then(value => {
+    if (requestCache.get(key) === entry) {
+      entry.value = value;
+      entry.expiresAt = Date.now() + Math.max(0, ttlMs);
+      entry.pending = null;
+    }
+  }, () => {
+    if (requestCache.get(key) === entry) requestCache.delete(key);
+  });
+  return consumerResult(pending, signal);
 }
 
 function isValidDate(value) {
@@ -79,8 +143,8 @@ function parseSeriesRows(s, payload) {
 // (putcall.js: `j.total`/`j.equity` etc.) — those sites are NOT retrofitted
 // to fetchJSON in P0 and are documented here as divergent, not silently
 // unified.
-export async function fetchJSON(url, { raw = false } = {}) {
-  const j = await requestJSON(url, `fetchJSON (${url})`);
+export async function fetchJSON(url, { raw = false, ...options } = {}) {
+  const j = await requestJSON(url, options);
   return raw ? j : j.data || j;
 }
 
@@ -91,11 +155,16 @@ export function isDataFresh(data) {
   return (Date.now() - new Date(lastDate + "T00:00:00Z")) / 86400000 <= 4;
 }
 
-export async function loadSeries(s) {
+export async function loadSeries(s, { signal, isCurrent, force = false, ttlMs } = {}) {
   if (!s?.key || !s?.file) throw new Error("loadSeries: invalid series descriptor");
-  if (loaded[s.key] && isDataFresh(loaded[s.key])) return; // cache hit, still fresh
-  const payload = await requestJSON(s.file, s.key);
-  const next = parseSeriesRows(s, payload);
+  const current = () => !signal?.aborted && (!isCurrent || isCurrent());
+  if (!current()) throw new DOMException("Request aborted", "AbortError");
+  if (!force && loaded[s.key] && isDataFresh(loaded[s.key])) return; // cache hit, still fresh
+  const payload = await requestJSON(s.file, { label: s.key, signal, force, ttlMs });
+  let next;
+  try { next = parseSeriesRows(s, payload); }
+  catch (err) { clearRequestCache(s.file); throw err; }
+  if (!current()) throw new DOMException("Request aborted", "AbortError");
   loaded[s.key] = next.rows;
   if (next.hlc) loadedHLC[s.key] = next.hlc;
   else delete loadedHLC[s.key];
@@ -104,15 +173,15 @@ export async function loadSeries(s) {
   state.sigMaps = null; // invalidate signal lookup cache
 }
 
-export async function ensureLoaded(key) {
+export async function ensureLoaded(key, options = {}) {
   const s = SERIES.find(x => x.key === key);
   if (!s) throw new Error(`Unknown series: ${key}`);
-  await loadSeries(s);
+  await loadSeries(s, options);
 }
 
 export async function loadEarnings() {
   try {
-    const j = await requestJSON("data/earnings.json", "earnings");
+    const j = await requestJSON("data/earnings.json");
     if (!Array.isArray(j?.data)) throw new Error("earnings: missing event rows");
     state.loadedEarnings = j.data;
   } catch { /* Keep the last successful calendar when refresh fails. */ }

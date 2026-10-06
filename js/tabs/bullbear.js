@@ -2,7 +2,9 @@
 // 7 components, each percentile-ranked to 0–10, equal-weight composite.
 // Data: bullbear.json (NAAIM/COT/FRED) + breadth.json + SP500_PE.json + SP500.json
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 import { tsToLocalDate, lookupLE } from '../utils/dates.js';
+import { bindOnce } from '../utils/dom.js';
 
 let gaugeChart = null, mainChart = null;
 let bb = null;            // bullbear.json
@@ -42,49 +44,49 @@ function percentileRank(val, sorted) {
   return (lo / sorted.length) * 10;
 }
 
-function buildComposite() {
+function buildComposite(source = bb, breadth = breadthArr, pe = peArr) {
   const series = {};
   const allVals = {};
 
   // NAAIM → weekly [{date, val}]
-  if (bb.naaim?.length) {
-    series.naaim = bb.naaim.map(r => ({ date: r.date, val: r.mean }));
-    allVals.naaim = bb.naaim.map(r => r.mean).sort((a, b) => a - b);
+  if (source.naaim?.length) {
+    series.naaim = source.naaim.map(r => ({ date: r.date, val: r.mean }));
+    allVals.naaim = source.naaim.map(r => r.mean).sort((a, b) => a - b);
   }
   // MMF (Money Market Fund assets) — NAAIM proxy
-  if (bb.mmf?.length) {
-    series.mmf = bb.mmf.map(r => ({ date: r.date, val: r.value }));
-    allVals.mmf = bb.mmf.map(r => r.value).sort((a, b) => a - b);
+  if (source.mmf?.length) {
+    series.mmf = source.mmf.map(r => ({ date: r.date, val: r.value }));
+    allVals.mmf = source.mmf.map(r => r.value).sort((a, b) => a - b);
   }
   // COT leveraged net
-  if (bb.cot?.length) {
-    series.cot = bb.cot.map(r => ({ date: r.date, val: r.lev_net }));
-    allVals.cot = bb.cot.map(r => r.lev_net).sort((a, b) => a - b);
+  if (source.cot?.length) {
+    series.cot = source.cot.map(r => ({ date: r.date, val: r.lev_net }));
+    allVals.cot = source.cot.map(r => r.lev_net).sort((a, b) => a - b);
   }
   // HY spread
-  if (bb.hy_spread?.length) {
-    series.hy = bb.hy_spread.map(r => ({ date: r.date, val: r.value }));
-    allVals.hy = bb.hy_spread.map(r => r.value).sort((a, b) => a - b);
+  if (source.hy_spread?.length) {
+    series.hy = source.hy_spread.map(r => ({ date: r.date, val: r.value }));
+    allVals.hy = source.hy_spread.map(r => r.value).sort((a, b) => a - b);
   }
   // SLOOS
-  if (bb.sloos?.length) {
-    series.sloos = bb.sloos.map(r => ({ date: r.date, val: r.value }));
-    allVals.sloos = bb.sloos.map(r => r.value).sort((a, b) => a - b);
+  if (source.sloos?.length) {
+    series.sloos = source.sloos.map(r => ({ date: r.date, val: r.value }));
+    allVals.sloos = source.sloos.map(r => r.value).sort((a, b) => a - b);
   }
   // Consumer sentiment
-  if (bb.consumer?.length) {
-    series.consumer = bb.consumer.map(r => ({ date: r.date, val: r.value }));
-    allVals.consumer = bb.consumer.map(r => r.value).sort((a, b) => a - b);
+  if (source.consumer?.length) {
+    series.consumer = source.consumer.map(r => ({ date: r.date, val: r.value }));
+    allVals.consumer = source.consumer.map(r => r.value).sort((a, b) => a - b);
   }
   // Breadth (% above 200MA)
-  if (breadthArr?.length) {
-    series.breadth = breadthArr;
-    allVals.breadth = breadthArr.map(r => r.val).sort((a, b) => a - b);
+  if (breadth?.length) {
+    series.breadth = breadth;
+    allVals.breadth = breadth.map(r => r.val).sort((a, b) => a - b);
   }
   // P/E
-  if (peArr?.length) {
-    series.pe = peArr;
-    allVals.pe = peArr.map(r => r.val).sort((a, b) => a - b);
+  if (pe?.length) {
+    series.pe = pe;
+    allVals.pe = pe.map(r => r.val).sort((a, b) => a - b);
   }
 
   // collect all unique dates (weekly grid from earliest to latest)
@@ -160,38 +162,54 @@ function contrarian(v) {
 
 // ── init ────────────────────────────────────────────────────────────────────
 
-export async function init() {
+export async function init(context = {}) {
   const status = document.getElementById("bb-status");
   if (composite) { renderAll(); return; }
   status.textContent = "載入中…";
   try {
-    const [bbResp, brResp, peResp, spResp] = await Promise.all([
-      fetch("data/bullbear.json"),
-      fetch("data/breadth.json"),
-      fetch("data/SP500_PE.json"),
-      fetch("data/SP500.json"),
+    const [nextBb, br, pe, sp] = await Promise.all([
+      requestJSON("data/bullbear.json", { signal: context.signal }),
+      requestJSON("data/breadth.json", { signal: context.signal }),
+      requestJSON("data/SP500_PE.json", { signal: context.signal }),
+      requestJSON("data/SP500.json", { signal: context.signal }),
     ]);
-    bb = await bbResp.json();
-    const br = await brResp.json();
-    const pe = await peResp.json();
-    const sp = await spResp.json();
-
-    breadthArr = br.data
-      .filter(r => r.above200_pct != null)
-      .map(r => ({ date: r.date, val: r.above200_pct }));
-    peArr = pe.data.map(r => ({ date: r.date, val: r.pe }));
-    spArr = sp.data.map(r => [r.date, r.close]);
-
-    composite = buildComposite();
-
-    document.querySelectorAll("[data-bb-range]").forEach(el =>
+    if (!nextBb || typeof nextBb !== "object") throw new Error("bullbear: invalid payload");
+    for (const [path, rows] of [["breadth", br?.data], ["SP500_PE", pe?.data], ["SP500", sp?.data]]) {
+      if (!Array.isArray(rows) || !rows.length) throw new Error(`${path}: missing data rows`);
+    }
+    const validDate = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
+    const componentFields = { naaim: 'mean', mmf: 'value', cot: 'lev_net',
+      hy_spread: 'value', sloos: 'value', consumer: 'value' };
+    if (!Object.entries(componentFields).every(([key, field]) =>
+      nextBb[key] == null || Array.isArray(nextBb[key]) && nextBb[key].every(r =>
+        validDate(r?.date) && (r[field] == null || Number.isFinite(r[field])))) ||
+      !br.data.every(r => validDate(r?.date) &&
+        (r.above200_pct == null || Number.isFinite(r.above200_pct))) ||
+      !pe.data.every(r => validDate(r?.date) && (r.pe == null || Number.isFinite(r.pe))) ||
+      !sp.data.every(r => validDate(r?.date) && Number.isFinite(r.close) && r.close > 0)) {
+      throw new Error('bullbear: invalid numeric row');
+    }
+    const cleanBb = { ...nextBb };
+    for (const [key, field] of Object.entries(componentFields)) {
+      if (Array.isArray(nextBb[key])) cleanBb[key] = nextBb[key].filter(r => r[field] != null);
+    }
+    const nextBreadth = br.data.filter(r => r.above200_pct != null).map(r => ({ date: r.date, val: r.above200_pct }));
+    const nextPe = pe.data.filter(r => r.pe != null).map(r => ({ date: r.date, val: r.pe }));
+    const nextSp = sp.data.map(r => [r.date, r.close]);
+    const nextComposite = buildComposite(cleanBb, nextBreadth, nextPe);
+    if (!nextComposite.length) throw new Error("bullbear: no composite rows");
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    bb = cleanBb; breadthArr = nextBreadth; peArr = nextPe; spArr = nextSp;
+    composite = nextComposite;
+    document.querySelectorAll("[data-bb-range]").forEach(el => {
+      if (!bindOnce(el)) return;
       el.addEventListener("click", () => {
         rangePreset = el.dataset.bbRange;
         document.querySelectorAll("[data-bb-range]").forEach(e =>
           e.classList.toggle("active", e.dataset.bbRange === rangePreset));
         renderChart();
-      }));
-
+      });
+    });
     renderAll();
     const keyMap = { hy: "hy_spread" };
     const available = COMP_META.filter(m => {
@@ -202,7 +220,9 @@ export async function init() {
     const missing = COMP_META.filter(m => !available.includes(m)).map(m => m.label);
     status.textContent = `${available.length}/${COMP_META.length} 個元件 · ${composite.length} 期 · 檔案更新 ${bb.updated}${missing.length ? ` · 暫缺：${missing.join("、")}（未納入計算）` : ""}`;
   } catch (err) {
+    composite = null; bb = null;
     status.textContent = `載入失敗：${err.message}`;
+    throw err;
   }
 }
 
@@ -373,3 +393,5 @@ function renderChart() {
     ],
   }, true);
 }
+
+export function getCharts() { return [gaugeChart, mainChart].filter(Boolean); }

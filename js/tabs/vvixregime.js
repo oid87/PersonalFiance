@@ -14,6 +14,7 @@
 // 已驗證研究結論（靜態文字，見 info-panel，非本檔重算）：見 vvix_term_regime_backtest.py baseline。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { cutoffDate } from '../utils/dates.js';
 import { chipPicker } from '../utils/dom.js';
 
@@ -47,20 +48,17 @@ function classifyRegime({ vix, ts_ratio, vvix }) {
 }
 
 // ── 資料載入 + 合併（inner join：QQQ 交易日為主軸，三者皆存在才分類） ──
-async function loadAll() {
+async function loadAll(context = {}) {
   if (merged) return;
-  const [vtResp, vvixResp, qqqResp] = await Promise.all([
-    fetch("data/vix_term.json", { cache: "no-cache" }),
-    fetch("data/VVIX.json",     { cache: "no-cache" }),
-    fetch("data/QQQ.json",      { cache: "no-cache" }),
-  ]);
-  if (!vtResp.ok)   throw new Error(`vix_term: HTTP ${vtResp.status}`);
-  if (!vvixResp.ok) throw new Error(`VVIX: HTTP ${vvixResp.status}`);
-  if (!qqqResp.ok)  throw new Error(`QQQ: HTTP ${qqqResp.status}`);
-
   const [vtJson, vvixJson, qqqJson] = await Promise.all([
-    vtResp.json(), vvixResp.json(), qqqResp.json(),
+    requestJSON("data/vix_term.json", { signal: context.signal }),
+    requestJSON("data/VVIX.json", { signal: context.signal }),
+    requestJSON("data/QQQ.json", { signal: context.signal }),
   ]);
+  if (!Array.isArray(vtJson?.data) || !vtJson.data.length || !Array.isArray(vvixJson?.data) || !vvixJson.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.close)) || !Array.isArray(qqqJson?.data) || !qqqJson.data.length) {
+    for (const path of ["data/vix_term.json", "data/VVIX.json", "data/QQQ.json"]) clearRequestCache(path);
+    throw new Error("VVIX regime: missing required rows");
+  }
 
   const vtByDate = new Map();
   for (const r of (vtJson.data || [])) vtByDate.set(r.date, { vix: r.vix, ts_ratio: r.ts_ratio });
@@ -82,6 +80,8 @@ async function loadAll() {
       regime: hasAll ? classifyRegime({ vix, ts_ratio, vvix }) : null,
     });
   }
+  if (!rows.length) throw new Error("VVIX regime: no aligned rows");
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
   merged = rows;
 }
 
@@ -280,18 +280,21 @@ function buildControls() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("vvixregime-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    chart?.resize(); render();
   } catch (e) {
     const s = document.getElementById("vvixregime-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[vvixregime] load failed", e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -301,3 +304,4 @@ export function onThemeChange(light) {
   if (merged) render();
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return [chart].filter(Boolean); }

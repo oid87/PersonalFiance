@@ -26,11 +26,14 @@ const tableTabs = new Set(['cashking', 'earnings', 'tools']);
   try {
     await page.goto(base, { waitUntil: 'networkidle', timeout: 60000 });
     await page.waitForFunction(() => typeof window.echarts !== 'undefined');
-    const categories = await page.locator('[data-cat]').evaluateAll(els => els.map(e => e.dataset.cat));
+    const categories = await page.locator('.cat-btn[data-cat]').evaluateAll(els => els.map(e => e.dataset.cat));
     const seen = new Set();
+    let marketstructureCategory;
     for (const cat of categories) {
-      await page.locator(`[data-cat="${cat}"]`).click();
+      if (mobile) await page.locator('#category-select').selectOption(cat);
+      else await page.locator(`.cat-btn[data-cat="${cat}"]`).click();
       const tabs = await page.locator('.sub-btn').evaluateAll(els => els.map(e => ({ id: e.dataset.tab, label: e.textContent.trim() })));
+      if (tabs.some(tab => tab.id === 'marketstructure')) marketstructureCategory = cat;
       for (const tab of tabs) {
         current = tab.id;
         const startErrors = errors.length;
@@ -72,7 +75,7 @@ const tableTabs = new Set(['cashking', 'earnings', 'tools']);
     await page.setViewportSize(mobile ? { width: 844, height: 390 } : { width: 1200, height: 850 });
     await page.waitForTimeout(200);
     if (seen.has('marketstructure')) {
-      await page.locator('[data-cat="analysis"]').click();
+      await page.locator(`.cat-btn[data-cat="${marketstructureCategory}"]`).click();
       await page.locator('.sub-btn[data-tab="marketstructure"]').click();
       await page.waitForTimeout(500);
       await page.screenshot({ path: outPath.replace(/\.json$/, '.png'), fullPage: true });

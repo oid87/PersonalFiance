@@ -52,6 +52,7 @@ from __future__ import annotations
 import json
 from datetime import date, datetime, timedelta
 from pathlib import Path
+import _common
 
 import requests
 
@@ -136,13 +137,7 @@ def parse_rows(raw_rows: list[dict]) -> list[dict]:
 
 
 def load_existing_rows() -> dict[str, dict]:
-    if not OUT.exists():
-        return {}
-    try:
-        payload = json.loads(OUT.read_text())
-        return {r["date"]: r for r in payload.get("data", []) if r.get("date")}
-    except Exception:
-        return {}
+    return _common.load_strict_rows_by_date(OUT)
 
 
 def main() -> None:

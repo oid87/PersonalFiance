@@ -7,6 +7,7 @@
 //      「最新值」一律 = 該欄最後一筆非 null 的值，不是陣列最後一筆。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { chipPicker } from '../utils/dom.js';
 
 // ── 格式化 helpers ───────────────────────────────────────────────────
@@ -85,15 +86,20 @@ let bufferScale = 'linear'; // 'linear' | 'log'
 let doc = null; // 整份 usdliq.json
 let daily = null, weekly = null, auctions = null, fails = null;
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (doc) return;
-  const r = await fetch('data/usdliq.json', { cache: 'no-cache' });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  doc = await r.json();
-  daily = doc.daily ?? [];
-  weekly = doc.weekly ?? [];
-  auctions = doc.auctions ?? [];
-  fails = doc.fails ?? [];
+  const next = await requestJSON('data/usdliq.json', { signal: context.signal });
+  if (!Array.isArray(next?.daily) || !next.daily.some(r => typeof r?.date === 'string' && [r.effr,r.onrrp,r.sofr,r.tga].some(Number.isFinite)) ||
+      !Array.isArray(next?.weekly) || !next.weekly.some(r => typeof r?.date === 'string' && Number.isFinite(r.reserves))) {
+    clearRequestCache('data/usdliq.json');
+    throw new Error('USD liquidity: missing required daily/weekly rows');
+  }
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+  doc = next;
+  daily = next.daily;
+  weekly = next.weekly;
+  auctions = next.auctions ?? [];
+  fails = next.fails ?? [];
 }
 
 function cutoffDate(key) {
@@ -642,7 +648,7 @@ function buildControls() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const hostC = document.getElementById('ul-corridor');
   const hostB = document.getElementById('ul-buffer');
   const hostS = document.getElementById('ul-supply');
@@ -652,15 +658,16 @@ export async function activate() {
   if (!chartSupply) chartSupply = echarts.init(hostS, isLight() ? null : 'dark');
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => {
-      chartCorridor?.resize(); chartBuffer?.resize(); chartSupply?.resize();
-      renderAll();
-    }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+    chartCorridor?.resize(); chartBuffer?.resize(); chartSupply?.resize();
+    renderAll();
   } catch (e) {
     const s = document.getElementById('ul-status');
     if (s) s.textContent = '載入失敗：' + (e.message || e);
     console.error('[usdliq] load failed', e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -677,3 +684,4 @@ export function onThemeChange(light) {
 export function resize() {
   chartCorridor?.resize(); chartBuffer?.resize(); chartSupply?.resize();
 }
+export function getCharts() { return [chartCorridor, chartBuffer, chartSupply].filter(Boolean); }

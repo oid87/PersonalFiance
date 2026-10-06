@@ -28,6 +28,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from _common import fetch_fred_csv as _fetch_fred_csv
+import _common
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -43,12 +44,7 @@ UA = {"User-Agent": (
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def load_existing() -> dict:
-    if not OUT.exists():
-        return {}
-    try:
-        return json.loads(OUT.read_text())
-    except Exception:
-        return {}
+    return _common.load_existing_object(OUT)
 
 
 def fetch_fred_csv(series_id: str) -> list[dict]:

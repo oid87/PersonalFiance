@@ -4,6 +4,7 @@
 //   資料：data/umich.json（fetch_umich.py 抓 FRED UMCSENT + USREC + yfinance SPY）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const CSI_COLOR  = "#e3b341";  // amber — UMCSENT line
@@ -20,16 +21,19 @@ let recessions = null;  // [{start, end}]
 let spyMap  = null;  // Map<date, close>
 
 // ── data load ────────────────────────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   if (rows) return;
-  const r = await fetch("data/umich.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`umich.json: HTTP ${r.status}`);
-  const j = await r.json();
-
-  rows = (j.umich ?? []).map(x => ({ ...x }));
-  computeMA(rows);
-  recessions = j.recessions ?? [];
-  spyMap = new Map((j.spy ?? []).map(x => [x.date, x.close]));
+  const payload = await requestJSON("data/umich.json", { signal: context.signal });
+  if (!Array.isArray(payload?.umich) || !payload.umich.length) throw new Error("umich.json: missing umich rows");
+  if (!payload.umich.some(r => Number.isFinite(r?.csi))) throw new Error("umich.json: no usable sentiment rows");
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  const nextRows = payload.umich.map(x => ({ ...x }));
+  computeMA(nextRows);
+  const nextRecessions = Array.isArray(payload.recessions) ? payload.recessions : [];
+  const nextSpy = new Map((Array.isArray(payload.spy) ? payload.spy : []).map(x => [x.date, x.close]));
+  rows = nextRows;
+  recessions = nextRecessions;
+  spyMap = nextSpy;
 }
 
 // check_reuse: keep — 就地 mutate 物件陣列、一次跑一整組 period 並綁死欄位名,與 canonical math.computeMA(data, period) 是不同概念
@@ -259,18 +263,20 @@ function buildControls() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("umich-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    chart?.resize();
+    render();
   } catch (e) {
-    const s = document.getElementById("umich-status");
-    if (s) s.textContent = "載入失敗：" + (e.message || e);
-    console.error("[umich] load failed", e);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    rows = null;
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -280,3 +286,5 @@ export function onThemeChange(light) {
   if (rows) render();
 }
 export function resize() { chart?.resize(); }
+
+export function getCharts() { return chart ? [chart] : []; }

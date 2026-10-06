@@ -15,6 +15,7 @@
 // 定位「環境理解」，不是交易訊號 —— 本檔文案與註解一律不做多空/買賣/進出場判讀。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { computeMA } from '../utils/math.js';
 import { chipPicker } from '../utils/dom.js';
 
@@ -34,6 +35,21 @@ let twii    = null;  // number[]，TWII 收盤週值（與 weeks 對齊）
 let emMA    = null;  // { 20: number|null[], 50: …, 200: … }，算在 emInv 上
 let twiiMA  = null;  // { 20: …, 50: …, 200: … }，算在 twii 上
 let latestDaily = null; // fsi.json 最後一筆日頻 rec，供「現值」卡使用
+const validDate = value => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
+function usableRows(rows, key, label, positive = false) {
+  if (!Array.isArray(rows) || !rows.length) throw new Error(`${label}: missing required rows`);
+  for (const row of rows) {
+    const value = row?.[key];
+    if (!row || !validDate(row.date) || (value != null &&
+        (typeof value !== "number" || !Number.isFinite(value) || (positive && value <= 0)))) {
+      throw new Error(`${label}: invalid date or ${key} value`);
+    }
+  }
+  const usable = rows.filter(row => row[key] != null);
+  if (!usable.length) throw new Error(`${label}: no usable ${key} values`);
+  return usable;
+}
 
 // ── weekly resample：取該週最後一個交易日的值，對齊到該週的「週日」 ──────
 // 與 dates.js 的 toWeekly()/toWeeklyHLC() 是不同 key 慣例：那兩支對齊到「週一」；
@@ -62,16 +78,16 @@ function maAligned(pairs, period, alignDates) {
 }
 
 // ── load + weekly resample + MA ─────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   if (weeks) return;
+  try {
   const [fsiJson, twiiJson] = await Promise.all([
-    fetch("data/fsi.json",  { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(`fsi.json: HTTP ${r.status}`); return r.json(); }),
-    fetch("data/TWII.json", { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error(`TWII.json: HTTP ${r.status}`); return r.json(); }),
+    requestJSON("data/fsi.json", { signal: context.signal }),
+    requestJSON("data/TWII.json", { signal: context.signal }),
   ]);
-
-  const fsiRows  = fsiJson?.data ?? [];
-  const twiiRows = twiiJson?.data ?? [];
-  latestDaily = fsiRows.length ? fsiRows[fsiRows.length - 1] : null;
+  const fsiRows = usableRows(fsiJson?.data, "em", "EM FSI");
+  const twiiRows = usableRows(twiiJson?.data, "close", "TWII", true);
+  const nextLatestDaily = fsiRows[fsiRows.length - 1];
 
   const emPairsDaily   = fsiRows.map(r => [r.date, r.em]);
   const twiiPairsDaily = twiiRows.map(r => [r.date, r.close]);
@@ -82,16 +98,23 @@ async function loadAll() {
   const emMap   = new Map(emWeekly);
   const twiiMap = new Map(twiiWeekly);
   // x 軸取兩者交集（FSI 從 2000-01-03、TWII 從 1997-07-02 起，交集起點落在 2000 年那週）
-  weeks = emWeekly.map(([d]) => d).filter(d => twiiMap.has(d));
-
-  emRaw = weeks.map(d => emMap.get(d));
-  emInv = emRaw.map(v => -v);           // 倒置只在這裡做一次，畫圖與 MA 都用這個
-  twii  = weeks.map(d => twiiMap.get(d));
-
-  const emInvPairs = weeks.map((d, i) => [d, emInv[i]]);
-  const twiiPairs  = weeks.map((d, i) => [d, twii[i]]);
-  emMA   = Object.fromEntries(PERIODS.map(p => [p, maAligned(emInvPairs, p, weeks)]));
-  twiiMA = Object.fromEntries(PERIODS.map(p => [p, maAligned(twiiPairs,  p, weeks)]));
+  const nextWeeks = emWeekly.map(([d]) => d).filter(d => twiiMap.has(d));
+  if (!nextWeeks.length) throw new Error("EM FSI and TWII: no overlapping weeks");
+  const nextEmRaw = nextWeeks.map(d => emMap.get(d));
+  const nextEmInv = nextEmRaw.map(v => -v);
+  const nextTwii = nextWeeks.map(d => twiiMap.get(d));
+  const emInvPairs = nextWeeks.map((d, i) => [d, nextEmInv[i]]);
+  const twiiPairs = nextWeeks.map((d, i) => [d, nextTwii[i]]);
+  const nextEmMA = Object.fromEntries(PERIODS.map(p => [p, maAligned(emInvPairs, p, nextWeeks)]));
+  const nextTwiiMA = Object.fromEntries(PERIODS.map(p => [p, maAligned(twiiPairs, p, nextWeeks)]));
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+  latestDaily = nextLatestDaily;
+  weeks = nextWeeks; emRaw = nextEmRaw; emInv = nextEmInv; twii = nextTwii;
+  emMA = nextEmMA; twiiMA = nextTwiiMA;
+  } catch (error) {
+    clearRequestCache("data/fsi.json"); clearRequestCache("data/TWII.json");
+    throw error;
+  }
 }
 
 // check_reuse: keep — 本地 range cutoff 變體：preset key 集合(6M/1Y/2Y/3Y/5Y/10Y/MAX)、
@@ -259,18 +282,23 @@ function buildControls() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("emfsi-chart");
   if (!host) return;
   if (!emfsiChart) emfsiChart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { emfsiChart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    emfsiChart?.resize(); render();
   } catch (e) {
+    weeks = emInv = emRaw = twii = emMA = twiiMA = latestDaily = null;
+    clearRequestCache("data/fsi.json"); clearRequestCache("data/TWII.json");
     const s = document.getElementById("emfsi-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[emfsi] load failed", e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -280,3 +308,4 @@ export function onThemeChange(light) {
   if (weeks) render();
 }
 export function resize() { emfsiChart?.resize(); }
+export function getCharts() { return [emfsiChart].filter(Boolean); }

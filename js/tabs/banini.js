@@ -3,6 +3,7 @@
 // self_result 是本頁自算的方向判定，非原作者公式（原作者未公開其成功率計算方法）。
 // 資料 data/banini_reverse_indicator.json，靜態快照，非逐日累積時序。
 import { isLight, tc, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 
 let chartTimeline = null;
 let chartBreakdown = null;
@@ -21,18 +22,43 @@ const RESULT_LABEL = {
   no_data: "無資料",
 };
 
-export async function init() {
+export async function init(context = {}) {
   const status = document.getElementById("banini-status");
   if (raw) { renderAll(); return; }
   status.textContent = "載入中…";
   try {
-    raw = await fetch("data/banini_reverse_indicator.json").then(r => r.json());
+    const next = await requestJSON('data/banini_reverse_indicator.json', { signal: context.signal });
+    if (!Array.isArray(next?.data) || !next.data.length ||
+        !Array.isArray(next.stats?.monthly_counts) || !next.stats.monthly_counts.length ||
+        !next.stats.monthly_counts.every(r => typeof r?.month === 'string' &&
+          Number.isFinite(r.count) && r.count >= 0) ||
+        !next.stats?.self_success_rate?.overall || !next.stats?.self_success_rate?.['多'] ||
+        !next.stats?.self_success_rate?.['空'] || !next.stats?.by_symbol_type ||
+        !next.stats?.by_reverse_view || !next.upstream_range?.from || !next.upstream_range?.to) {
+      throw new Error('反指標資料格式不完整');
+    }
+    const numericCounts = ['success', 'fail', 'rate_pct'];
+    if (![next.stats.self_success_rate.overall, next.stats.self_success_rate['多'],
+      next.stats.self_success_rate['空']].every(part => numericCounts.every(key =>
+        Number.isFinite(part[key]) && part[key] >= 0)) ||
+      !['insufficient', 'no_data'].every(key =>
+        Number.isFinite(next.stats.self_success_rate.overall[key]) &&
+        next.stats.self_success_rate.overall[key] >= 0) ||
+      ![next.stats.by_symbol_type, next.stats.by_reverse_view].every(groups =>
+        Object.values(groups).every(value => Number.isFinite(value) && value >= 0)) ||
+      !next.data.every(r => typeof r?.created_at === 'string')) {
+      throw new Error('反指標資料數值不完整');
+    }
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    raw = next;
     renderAll();
     status.textContent =
       `共 ${raw.data.length} 筆預測 · ${raw.upstream_range.from.slice(0,10)} ~ ${raw.upstream_range.to.slice(0,10)} · 更新至 ${raw.updated} · ` +
       `來源：banini-tracker by cablate (https://github.com/cablate/banini-tracker)`;
   } catch (err) {
+    raw = null;
     status.textContent = `載入失敗：${err.message}`;
+    throw err;
   }
 }
 
@@ -181,3 +207,4 @@ export function resize() {
   chartTimeline?.resize();
   chartBreakdown?.resize();
 }
+export function getCharts() { return [chartTimeline, chartBreakdown].filter(Boolean); }

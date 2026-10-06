@@ -139,22 +139,24 @@ function buildControls() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("mag7spy-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await ensureLoaded('MAGS');
-    await ensureLoaded('SPY');
+    await Promise.all([ensureLoaded('MAGS', context), ensureLoaded('SPY', context)]);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     buildRatioRows();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    if (!ratioRows.length) throw new Error("MAGS/SPY: no overlapping price rows");
+    chart.resize(); render();
   } catch (e) {
-    const s = document.getElementById("mag7spy-status");
-    if (s) s.textContent = "載入失敗：" + (e.message || e);
-    console.error("[mag7spy] load failed", e);
+    ratioRows = null;
+    document.getElementById("mag7spy-status").textContent = "載入失敗：" + (e.message || e);
+    throw e;
   }
 }
+
 export function onThemeChange(light) {
   if (!chart) return;
   chart.dispose();
@@ -162,3 +164,5 @@ export function onThemeChange(light) {
   if (ratioRows) render();
 }
 export function resize() { chart?.resize(); }
+
+export function getCharts() { return chart ? [chart] : []; }

@@ -1,14 +1,13 @@
-// Tab dispatcher — owns the tab registry and the cross-cutting resize/theme
-// fan-outs. Each entry is { id, module } where module exports any of
-// activate / init / onThemeChange / resize. Missing methods are skipped.
+// Tab dispatcher: selection changes immediately; activation and rendering may be async.
+import { captureChartState, preserveChartState, resizeVisibleCharts, restoreChartState } from './utils/chartLifecycle.js';
+import { clearRequestCacheForSignal } from './utils/data.js';
 
 const tabs = [];
 const activations = new Map();
+const generations = new Map();
 const ACTIVATION_TIMEOUT_MS = 20_000;
 
-export function registerAll(list) {
-  tabs.push(...list);
-}
+export function registerAll(list) { tabs.push(...list); }
 
 function removeState(section) {
   section.removeAttribute("aria-busy");
@@ -34,7 +33,6 @@ function showError(section, id, err) {
   const banner = document.createElement("div");
   banner.className = "status tab-load-error";
   banner.setAttribute("role", "alert");
-
   const message = document.createElement("span");
   message.textContent = `載入失敗：${err?.message || err}`;
   const retry = document.createElement("button");
@@ -45,25 +43,56 @@ function showError(section, id, err) {
   section.appendChild(banner);
 }
 
-async function activateTab(id, section, entry) {
+function moduleFor(entry) { return entry.module || entry.loadedModule; }
+
+async function resolveModule(entry) {
+  const existing = moduleFor(entry);
+  if (existing) return existing;
+  const module = await entry.load();
+  if (!module) throw new Error(`Tab ${entry.id} did not load a module`);
+  entry.loadedModule = module;
+  return module;
+}
+
+async function activateTab(id, section, entry, generation, controller) {
   showLoading(section);
+  const isCurrent = () => generations.get(id) === generation && !controller.signal.aborted;
+  const existingCharts = chartsFor(entry).map(chart => ({ host: chart.getDom?.(), state: captureChartState(chart) }));
   let timer;
   try {
-    const run = Promise.resolve().then(() =>
-      (entry.module.activate || entry.module.init)?.());
+    const run = Promise.resolve().then(async () => {
+      const module = await resolveModule(entry);
+      if (!isCurrent()) return;
+      await (module.activate || module.init)?.({ signal: controller.signal, isCurrent });
+    });
     const timeout = new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error("載入逾時，請重試")), ACTIVATION_TIMEOUT_MS);
+      timer = setTimeout(() => {
+        controller.abort();
+        reject(new Error("載入逾時，請重試"));
+      }, entry.timeoutMs ?? ACTIVATION_TIMEOUT_MS);
     });
     await Promise.race([run, timeout]);
-    removeState(section);
-    return true;
+    if (isCurrent()) {
+      const currentCharts = chartsFor(entry);
+      resizeVisibleCharts(() => currentCharts, section);
+      for (const [index, saved] of existingCharts.entries()) {
+        const chart = currentCharts.find(candidate => candidate.getDom?.() === saved.host) || currentCharts[index];
+        restoreChartState(chart, saved.state);
+      }
+      entry.activated = true;
+      removeState(section);
+    }
+    return isCurrent();
   } catch (err) {
-    showError(section, id, err);
-    console.warn(`[tabs] ${id} activation failed`, err);
+    clearRequestCacheForSignal(controller.signal);
+    if (isCurrent() || (generations.get(id) === generation && controller.signal.aborted)) {
+      showError(section, id, err);
+      console.warn(`[tabs] ${id} activation failed`, err);
+    }
     return false;
   } finally {
     clearTimeout(timer);
-    activations.delete(id);
+    if (generations.get(id) === generation) activations.delete(id);
   }
 }
 
@@ -79,35 +108,51 @@ export async function switchTo(id) {
 
   const pending = activations.get(id);
   if (pending) return pending;
-  const activation = activateTab(id, section, entry);
+  const generation = (generations.get(id) || 0) + 1;
+  generations.set(id, generation);
+  const controller = new AbortController();
+  const activation = activateTab(id, section, entry, generation, controller);
   activations.set(id, activation);
   return activation;
 }
 
-export function applyThemeAll(light) {
-  for (const { id, module } of tabs) {
-    try {
-      Promise.resolve(module.onThemeChange?.(light)).catch(err =>
-        console.warn(`[tabs] ${id} theme update failed`, err));
-    } catch (err) {
-      console.warn(`[tabs] ${id} theme update failed`, err);
-    }
-  }
+function chartsFor(entry) {
+  const module = moduleFor(entry);
+  if (!module) return [];
+  if (module.getCharts) return module.getCharts().filter(Boolean);
+  const section = document.getElementById("tab-" + entry.id);
+  if (!section || !globalThis.echarts?.getInstanceByDom) return [];
+  return [...section.querySelectorAll("[_echarts_instance_]")]
+    .map(el => globalThis.echarts.getInstanceByDom(el)).filter(Boolean);
 }
 
-export function resizeAll() {
-  for (const { id, module } of tabs) {
+export async function applyThemeAll(light) {
+  await Promise.all(tabs.map(async entry => {
+    const module = moduleFor(entry);
+    const section = document.getElementById("tab-" + entry.id);
+    if ((!entry.activated && !chartsFor(entry).length) || !module?.onThemeChange) return;
     try {
-      Promise.resolve(module.resize?.()).catch(err =>
-        console.warn(`[tabs] ${id} resize failed`, err));
-    } catch (err) {
-      console.warn(`[tabs] ${id} resize failed`, err);
-    }
-  }
+      await preserveChartState(() => chartsFor(entry), () => module.onThemeChange(light));
+      resizeVisibleCharts(() => chartsFor(entry), section);
+    } catch (err) { console.warn(`[tabs] ${entry.id} theme update failed`, err); }
+  }));
+}
+
+export async function resizeAll() {
+  await Promise.all(tabs.map(async entry => {
+    const module = moduleFor(entry);
+    const section = document.getElementById("tab-" + entry.id);
+    if (section?.hidden) return;
+    if ((!entry.activated && !chartsFor(entry).length) || !module?.resize) return;
+    try {
+      await preserveChartState(() => chartsFor(entry), () => module.resize());
+      resizeVisibleCharts(() => chartsFor(entry), section);
+    } catch (err) { console.warn(`[tabs] ${entry.id} resize failed`, err); }
+  }));
 }
 
 export function setupResizeHandler() {
   if (window._resizeHandler) window.removeEventListener("resize", window._resizeHandler);
-  window._resizeHandler = () => resizeAll();
+  window._resizeHandler = () => { void resizeAll(); };
   window.addEventListener("resize", window._resizeHandler);
 }

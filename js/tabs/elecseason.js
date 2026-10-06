@@ -9,7 +9,7 @@
 // 理由：三張圖的計算邏輯彼此獨立、樣本窗口不同，攤開一次看比切換更容易對照三張投影片原圖。
 
 import { echartsBase, isLight, PALETTE } from '../utils/theme.js';
-import { fetchJSON } from '../utils/data.js';
+import { requestJSON } from '../utils/data.js';
 import { std, percentile } from '../utils/math.js';
 
 // ── 子圖 A 常數 ──────────────────────────────────────────────────────────
@@ -158,15 +158,21 @@ function computeCyclePaths(rows) {
 }
 
 // ── data load ────────────────────────────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   if (cache) return;
-  const rows = await fetchJSON('data/SP500.json');
+  const payload = await requestJSON('data/SP500.json', { signal: context.signal });
+  if (!Array.isArray(payload?.data)) throw new Error('SP500資料格式不完整');
+  const rows = payload.data.filter(row => typeof row?.date === 'string' &&
+    Number.isFinite(row.close) && row.close > 0);
+  if (rows.length < 252) throw new Error('SP500資料不足以計算選舉季節性');
   const sorted = [...rows].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-  cache = {
+  const next = {
     monthly: computeMonthlyPaths(sorted),
     vol: computeVolTable(sorted),
     cycle: computeCyclePaths(sorted),
   };
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
+  cache = next;
 }
 
 // ── option builders ───────────────────────────────────────────────────────
@@ -278,7 +284,7 @@ function renderAll() {
 }
 
 // ── lifecycle ──────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const hostA = document.getElementById('elecseason-chart-a');
   const hostB = document.getElementById('elecseason-chart-b');
   const hostC = document.getElementById('elecseason-chart-c');
@@ -288,10 +294,12 @@ export async function activate() {
   if (!chartB) chartB = echarts.init(hostB, darkTheme);
   if (!chartC) chartC = echarts.init(hostC, darkTheme);
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
     renderAll();
   } catch (e) {
     console.error('[elecseason] load failed', e);
+    throw e;
   }
 }
 
@@ -304,3 +312,4 @@ export function resize() {
   chartB?.resize();
   chartC?.resize();
 }
+export function getCharts() { return [chartA, chartB, chartC].filter(Boolean); }
