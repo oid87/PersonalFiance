@@ -41,6 +41,17 @@ async function loadAll(context = {}) {
     ...paths.map(path => requestJSON(path, { signal: context.signal })),
   ]);
   const [spyRows, qqqRows, svRows, siRows] = [spy, qqq, sv, si].map(payload => payload?.data);
+  if (![spyRows, qqqRows, svRows, siRows, pcPayload?.equity, skewPayload?.history]
+      .every(rows => Array.isArray(rows) && rows.length) ||
+      !spyRows.some(r => typeof r?.date === 'string' && Number.isFinite(r.close)) ||
+      !qqqRows.some(r => typeof r?.date === 'string' && Number.isFinite(r.close)) ||
+      !svRows.some(r => typeof r?.date === 'string' && Number.isFinite(r.SPY_sv)) ||
+      !siRows.some(r => typeof r?.date === 'string' && Number.isFinite(r.SPY_si)) ||
+      !pcPayload.equity.some(r => typeof r?.date === 'string' && Number.isFinite(r.pc)) ||
+      !skewPayload.history.some(r => typeof r?.d === 'string' && Number.isFinite(r.sk))) {
+    paths.forEach(clearRequestCache);
+    throw new Error('Flow radar: missing required series');
+  }
   if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
   raw = {
     priceRows: {

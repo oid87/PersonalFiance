@@ -63,6 +63,36 @@ Vela 是瀏覽器金融圖表函式庫，包含 headless core、原生 renderer�
 
 **D．不移植：** 上游整個 workspace、交易所連線、drawing runtime、renderer、內建指標公式、Pine engine、state store 或主題品牌。不把 WebGL 宣稱轉成效能結論；不以 crypto provider 取代 ETF／台股／VIX 管線；不將上游 script strategy 直接當可用 backtest。
 
+## 對應 PersonalFiance 與研究子專案
+
+[`README`](../../README.md)、[`CLAUDE.md`](../../CLAUDE.md)、[`runtime-contracts`](../runtime-contracts.md)、[`ui-components`](../ui-components.md) 與 [`Financial_work 架構`](../../../Financial_work/docs/refactor-architecture.md) 是內部依據。
+
+| 本專案責任 | 對應方式 |
+| --- | --- |
+| PersonalFiance 靜態 SPA／ECharts | `index.html`、[`boot.js`](../../js/boot.js)、[`navigation-catalog.mjs`](../../js/navigation-catalog.mjs)、[`switcher.js`](../../js/switcher.js)、各 tab ES module，CDN ECharts、無建置步驟。Vela 僅在參考目錄，不成為 runtime。 |
+| activation／abort／cache | tab 的 `activate({ signal, isCurrent })`；[`data.js`](../../js/utils/data.js) 管請求去重、consumer clone、abort 與 TTL；`switcher.js` 提供失敗重試，各 tab 驗必要 payload 後才提交 module cache。不能用外部 provider cache 蓋掉此契約。 |
+| 金融計算與呈現 | tab 持有 adapter／DOM／option；`*_calc.mjs` 純計算。[`trend.js`](../../js/tabs/trend.js) 和 [`trend_calc.mjs`](../../js/tabs/trend_calc.mjs) 保留既有金融語意。Vela settings UX 不決定研究公式。 |
+| theme／zoom／legend／resize | [`chartLifecycle.js`](../../js/utils/chartLifecycle.js) 捕捉及恢復 zoom／legend，dispatcher 管再進入／主題；[`state.js`](../../js/state.js) 是現有 series／選擇狀態，不能另外建立平行 store。 |
+| 市場資料 | Python `scripts/fetch_*.py` → `data/*.json`；manifest／source contracts 管來源。trend 自訂 ticker 先查 local JSON，僅 HTTP404 才 fallback [`api/stock.js`](../../api/stock.js)，API 取約十年 `1d` historical 並傳 close／OHLCV，不能據此宣稱 intraday 或已驗 adjusted。 |
+| Financial_work 研究 | `study_runtime.py` 管 manifest／provenance，`study_report.py` 提供 Plotly 報告；`web/chart.js` 是 Canvas backtest app。TW dashboards 是各自獨立 repo／app；不跨 repo 引入前端 runtime。Vela UI 參考不改 compute 或 baseline。 |
+
+[`2026-10-03 重構驗收`](../../../Financial_work/docs/refactor-acceptance-2026-10-03.md) 明列第二輪 **FAIL、13 項待修，依指示停止**。其中 trend FPE 缺值與手機直接旋轉問題仍存在。這份參考文件不能當成全部架構通過的證據，也不恢復那些工作。
+
+### 金融語意與需求邊界
+
+- **Bar resolution 與日期窗口不同。** Vela `60` 是 60 分鐘，`D/W/M` 是日／週／月 bar；`timeframeToMs` 的月以 30 日估算僅供 bucketing。PF 的 1Y／5Y／自選起迄是顯示窗口；目前不能把切日期範圍解釋成切 intraday resolution。
+- **Raw 與 adjusted 分開。** PF 固定資料以 raw close（`auto_adjust=False`）為契約，0050 有既定 ratio-splice 修補；不可為了線條連續而改成 adjusted。研究若需要 adjusted／total return，必須明示來源、口徑、as-of 與缺值；API／provider 名稱本身不證明口徑。
+- **VIX 不共用價格單位。** 目前 trend 有獨立 VIX y-axis，並跳過 VIX／F&G 的 MA overlay。未來若做多 pane，VIX 指數點數用獨立 pane／scale／標籤；USD、TWD、報酬率和成交量亦需明確區分，不混畫成一個「價格」。
+- SPY／QQQ／VOO／0050／VIX 已在 trend series 清單；VT 及 MA100／125／150／300 等擴展是未來需求。portfolio、allocation、cashflow、loans、SPYI、watchlist、regime、signals、backtest、AI summaries 的完整產品流程不能一概稱為已實作；個別既有圖表／訊號或研究工具不等於完整模組。
+
+## 建議下一個限縮功能（本次不實作）
+
+**Trend 可選 MA 週期擴展：保留 MA20／50／200，增加 MA100／125／150／300。** 借鏡 Vela 指標設定的選擇／狀態 UX，以既有 ECharts 和 `maActive` 完成。
+
+來源現況：[`trend.js`](../../js/tabs/trend.js) 的 render 明列 `[20, 50, 200]`，HTML `#ma-picker` 對應三個 `data-ma` chip；[`math.js`](../../js/utils/math.js) 的 `computeMA` 是最近 N 筆價格算術平均，滿 N 筆後才出值、四位小數，先在完整 series 計算再 `filterRange`。這是交易資料筆數窗口，不是 N 個日曆天。MA200 在 signal 計算另有固定用途。
+
+未來定案 spec 可限定 `index.html`、`js/tabs/trend.js` 及必要控制項樣式；保留原共用計算，沿用 data-ma 多選與 shared chip 可及性。不得把顯示 MA 選擇改成 signal MA200 參數；不得改價格口徑、資料檔、缺值、日期窗口或 rounding。驗收需比對舊三條 MA 數值完全不變、新週期首點與短 history、範圍切換、theme／zoom／legend／手機控制換行；若涉及現有旋轉或 FPE 問題，應明確列限制並另行授權修正。這項建議沒有包含 VT 新來源、signals 或 backtest。
+
 ## 授權工程筆記
 
 本機 [`LICENSE`](../../references/vela/LICENSE) 為 Apache-2.0；[`NOTICE`](../../references/vela/NOTICE) 實際寫有每個使用 Vela renderer 的頁面／畫面顯示 visible attribution 要求。內建 mark 預設啟用；NOTICE 表示只有同畫面其他可見位置提供 Vela 名稱與專案連結時，才可停用內建 attribution；不能隱藏或遮蔽且沒有等效標示。
@@ -96,3 +126,19 @@ git pull --ff-only
 ```
 
 上游更新後重新記錄 SHA／版本並核對 source map、public exports、LICENSE／NOTICE；本次未建立 submodule、未安裝 package 或 dependencies。
+
+## Main 本輪 setup 驗收
+
+2026-10-03，在實際產品工作目錄執行：
+
+| 檢查 | 實際結果 |
+| --- | --- |
+| checkout 與 Git 隔離 | `references/vela/.git` 是獨立目錄；`git rev-parse --show-toplevel` 分別指向產品與 Vela；Vela `git fsck --no-reflogs` 通過。 |
+| upstream origin／工作目錄 | `origin` 是 `https://github.com/LuxAlgo/Vela.git`；Vela `git status --porcelain` 為空。 |
+| 父 repo 不追蹤 Vela | `git ls-files references/vela` 為空；`git check-ignore -v` 確認 `/references/vela/` 同時排除 source 與 upstream `.git`。 |
+| 文件與來源路徑 | 本文件存在；Main 獨立解析本文件所有相對 Markdown 連結並核對目標存在，另抽查 API、MA 窗口／四位小數、renderer、provider、state 及授權聲明。 |
+| agent 指引 | 只修改唯一來源 `CLAUDE.md`，執行 `scripts/sync_agent_docs.py` 生成 `AGENTS.md`；`--check` 通過；既有 `test_agent_docs.py` 四項測試通過。 |
+| WIP／產品隔離 | 對照開工前檔案 SHA 與 status，既有檔案僅產品 `.gitignore`／`CLAUDE.md`／`AGENTS.md` 改變，新增本文件；沒有 application／market-data／dependency 變動、刪檔或丟失既有 WIP。Financial_work 與 personal_financial_work 原有檔案及 status 均保持。 |
+| 變更衛生 | `git diff --check` 通過；未 stage、commit、push、deploy 或修改 upstream source。父 repo 原有大量 dirty／untracked，驗收的是本輪 delta，不能把原有修改算成本輪。 |
+
+本輪只驗 reference setup／文件；不宣稱先前產品重構的 13 項待修已解決，也未執行上游 runtime／效能驗收。

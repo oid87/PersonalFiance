@@ -22,6 +22,7 @@ import { isLight, mob, PALETTE, echartsBase } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
 import { percentile } from '../utils/math.js';
 import { chipPicker } from '../utils/dom.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 const SOFR_COLOR   = '#58a6ff';
 const EFFR_COLOR   = '#3fb950';
@@ -63,30 +64,49 @@ let marginByMonth = null;  // Map("YYYY-MM" -> $T)
 const idxCache = {};       // { SP500: [[date,close],...], ... }
 
 // ── data load ────────────────────────────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   if (mcData) return;
-  const [mcRes, liqRes] = await Promise.all([
-    fetch('data/margin_cost.json', { cache: 'no-cache' }),
-    fetch('data/liquidity.json', { cache: 'no-cache' }),
+  const [mcJson, liqJson] = await Promise.all([
+    requestJSON('data/margin_cost.json', { signal: context.signal }),
+    requestJSON('data/liquidity.json', { signal: context.signal }),
   ]);
-  if (!mcRes.ok) throw new Error(`margin_cost.json: HTTP ${mcRes.status}`);
-  if (!liqRes.ok) throw new Error(`liquidity.json: HTTP ${liqRes.status}`);
-  const mcJson = await mcRes.json();
-  const liqJson = await liqRes.json();
-  mcData = mcJson.data ?? [];
-  marginByMonth = new Map();
-  for (const r of (liqJson.margin ?? [])) {
-    if (r.debit != null) marginByMonth.set(r.date.slice(0, 7), r.debit / 1e6); // USD millions → $T
+  const rates = ['sofr', 'effr', 'iorb', 'sofr99', 'ffr', 'sofr_iorb_spread'];
+  const validDate = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  if (!Array.isArray(mcJson?.data) || !mcJson.data.some(r =>
+      validDate(r?.date) && Number.isFinite(r.ffr)) ||
+      !mcJson.data.every(r => validDate(r?.date) && rates.every(key =>
+        r[key] == null || Number.isFinite(r[key]))) ||
+      !Array.isArray(liqJson?.margin) || !liqJson.margin.some(r => Number.isFinite(r?.debit)) ||
+      !liqJson.margin.every(r => validDate(r?.date) &&
+        (r.debit == null || Number.isFinite(r.debit)) &&
+        (r.margin == null || Number.isFinite(r.margin)) &&
+        (r.cash == null || Number.isFinite(r.cash)))) {
+    throw new Error('融資成本資料格式不完整');
   }
+  const nextMargin = new Map();
+  for (const r of liqJson.margin) {
+    if (r.debit != null) nextMargin.set(r.date.slice(0, 7), r.debit / 1e6); // USD millions → $T
+  }
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
+  mcData = mcJson.data;
+  marginByMonth = nextMargin;
 }
 
-async function loadIndex(key) {
+async function loadIndex(key, context = {}) {
   if (idxCache[key]) return idxCache[key];
   const meta = DD_INDEX_FILES[key];
-  const r = await fetch(meta.file, { cache: 'no-cache' });
-  if (!r.ok) throw new Error(`${meta.file}: HTTP ${r.status}`);
-  const j = await r.json();
-  const rows = (j.data ?? []).map(x => [x.date, x.close]); // ascending, per data/*.json convention
+  const j = await requestJSON(meta.file, { signal: context.signal });
+  if (!Array.isArray(j?.data)) {
+    clearRequestCache(meta.file);
+    throw new Error(`${meta.label}資料格式不完整`);
+  }
+  const rows = j.data.filter(x => typeof x?.date === 'string' && Number.isFinite(x.close) &&
+    x.close > 0).map(x => [x.date, x.close]); // ascending, per data/*.json convention
+  if (!rows.length) {
+    clearRequestCache(meta.file);
+    throw new Error(`${meta.label}資料沒有可用數值`);
+  }
+  if (context.signal?.aborted || context.isCurrent?.() === false) return null;
   idxCache[key] = rows;
   return rows;
 }
@@ -390,8 +410,10 @@ function renderDDTable(stats) {
   host.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:10px">${cards}</div>`;
 }
 
-async function renderDrawdownSection() {
-  const rows = await loadIndex(ddIndex);
+async function renderDrawdownSection(context = {}) {
+  const key = ddIndex;
+  const rows = await loadIndex(key, context);
+  if (!rows || key !== ddIndex || context.signal?.aborted || context.isCurrent?.() === false) return;
   const ffrMap = new Map(mcData.map(r => [r.date, r.ffr]));
   const ffrMinDate = mcData.length ? mcData[0].date : '1990-01-01';
   const stats = computeDrawdownStats(rows, ffrMap, ffrMinDate);

@@ -14,6 +14,7 @@ import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeMA, computeMACD } from '../utils/math.js';
 import { toWeeklyOHLC } from '../utils/dates.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
+import { requestJSON } from '../utils/data.js';
 
 const TICKERS = [
   { key: "QQQ", label: "QQQ",       file: "data/QQQ.json",   color: "#f778ba" },
@@ -289,16 +290,19 @@ function buildControls() {
   chipPicker(host, "qqqmacd-ticker", v => { ticker = v; refresh(); });
 }
 
-async function loadTicker(key) {
+async function loadTicker(key, context = {}) {
   if (cache[key]) return cache[key];
   const t = TICKERS.find(x => x.key === key);
-  const resp = await fetch(t.file, { cache: "no-cache" });
-  if (!resp.ok) throw new Error(`${key}: HTTP ${resp.status}`);
-  const j = await resp.json();
-  const daily = (j.data || []).map(r => [r.date, r.open, r.high, r.low, r.close, r.volume || 0]);
+  const j = await requestJSON(t.file, { signal: context.signal });
+  if (!Array.isArray(j?.data)) throw new Error(`${key}資料格式不完整`);
+  const daily = j.data.filter(r => typeof r?.date === 'string' &&
+    [r.open, r.high, r.low, r.close].every(v => Number.isFinite(v) && v > 0))
+    .map(r => [r.date, r.open, r.high, r.low, r.close, r.volume || 0]);
+  if (daily.length < 260) throw new Error(`${key}週線資料不足`);
   let weeks = toWeeklyOHLC(daily);
   // 尾端 partial 週整根丟棄（同 python：load_weekly 丟棄未走完的最後一週，不進入任何統計/圖表）
   if (weeks.length && weeks[weeks.length - 1].partial) weeks = weeks.slice(0, -1);
+  if (weeks.length < 55) throw new Error(`${key}完整週數不足`);
 
   const closes = weeks.map(w => w.close);
   const { dif, dea } = computeMACD(closes, 12, 26, 9);
@@ -306,6 +310,7 @@ async function loadTicker(key) {
   const ma50 = alignMA(weeks, 50);
   const res = analyze(weeks, dif, dea, ma20, ma50);
 
+  if (context.signal?.aborted || context.isCurrent?.() === false) return null;
   cache[key] = { weeks, dif, dea, ma20, ma50, res };
   return cache[key];
 }

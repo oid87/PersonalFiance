@@ -2,6 +2,8 @@
 // + 原始元件面板：選擇權 P/C ratio / 台指期散戶多空+外資 / 大盤融資餘額。
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
+import { bindOnce } from '../utils/dom.js';
 
 let chart = null, gauge = null, mcChart = null, basisChart = null, chipsChart = null, forcedChart = null;
 let sent = null;            // taiwan_sentiment.json
@@ -49,59 +51,101 @@ function movingAvg(rows, window) {
   return out;
 }
 
-export async function init() {
+async function optionalJSON(url, valid, context) {
+  try {
+    const payload = await requestJSON(url, { signal: context.signal });
+    if (valid(payload)) return payload;
+    clearRequestCache(url);
+  } catch { /* optional source stays absent; retry on a later activation */ }
+  return null;
+}
+
+export async function init(context = {}) {
   const status = document.getElementById("twsent-status");
-  if (sent) { renderAll(); return; }
+  // Recheck optional sources on reentry. Successful requests remain cached, while
+  // a missing source gets another chance after the route or server recovers.
   status.textContent = "載入中…";
   try {
     const [s, t, p, f, m] = await Promise.all([
-      fetch("data/taiwan_sentiment.json").then(r => r.json()),
-      fetch("data/TWII.json").then(r => r.json()),
-      fetch("data/taiwan_pcratio.json").then(r => r.json()),
-      fetch("data/taiwan_fut_inst.json").then(r => r.json()),
-      fetch("data/taiwan_margin_total.json").then(r => r.json()),
+      requestJSON('data/taiwan_sentiment.json', { signal: context.signal }),
+      requestJSON('data/TWII.json', { signal: context.signal }),
+      requestJSON('data/taiwan_pcratio.json', { signal: context.signal }),
+      requestJSON('data/taiwan_fut_inst.json', { signal: context.signal }),
+      requestJSON('data/taiwan_margin_total.json', { signal: context.signal }),
     ]);
-    sent = s;
-    twii = t.data.map(r => [r.date, r.close]);
-    pc   = p.data;
-    fut  = f.data;
-    mar  = m.data;
+    if (!Array.isArray(s?.data) || !s.data.some(r => typeof r?.date === 'string' &&
+        Number.isFinite(r.composite)) || !Number.isFinite(s.latest?.composite) ||
+        !Array.isArray(t?.data) || !t.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.close)) ||
+        !Array.isArray(p?.data) || !p.data.some(r => typeof r?.date === 'string' &&
+          Number.isFinite(r.vol_pc) && Number.isFinite(r.oi_pc)) ||
+        !Array.isArray(f?.data) || !f.data.some(r => typeof r?.date === 'string' &&
+          Number.isFinite(r.foreign_net) && Number.isFinite(r.retail_net)) ||
+        !Array.isArray(m?.data) || !m.data.some(r => typeof r?.date === 'string' &&
+          Number.isFinite(r.margin_money))) {
+      throw new Error('台股情緒資料格式不完整');
+    }
+    if (!s.data.every(r => typeof r?.date === 'string' &&
+        ['composite', 'pc', 'retail', 'trend', 'lev'].every(key =>
+          r[key] == null || Number.isFinite(r[key]))) ||
+        !t.data.every(r => typeof r?.date === 'string' && Number.isFinite(r.close) && r.close > 0) ||
+        !p.data.every(r => typeof r?.date === 'string' &&
+          Number.isFinite(r.vol_pc) && Number.isFinite(r.oi_pc)) ||
+        !f.data.every(r => typeof r?.date === 'string' &&
+          ['foreign_net', 'trust_net', 'dealer_net', 'inst_net', 'retail_net'].every(key =>
+            Number.isFinite(r[key]))) ||
+        !m.data.every(r => typeof r?.date === 'string' && Number.isFinite(r.margin_money))) {
+      throw new Error('台股情緒資料數值不完整');
+    }
     // 融資維持率:逐日檔(2022-12起，CI 每天更新，權威)接上 mm 檔(2004-02起，月頻回補，ratio_all 口徑相同)。
     // 兩個 fetch 平行、各自容錯，任一失敗不擋另一個；都失敗則 mr=[]（tab 不壞）。
-    const [dailyRatio, mmRatio] = await Promise.all([
-      fetch("data/taiwan_margin_ratio.json")
-        .then(r => (r.ok ? r.json() : null))
-        .then(j => (Array.isArray(j?.data) ? j.data.map(r => [r.date, r.ratio]) : []))
-        .catch(() => []),
-      fetch("data/taiwan_margin_ratio_mm.json")
-        .then(r => (r.ok ? r.json() : null))
-        .then(j => (Array.isArray(j?.data) ? j.data.map(r => [r.date, r.ratio_all]) : []))
-        .catch(() => []),
+    const [dailyPayload, mmPayload, mcPayload, basisPayload, tdccPayload, daytradePayload] = await Promise.all([
+      optionalJSON('data/taiwan_margin_ratio.json', j => Array.isArray(j?.data) &&
+        j.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.ratio)), context),
+      optionalJSON('data/taiwan_margin_ratio_mm.json', j => Array.isArray(j?.data) &&
+        j.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.ratio_all)), context),
+      optionalJSON('data/taiwan_margin_mktcap.json', j => Array.isArray(j?.data) &&
+        j.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.ratio)), context),
+      optionalJSON('data/taiwan_basis.json', j => Array.isArray(j?.data) &&
+        j.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.basis)), context),
+      optionalJSON('data/tdcc_holders.json', j => j?.data && typeof j.data === 'object' &&
+        !Array.isArray(j.data) && Object.values(j.data).some(rows => Array.isArray(rows) &&
+          rows.some(r => typeof r?.date === 'string' && Number.isFinite(r.holders))), context),
+      optionalJSON('data/tw_daytrading.json', j => Array.isArray(j?.data) &&
+        j.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.shares_ratio)), context),
     ]);
+    const dailyRatio = dailyPayload?.data?.map(r => [r.date, r.ratio]) ?? [];
+    const mmRatio = mmPayload?.data?.map(r => [r.date, r.ratio_all]) ?? [];
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    sent = s;
+    twii = t.data.map(r => [r.date, r.close]);
+    pc = p.data;
+    fut = f.data;
+    mar = m.data;
     mr = spliceMarginRatio(mmRatio, dailyRatio);
+    mcData = mcPayload;
+    basisData = basisPayload?.data ?? null;
+    tdccData = tdccPayload;
+    daytradeData = daytradePayload;
 
-    try {
-      const mc = await fetch("data/taiwan_margin_mktcap.json");
-      if (mc.ok) mcData = await mc.json();
-    } catch { /* optional — 缺檔則隱藏該 section */ }
-
-    try { const rb = await fetch("data/taiwan_basis.json"); if (rb.ok) basisData = (await rb.json()).data || null; } catch (e) {}
-
-    try { const rt = await fetch("data/tdcc_holders.json"); if (rt.ok) tdccData = await rt.json(); } catch (e) { /* optional — 缺檔則該序列不畫 */ }
-    try { const rd = await fetch("data/tw_daytrading.json"); if (rd.ok) daytradeData = await rd.json(); } catch (e) { /* optional — 缺檔則該序列不畫 */ }
-
-    document.querySelectorAll("[data-twsent-range]").forEach(el =>
+    renderAll();
+    document.querySelectorAll("[data-twsent-range]").forEach(el => {
+      if (!bindOnce(el)) return;
       el.addEventListener("click", () => {
         rangePreset = el.dataset.twsentRange;
         document.querySelectorAll("[data-twsent-range]").forEach(e =>
           e.classList.toggle("active", e.dataset.twsentRange === rangePreset));
         renderChart(); renderTable(); renderForced(); renderMktcap(); renderBasis(); renderChips();
-      }));
+      });
+    });
 
-    renderAll();
-    status.textContent = `台股恐懼貪婪 ${sent.data.length} 日 · 更新至 ${sent.updated}`;
+    const optionalMissing = [dailyPayload, mmPayload, mcPayload, basisPayload, tdccPayload,
+      daytradePayload].filter(value => !value).length;
+    status.textContent = `台股恐懼貪婪 ${sent.data.length} 日 · 更新至 ${sent.updated}` +
+      (optionalMissing ? ` · ${optionalMissing} 項可選資料暫缺` : '');
   } catch (err) {
+    sent = twii = pc = fut = mar = mr = mcData = basisData = tdccData = daytradeData = null;
     status.textContent = `載入失敗：${err.message}`;
+    throw err;
   }
 }
 

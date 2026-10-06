@@ -47,6 +47,11 @@ async function loadAll(context = {}) {
   const get = async (path, opt = false) => {
     try {
       const value = await requestJSON(path, { signal: context.signal });
+      const records = path.endsWith("umich.json") ? value?.recessions : value?.data;
+      if (!Array.isArray(records) || !records.length || (!opt && !records.some(r => typeof r?.date === 'string' && (path.endsWith('credit_spread.json') ? Number.isFinite(r.hy) || Number.isFinite(r.ig) : Number.isFinite(r.value))))) {
+        clearRequestCache(path);
+        throw new Error(`${path}: missing required rows`);
+      }
       return value;
     } catch (e) { if (opt && !context.signal?.aborted) { console.warn(`[credit] optional ${path}`, e); return null; } throw e; }
   };
@@ -60,14 +65,16 @@ async function loadAll(context = {}) {
     get("data/bdc_nav.json", true),
   ]);
 
-  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
-  spreadData = cs?.data ?? [];
-
-  const y2Map = new Map((y2?.data ?? []).map(r => [r.date, r.value]));
-  yieldData = (y10?.data ?? [])
+  const nextSpread = cs.data;
+  const y2Map = new Map(y2.data.map(r => [r.date, r.value]));
+  const nextYield = y10.data
     .filter(r => y2Map.has(r.date) && r.value != null && y2Map.get(r.date) != null)
     .map(r => ({ date: r.date, spread: +(r.value - y2Map.get(r.date)).toFixed(3) }));
 
+  if (!nextYield.length) throw new Error("credit: no overlapping yield dates");
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+  spreadData = nextSpread;
+  yieldData = nextYield;
   delinqData = dl?.data ?? [];
   sp500Data = (sp?.data ?? []).map(r => [r.date, r.close]);
   recessions = (um?.recessions ?? []).filter(r => r.end >= "1990-01-01");

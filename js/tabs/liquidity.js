@@ -33,6 +33,9 @@ async function loadAll(context = {}) {
   const fetchJson = async (path, optional = false) => {
     try {
       const value = await requestJSON(path, { signal: context.signal });
+      const valid = optional ? Array.isArray(value?.data) && value.data.length > 0
+        : ["tw", "us", "jp"].every(k => Array.isArray(value?.[k]?.monthly) && value[k].monthly.some(r => typeof r?.date === 'string' && [r.index_yoy,r.margin_yoy,r.excess].some(Number.isFinite)));
+      if (!valid) { clearRequestCache(path); throw new Error(`${path}: missing required rows`); }
       return value;
     } catch (e) {
       if (optional && !context.signal?.aborted) { console.warn(`[liquidity] optional load failed: ${path}`, e); return null; }

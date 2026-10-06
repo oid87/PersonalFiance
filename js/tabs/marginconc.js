@@ -12,36 +12,48 @@
 //   候選池是「今日」名單回溯套用到歷史,早期年份集中度可能被低估(倖存者偏誤變體)。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 let chart = null;
 let state = null; // { dates, pctData, percentileData, twiiData, currentValuePct, currentPercentile, leaderboard, note, asOf, latestDataDate, seriesStart, nSamples }
 
 // ── data load ────────────────────────────────────────────────────────
-async function loadAll() {
-  if (state) return;
-  const [mcRes, twiiRes] = await Promise.all([
-    fetch('data/margin_concentration.json', { cache: 'no-cache' }),
-    fetch('data/TWII.json', { cache: 'no-cache' }),
-  ]);
-  if (!mcRes.ok) throw new Error(`margin_concentration.json: HTTP ${mcRes.status}`);
-  const mc = await mcRes.json();
-  let twii = null;
-  if (twiiRes.ok) {
-    try { twii = await twiiRes.json(); } catch { twii = null; }
+async function loadAll(context = {}) {
+  if (state) {
+    if (state.twiiUnavailable) {
+      const twii = await requestJSON('data/TWII.json', { signal: context.signal }).catch(() => null);
+      const validTwii = Array.isArray(twii?.data)
+        ? twii.data.filter(r => typeof r?.date === 'string' && Number.isFinite(r.close) && r.close > 0)
+        : [];
+      if (validTwii.length && !context.signal?.aborted && context.isCurrent?.() !== false) {
+        const byDate = new Map(validTwii.map(r => [r.date, r.close]));
+        state = { ...state, twiiData: state.dates.map(d => byDate.get(d) ?? null), twiiUnavailable: false };
+      } else if (!validTwii.length) clearRequestCache('data/TWII.json');
+    }
+    return;
   }
-
-  const series = mc.concentration_series?.data ?? [];
+  const [mc, twii] = await Promise.all([
+    requestJSON('data/margin_concentration.json', { signal: context.signal }),
+    requestJSON('data/TWII.json', { signal: context.signal }).catch(() => null),
+  ]);
+  const series = mc?.concentration_series?.data;
+  if (!Array.isArray(series) || !series.length ||
+      !series.some(row => typeof row?.date === 'string' && Number.isFinite(row.top10_pct_of_market)) ||
+      !Array.isArray(mc.leaderboard)) throw new Error('融資集中度資料格式不完整');
   const dates = series.map(r => r.date);
   const pctData = series.map(r => r.top10_pct_of_market);
   const percentileData = series.map(r => r.percentile);
 
   let twiiData = null;
-  if (twii?.data?.length) {
-    const twiiByDate = new Map(twii.data.map(r => [r.date, r.close]));
+  const validTwii = Array.isArray(twii?.data)
+    ? twii.data.filter(r => typeof r?.date === 'string' && Number.isFinite(r.close) && r.close > 0)
+    : [];
+  if (validTwii.length) {
+    const twiiByDate = new Map(validTwii.map(r => [r.date, r.close]));
     twiiData = dates.map(d => twiiByDate.get(d) ?? null);
-  }
+  } else clearRequestCache('data/TWII.json');
 
-  state = {
+  const next = {
     dates, pctData, percentileData, twiiData,
     currentValuePct: mc.concentration_series?.current_value_pct ?? null,
     currentPercentile: mc.concentration_series?.current_percentile ?? null,
@@ -53,7 +65,10 @@ async function loadAll() {
     latestDataDate: mc.latest_data_date,
     candidatePoolSize: mc.candidate_pool_size,
     candidatePoolFetchedOk: mc.candidate_pool_fetched_ok,
+    twiiUnavailable: !validTwii.length,
   };
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
+  state = next;
 }
 
 // ── table ────────────────────────────────────────────────────────────
@@ -235,5 +250,5 @@ export function onThemeChange(light) {
   if (state) render();
 }
 export function resize() { chart?.resize(); }
-export { render };
 export function getCharts() { return chart ? [chart] : []; }
+export { render };

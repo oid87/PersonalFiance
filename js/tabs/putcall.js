@@ -6,6 +6,7 @@
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
 import { chipPicker } from '../utils/dom.js';
+import { requestJSON } from '../utils/data.js';
 
 const LINES = [
   { key: "total_pc",  name: "Total P/C",  color: "#58a6ff" },
@@ -16,15 +17,26 @@ let chart = null;
 let range = "3Y";
 let rows  = null;
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (rows) return;
-  const r = await fetch("data/putcall.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const j = await r.json();
+  const j = await requestJSON('data/putcall.json', { signal: context.signal });
+  if (!Array.isArray(j?.total) || !j.total.some(x => typeof x?.date === 'string' &&
+      Number.isFinite(x.pc)) || !Array.isArray(j?.equity) ||
+      !j.equity.some(x => typeof x?.date === 'string' && Number.isFinite(x.pc))) {
+    throw new Error('Put/Call資料格式不完整');
+  }
   // 巢狀 by-series → 依日期合併成 {date, total_pc, equity_pc}
   const map = new Map();
-  for (const x of (j?.total ?? []))  { const o = map.get(x.date) || { date: x.date }; o.total_pc  = x.pc; map.set(x.date, o); }
-  for (const x of (j?.equity ?? [])) { const o = map.get(x.date) || { date: x.date }; o.equity_pc = x.pc; map.set(x.date, o); }
+  for (const x of j.total.filter(x => typeof x?.date === 'string' && Number.isFinite(x.pc))) {
+    const o = map.get(x.date) || { date: x.date }; o.total_pc = x.pc; map.set(x.date, o);
+  }
+  for (const x of j.equity.filter(x => typeof x?.date === 'string' && Number.isFinite(x.pc))) {
+    const o = map.get(x.date) || { date: x.date }; o.equity_pc = x.pc; map.set(x.date, o);
+  }
+  if (!map.size || ![...map.values()].some(row => row.total_pc != null)) {
+    throw new Error('Put/Call資料沒有可用數值');
+  }
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
   rows = [...map.values()].sort((a, b) => a.date < b.date ? -1 : 1);
 }
 
@@ -155,18 +167,21 @@ function buildControls() {
   chipPicker(rp, "putc-range", v => { range = v; render(); });
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("putc-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    chart?.resize(); render();
   } catch (e) {
     const s = document.getElementById("putc-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[putcall] load failed", e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -176,3 +191,4 @@ export function onThemeChange(light) {
   if (rows) render();
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }
