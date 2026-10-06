@@ -18,8 +18,7 @@ spec: Financial_work/spec_marginmap_tab.md (模型設計已由主 session 驗收
   prof_edges/摘要值+note/updated)。deviations/glitch_dates/latest_clean_actual_date 等診斷
   欄位也移到 raw 檔(前端 marginmap.js 本就不讀這幾個 key)。
 - 增量抓取加 MAX_FETCH_PER_RUN(預設 300)上限:單次執行最多補 300 個缺日,平時只缺 1 天不受
-  影響;萬一 raw 種子遺失,CI 每天補 300 天、數日內自動補齊,不會單次跑爆(~4700 天全補要
-  ~60-90 分鐘)。
+  影響。無既有 raw 快取時須明確設定 MARGIN_COSTMAP_SEED_PATH，未設定即停止，不自行全量抓取。
 
 改哪些檔(只准動這些,依 spec):
 - 本檔 scripts/fetch_margin_costmap.py
@@ -27,7 +26,7 @@ spec: Financial_work/spec_marginmap_tab.md (模型設計已由主 session 驗收
 - data/margin_costmap_raw.json (自動寫,追加需求3新增,raw_flows + 建置診斷欄位,CI 續抓用)
 
 唯讀資料源(不重抓):
-- 種子:Financial_work/data/margin_costbasis.json 的 raw_flows(2020-01→2026-07-14),
+- 種子:由 MARGIN_COSTMAP_SEED_PATH 明確指定含 raw_flows 的本地 JSON；無預設外部路徑。
   只在 data/margin_costmap_raw.json 完全不存在、且前端 data/margin_costmap.json 也沒有舊格式
   內嵌 raw_flows 可 fallback 遷移時,才會被載入當種子;一旦 raw 快取存在(不論新舊格式),
   一律優先讀既有 raw_flows 當快取(2020+ 種子與後續已抓的 2001-2019 新增段都在裡面),之後只
@@ -40,6 +39,7 @@ spec: Financial_work/spec_marginmap_tab.md (模型設計已由主 session 驗收
 import bisect
 import json
 import math
+import os
 import statistics
 import sys
 import time
@@ -52,9 +52,7 @@ TWII_PATH = BASE / "data" / "TWII.json"
 ACTUAL_RATIO_PATH = BASE / "data" / "taiwan_margin_ratio.json"
 OUT_JSON = BASE / "data" / "margin_costmap.json"
 RAW_JSON = BASE / "data" / "margin_costmap_raw.json"   # 追加需求3:raw_flows+checkpoint 拆檔(CI 續抓用)
-SEED_PATH = Path(
-    "/Users/orangembpm2/work/code/personal_financial/Financial_work/data/margin_costbasis.json"
-)
+SEED_ENV = "MARGIN_COSTMAP_SEED_PATH"
 
 MI_MARGN_URL = "https://www.twse.com.tw/exchangeReport/MI_MARGN?response=json&date={date}&selectType=ALL"
 UA = {"User-Agent": "Mozilla/5.0"}
@@ -134,8 +132,19 @@ def load_existing_raw_flows():
     return {}
 
 
-def load_seed_raw_flows():
-    d = json.loads(SEED_PATH.read_text())
+def load_seed_raw_flows(path=None):
+    """Load an explicitly configured local seed, only when no raw cache exists."""
+    seed_path = Path(path).expanduser() if path is not None else None
+    if seed_path is None:
+        configured = os.environ.get(SEED_ENV, "").strip()
+        if not configured:
+            raise RuntimeError(
+                f"No margin costmap raw cache; set {SEED_ENV} to an existing seed JSON path."
+            )
+        seed_path = Path(configured).expanduser()
+    if not seed_path.is_file():
+        raise FileNotFoundError(f"Margin costmap seed file does not exist: {seed_path}")
+    d = json.loads(seed_path.read_text())
     out = {}
     for r in d.get("raw_flows", []):
         out[r["date"]] = {
@@ -524,8 +533,10 @@ def main():
     log("[main] 準備 raw_flows:先讀既有 raw 快取(獨立檔,追加需求3),若空則用種子(避免重抓)...")
     existing = load_existing_raw_flows()
     if not existing:
-        log(f"[main] 無既有快取,從種子載入: {SEED_PATH}")
+        log("[main] 無既有快取,讀取明確設定的種子")
         existing = load_seed_raw_flows()
+        if not existing:
+            raise ValueError("Margin costmap seed has no raw_flows; supply a valid seed JSON.")
         log(f"[main] 種子載入 {len(existing)} 日({min(existing)}..{max(existing)})")
     else:
         log(f"[main] 既有快取載入 {len(existing)} 日")

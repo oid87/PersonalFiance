@@ -3,6 +3,7 @@
 //   資料：data/central_banks.json（fetch_central_banks.py 抓 FRED WALCL/ECBASSETSW/JPNASSETS,免 key）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { chipPicker } from '../utils/dom.js';
 
 const LINES = [
@@ -14,13 +15,30 @@ const LINES = [
 let chart = null;
 let range = "10Y";
 let rows  = null;
+const validDate = value => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+  !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (rows) return;
-  const r = await fetch("data/central_banks.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const j = await r.json();
-  rows = (j?.data ?? []).filter(x => x.fed != null || x.ecb != null || x.boj != null).map(x => ({ ...x }));
+  const url = "data/central_banks.json";
+  try {
+    const j = await requestJSON(url, { signal: context.signal });
+    if (!(Array.isArray(j?.data) && j.data.length > 0)) throw new Error("central_banks: missing required data");
+    const keys = ["fed", "ecb", "boj"];
+    for (const row of j.data) {
+      if (!row || !validDate(row.date) || keys.some(key => row[key] != null &&
+          (typeof row[key] !== "number" || !Number.isFinite(row[key])))) {
+        throw new Error("central_banks: invalid date or asset value");
+      }
+    }
+    const nextRows = j.data.filter(row => keys.some(key => row[key] != null)).map(row => ({ ...row }));
+    if (!nextRows.length) throw new Error("central_banks: no usable rows");
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    rows = nextRows;
+  } catch (error) {
+    clearRequestCache(url);
+    throw error;
+  }
 }
 
 function cutoffDate(key) {
@@ -151,18 +169,23 @@ function buildControls() {
   chipPicker(rp, "cb-range", v => { range = v; render(); });
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("cb-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+    chart?.resize(); render();
   } catch (e) {
+    rows = null;
+    clearRequestCache("data/central_banks.json");
     const s = document.getElementById("cb-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[central_banks] load failed", e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -172,3 +195,5 @@ export function onThemeChange(light) {
   if (rows) render();
 }
 export function resize() { chart?.resize(); }
+
+export function getCharts() { return [chart].filter(Boolean); }

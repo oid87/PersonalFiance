@@ -1,320 +1,80 @@
-import { SERIES, loaded, active } from './state.js';
+import { loaded, active } from './state.js';
 import { isLight } from './utils/theme.js';
-import { isDataFresh, loadSeries, ensureLoaded } from './utils/data.js';
+import { isDataFresh, ensureLoaded } from './utils/data.js';
 import { chipPicker } from './utils/dom.js';
+import { initSharedUI } from './utils/ui.js';
+import { initChartFocus } from './utils/chartFocus.js';
 import { registerAll, switchTo, applyThemeAll, setupResizeHandler } from './switcher.js';
+import { registryEntries } from './navigation-catalog.mjs';
+import { initNavigation } from './navigation.js';
 
-import * as trendTab     from './tabs/trend.js';
-import * as pentagramTab from './tabs/pentagram.js';
-import * as macroTab     from './tabs/macro.js';
-import * as usmacroTab   from './tabs/usmacro.js';
-import * as corrTab      from './tabs/corr.js';
-import * as sectorTab    from './tabs/sector.js';
-import * as cashkingTab  from './tabs/cashking.js';
-import * as sentimentTab from './tabs/sentiment.js';
-import * as breadthTab   from './tabs/breadth.js';
-import * as earningsTab  from './tabs/earnings.js';
-import * as valuationTab from './tabs/valuation.js';
-import * as leverageTab  from './tabs/leverage.js';
-import * as aaiiTab      from './tabs/aaii.js';
-import * as twSentTab    from './tabs/twsentiment.js';
-import * as positionTab  from './tabs/position.js';
-import * as liquidityTab from './tabs/liquidity.js';
-import * as bullbearTab  from './tabs/bullbear.js';
-import * as naaimTab     from './tabs/naaim.js';
-import * as waveTab      from './tabs/wave.js';
-import * as twCycleTab   from './tabs/twcycle.js';
-import * as vixSkewTab   from './tabs/vixskew.js';
-import * as fsiTab        from './tabs/fsi.js';
-import * as nfciTab       from './tabs/nfci.js';
-import * as emfsiTab      from './tabs/emfsi.js';
-import * as stressdashTab from './tabs/stressdash.js';
-import * as twStressTab   from './tabs/twstress.js';
-import * as umichTab      from './tabs/umich.js';
-import * as flowsTab      from './tabs/flows.js';
-import * as inflationTab  from './tabs/inflation.js';
-import * as creditTab        from './tabs/credit.js';
-import * as twSectorFlowTab  from './tabs/twsectorflow.js';
-import * as wkrevTab         from './tabs/wkrev.js';
-import * as marginheatTab    from './tabs/marginheat.js';
-import * as marginpeakTab    from './tabs/marginpeak.js';
-import * as marginconcTab    from './tabs/marginconc.js';
-import * as marginmapTab     from './tabs/marginmap.js';
-import * as baniniTab        from './tabs/banini.js';
-import * as qqqmacdTab       from './tabs/qqqmacd.js';
-import * as structTab        from './tabs/struct.js';
-import * as kellyTab         from './tabs/kelly.js';
-import * as madevTab         from './tabs/madev.js';
-import * as toolsTab         from './tabs/tools.js';
-import * as netLiqTab        from './tabs/net_liquidity.js';
-import * as yieldCurveTab    from './tabs/yield_curve.js';
-import * as vixTermTab       from './tabs/vix_term.js';
-import * as vvixregimeTab    from './tabs/vvixregime.js';
-import * as vxnvixTab        from './tabs/vxnvix.js';
-import * as relstrengthTab   from './tabs/relstrength.js';
-import * as mag7spyTab       from './tabs/mag7spy.js';
-import * as realRatesTab     from './tabs/real_rates.js';
-import * as moneyMktTab      from './tabs/money_market.js';
-import * as putcallTab       from './tabs/putcall.js';
-import * as centralBanksTab  from './tabs/central_banks.js';
-import * as inflNowcastTab   from './tabs/infl_nowcast.js';
-import * as cpiTab           from './tabs/cpi.js';
-import * as usdliqTab        from './tabs/usdliq.js';
-import * as marginCostTab    from './tabs/margincost.js';
-import * as levvolTab         from './tabs/levvol.js';
-import * as taifexForeignOiTab from './tabs/taifex_foreign_oi.js';
-import * as twChipsTab       from './tabs/twchips.js';
-import * as roc4Tab          from './tabs/roc4.js';
-import * as marginGlobalTab  from './tabs/marginglobal.js';
-import * as fwdpeTab         from './tabs/fwdpe.js';
-import * as vixSeasonTab     from './tabs/vixseason.js';
-import * as elecSeasonTab    from './tabs/elecseason.js';
-import * as twCrashTab       from './tabs/twcrash.js';
-import * as gdpProductivityDecompTab from './tabs/gdp_productivity_decomp.js';
-import * as semiVsSpxPeTab   from './tabs/semi_vs_spx_pe.js';
-import * as twJpKrGdpTab     from './tabs/tw_jp_kr_gdp.js';
-import * as soxVsTwSemiPeTab from './tabs/sox_vs_tw_semi_pe.js';
-import * as marketstructureTab from './tabs/marketstructure.js';
-import * as flowradarTab     from './tabs/flowradar.js';
+const entries = registryEntries();
+const entriesById = new Map(entries.map(entry => [entry.id, entry]));
 
-registerAll([
-  { id: 'trend',     module: trendTab     },
-  { id: 'pentagram', module: pentagramTab },
-  { id: 'macro',     module: macroTab     },
-  { id: 'usmacro',   module: usmacroTab   },
-  { id: 'corr',      module: corrTab      },
-  { id: 'sector',    module: sectorTab    },
-  { id: 'cashking',  module: cashkingTab  },
-  { id: 'sentiment', module: sentimentTab },
-  { id: 'breadth',   module: breadthTab   },
-  { id: 'earnings',  module: earningsTab  },
-  { id: 'valuation', module: valuationTab },
-  { id: 'leverage',  module: leverageTab  },
-  { id: 'levvol',    module: levvolTab    },
-  { id: 'aaii',      module: aaiiTab      },
-  { id: 'twsent',    module: twSentTab    },
-  { id: 'position',  module: positionTab  },
-  { id: 'liquidity', module: liquidityTab },
-  { id: 'bullbear',  module: bullbearTab  },
-  { id: 'naaim',     module: naaimTab     },
-  { id: 'taifex_foreign_oi', module: taifexForeignOiTab },
-  { id: 'twchips',   module: twChipsTab   },
-  { id: 'wave',      module: waveTab      },
-  { id: 'twcycle',   module: twCycleTab   },
-  { id: 'vixskew',   module: vixSkewTab   },
-  { id: 'fsi',       module: fsiTab       },
-  { id: 'nfci',      module: nfciTab      },
-  { id: 'emfsi',     module: emfsiTab     },
-  { id: 'stressdash', module: stressdashTab },
-  { id: 'twstress',  module: twStressTab  },
-  { id: 'umich',     module: umichTab     },
-  { id: 'flows',    module: flowsTab     },
-  { id: 'inflation', module: inflationTab },
-  { id: 'credit',        module: creditTab        },
-  { id: 'twsectorflow',  module: twSectorFlowTab  },
-  { id: 'wkrev',         module: wkrevTab         },
-  { id: 'marginheat',    module: marginheatTab    },
-  { id: 'marginpeak',    module: marginpeakTab    },
-  { id: 'marginconc',    module: marginconcTab    },
-  { id: 'marginmap',     module: marginmapTab     },
-  { id: 'banini',        module: baniniTab        },
-  { id: 'qqqmacd',       module: qqqmacdTab       },
-  { id: 'struct',        module: structTab        },
-  { id: 'kelly',         module: kellyTab         },
-  { id: 'madev',         module: madevTab         },
-  { id: 'tools',         module: toolsTab         },
-  { id: 'net_liquidity', module: netLiqTab        },
-  { id: 'yield_curve',   module: yieldCurveTab    },
-  { id: 'vix_term',      module: vixTermTab       },
-  { id: 'vvixregime',    module: vvixregimeTab    },
-  { id: 'vxnvix',        module: vxnvixTab        },
-  { id: 'relstrength',   module: relstrengthTab   },
-  { id: 'mag7spy',       module: mag7spyTab       },
-  { id: 'real_rates',    module: realRatesTab     },
-  { id: 'money_market',  module: moneyMktTab      },
-  { id: 'putcall',       module: putcallTab       },
-  { id: 'central_banks', module: centralBanksTab  },
-  { id: 'infl_nowcast',  module: inflNowcastTab   },
-  { id: 'cpi',           module: cpiTab           },
-  { id: 'usdliq',        module: usdliqTab        },
-  { id: 'margincost',    module: marginCostTab    },
-  { id: 'roc4',          module: roc4Tab          },
-  { id: 'marginglobal',  module: marginGlobalTab  },
-  { id: 'fwdpe',         module: fwdpeTab         },
-  { id: 'vixseason',     module: vixSeasonTab     },
-  { id: 'elecseason',    module: elecSeasonTab    },
-  { id: 'twcrash',       module: twCrashTab       },
-  { id: 'gdp_productivity_decomp', module: gdpProductivityDecompTab },
-  { id: 'semi_vs_spx_pe',   module: semiVsSpxPeTab   },
-  { id: 'tw_jp_kr_gdp',     module: twJpKrGdpTab     },
-  { id: 'sox_vs_tw_semi_pe', module: soxVsTwSemiPeTab },
-  { id: 'marketstructure', module: marketstructureTab },
-  { id: 'flowradar',     module: flowradarTab     },
-]);
-
-setupResizeHandler();
-
-const CATEGORIES = [
-  {
-    id: 'sentiment', tabs: [
-      { id: 'sentiment', label: '複合情緒' },
-      { id: 'aaii',      label: '散戶情緒' },
-      { id: 'twsent',    label: '台股情緒' },
-      { id: 'bullbear',  label: '牛熊' },
-      { id: 'naaim',     label: '經理人曝險' },
-      { id: 'taifex_foreign_oi', label: '外資未平倉' },
-      { id: 'twchips',   label: '台股籌碼' },
-      { id: 'umich',     label: '消費者信心' },
-      { id: 'flows',    label: '資金脈衝' },
-      { id: 'banini',   label: '反指標(8zz)' },
-      { id: 'putcall',  label: 'Put/Call' },
-      { id: 'flowradar', label: '資金雷達' },
-    ]
-  },
-  {
-    id: 'liquidity', tabs: [
-      { id: 'liquidity', label: '流動性×槓桿' },
-      { id: 'marginheat', label: '融資熱度' },
-      { id: 'breadth',   label: '市場廣度' },
-      { id: 'fsi',       label: '金融壓力' },
-      { id: 'nfci',      label: '金融狀況' },
-      { id: 'emfsi',     label: '新興市場壓力' },
-      { id: 'stressdash', label: '壓力總覽' },
-      { id: 'twstress',  label: '台股壓力' },
-      { id: 'vixskew',   label: 'VIX-SKEW' },
-      { id: 'vxnvix',    label: 'VXN-VIX價差' },
-      { id: 'inflation', label: '通膨預期' },
-      { id: 'credit',    label: '信用' },
-      { id: 'net_liquidity', label: '淨流動性' },
-      { id: 'usdliq',        label: '美元流動性' },
-      { id: 'margincost',    label: '美國融資成本' },
-      { id: 'marginglobal',  label: '全球融資餘額' },
-      { id: 'yield_curve',   label: '殖利率曲線' },
-      { id: 'vix_term',      label: 'VIX期限結構' },
-      { id: 'vixseason',     label: 'VIX十年季節性' },
-      { id: 'real_rates',    label: '實質利率' },
-      { id: 'money_market',  label: '貨幣市場' },
-      { id: 'central_banks', label: '全球央行資產' },
-      { id: 'infl_nowcast',  label: '通膨Nowcast' },
-      { id: 'cpi',           label: 'CPI 分項' },
-    ]
-  },
-  {
-    id: 'position', tabs: [
-      { id: 'trend',     label: '趨勢' },
-      { id: 'pentagram', label: '五線譜' },
-      { id: 'macro',     label: '宏觀' },
-      { id: 'usmacro',   label: '美國總經' },
-      { id: 'twcrash',   label: '台股歷史股災' },
-      { id: 'valuation', label: '估值' },
-      { id: 'fwdpe',     label: 'Forward P/E 自建' },
-      { id: 'position',  label: '位階' },
-      { id: 'struct',    label: '結構判讀' },
-      { id: 'relstrength', label: 'NDX相對強度' },
-      { id: 'mag7spy',     label: '七巨頭相對強度' },
-      { id: 'marginmap', label: '融資斷頭地圖' },
-      { id: 'kelly',     label: '凱利上限' },
-      { id: 'madev',     label: '乖離率' },
-      { id: 'twcycle',   label: '景氣燈號' },
-      { id: 'tools',     label: '工具箱' },
-    ]
-  },
-  {
-    id: 'analysis', tabs: [
-      { id: 'corr',     label: '相關係數' },
-      { id: 'sector',        label: '產業輪動' },
-      { id: 'twsectorflow',  label: '外資板塊流向' },
-      { id: 'cashking',      label: '現金為王' },
-      { id: 'earnings', label: '財報日' },
-      { id: 'wave',     label: '波浪理論' },
-      { id: 'elecseason', label: '選舉週期季節性' },
-      { id: 'leverage', label: '槓桿模擬' },
-      { id: 'levvol',   label: '波動率倍數' },
-      { id: 'wkrev',    label: '週K反轉' },
-      { id: 'qqqmacd',  label: 'MACD死叉' },
-      { id: 'marginpeak', label: '融資峰值' },
-      { id: 'marginconc', label: '融資集中度' },
-      { id: 'vvixregime', label: 'VVIX波動象限' },
-      { id: 'roc4',       label: 'ROC4急漲急跌' },
-      { id: 'gdp_productivity_decomp', label: '美國GDP拆解' },
-      { id: 'semi_vs_spx_pe',   label: '半導體估值' },
-      { id: 'tw_jp_kr_gdp',     label: '台日韓GDP對照' },
-      { id: 'sox_vs_tw_semi_pe', label: '半導體估值(全球vs台灣)' },
-      { id: 'marketstructure', label: '市場結構' },
-    ]
-  },
-];
-
-function renderSubNav(cat, activeTabId) {
-  const subNav = document.getElementById('sub-nav');
-  subNav.innerHTML = cat.tabs.map(t =>
-    `<button class="sub-btn${t.id === activeTabId ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`
-  ).join('');
-  subNav.querySelectorAll('.sub-btn').forEach(btn =>
-    btn.addEventListener('click', () => {
-      subNav.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      switchTo(btn.dataset.tab);
-    })
-  );
+function decorateLoad(entry, prepare) {
+  const load = entry.load;
+  entry.load = async () => prepare(await load());
+  entry.load.needsReload = load.needsReload;
 }
 
-function applyTheme(light) {
-  document.body.classList.toggle("light", light);
-  document.getElementById("theme-btn").textContent = light ? "☾" : "☀";
-  localStorage.setItem("theme", light ? "light" : "dark");
-  applyThemeAll(light);
-}
+decorateLoad(entriesById.get('pentagram'), module => {
+  module.renderPentaTickerPicker();
+  return module;
+});
 
-document.getElementById("theme-btn").addEventListener("click", () => applyTheme(!isLight()));
-
-// Default: 位置 category, 趨勢 tab
-let _activeCat = CATEGORIES.find(c => c.id === 'position');
-renderSubNav(_activeCat, 'trend');
-
-document.querySelectorAll(".cat-btn").forEach(btn =>
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    _activeCat = CATEGORIES.find(c => c.id === btn.dataset.cat);
-    const firstTab = _activeCat.tabs[0].id;
-    renderSubNav(_activeCat, firstTab);
-    switchTo(firstTab);
-  })
-);
-
-(async () => {
-  const status = document.getElementById("status");
-  const savedTheme = localStorage.getItem("theme");
-  if (savedTheme === "light") applyTheme(true);
-  else if (savedTheme === "dark") applyTheme(false);
-  try {
-    await Promise.all(SERIES.filter(s => active.has(s.key)).map(loadSeries));
-    trendTab.renderSeriesPicker();
-    trendTab.render();
-    pentagramTab.renderPentaTickerPicker();
-    const lastDates = Object.values(loaded).map(d => d[d.length - 1]?.[0]).filter(Boolean);
+decorateLoad(entriesById.get('trend'), module => ({
+  ...module,
+  async activate(context) {
+    await module.activate(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    const status = document.getElementById('status');
+    const lastDates = Object.values(loaded).map(rows => rows[rows.length - 1]?.[0]).filter(Boolean);
     const latestDate = lastDates.sort().at(-1);
     const allFresh = Object.values(loaded).every(isDataFresh);
-    status.textContent = `已載入 ${Object.keys(loaded).length} 個指標 · 最新資料 ${latestDate}${allFresh ? "" : " ⚠ 部分資料可能過期"} · 點選 chip 切換顯示`;
+    status.textContent = '已載入 ' + Object.keys(loaded).length + ' 個指標 · 最新資料 ' +
+      latestDate + (allFresh ? '' : ' ⚠ 部分資料可能過期') + ' · 點選 chip 切換顯示';
+    module.renderSignalPanel();
+    ensureLoaded('VIX').then(() => module.renderSignalPanel()).catch(() => {});
+  },
+}));
 
-    // Pre-load VIX for signal panel, macro data in background
-    ensureLoaded("VIX").then(() => trendTab.renderSignalPanel()).catch(() => {});
-    macroTab.loadMacroData().catch(() => {});
-    trendTab.renderSignalPanel();
-  } catch (err) {
-    status.textContent = `載入失敗：${err.message}`;
-  }
-})();
+registerAll(entries);
+setupResizeHandler();
+initSharedUI();
+initChartFocus();
 
-document.getElementById("penta-fpe-toggle")?.addEventListener("click", () => pentagramTab.toggleFpe());
-document.getElementById("trend-fpe-toggle")?.addEventListener("click", () => trendTab.toggleTrendFpe());
+function applyTheme(light) {
+  document.body.classList.toggle('light', light);
+  document.getElementById('theme-btn').textContent = light ? '☾' : '☀';
+  try { localStorage.setItem('theme', light ? 'light' : 'dark'); } catch {}
+  void applyThemeAll(light);
+}
 
-chipPicker(document.getElementById("val-range-picker"), "val-range", v => valuationTab.setRange(v));
+document.getElementById('theme-btn').addEventListener('click', () => applyTheme(!isLight()));
+try {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme === 'light') applyTheme(true);
+  else if (savedTheme === 'dark') applyTheme(false);
+} catch {}
 
-document.querySelectorAll(".info-panel-header").forEach(h => {
-  h.addEventListener("click", () => {
-    h.classList.toggle("open");
-    h.nextElementSibling.classList.toggle("open");
+initNavigation({
+  switchTo,
+  needsReload: id => entriesById.get(id)?.load.needsReload?.() || false,
+});
+
+document.getElementById('penta-fpe-toggle')?.addEventListener('click', () => {
+  void entriesById.get('pentagram')?.loadedModule?.toggleFpe();
+});
+document.getElementById('trend-fpe-toggle')?.addEventListener('click', () => {
+  void entriesById.get('trend')?.loadedModule?.toggleTrendFpe();
+});
+chipPicker(document.getElementById('val-range-picker'), 'val-range', value => {
+  entriesById.get('valuation')?.loadedModule?.setRange(value);
+});
+
+document.querySelectorAll('.info-panel-header').forEach(header => {
+  header.addEventListener('click', () => {
+    header.classList.toggle('open');
+    header.nextElementSibling.classList.toggle('open');
   });
 });

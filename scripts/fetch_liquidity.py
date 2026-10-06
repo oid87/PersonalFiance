@@ -33,6 +33,7 @@ import pandas as pd
 import requests
 
 from _common import fred_csv_text
+import _common
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -130,12 +131,7 @@ def load_seed_margin() -> list[dict]:
 
 
 def load_existing() -> dict:
-    if not OUT.exists():
-        return {}
-    try:
-        return json.loads(OUT.read_text())
-    except Exception:
-        return {}
+    return _common.load_existing_object(OUT)
 
 
 def main() -> None:

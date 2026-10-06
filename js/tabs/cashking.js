@@ -1,6 +1,7 @@
 import { CK_ASSETS, CK_ASSETS_3 } from '../state.js';
 import { computeMA, computeBounceSignals } from '../utils/math.js';
 import { chipPicker } from '../utils/dom.js';
+import { requestJSON } from '../utils/data.js';
 
 const ckRaw = {};
 let ckFilter = "all";
@@ -11,25 +12,29 @@ let ckData4a = null;
 let ckData3a = null;
 let ckInited = false;
 
-async function loadCKData() {
+async function loadCKData(context = {}) {
   const allAssets = [...CK_ASSETS,
     ...CK_ASSETS_3.filter(a => !CK_ASSETS.some(b => b.key === a.key))];
-  await Promise.all([
+  const next = Object.fromEntries(await Promise.all([
     ...allAssets.map(async ({ key, file }) => {
-      if (ckRaw[key]) return;
-      const resp = await fetch(file, { cache: "no-cache" });
-      if (!resp.ok) throw new Error(`${key}: HTTP ${resp.status}`);
-      const j = await resp.json();
-      ckRaw[key] = (j.data || []).map(r => [r.date, r.close]);
+      const j = await requestJSON(file, { signal: context.signal });
+      if (!Array.isArray(j?.data)) throw new Error(`${key}資料格式不完整`);
+      const rows = j.data.filter(r => typeof r?.date === 'string' && Number.isFinite(r.close) &&
+        r.close > 0).map(r => [r.date, r.close]);
+      if (!rows.length) throw new Error(`${key}資料沒有可用數值`);
+      return [key, rows];
     }),
     (async () => {
-      if (ckRaw["F&G"]) return;
-      const resp = await fetch("data/fear_greed.json", { cache: "no-cache" });
-      if (!resp.ok) throw new Error("F&G: HTTP " + resp.status);
-      const j = await resp.json();
-      ckRaw["F&G"] = (j.data || []).map(r => [r.date, r.value]);
+      const j = await requestJSON('data/fear_greed.json', { signal: context.signal });
+      if (!Array.isArray(j?.data)) throw new Error('F&G資料格式不完整');
+      const rows = j.data.filter(r => typeof r?.date === 'string' && Number.isFinite(r.value))
+        .map(r => [r.date, r.value]);
+      if (!rows.length) throw new Error('F&G資料沒有可用數值');
+      return ['F&G', rows];
     })(),
-  ]);
+  ]));
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
+  Object.assign(ckRaw, next);
 }
 
 function ckWeekStart(dateStr) {
@@ -250,17 +255,19 @@ function renderBounceSection() {
   section.style.display = rows.length ? "block" : "none";
 }
 
-export async function init() {
+export async function init(context = {}) {
   if (ckInited) { renderCKTab(); renderBounceSection(); return; }
   const statusEl = document.getElementById("ck-status");
   statusEl.textContent = "載入中…";
   try {
-    await loadCKData();
-    ckInited = true;
+    await loadCKData(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
     renderCKTab();
     renderBounceSection();
+    ckInited = true;
   } catch (e) {
     statusEl.textContent = `載入失敗：${e.message}`;
+    throw e;
   }
 }
 
@@ -270,6 +277,7 @@ export function onThemeChange(_light) {
 }
 
 export function resize() { /* no chart */ }
+export function getCharts() { return []; }
 
 chipPicker(document.getElementById("ck-asset-picker"), "ck-asset", v => {
   ckAssetMode = v;

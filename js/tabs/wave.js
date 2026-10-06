@@ -3,6 +3,7 @@
 // 標準化基準：各指數 2022/10 月內最低收盤 = 100（Wave II 底部）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 import { tsToLocalDate } from '../utils/dates.js';
 
 const TICKERS = [
@@ -22,15 +23,19 @@ let wRange = '4Y';
 let ready = false;
 
 // ── 公開介面 ─────────────────────────────────────────────────────────
-export async function init() {
+export async function init(context = {}) {
   if (ready) { render(isLight()); return; }
   const status = document.getElementById('wave-status');
   if (status) status.textContent = '載入中…';
   try {
-    const jsons = await Promise.all(TICKERS.map(t => fetch(t.file).then(r => r.json())));
-    TICKERS.forEach((t, i) => {
-      rawData[t.key] = (jsons[i].data || []).filter(r => r.close > 0);
-    });
+    const jsons = await Promise.all(TICKERS.map(t => requestJSON(t.file, { signal: context.signal })));
+    for (const [i, json] of jsons.entries()) {
+      if (!Array.isArray(json?.data) || !json.data.length) throw new Error(`${TICKERS[i].file}: missing data rows`);
+    }
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    const nextData = Object.fromEntries(TICKERS.map((t, i) => [t.key, jsons[i].data.filter(r => r.close > 0)]));
+    for (const [key, rows] of Object.entries(nextData)) if (!rows.length) throw new Error(`${key}: no positive prices`);
+    rawData = nextData;
     setupControls();
     setupInteractors();
     render(isLight());
@@ -46,7 +51,9 @@ export async function init() {
     if (status) status.textContent =
       `更新至 ${jsons[0].updated || ''} ｜ 標準化基準：各指數 2022/10 低點 = 100`;
   } catch (err) {
+    rawData = {}; ready = false;
     if (status) status.textContent = `載入失敗：${err.message}`;
+    throw err;
   }
 }
 
@@ -409,3 +416,5 @@ function updateM1bGauge() {
   }
   if (pctEl) pctEl.textContent = `佔 1990 年峰值（10%）的 ${pctPeak.toFixed(1)}%`;
 }
+
+export function getCharts() { return [chart, taixChart].filter(Boolean); }

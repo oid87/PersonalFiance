@@ -7,7 +7,7 @@
 
 import { isLight, PALETTE, mob } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
-import { fetchJSON } from '../utils/data.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { chipPicker } from '../utils/dom.js';
 
 const POS_COLOR = "#3fb950";
@@ -20,28 +20,29 @@ let range  = "3Y";
 let retailProduct = "tmf"; // 微台預設；跟 range 各自獨立保存，互切不互相重設
 let loaded = false;
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (loaded) return;
-  const [futRows, basisRows, marginRows, retailRows] = await Promise.all([
-    fetchJSON("data/taiwan_fut_inst.json"),
-    fetchJSON("data/taiwan_basis.json"),
-    fetchJSON("data/taiwan_margin_total.json"),
-    fetchJSON("data/taiwan_retail_ls.json"),
-  ]);
-  rows.fut    = futRows;
-  rows.basis  = basisRows;
-  rows.margin = marginRows;
-  rows.retail = retailRows;
-
-  try {
-    const optRows = await fetchJSON("data/taiwan_opt_inst.json");
-    rows.opt = Array.isArray(optRows) ? optRows : [];
-    optAvailable = rows.opt.length > 0;
-  } catch (e) {
-    rows.opt = [];
-    optAvailable = false;
-    console.warn("[twchips] taiwan_opt_inst.json load failed (可能尚未產生)", e);
+  const paths = ["data/taiwan_fut_inst.json", "data/taiwan_basis.json",
+    "data/taiwan_margin_total.json", "data/taiwan_retail_ls.json"];
+  const payloads = await Promise.all(paths.map(path => requestJSON(path, { signal: context.signal })));
+  if (!payloads.every((p,i) => Array.isArray(p?.data) && p.data.some(r => typeof r?.date === 'string' && Number.isFinite(r?.[['foreign_net','basis','margin_money','mtx_ratio'][i]])))) {
+    paths.forEach(clearRequestCache);
+    throw new Error("Taiwan chips: missing required rows");
   }
+  const [futRows, basisRows, marginRows, retailRows] = payloads.map(p => p.data);
+  let nextOpt = [], nextOptAvailable = false;
+  try {
+    const opt = await requestJSON("data/taiwan_opt_inst.json", { signal: context.signal });
+    if (!Array.isArray(opt?.data)) { clearRequestCache("data/taiwan_opt_inst.json"); throw new Error("options rows missing"); }
+    nextOpt = opt.data;
+    nextOptAvailable = nextOpt.length > 0;
+  } catch (e) {
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw e;
+    console.warn("[twchips] taiwan_opt_inst.json optional load failed", e);
+  }
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+  rows = { fut: futRows, basis: basisRows, margin: marginRows, retail: retailRows, opt: nextOpt };
+  optAvailable = nextOptAvailable;
   loaded = true;
 }
 
@@ -369,16 +370,18 @@ function buildProductPicker() {
   chipPicker(pp, "twchips-product", v => { retailProduct = v; renderRetail(); });
 }
 
-export async function init() {
+export async function init(context = {}) {
   buildControls();
   buildProductPicker();
   const status = document.getElementById("twchips-status");
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
     renderAll();
   } catch (e) {
     if (status) status.textContent = "載入失敗：" + (e.message || e);
     console.error("[twchips] load failed", e);
+    throw e;
   }
 }
 
@@ -392,3 +395,4 @@ export function onThemeChange(_light) {
 export function resize() {
   Object.values(charts).forEach(c => c?.resize());
 }
+export function getCharts() { return Object.values(charts).filter(Boolean); }

@@ -220,6 +220,21 @@ function retColor(pct) {
   return `rgb(${r},${g},${b})`;
 }
 
+// Pick the higher WCAG contrast against the cell's actual sRGB fill.
+function cellLabelColor(color) {
+  const channels = color.startsWith('#')
+    ? color.slice(1).match(/.{2}/g).map(value => parseInt(value, 16))
+    : color.match(/[\d.]+/g).slice(0, 3).map(Number);
+  const linear = channels.map(value => {
+    const s = value / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722;
+  const darkLuminance = ((17 / 255 + 0.055) / 1.055) ** 2.4;
+  return (luminance + 0.05) / (darkLuminance + 0.05) >= 1.05 / (luminance + 0.05)
+    ? '#111111' : '#ffffff';
+}
+
 const googleUrl = sym => `https://www.google.com/search?q=${encodeURIComponent(sym + " stock")}`;
 
 // ── Data loading ────────────────────────────────────────────────────────
@@ -277,8 +292,10 @@ function showLineChart(key) {
   if (market === "us") {
     const holdings = (liveHoldings && liveHoldings[key]) || SECTOR_HOLDINGS[key];
     if (holdings) {
+      const loaded = !!(liveHoldings && liveHoldings[key]);
       holdingsHTML = `<div style="margin-top:12px;border-top:1px solid ${bd};padding-top:10px">
         <div style="font-size:12px;color:${mut};margin-bottom:6px">前十大持股</div>
+        <div data-sector-holdings-source="${loaded ? "loaded" : "fallback"}" style="font-size:11px;color:${mut};margin-bottom:6px">${loaded ? "Loaded holdings · 已載入持股清單" : "Fallback holdings · 專案內建清單"}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">${holdings.map(h =>
           `<a href="${googleUrl(h.sym)}" target="_blank" rel="noopener noreferrer"
               style="font-size:12px;padding:3px 8px;border:1px solid ${bd};border-radius:6px;
@@ -378,14 +395,15 @@ function renderTreemap(returns) {
 
   const treeData = ks.map(k => {
     const ret = returns[k]?.[sortCol];
+    const color = retColor(ret);
     return {
       name: label(k) + (market === "us" ? "\n" + k : ""),
       value: weight(k),
       _key: k,
       _ret: ret,
-      itemStyle: { color: retColor(ret), borderColor: PALETTE.cellBorder, borderWidth: 2 },
+      itemStyle: { color, borderColor: PALETTE.cellBorder, borderWidth: 2 },
       label: {
-        color: PALETTE.text, fontSize: weight(k) > 8 ? 13 : 11, fontWeight: 600,
+        color: cellLabelColor(color), fontSize: weight(k) > 8 ? 13 : 11, fontWeight: 600,
       },
     };
   });

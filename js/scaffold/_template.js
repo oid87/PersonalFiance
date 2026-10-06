@@ -4,13 +4,14 @@
 // pattern——2026-07 稽核:js/utils 採用率僅 12-16%)。本範本示範標準流程:
 //   1. import 共用層(theme/dates/math/data),不要在 tab 裡重寫 tc()/computeMA()/
 //      percentile() 之類的 primitive。
-//   2. `activate()`(首次切入載入)+ `onThemeChange(light)` + `resize()` 三個
-//      生命週期 export,對齊 boot.js/switcher.js 的呼叫慣例。
+//   2. `activate({signal,isCurrent})` 首次切入載入並 await 首圖；錯誤需 throw 給
+//      switcher 的 retry UI。另 export `onThemeChange(light)`、`resize()`、`getCharts()`。
 //   3. `ensureLoaded(key)` 走 SERIES 註冊表 + `loaded` 快取(見 js/state.js),
 //      不要自己重寫 fetch(...).then(r=>r.json())。
 //   4. `echartsBase({...overrides})` 出圖,不要從零手刻 grid/tooltip/axis 樣板。
 //
-// ⚠️ 本檔**不註冊進 boot.js**,只是複製起手用的範本,不會被實際掛載成 tab。
+// ⚠️ 本檔不在 navigation-catalog.mjs，故不會被 boot 的 registryEntries() 註冊。
+// 複製新頁後加入 catalog 的分類清單與 index.html 的 tab-section，勿在 boot 靜態 import。
 
 import { loaded } from '../state.js';
 import { isLight, echartsBase, PALETTE } from '../utils/theme.js';
@@ -22,11 +23,12 @@ const TAB_ID = 'scaffold-template'; // 複製時改成新 tab 的 id
 let chart = null;
 
 // ── data load ────────────────────────────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   // 示範:走 SERIES 註冊表(js/state.js)+ 共用快取,不自己重寫 fetch。
   // 複製時把 'QQQ' 換成新 tab 需要的 SERIES key,或改讀專屬 data/*.json
-  // (若無 SERIES 註冊,改用 utils/data.js 的 fetchJSON(url))。
-  await ensureLoaded('QQQ');
+  // (若無 SERIES 註冊,改用 utils/data.js 的 requestJSON(url,{signal}))。
+  await ensureLoaded('QQQ', context);
+  if (!Array.isArray(loaded.QQQ) || !loaded.QQQ.length) throw new Error('QQQ資料不足');
 }
 
 function buildOption() {
@@ -61,15 +63,19 @@ function buildOption() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById(`${TAB_ID}-chart`);
   if (!host) return; // 範本不掛載,正常情況下 host 一定是 null
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
     chart.setOption(buildOption(), { notMerge: true });
   } catch (e) {
     console.error(`[${TAB_ID}] load failed`, e);
+    const status = document.getElementById(`${TAB_ID}-status`);
+    if (status) status.textContent = '載入失敗：' + (e.message || e);
+    throw e;
   }
 }
 
@@ -81,6 +87,7 @@ export function onThemeChange(_light) {
 export function resize() {
   chart?.resize();
 }
+export function getCharts() { return chart ? [chart] : []; }
 
 // 複製時順便看一下 tsToLocalDate 的用途說明(ECharts time-axis 用本地午夜解析
 // "YYYY-MM-DD",tooltip callback 若要把 axisValue 轉回日期字串,一律用它,不要用

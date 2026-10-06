@@ -8,7 +8,7 @@
 
 import { isLight, mob, PALETTE } from '../utils/theme.js';
 import { chipPicker } from '../utils/dom.js';
-import { fetchJSON } from '../utils/data.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { buildAxes, svrRaw, shortPressureRaw, optionsRaw, skewRaw } from './flowradar_calc.mjs';
 
 const AXIS_ORDER = ['darkpool', 'short', 'options', 'technical', 'skew'];
@@ -33,16 +33,26 @@ let raw = null;      // 載入的原始資料（跨 symbol 共用）
 const bySymbol = {}; // symbol -> { dates, axes, rawSeries, prices }
 
 // ── data load ────────────────────────────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   if (raw) return;
-  const [spyRows, qqqRows, svRows, siRows, pcPayload, skewPayload] = await Promise.all([
-    fetchJSON('data/SPY.json'),
-    fetchJSON('data/QQQ.json'),
-    fetchJSON('data/finra_shortvol.json'),
-    fetchJSON('data/finra_short_interest.json'),
-    fetchJSON('data/putcall.json'),
-    fetchJSON('data/vix_skew.json'),
+  const paths = ['data/SPY.json', 'data/QQQ.json', 'data/finra_shortvol.json',
+    'data/finra_short_interest.json', 'data/putcall.json', 'data/vix_skew.json'];
+  const [spy, qqq, sv, si, pcPayload, skewPayload] = await Promise.all([
+    ...paths.map(path => requestJSON(path, { signal: context.signal })),
   ]);
+  const [spyRows, qqqRows, svRows, siRows] = [spy, qqq, sv, si].map(payload => payload?.data);
+  if (![spyRows, qqqRows, svRows, siRows, pcPayload?.equity, skewPayload?.history]
+      .every(rows => Array.isArray(rows) && rows.length) ||
+      !spyRows.some(r => typeof r?.date === 'string' && Number.isFinite(r.close)) ||
+      !qqqRows.some(r => typeof r?.date === 'string' && Number.isFinite(r.close)) ||
+      !svRows.some(r => typeof r?.date === 'string' && Number.isFinite(r.SPY_sv)) ||
+      !siRows.some(r => typeof r?.date === 'string' && Number.isFinite(r.SPY_si)) ||
+      !pcPayload.equity.some(r => typeof r?.date === 'string' && Number.isFinite(r.pc)) ||
+      !skewPayload.history.some(r => typeof r?.d === 'string' && Number.isFinite(r.sk))) {
+    paths.forEach(clearRequestCache);
+    throw new Error('Flow radar: missing required series');
+  }
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
   raw = {
     priceRows: {
       SPY: spyRows.map(r => [r.date, r.close]),
@@ -270,7 +280,7 @@ function buildControls() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const radarHost = document.getElementById('fr-radar-chart');
   if (!radarHost) return; // 正常情況下只有 flowradar tab 被掛載時才有這個 host
   if (!radarChart) radarChart = echarts.init(radarHost, isLight() ? null : 'dark');
@@ -282,12 +292,14 @@ export async function activate() {
 
   const status = document.getElementById('fr-status');
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
     renderAll();
     if (status) status.textContent = `資金雷達 · ${symbol} · ${bySymbol[symbol].dates.length} 個交易日`;
   } catch (e) {
     if (status) status.textContent = '載入失敗：' + (e.message || e);
     console.error('[flowradar] load failed', e);
+    throw e;
   }
 }
 
@@ -308,3 +320,4 @@ export function resize() {
   radarChart?.resize();
   for (const key of AXIS_ORDER) lineCharts[key]?.resize();
 }
+export function getCharts() { return [radarChart, ...Object.values(lineCharts)].filter(Boolean); }

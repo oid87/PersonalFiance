@@ -8,7 +8,7 @@
 
 import { isLight, PALETTE } from '../utils/theme.js';
 import { cutoffDate } from '../utils/dates.js';
-import { fetchJSON } from '../utils/data.js';
+import { requestJSON } from '../utils/data.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const TAB_ID = 'roc4';
@@ -21,12 +21,17 @@ let thr = 5;
 let showUp = true, showDn = true, firstOnly = true;
 
 // ── data ─────────────────────────────────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   if (raw) return raw;
-  const rows = await fetchJSON('data/QQQ.json');
+  const payload = await requestJSON('data/QQQ.json', { signal: context.signal });
+  if (!Array.isArray(payload?.data)) throw new Error('QQQ資料格式不完整');
+  const rows = payload.data.filter(row => typeof row?.date === 'string' &&
+    Number.isFinite(row.close) && row.close > 0);
+  if (rows.length < 5) throw new Error('QQQ資料不足以計算ROC4');
   const dates = rows.map(r => r.date);
   const closes = rows.map(r => r.close);
   const roc = closes.map((c, i) => (i < 4 ? null : (c / closes[i - 4] - 1) * 100));
+  if (context.signal?.aborted || context.isCurrent?.() === false) return null;
   raw = { dates, closes, roc };
   return raw;
 }
@@ -235,17 +240,19 @@ function buildControls() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById(`${TAB_ID}-chart`);
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   buildControls();
   const status = document.getElementById(`${TAB_ID}-status`);
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
     render();
   } catch (e) {
     if (status) status.textContent = `載入失敗：${e.message}`;
+    throw e;
   }
 }
 
@@ -257,3 +264,4 @@ export function onThemeChange(light) {
 }
 
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }

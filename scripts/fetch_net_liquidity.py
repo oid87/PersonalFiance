@@ -30,6 +30,7 @@ from pathlib import Path
 
 
 from _common import fetch_fred_csv
+import _common
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -58,13 +59,7 @@ def forward_fill_lookup(rows: list[dict]):
 
 
 def load_existing() -> dict[str, dict]:
-    if not OUT.exists():
-        return {}
-    try:
-        payload = json.loads(OUT.read_text())
-        return {r["date"]: r for r in payload.get("data", []) if r.get("date")}
-    except Exception:
-        return {}
+    return _common.load_strict_rows_by_date(OUT)
 
 
 def idempotent_merge(existing: dict[str, dict], new_rows: list[dict]) -> list[dict]:

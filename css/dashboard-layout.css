@@ -1,0 +1,21 @@
+/* Stress overview: keep the three independent indicators above the chart.
+   Scope the layout so other tabs retain their existing card arrangements. */
+#stressdash-top {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--border);
+}
+
+#stressdash-top > .breadth-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  #stressdash-top {
+    gap: var(--space-3);
+    padding: var(--space-3);
+  }
+}

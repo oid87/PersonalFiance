@@ -8,6 +8,8 @@
 import { isLight, mob, PALETTE, echartsBase } from '../utils/theme.js';
 import { cutoffDate, presetStart, tsToLocalDate, lookupLE } from '../utils/dates.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
+import { normalizeMarginRows, monthChange, rebaseToPercent, computeDivergence, computeVWAC } from './marginglobal_calc.mjs';
 
 const MARGIN_COLOR = '#f778ba';
 const INDEX_COLOR  = '#58a6ff';
@@ -75,108 +77,73 @@ function mgCutoffDate(key) {
 }
 
 // ── data load ────────────────────────────────────────────────────────────
-function normalizeMarginRows(market, rawData) {
-  if (!Array.isArray(rawData) || !rawData.length) return [];
-  if (market.needsExchangeSum) {
-    // SZSE 資料比 SSE 晚一天公布(實測現象),若某天只有部分交易所回報就加總,
-    // 會把「當天沒公布的交易所」誤算成 0,讓最新一天看起來像腰斬。因此只保留
-    // 「該資料集出現過的所有交易所都已回報」的日期,避免用不完整的加總誤導。
-    const allExchanges = new Set(rawData.map(r => r.exchange).filter(Boolean));
-    const byDate = new Map(); // date -> { sum, exchanges: Set }
-    for (const r of rawData) {
-      if (r.margin_balance == null || r.date == null) continue;
-      if (!byDate.has(r.date)) byDate.set(r.date, { sum: 0, exchanges: new Set() });
-      const entry = byDate.get(r.date);
-      entry.sum += r.margin_balance;
-      entry.exchanges.add(r.exchange);
-    }
-    return [...byDate.entries()]
-      .filter(([, v]) => allExchanges.size === 0 || v.exchanges.size === allExchanges.size)
-      .map(([date, v]) => [date, v.sum])
-      .sort((a, b) => (a[0] < b[0] ? -1 : 1));
-  }
-  return rawData
-    .map(r => [r.date, r[market.marginField]])
-    .filter(([, v]) => v != null);
-}
-
-async function loadMarketMargin(market) {
-  if (marginCache[market.id] !== undefined) return marginCache[market.id];
+async function loadMarketMargin(market, context = {}) {
+  if (marginCache[market.id]) return marginCache[market.id];
   try {
-    const r = await fetch(market.marginFile, { cache: 'no-cache' });
-    if (!r.ok) { marginCache[market.id] = null; return null; }
-    const j = await r.json();
-    const rows = normalizeMarginRows(market, j.data ?? []);
-    marginCache[market.id] = rows.length ? rows : null;
+    const j = await requestJSON(market.marginFile, { signal: context.signal });
+    if (!Array.isArray(j?.data)) throw new Error('資料格式不完整');
+    const rows = normalizeMarginRows(market, j.data)
+      .filter(([date, value]) => typeof date === 'string' && Number.isFinite(value));
+    if (!rows.length) throw new Error('沒有可用數值');
+    if (context.signal?.aborted || context.isCurrent?.() === false) return null;
+    marginCache[market.id] = rows;
   } catch (e) {
     console.error(`[marginglobal] load ${market.marginFile} failed`, e);
-    marginCache[market.id] = null;
+    clearRequestCache(market.marginFile);
+    return null;
   }
   return marginCache[market.id];
 }
 
-async function loadMarketIndex(market) {
-  if (indexCache[market.id] !== undefined) return indexCache[market.id];
+async function loadMarketIndex(market, context = {}) {
+  if (indexCache[market.id]) return indexCache[market.id];
   try {
-    const r = await fetch(market.indexFile, { cache: 'no-cache' });
-    if (!r.ok) { indexCache[market.id] = null; return null; }
-    const j = await r.json();
-    const rows = (j.data ?? [])
-      .map(x => [x.date, x.close])
-      .filter(([, v]) => v != null);
-    indexCache[market.id] = rows.length ? rows : null;
+    const j = await requestJSON(market.indexFile, { signal: context.signal });
+    if (!Array.isArray(j?.data)) throw new Error('資料格式不完整');
+    const rows = j.data
+      .filter(x => typeof x?.date === 'string' && Number.isFinite(x.close) && x.close > 0)
+      .map(x => [x.date, x.close]);
+    if (!rows.length) throw new Error('沒有可用數值');
+    if (context.signal?.aborted || context.isCurrent?.() === false) return null;
+    indexCache[market.id] = rows;
   } catch (e) {
     console.error(`[marginglobal] load ${market.indexFile} failed`, e);
-    indexCache[market.id] = null;
+    clearRequestCache(market.indexFile);
+    return null;
   }
   return indexCache[market.id];
 }
 
-async function loadAll() {
-  await Promise.all(MARKETS.map(m => Promise.all([loadMarketMargin(m), loadMarketIndex(m)])));
+async function loadAll(context = {}) {
+  await Promise.all(MARKETS.map(m => Promise.all([loadMarketMargin(m, context), loadMarketIndex(m, context)])));
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
+  if (!marginCache[activeMarket]?.length || !indexCache[activeMarket]?.length) {
+    throw new Error('目前市場的融資餘額或指數資料暫缺');
+  }
 }
 
 // 美股集中度代理指數(QQQ/MAGS),延遲載入:只在使用者切到美國市場且點選非預設選項時才 fetch。
 async function loadAltIndex(key) {
-  if (altIndexCache[key] !== undefined) return altIndexCache[key];
+  if (altIndexCache[key]) return altIndexCache[key];
   const us = MARKETS.find(m => m.id === 'us');
   const alt = us?.altIndexes?.find(a => a.key === key);
   if (!alt) { altIndexCache[key] = null; return null; }
   try {
-    const r = await fetch(alt.file, { cache: 'no-cache' });
-    if (!r.ok) { altIndexCache[key] = null; return null; }
-    const j = await r.json();
-    const rows = (j.data ?? [])
-      .map(x => [x.date, x.close])
-      .filter(([, v]) => v != null);
-    altIndexCache[key] = rows.length ? rows : null;
+    const j = await requestJSON(alt.file);
+    if (!Array.isArray(j?.data)) throw new Error('資料格式不完整');
+    const rows = j.data.filter(x => typeof x?.date === 'string' && Number.isFinite(x.close) && x.close > 0)
+      .map(x => [x.date, x.close]);
+    if (!rows.length) throw new Error('沒有可用數值');
+    altIndexCache[key] = rows;
   } catch (e) {
     console.error(`[marginglobal] load ${alt.file} failed`, e);
-    altIndexCache[key] = null;
+    clearRequestCache(alt.file);
+    return null;
   }
   return altIndexCache[key];
 }
 
 // ── table ────────────────────────────────────────────────────────────────
-function monthChange(rows) {
-  if (!rows || rows.length < 2) return null;
-  const latestDate = rows[rows.length - 1][0];
-  const latestVal = rows[rows.length - 1][1];
-  // 全程用 UTC 運算，避免 new Date("YYYY-MM-DD") 解析成 UTC 午夜、卻用本地
-  // setMonth/getMonth 導致負時區(如 America/Los_Angeles)差一天。
-  const d = new Date(latestDate + 'T00:00:00Z');
-  d.setUTCMonth(d.getUTCMonth() - 1);
-  // check_reuse: keep — 全程 UTC 運算,tsToLocalDate 用本地 getFullYear/getMonth/getDate,套在這裡會重新引入本地時區的月份溢位問題(正是這次要修的 bug)
-  const cutoffStr = d.toISOString().slice(0, 10);
-  // 找「一個月前」最接近(不晚於)的一筆
-  let prevVal = null;
-  for (let i = rows.length - 1; i >= 0; i--) {
-    if (rows[i][0] <= cutoffStr) { prevVal = rows[i][1]; break; }
-  }
-  if (prevVal == null || prevVal === 0) return null;
-  return (latestVal - prevVal) / Math.abs(prevVal);
-}
-
 function fmtNumber(v) {
   if (v == null) return '—';
   return v.toLocaleString('en-US', { maximumFractionDigits: 1 });
@@ -240,27 +207,6 @@ function renderTable() {
 // ── anchor % 比較 ────────────────────────────────────────────────────────
 // 以 anchor 當天(找 <= anchor 的最後一筆)為基準,把後續每一筆換算成相對基準的 % 變動。
 // 找不到基準值(anchor 早於該市場資料起始)回傳 null。
-function rebaseToPercent(rows, anchor) {
-  if (!rows || !rows.length || !anchor) return null;
-  let anchorVal = null;
-  for (let i = rows.length - 1; i >= 0; i--) {
-    if (rows[i][0] <= anchor) { anchorVal = rows[i][1]; break; }
-  }
-  if (anchorVal == null || anchorVal === 0) return null;
-  return rows.filter(([d]) => d >= anchor).map(([d, v]) => [d, (v / anchorVal - 1) * 100]);
-}
-
-// 差值(槓桿堆積訊號)= 融資%變動 - 指數%變動,逐日期對齊,缺一邊就跳過(不插值)。
-function computeDivergence(marginPct, indexPct) {
-  if (!marginPct || !indexPct) return [];
-  const idxMap = new Map(indexPct.map(([d, v]) => [d, v]));
-  const out = [];
-  for (const [d, mv] of marginPct) {
-    if (idxMap.has(d)) out.push([d, mv - idxMap.get(d)]);
-  }
-  return out;
-}
-
 function updateAnchorClearVisibility() {
   const btn = document.getElementById('mg-anchor-clear');
   if (btn) btn.style.display = anchorDate ? '' : 'none';
@@ -269,33 +215,6 @@ function updateAnchorClearVisibility() {
 // 用「融資餘額淨增額」當新增融資量的權重,滾動算出一個近似的「平均建倉成本(指數位階)」。
 // 這是台股 marginmap.js 精緻 LIFO 衰減模型的簡化版——沒有拆買賣、沒有衰減假設,只用
 // 淨額(Δbalance)當權重,淨減少(還款)時假設不改變平均成本(比例攤還的簡化假設,非事實)。
-function computeVWAC(marginRows, indexRows) {
-  if (!marginRows || !marginRows.length || !indexRows || !indexRows.length) return [];
-  const out = [];
-  let avgCost = null;
-  let prevBalance = null;
-  for (const [date, balance] of marginRows) {
-    const idxEntry = lookupLE(indexRows, date);
-    if (!idxEntry) continue; // 該日期早於指數資料起點,跳過(無法對照)
-    const idxPrice = idxEntry[1];
-    if (avgCost == null) {
-      avgCost = idxPrice; // 初始化:資料集第一筆融資餘額,假設當下就是這個成本(已知限制,見info-panel揭露)
-    } else {
-      const delta = balance - prevBalance;
-      if (delta > 0 && prevBalance > 0) {
-        avgCost = (avgCost * prevBalance + delta * idxPrice) / balance;
-      }
-      // delta <= 0(淨還款)或 prevBalance<=0:avgCost 維持不變(比例攤還簡化假設)
-    }
-    out.push([date, avgCost]);
-    prevBalance = balance;
-  }
-  return out;
-}
-
-// 目前畫面上實際顯示的指數序列:美股市場且選了非預設代理指數(QQQ/MAGS)時用代理指數,
-// 否則用該市場預設指數。renderChart() 與拖曳量測都需要用「畫面上實際顯示的那條指數線」查值,
-// 抽出來共用,避免兩處各寫一份同樣的判斷邏輯。
 function getActiveIndexRows() {
   const market = MARKETS.find(m => m.id === activeMarket);
   const usingAltIndex = activeMarket === 'us' && activeAltIndexKey !== 'sp500';
@@ -337,9 +256,11 @@ function renderChart() {
 
   const status = document.getElementById('mg-status');
   if (status) {
+    const missing = MARKETS.filter(m => !marginCache[m.id]?.length || !indexCache[m.id]?.length).length;
     status.textContent = marginRows.length
       ? `目前顯示：${market.label} · 融資餘額 ${marginView.length} 筆 · 指數 ${indexView.length} 筆 · 最新資料 ${marginRows[marginRows.length - 1][0]}`
       : `目前顯示：${market.label} · 融資餘額資料尚無或載入失敗（可能是背景資料回補中）`;
+    if (missing) status.textContent += ` · ${missing} 個市場資料暫缺`;
   }
 
   const vwacStatus = document.getElementById('mg-vwac-status');
@@ -730,14 +651,18 @@ function buildControls() {
       const key = t.dataset.mgAltindex;
       if (key === activeAltIndexKey) return;
       activeAltIndexKey = key;
-      if (key !== 'sp500') await loadAltIndex(key);
-      renderChart();
+      try {
+        if (key !== 'sp500') await loadAltIndex(key);
+        renderChart();
+      } catch (error) {
+        document.getElementById('mg-status').textContent = '代理指數載入失敗：' + (error.message || error);
+      }
     });
   }
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('mg-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
@@ -746,18 +671,20 @@ export async function activate() {
   const status = document.getElementById('mg-status');
   if (status) status.textContent = '載入中…';
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
     renderTable();
-    setTimeout(() => {
-      chart?.resize();
-      pctChart?.resize();
-      renderChart();
-      renderPctChart();
-      updateAnchorClearVisibility();
-    }, 50);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    chart?.resize();
+    pctChart?.resize();
+    renderChart();
+    renderPctChart();
+    updateAnchorClearVisibility();
   } catch (e) {
     if (status) status.textContent = '載入失敗：' + (e.message || e);
     console.error('[marginglobal] load failed', e);
+    throw e;
   }
 }
 
@@ -783,3 +710,4 @@ export function resize() {
   }
   if (anchorDate) pctChart?.resize();
 }
+export function getCharts() { return [chart, pctChart].filter(Boolean); }

@@ -9,3 +9,6 @@ venv/
 node_modules/
 .codex/hooks.json
 .fred_api_key
+
+# Independent upstream chart/UI reference repository
+/references/vela/

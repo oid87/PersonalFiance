@@ -1,0 +1,9 @@
+{
+  "version": "marginpeak-transparency-fixtures-v1",
+  "note": "Synthetic price observations, not real exchange sessions or market provenance.",
+  "horizons": {"1m": 21, "3m": 63, "6m": 126, "12m": 252},
+  "linear": {"start": "2024-01-01", "length": 340, "base": 100, "step": 1},
+  "short": {"start": "2025-01-31", "spxLength": 90, "qqqLength": 22, "base": 100, "step": 1},
+  "monthly": {"start": "2024-01", "debits": [100,100,100,100,100,100,100,100,100,100,100,100,160,110,110,110,110,110,110,110,110,110,110,110]},
+  "noEvents": {"start": "2024-01", "debits": [100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100]}
+}
