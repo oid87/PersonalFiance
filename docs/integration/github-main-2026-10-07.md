@@ -4,11 +4,12 @@ The user explicitly authorized merging to `main` on 2026-10-07 and stopping afte
 
 ## Provenance and boundary
 
-- Main input: `fdef064acb15891cd7f55a91c084a59792b4bb17`.
+- Initial main input: `fdef064acb15891cd7f55a91c084a59792b4bb17`.
+- Refreshed main input: `515861e7e96ef13cf2483abd1397607769d7ba4e`; the existing daily-data workflow advanced main during the final gate. Only data changed. The integration retained the update and reran required validation/CI on the refreshed candidate.
 - Reviewed WIP input: `fc58f76c49853c4a0ac4d4010470fe80582a0c39`.
 - Common ancestor: `5fcea8c43ebd472c27b9909f66bff6313f8dee7b`.
 - Integration branch: `agent/pf-main-integration-2026-10-07` in a separate clean clone; original Mac checkout stays on its WIP branch.
-- Incoming history: 30 engineering baseline commits plus the selective WIP transfer. The merge was conflict-free; the 201 incoming paths include the preserved baseline, not just the 45 newly selected WIP paths.
+- Incoming history: 30 engineering baseline commits plus the selective WIP transfer. Both main synchronizations were conflict-free; the 201 incoming paths include the preserved baseline, not just the 45 newly selected WIP paths.
 - Every `data/` blob remains identical to main input. No original Mac data refresh, archive, cache or deferred source was imported. GitHub merge should preserve ancestry rather than squash/rebase the reviewed history.
 - Original 171 deferred paths, index and branch are retained. Original product SHA256 inventory remains `f3b3a96f012f378db78dd687a210f5635e87c34777dec49981d1c7637551b7bb`.
 
