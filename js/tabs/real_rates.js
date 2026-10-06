@@ -3,6 +3,7 @@
 //   資料：data/real_rates.json（fetch_real_rates.py 抓 FRED CSV，免 key）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 import { cutoffDate } from '../utils/dates.js';
 import { chipPicker } from '../utils/dom.js';
 
@@ -16,12 +17,14 @@ let chart = null;
 let range = "3Y";
 let rows  = null;
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (rows) return;
-  const r = await fetch("data/real_rates.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const j = await r.json();
-  rows = (j?.data ?? []).filter(x => x.dfii5 != null || x.dfii10 != null || x.dfii30 != null).map(x => ({ ...x }));
+  const payload = await requestJSON("data/real_rates.json", { signal: context.signal });
+  if (!Array.isArray(payload?.data) || !payload.data.length) throw new Error("real_rates.json: missing data rows");
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  const nextRows = payload.data.filter(x => x.dfii5 != null || x.dfii10 != null || x.dfii30 != null).map(x => ({ ...x }));
+  if (!nextRows.length) throw new Error("real_rates.json: no usable data rows");
+  rows = nextRows;
 }
 
 // ── cards ─────────────────────────────────────────────────────────────
@@ -152,18 +155,20 @@ function buildControls() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("realr-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    chart?.resize();
+    render();
   } catch (e) {
-    const s = document.getElementById("realr-status");
-    if (s) s.textContent = "載入失敗：" + (e.message || e);
-    console.error("[real_rates] load failed", e);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    rows = null;
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -173,3 +178,5 @@ export function onThemeChange(light) {
   if (rows) render();
 }
 export function resize() { chart?.resize(); }
+
+export function getCharts() { return chart ? [chart] : []; }

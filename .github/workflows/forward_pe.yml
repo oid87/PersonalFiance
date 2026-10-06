@@ -33,6 +33,9 @@ jobs:
       - name: Install deps
         run: pip install -r scripts/requirements.txt
 
+      - name: Check source manifest
+        run: python scripts/check_pipeline.py
+
       # 兩個標的分開跑：VOO 約 500 檔、QQQ 約 100 檔，任一標的失敗不該拖垮另一個。
       # 序列跑（不 matrix）是刻意的 —— 併發打 yfinance 容易觸發 rate limit。
       - name: Fetch VOO forward P/E
@@ -49,6 +52,9 @@ jobs:
       - name: Fetch QQQ forward P/E
         continue-on-error: true
         run: python scripts/fetch_forward_pe.py --ticker QQQ --rows 0
+
+      - name: Validate forward P/E data
+        run: python scripts/validate_forward_pe.py
 
       - name: Commit updates
         run: |

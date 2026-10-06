@@ -2,7 +2,7 @@
 name: fetch-script
 description: >
   為 PersonalFiance 新增一個 fetch_xxx.py 資料腳本，
-  並同步更新 update_all.sh、validate_data.py（若需要）、
+  並同步更新 source_manifest.json、update_all.sh、validate_data.py（若需要）、
   以及 GitHub Actions workflow。
   適用於：新增 tab 的資料源、更換現有資料的 API、補歷史資料。
 ---
@@ -11,7 +11,7 @@ description: >
 
 ## 用途
 
-每新增一個 tab 就需要一個 fetch script。這個 skill 封裝整個流程：
+新增或更換資料源時使用；新 tab 可直接復用既有資料，不一定需要新 fetch script。這個 skill 封裝資料來源的流程：
 從確認資料來源→寫 script→接上 pipeline→驗證，確保沒有遺漏步驟。
 
 ## 呼叫方式
@@ -105,7 +105,6 @@ def main() -> None:
     except Exception as exc:
         if existing:
             print(f"  [xxx] FAILED ({exc}); keeping {len(existing)} existing rows")
-            return
         raise
     merged = OrderedDict(existing)
     merged.update(fresh)          # 新覆舊（idempotent）
@@ -128,46 +127,47 @@ if __name__ == "__main__":
 - [ ] `load_existing()` + idempotent merge（新覆舊，不是直接覆蓋）；優先用
       `_common.load_rows_by_date(OUT)` / `_common.load_rows(OUT)`，別自己重寫
       loader。多條序列組列合併用 `_common.idempotent_merge(existing_path, new_rows, key_field="date")`。
-- [ ] try/except：失敗時保留舊資料，不 raise（避免 CI 整批失敗）
+- [ ] 失敗時保留舊資料，回傳非零或 raise；optional 路由由 workflow／run_script 控制繼續，不能把失敗報成成功
 - [ ] headers 依來源決定，不要全 repo 統一（見上方 UA 的說明）
 - [ ] date 升序、format 統一
 - [ ] 最後一行輸出 row count（CI log 可查）
 - [ ] 完成後把新 fetch 腳本與對應 data seed 檔一起 `git add`（不要只 stage
       wiring 檔如 `update_all.sh`/`fetch.yml`）；不執行 commit，由使用者決定
 
-### Step 2：加進 update_all.sh
+### Step 2：依實際路由接入本地入口
 
-找到 `scripts/update_all.sh`，在 `validate_data.py` 那行**之前**插入：
+先核對 `scripts/source_manifest.json` 的 `required`、`routes`、`status` 與 `depends_on`。新來源採已確定的資料契約與路由；不能從範本推定為 optional 或主排程來源。
+
+只有 `routes` 含 `local` 的來源才加入 `scripts/update_all.sh`，放在全庫 `validate_data.py` 之前並遵守依賴順序。按該來源的既有／已確定分類選用其中一種：
 
 ```bash
-$PYTHON fetch_xxx.py          || true
+# required 本地路由：失敗停止
+run_script required fetch_xxx.py || exit 1
+# optional 本地路由：run_script 記錄失敗後繼續，最後仍需驗資料
+run_script optional fetch_xxx.py
 ```
 
-位置：依邏輯順序插（美股日頻放前段、台股放中段、月頻指標放後段）。
+兩行是互斥範例，不是同一來源跑兩次。script 本身不吞錯；繼續或停止由入口的實際路由負責。
+`fetch_forward_pe.py` 的 `routes: ["forward_pe"]`／`status: "independent_schedule"` 只走獨立 workflow，不加入本地刷新。`fetch_margin_ratio_mm.py` 的空 routes／`manual_research` 不接入 production 排程。獨立排程或手動來源需在 manifest 記錄實際例外。
 
-### Step 3：確認 validate_data.py 不需要異常處理
+### Step 3：登錄並驗證資料契約
 
-`validate_data.py` 做三件事：
-1. 偵測 git conflict marker
-2. 確認合法 JSON
-3. row count 不能比上一次 commit 少 50%
+在 `scripts/source_manifest.json` 加入 script、outputs、output_contracts、required、routes、status、depends_on。profile 依實際 payload 選擇，特殊結構需明確契約；不能為了通過檢查而放入無條件白名單。詳見 `docs/source-contracts.md`。
 
-通常不需要改，除非新檔有特殊結構（不是 `data` 陣列）。
-如果輸出結構特殊，說明清楚讓使用者決定是否加白名單。
+`python3 scripts/check_pipeline.py` 驗清單／路由／依賴；`python3 scripts/validate_data.py` 驗必要股票檔、日期／欄位／有限數值、JSONL、macro archive 與資料縮減。Synthetic partial fixture 明確使用 `--allow-partial`，不放寬已知檔案 schema。
 
 ### Step 4：確認 GitHub Actions
 
-查 `.github/workflows/fetch.yml`。這個 workflow 是逐一列出每支腳本的 step（不是跑
-`update_all.sh`），所以新增腳本必須手動加一個 step，格式仿現有：
+依 manifest 的實際 `routes` 核對 workflow：`us`／`tw` 走 `.github/workflows/fetch.yml` 對應 job；`forward_pe` 走 `.github/workflows/forward_pe.yml`；manual research 不加入 production 排程。
+`fetch.yml` 逐支列 step，不執行 `update_all.sh`。只有走該 job 的新來源才加 step；位置需在資料驗證之前，且符合 `depends_on`。`scheduled_macro_pipeline` 則經現有 macro shell pipeline 接線，不能另建重複 step。
 
 ```yaml
       - name: Fetch <說明>
-        continue-on-error: true
         run: python scripts/fetch_xxx.py
 ```
 
-插入位置放在 `Validate data integrity` step 之前。若腳本需要密鑰（如
-`FINMIND_TOKEN`），加 `env:` 區塊比照 `fetch_taiwan_fut_inst.py` 的 step。
+此片段只示範執行命令，不設定 failure policy。逐項核對該來源已確定的 workflow 路由；不要一律新增 `continue-on-error: true`，也不要因 manifest 的 `required` 欄位而順帶修改既有 stock step／其他資料發布 policy。若路由或發布規則尚未確定，記錄未定項，範本不能代替決策。
+若腳本需要密鑰（如 `FINMIND_TOKEN`），依既有 workflow 的 env 注入方式接線；不把 token 寫進 script、JSON 或報告。
 
 ## 驗證
 
@@ -197,5 +197,5 @@ python3 validate_data.py
 完成後確認使用者知道：
 1. 新 `data/xxx.json` 在哪、格式是什麼
 2. CI 何時會自動跑（美股/台股收盤後）
-3. 本地預覽：`bash scripts/update_all.sh` 只會刷 data/，不 push
+3. 本地預覽：`bash scripts/update_all.sh` 刷 data/、不 push、不丟棄本地變動；`--dry-run` 只列步驟，`--sync-data` 才顯式允許條件式 fast-forward pull
 4. 如果 tab JS 還沒寫，提示下一步是 `js/tabs/xxx.js`

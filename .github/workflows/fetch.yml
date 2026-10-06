@@ -38,6 +38,9 @@ jobs:
       - name: Install deps
         run: pip install -r scripts/requirements.txt
 
+      - name: Check source manifest
+        run: python scripts/check_pipeline.py
+
       # 跨市場:價格總表(US + 0050 + BTC/GLD/VIX),兩個 job 都跑取各自最新收盤
       - name: Fetch stock data
         continue-on-error: true
@@ -315,6 +318,9 @@ jobs:
 
       - name: Install deps
         run: pip install -r scripts/requirements.txt
+
+      - name: Check source manifest
+        run: python scripts/check_pipeline.py
 
       # 跨市場:價格總表(0050 台股收盤後最新 + US 昨收),兩個 job 都跑
       - name: Fetch stock data

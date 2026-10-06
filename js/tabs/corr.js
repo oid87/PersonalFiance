@@ -7,15 +7,18 @@ import { chipPicker } from '../utils/dom.js';
 let corrChart  = null;
 let corrPeriod = "1Y";
 
-export async function renderCorrTab() {
+export async function renderCorrTab(context = {}) {
   if (!corrChart) return;
   const statusEl = document.getElementById("corr-status");
   statusEl.textContent = "載入資料中…";
 
   try {
-    await Promise.all([...SERIES, ...CORR_EXTRA].map(loadSeries));
+    await Promise.all([...SERIES, ...CORR_EXTRA].map(series => loadSeries(series, context)));
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
   } catch (e) {
-    statusEl.textContent = `載入失敗：${e.message}`; return;
+    statusEl.textContent = `載入失敗：${e.message}`;
+    if (context.signal || context.isCurrent) throw e;
+    return;
   }
 
   const d = new Date();
@@ -41,6 +44,7 @@ export async function renderCorrTab() {
 
   // Intersection of trading dates across all tickers
   const dateSets = Object.values(retMaps).map(m => new Set(m.keys()));
+  if (!dateSets.length) throw new Error("correlation: no price series");
   let common = dateSets[0];
   for (const s of dateSets.slice(1)) common = new Set([...common].filter(x => s.has(x)));
   const dates = [...common].sort();
@@ -98,7 +102,7 @@ export async function renderCorrTab() {
       type: "heatmap",
       data: heatData,
       label: {
-        show: true,
+        show: !mob(),
         fontSize: 12,
         formatter: p => p.value?.[2] != null ? p.value[2].toFixed(2) : "—",
       },
@@ -110,23 +114,29 @@ export async function renderCorrTab() {
     `日報酬率相關係數 · ${corrPeriod} · ${dates.length} 個共同交易日 · 對角線 = 完全正相關`;
 }
 
-export function activate() {
+export async function activate(context = {}) {
   const el = document.getElementById("corr-chart");
   if (!corrChart) {
     corrChart = echarts.init(el, isLight() ? null : "dark");
   }
-  setTimeout(() => { corrChart.resize(); renderCorrTab(); }, 50);
+  await new Promise(resolve => setTimeout(resolve, 50));
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  corrChart.resize();
+  await renderCorrTab(context);
 }
 
 export function onThemeChange(light) {
   if (!corrChart) return;
   corrChart.dispose();
   corrChart = echarts.init(document.getElementById("corr-chart"), light ? null : "dark");
-  renderCorrTab();
+  return renderCorrTab();
 }
 
 export function resize() {
-  corrChart?.resize();
+  if (!corrChart) return;
+  // Shrink the previous canvas before reading the current layout viewport.
+  corrChart.resize();
+  corrChart.setOption({ series: [{ label: { show: !mob() } }] });
 }
 
 // Wire period picker once at module load
@@ -134,3 +144,5 @@ chipPicker(document.getElementById("corr-period-picker"), "corr-period", v => {
   corrPeriod = v;
   renderCorrTab();
 });
+
+export function getCharts() { return corrChart ? [corrChart] : []; }

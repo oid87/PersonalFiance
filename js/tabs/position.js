@@ -428,28 +428,31 @@ function buildControls() {
   pickWire("pos-range-picker",  "posRange",  v => posRange  = v);
 }
 
-async function refresh() {
+async function refresh(context = {}) {
   const status = document.getElementById("pos-status");
   try {
-    await ensureLoaded(posTicker);
+    await ensureLoaded(posTicker, context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     let rows = rowCache[posTicker];
     if (!rows) {
       rows = computeRows(loaded[posTicker], loadedHLC[posTicker], loadedVol[posTicker]);
+      if (!rows.length) throw new Error(`${posTicker}: missing price rows`);
       rowCache[posTicker] = rows;
     }
     render(rows);
   } catch (e) {
     if (status) status.textContent = `載入失敗：${e.message}`;
+    if (context.signal || context.isCurrent) throw e;
   }
 }
 
 // ── lifecycle ──────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("pos-chart");
   if (!host) return;
   if (!posChart) posChart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
-  await refresh();
+  await refresh(context);
 }
 export function onThemeChange(light) {
   if (!posChart) return;
@@ -458,3 +461,5 @@ export function onThemeChange(light) {
   if (rowCache[posTicker]) render(rowCache[posTicker]);
 }
 export function resize() { posChart?.resize(); }
+
+export function getCharts() { return posChart ? [posChart] : []; }

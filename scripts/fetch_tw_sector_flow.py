@@ -17,6 +17,7 @@ from pathlib import Path
 import requests
 
 from _common import get_finmind_token as get_token
+import _common
 
 ROOT   = Path(__file__).resolve().parent.parent
 DATA   = ROOT / "data"
@@ -182,12 +183,7 @@ def fetch_t86(dt: date) -> dict[str, int] | None:
 
 
 def trading_dates(start: date, end: date) -> list[date]:
-    out, d = [], start
-    while d <= end:
-        if d.weekday() < 5:
-            out.append(d)
-        d += timedelta(days=1)
-    return out
+    return list(_common.weekday_dates(start, end))
 
 
 def load_existing() -> dict[str, list[list]]:

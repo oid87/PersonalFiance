@@ -12,6 +12,8 @@ const LINE_COLORS = ['#58a6ff', '#3fb950', '#e3b341', '#f778ba', '#f85149'];
 let chart = null;
 let BUNDLE = null;
 let loadPromise = null;
+let loadController = null;
+let activationVersion = 0;
 let curId = 'TQQQ';
 let wired = false;
 
@@ -20,10 +22,23 @@ const $ = id => document.getElementById(id);
 // ── data load ────────────────────────────────────────────────────────────
 async function loadBundle() {
   if (BUNDLE) return BUNDLE;
-  if (!loadPromise) loadPromise = fetch('data/leverage.json', { cache: 'no-cache' })
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
-  BUNDLE = await loadPromise;
-  return BUNDLE;
+  if (!loadPromise) {
+    const controller = new AbortController();
+    loadController = controller;
+    const pending = Promise.resolve().then(() => fetch('data/leverage.json', {
+      cache: 'no-cache', signal: controller.signal,
+    }))
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(bundle => {
+        if (controller.signal.aborted) throw new DOMException('Request aborted', 'AbortError');
+        return bundle;
+      })
+      .finally(() => {
+        if (loadPromise === pending) { loadPromise = null; loadController = null; }
+      });
+    loadPromise = pending;
+  }
+  return loadPromise;
 }
 
 // ── math helpers ─────────────────────────────────────────────────────────
@@ -116,10 +131,12 @@ function computePair(etf) {
 // ── controls ──────────────────────────────────────────────────────────
 function buildPairSelect() {
   const sel = $('levvol-pair');
-  if (!bindOnce(sel)) return;
-  sel.innerHTML = BUNDLE.etfs.map(e =>
+  if (!sel) return;
+  const options = BUNDLE.etfs.map(e =>
     `<option value="${e.id}" ${e.id === curId ? 'selected' : ''}>${e.id} / ${e.underlying} (${e.leverage}x)</option>`
   ).join('');
+  if (!bindOnce(sel)) return;
+  sel.innerHTML = options;
   sel.addEventListener('change', () => { curId = sel.value; render(); });
 }
 
@@ -222,20 +239,64 @@ function render() {
 }
 
 // ── lifecycle (switcher API) ────────────────────────────────────────────
-export async function init() {
+export async function init({ signal, isCurrent } = {}) {
+  if (signal?.aborted || (isCurrent && !isCurrent())) throw new DOMException('Request aborted', 'AbortError');
+  const version = ++activationVersion;
+  const current = () => version === activationVersion && !signal?.aborted && (!isCurrent || isCurrent());
+  const visible = () => !$('tab-levvol')?.hidden;
+  if (!current()) throw new DOMException('Request aborted', 'AbortError');
   const host = $('levvol-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
-  setTimeout(async () => {
+  const select = $('levvol-pair');
+  let abort;
+  const previous = BUNDLE;
+  try {
     chart.resize();
     if (!BUNDLE) {
       setStatus('載入槓桿資料中…');
-      try { await loadBundle(); } catch (e) { setStatus('載入失敗：' + e.message); console.error('[levvol] load failed', e); return; }
+      chart.clear();
+      const table = $('levvol-table'); if (table) table.innerHTML = '';
+      if (select) select.disabled = true;
+      const pending = loadBundle();
+      const interrupted = signal && new Promise((_, reject) => {
+        abort = () => {
+          // A superseded consumer cannot cancel a newer consumer of the same request.
+          if (version === activationVersion) {
+            const controller = loadController;
+            loadPromise = null; loadController = null;
+            controller?.abort();
+            if (visible()) setStatus('Unavailable · 載入中斷，請重試');
+          }
+          reject(new DOMException('Request aborted', 'AbortError'));
+        };
+        signal.addEventListener('abort', abort, { once: true });
+      });
+      const bundle = await (interrupted ? Promise.race([pending, interrupted]) : pending);
+      if (!current() || !visible()) return;
+      BUNDLE = bundle;
     }
-    buildPairSelect();
+    if (!current() || !visible()) return;
     render();
-  }, 50);
+    buildPairSelect();
+    if (select) select.disabled = false;
+  } catch (error) {
+    if (version !== activationVersion || (isCurrent && !isCurrent())) return;
+    if (signal?.aborted) throw error;
+    BUNDLE = previous;
+    if (visible()) {
+      chart.clear();
+      const table = $('levvol-table'); if (table) table.innerHTML = '';
+      if (select) select.disabled = true;
+      setStatus('Unavailable · 載入失敗：' + error.message);
+    }
+    // The dispatcher owns the accessible failure banner and retry button.
+    throw error;
+  } finally {
+    if (abort) signal.removeEventListener('abort', abort);
+  }
 }
+export function getCharts() { return chart ? [chart] : []; }
 export function onThemeChange(light) {
   if (!chart) return;
   chart.dispose();

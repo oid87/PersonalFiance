@@ -5,6 +5,7 @@
 //             ratio 為未還原息價格比（不含股息），方法論比照原始靈感來源（SpotGamma NDX/SPX 比較圖，同樣排除股息）。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 import { cutoffDate } from '../utils/dates.js';
 import { chipPicker } from '../utils/dom.js';
 
@@ -14,12 +15,12 @@ let chart = null;
 let range = "MAX";
 let payload = null; // full parsed json: { data, dotcom_peak, bust_trough, current, updated }
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (payload) return;
-  const r = await fetch("data/relstrength.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const j = await r.json();
-  payload = j;
+  const next = await requestJSON("data/relstrength.json", { signal: context.signal });
+  if (!Array.isArray(next?.data) || !next.data.length) throw new Error("relstrength.json: missing data rows");
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  payload = next;
 }
 
 // ── cards ─────────────────────────────────────────────────────────────
@@ -166,20 +167,22 @@ function buildControls() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("relstrength-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    chart.resize(); render();
   } catch (e) {
-    const s = document.getElementById("relstrength-status");
-    if (s) s.textContent = "載入失敗：" + (e.message || e);
-    console.error("[relstrength] load failed", e);
+    payload = null;
+    document.getElementById("relstrength-status").textContent = "載入失敗：" + (e.message || e);
+    throw e;
   }
 }
+
 export function onThemeChange(light) {
   if (!chart) return;
   chart.dispose();
@@ -187,3 +190,5 @@ export function onThemeChange(light) {
   if (payload) render();
 }
 export function resize() { chart?.resize(); }
+
+export function getCharts() { return chart ? [chart] : []; }

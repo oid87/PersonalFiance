@@ -3,12 +3,14 @@ import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
 import { computeM2YoY } from '../utils/math.js';
 import { chipPicker } from '../utils/dom.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 let macroChart       = null;
 let bizChart         = null;
 let macroRangePreset = "10Y";
 let macroShowM2      = false;
 let macroShowCAPE    = false;
+let bizLoading      = false;
 
 const BIZ_ZONES = [
   { lo: 38, hi: 46, c: "#c62a47", name: "紅燈" },
@@ -31,23 +33,46 @@ function filterMacroRange(rows) {
   return rows.filter(r => r[0] >= from);
 }
 
-export async function loadMacroData() {
+function requireCurrent(context) {
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+}
+
+async function loadOptionalBusiness(context) {
+  const path = "data/taiwan_business_signal.json";
+  requireCurrent(context);
+  try {
+    const j = await requestJSON(path, { signal: context.signal });
+    requireCurrent(context);
+    if (!Array.isArray(j?.data) || !j.data.length || !j.data.every(row => {
+      if (typeof row?.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(row.date) || !Number.isFinite(row.score)) return false;
+      const date = new Date(`${row.date}T00:00:00Z`);
+      // check_reuse: keep — 驗證 ISO 日曆日期需 UTC 往返比對；tsToLocalDate 是本地軸日期、presetStart 是窗口裁切，皆非 schema 驗證。
+      return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === row.date;
+    })) throw new Error("Business cycle: invalid rows");
+    return j.data.map(d => [d.date, d.score, d.light]);
+  } catch (error) {
+    requireCurrent(context);
+    if (error.name === 'AbortError') throw error;
+    clearRequestCache(path);
+    return null;
+  }
+}
+
+export async function loadMacroData(context = {}) {
+  const next = {};
   for (const stem of ["US10Y", "US2Y", "M2", "CAPE"]) {
     if (macroLoaded[stem]) continue;
-    const resp = await fetch(`data/${stem}.json`, { cache: "no-cache" });
-    if (!resp.ok) throw new Error(`${stem}: HTTP ${resp.status}`);
-    const j = await resp.json();
-    macroLoaded[stem] = (j.data || []).map(r => [r.date, r.value]);
+    const path = `data/${stem}.json`;
+    const j = await requestJSON(path, { signal: context.signal });
+    if (!Array.isArray(j?.data) || !j.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.value))) { clearRequestCache(path); throw new Error(`${stem}: missing required rows`); }
+    next[stem] = j.data.map(r => [r.date, r.value]);
   }
   if (!macroLoaded["BIZ"]) {
-    try {
-      const r = await fetch("data/taiwan_business_signal.json", { cache: "no-cache" });
-      if (r.ok) {
-        const j = await r.json();
-        macroLoaded["BIZ"] = (j.data || []).map(d => [d.date, d.score, d.light]);
-      }
-    } catch (_) { /* optional, skip if unavailable */ }
+    const rows = await loadOptionalBusiness(context);
+    if (rows) next.BIZ = rows;
   }
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+  Object.assign(macroLoaded, next);
 }
 
 export function renderMacroTab() {
@@ -186,7 +211,32 @@ export function renderMacroTab() {
 
 function renderBizChart() {
   const el = document.getElementById("biz-chart");
-  if (!el || !macroLoaded["BIZ"]) return;
+  if (!el) return;
+  if (!macroLoaded["BIZ"]) {
+    bizChart?.clear();
+    const status = document.getElementById("biz-status");
+    if (status) {
+      status.setAttribute('role', 'status');
+      status.setAttribute('aria-live', 'polite');
+      status.setAttribute('aria-busy', String(bizLoading));
+      status.textContent = bizLoading
+        ? '台灣景氣燈號資料載入中，尚無法判斷景氣燈號；美國曲線仍可查看。 '
+        : '台灣景氣燈號資料暫不可用，無法判斷景氣燈號；美國曲線仍可查看。 ';
+      const retry = document.createElement('button');
+      retry.type = 'button'; retry.className = 'chip'; retry.id = 'macro-biz-retry';
+      retry.textContent = bizLoading ? '重試中…' : '重試';
+      retry.disabled = bizLoading;
+      retry.addEventListener('click', async () => {
+        if (retry.disabled) return;
+        retry.disabled = true;
+        retry.textContent = '重試中…';
+        const { switchTo } = await import('../switcher.js');
+        await switchTo('macro');
+      });
+      status.append(retry);
+    }
+    return;
+  }
   if (!bizChart) bizChart = echarts.init(el, isLight() ? null : "dark");
 
   const d = new Date();
@@ -201,6 +251,7 @@ function renderBizChart() {
   const last  = macroLoaded["BIZ"].at(-1);
   const zone  = BIZ_ZONES.find(z => last[1] >= z.lo) ?? BIZ_ZONES.at(-1);
   const bizEl = document.getElementById("biz-status");
+  bizEl?.removeAttribute('aria-busy');
   if (bizEl) bizEl.innerHTML =
     `<span style="color:${zone.c};font-weight:600">${zone.name}</span> ${last[1]} 分 ` +
     `· ${last[0].slice(0, 7)} · 資料來源：NDC data.gov.tw`;
@@ -314,7 +365,7 @@ function wireMacroCrossSync() {
       syncing = true;
       try {
         for (const dst of charts) {
-          if (dst === src) continue;
+          if (dst === src || dst.isDisposed() || !dst.getOption()?.xAxis?.length) continue;
           const w = dst.getWidth();
           let px = dst.convertToPixel({ xAxisIndex: 0 }, xInfo.value);
           if (px == null || Number.isNaN(px) || px < -50 || px > w + 50) {
@@ -329,7 +380,7 @@ function wireMacroCrossSync() {
       }
     });
     src.getZr().on("globalout", () => {
-      for (const dst of charts) if (dst !== src) dst.dispatchAction({ type: "hideTip" });
+      for (const dst of charts) if (dst !== src && !dst.isDisposed() && dst.getOption()?.xAxis?.length) dst.dispatchAction({ type: "hideTip" });
     });
     // dataZoom (macroChart's slider drag or either chart's scroll/inside zoom) used to reach
     // the sibling chart only via echarts.connect(); relay it manually the same way as the
@@ -341,7 +392,7 @@ function wireMacroCrossSync() {
       const range = event.batch?.[0] ?? event;
       let { start, end } = range;
       if (start == null || end == null) {
-        const dz = src.getOption().dataZoom?.[0];
+        const dz = src.getOption()?.dataZoom?.[0];
         start = dz?.start;
         end = dz?.end;
       }
@@ -349,7 +400,7 @@ function wireMacroCrossSync() {
       syncingZoom = true;
       try {
         for (const dst of charts) {
-          if (dst === src) continue;
+          if (dst === src || dst.isDisposed() || !dst.getOption()?.dataZoom?.length) continue;
           dst.dispatchAction({ type: "dataZoom", start, end });
         }
       } finally {
@@ -359,13 +410,30 @@ function wireMacroCrossSync() {
   }
 }
 
-export function activate() {
+export async function activate(context = {}) {
+  requireCurrent(context);
   const el = document.getElementById("macro-chart");
   if (!macroChart) macroChart = echarts.init(el, isLight() ? null : "dark");
-  const bEl = document.getElementById("biz-chart");
-  if (!bizChart && bEl) bizChart = echarts.init(bEl, isLight() ? null : "dark");
-  wireMacroCrossSync();
-  setTimeout(() => { macroChart.resize(); bizChart?.resize(); renderMacroTab(); renderBizChart(); }, 50);
+  if (!macroLoaded.BIZ) {
+    bizLoading = true;
+    renderBizChart();
+  }
+  try {
+    await loadMacroData(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    requireCurrent(context);
+    bizLoading = false;
+    if (document.getElementById('tab-macro')?.hidden) return;
+    macroChart.resize(); bizChart?.resize(); renderMacroTab(); renderBizChart();
+    wireMacroCrossSync();
+  } catch (error) {
+    requireCurrent(context);
+    bizLoading = false;
+    renderBizChart();
+    const status = document.getElementById('macro-status');
+    if (status) status.textContent = '載入失敗：' + (error.message || error);
+    throw error;
+  }
 }
 
 export function onThemeChange(light) {
@@ -386,6 +454,7 @@ export function resize() {
   macroChart?.resize();
   bizChart?.resize();
 }
+export function getCharts() { return [macroChart, bizChart].filter(Boolean); }
 
 document.getElementById("m2-toggle")?.addEventListener("click", () => {
   macroShowM2 = !macroShowM2;

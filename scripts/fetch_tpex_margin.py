@@ -79,6 +79,7 @@ import os
 import time
 from datetime import date, timedelta
 from pathlib import Path
+import _common
 
 import requests
 
@@ -236,20 +237,7 @@ def fetch_day(d_iso):
 def missing_trading_days(have):
     """[FLOOR, CEIL] 內尚未抓過的平日，依 stride 分層排序(32→16→8→4→2→1)，寫法/理由
     同 fetch_margin_ratio_mm.py：任一中途點停下，樣本都均勻散佈全區間。"""
-    days = []
-    d = date.fromisoformat(CEIL) if CEIL else date.today()
-    floor = date.fromisoformat(FLOOR)
-    while d >= floor:
-        if d.weekday() < 5 and d.isoformat() not in have:
-            days.append(d.isoformat())
-        d -= timedelta(days=1)
-    out, taken = [], set()
-    for stride in (32, 16, 8, 4, 2, 1):
-        for i, iso in enumerate(days):
-            if i % stride == 0 and iso not in taken:
-                taken.add(iso)
-                out.append(iso)
-    return out
+    return _common.stratified_missing_weekdays(have, FLOOR, CEIL, date.today())
 
 
 def save(by_date):

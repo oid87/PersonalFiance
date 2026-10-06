@@ -4,6 +4,7 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { chipPicker } from '../utils/dom.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 let chart = null;
 let forcedChart = null;
@@ -19,16 +20,27 @@ let twMarginSeries = null;   // [{date, value}] — 台股融資餘額（億元�
 let domInjected = false;
 
 // ── data load ────────────────────────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   if (rows) return;
-  const [liqRes, spxRes] = await Promise.all([
-    fetch('data/liquidity.json', { cache: 'no-cache' }),
-    fetch('data/SP500.json', { cache: 'no-cache' }),
+  const [liq, spx] = await Promise.all([
+    requestJSON('data/liquidity.json', { signal: context.signal }),
+    requestJSON('data/SP500.json', { signal: context.signal }),
   ]);
-  if (!liqRes.ok) throw new Error(`liquidity.json: HTTP ${liqRes.status}`);
-  if (!spxRes.ok) throw new Error(`SP500.json: HTTP ${spxRes.status}`);
-  const liq = await liqRes.json();
-  const spx = await spxRes.json();
+  if (!Array.isArray(liq?.margin) || liq.margin.length < 13 ||
+      !Array.isArray(spx?.data) || !spx.data.length) {
+    throw new Error('融資熱度資料格式不完整');
+  }
+  const validDate = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  if (!liq.margin.some(r => Number.isFinite(r?.debit)) ||
+      !liq.margin.every(r => validDate(r?.date) &&
+        (r.debit == null || Number.isFinite(r.debit)) &&
+        (r.cash == null || Number.isFinite(r.cash)) &&
+        (r.margin == null || Number.isFinite(r.margin)) &&
+        (r.cash == null || r.margin == null || r.cash + r.margin > 0)) ||
+      !spx.data.some(r => Number.isFinite(r?.close) && r.close > 0) ||
+      !spx.data.every(r => validDate(r?.date) && Number.isFinite(r.close) && r.close > 0)) {
+    throw new Error('融資熱度資料數值不完整');
+  }
 
   const margin = liq.margin ?? [];
   const debitByDate = new Map(margin.map(r => [r.date, r.debit]));
@@ -52,34 +64,52 @@ async function loadAll() {
     out.push({ date: cur.date, spx: spxClose, yoy, debit: cur.debit });
   }
   out.sort((a, b) => a.date.localeCompare(b.date));
-  rows = out;
+  if (!out.length) throw new Error('融資熱度資料沒有可用數值');
+  if (!out.every(r => Number.isFinite(r.spx) && Number.isFinite(r.yoy) &&
+      Number.isFinite(r.debit) && r.debit > 0)) throw new Error('融資熱度資料數值不完整');
 
   // 子圖 A：debit / (cash + margin free credit)。
   // 早期 FINRA 回補史料（1997 起）margin 欄位是 null（未分列融資帳戶餘額），
   // 只有 cash。禁止把缺值的 margin 欄位當成零來補——那會讓分母憑空變大、製造假崖。
   // 定案：主線只從 margin 首個非 null 的月份起算，之前的月份直接不畫。
-  freecreditRows = margin
+  const nextFreecreditRows = margin
     .filter(r => r.margin != null && r.cash != null && r.debit != null)
     .map(r => ({ date: r.date, ratio: r.debit / (r.cash + r.margin) }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
   // 子圖 B（美股）：FINRA margin debt 全史，不要求與 S&P500 對齊。
-  usDebitSeries = margin
+  const nextUsDebitSeries = margin
     .filter(r => r.debit != null)
     .map(r => ({ date: r.date, value: r.debit }))
     .sort((a, b) => a.date.localeCompare(b.date));
+  if (!nextUsDebitSeries.length) throw new Error('融資餘額資料沒有可用數值');
+  if (!nextFreecreditRows.every(r => Number.isFinite(r.ratio)) ||
+      !nextUsDebitSeries.every(r => Number.isFinite(r.value) && r.value > 0)) {
+    throw new Error('融資熱度資料數值不完整');
+  }
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
+  rows = out;
+  freecreditRows = nextFreecreditRows;
+  usDebitSeries = nextUsDebitSeries;
 }
 
 // 台股融資餘額（taiwan_margin_total.json）— lazy load，只在切到 TW 時抓。
 async function ensureTwMargin() {
   if (twMarginSeries) return twMarginSeries;
-  const r = await fetch('data/taiwan_margin_total.json', { cache: 'no-cache' });
-  if (!r.ok) throw new Error(`taiwan_margin_total.json: HTTP ${r.status}`);
-  const j = await r.json();
-  twMarginSeries = (j.data ?? [])
-    .filter(d => d.margin_money != null)
+  const j = await requestJSON('data/taiwan_margin_total.json');
+  if (!Array.isArray(j?.data)) {
+    clearRequestCache('data/taiwan_margin_total.json');
+    throw new Error('台股融資資料格式不完整');
+  }
+  const next = j.data
+    .filter(d => typeof d?.date === 'string' && Number.isFinite(d.margin_money))
     .map(d => ({ date: d.date, value: d.margin_money }))
     .sort((a, b) => a.date.localeCompare(b.date));
+  if (!next.length) {
+    clearRequestCache('data/taiwan_margin_total.json');
+    throw new Error('台股融資資料沒有可用數值');
+  }
+  twMarginSeries = next;
   return twMarginSeries;
 }
 
@@ -327,7 +357,9 @@ function ensureExtraDom() {
 
   chipPicker(document.getElementById('marginheat-unwind-toggle'), 'unwind-mkt', v => {
     unwindMarket = v;
-    renderUnwind();
+    void renderUnwind().catch(e => {
+      document.getElementById('marginheat-unwind-summary').textContent = '載入失敗：' + (e.message || e);
+    });
   });
 }
 
@@ -513,29 +545,33 @@ async function renderUnwind() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('marginheat-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   ensureExtraDom();
   try {
-    await loadAll();
-    setTimeout(() => {
-      chart?.resize();
-      render();
-      const fcHost = document.getElementById('marginheat-freecredit-chart');
-      if (fcHost && !freecreditChart) freecreditChart = echarts.init(fcHost, isLight() ? null : 'dark');
-      renderFreeCredit();
-      freecreditChart?.resize();
-      renderUnwind().then(() => unwindChart?.resize());
-    }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    chart?.resize();
+    render();
+    const fcHost = document.getElementById('marginheat-freecredit-chart');
+    if (fcHost && !freecreditChart) freecreditChart = echarts.init(fcHost, isLight() ? null : 'dark');
+    renderFreeCredit();
+    freecreditChart?.resize();
+    await renderUnwind();
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    unwindChart?.resize();
   } catch (e) {
+    rows = freecreditRows = usDebitSeries = null;
     const s = document.getElementById('marginheat-status');
     if (s) s.textContent = '載入失敗：' + (e.message || e);
     console.error('[marginheat] load failed', e);
+    throw e;
   }
 }
-export function onThemeChange(light) {
+export async function onThemeChange(light) {
   if (!chart) return;
   chart.dispose();
   chart = echarts.init(document.getElementById('marginheat-chart'), light ? null : 'dark');
@@ -551,7 +587,8 @@ export function onThemeChange(light) {
   const unwindHost = document.getElementById('marginheat-unwind-chart');
   if (unwindHost && (usDebitSeries || twMarginSeries)) {
     unwindChart = echarts.init(unwindHost, light ? null : 'dark');
-    renderUnwind();
+    await renderUnwind();
   }
 }
 export function resize() { chart?.resize(); forcedChart?.resize(); freecreditChart?.resize(); unwindChart?.resize(); }
+export function getCharts() { return [chart, forcedChart, freecreditChart, unwindChart].filter(Boolean); }

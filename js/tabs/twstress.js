@@ -7,6 +7,7 @@
 // 定位環境理解 / 風險溫度計，非交易訊號。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const DIMS = [
@@ -25,13 +26,15 @@ let tsRange = "10Y";
 let showTwii = true;
 let rows = null;   // [{date, twii, composite, fx, eqvol, margin, foreign, ma20, ma50, ma200}]
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (rows) return;
-  const r = await fetch("data/taiwan_stress.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`taiwan_stress.json: HTTP ${r.status}`);
-  const j = await r.json();
-  rows = (j?.data ?? []).map(d => ({ ...d }));
-  computeMA(rows);
+  const payload = await requestJSON("data/taiwan_stress.json", { signal: context.signal });
+  if (!Array.isArray(payload?.data) || !payload.data.length) throw new Error("taiwan_stress.json: missing data rows");
+  if (!payload.data.some(r => Number.isFinite(r?.composite))) throw new Error("taiwan_stress.json: no usable stress rows");
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  const nextRows = payload.data.map(d => ({ ...d }));
+  computeMA(nextRows);
+  rows = nextRows;
 }
 
 // check_reuse: keep — 就地 mutate 物件陣列、一次跑一整組 period 並綁死欄位名,與 canonical math.computeMA(data, period) 是不同概念
@@ -239,18 +242,20 @@ function buildControls() {
   }
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("ts-chart");
   if (!host) return;
   if (!tsChart) tsChart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { tsChart?.resize(); render(); }, 50);
+    await loadAll(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    tsChart?.resize();
+    render();
   } catch (e) {
-    const s = document.getElementById("ts-status");
-    if (s) s.textContent = "載入失敗：" + (e.message || e);
-    console.error("[twstress] load failed", e);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    rows = null;
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -260,3 +265,5 @@ export function onThemeChange(light) {
   if (rows) render();
 }
 export function resize() { tsChart?.resize(); }
+
+export function getCharts() { return tsChart ? [tsChart] : []; }
