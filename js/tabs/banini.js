@@ -28,6 +28,27 @@ export async function init(context = {}) {
   status.textContent = "載入中…";
   try {
     const next = await requestJSON('data/banini_reverse_indicator.json', { signal: context.signal });
+    if (!Array.isArray(next?.data) || !next.data.length ||
+        !Array.isArray(next.stats?.monthly_counts) || !next.stats.monthly_counts.length ||
+        !next.stats.monthly_counts.every(r => typeof r?.month === 'string' &&
+          Number.isFinite(r.count) && r.count >= 0) ||
+        !next.stats?.self_success_rate?.overall || !next.stats?.self_success_rate?.['多'] ||
+        !next.stats?.self_success_rate?.['空'] || !next.stats?.by_symbol_type ||
+        !next.stats?.by_reverse_view || !next.upstream_range?.from || !next.upstream_range?.to) {
+      throw new Error('反指標資料格式不完整');
+    }
+    const numericCounts = ['success', 'fail', 'rate_pct'];
+    if (![next.stats.self_success_rate.overall, next.stats.self_success_rate['多'],
+      next.stats.self_success_rate['空']].every(part => numericCounts.every(key =>
+        Number.isFinite(part[key]) && part[key] >= 0)) ||
+      !['insufficient', 'no_data'].every(key =>
+        Number.isFinite(next.stats.self_success_rate.overall[key]) &&
+        next.stats.self_success_rate.overall[key] >= 0) ||
+      ![next.stats.by_symbol_type, next.stats.by_reverse_view].every(groups =>
+        Object.values(groups).every(value => Number.isFinite(value) && value >= 0)) ||
+      !next.data.every(r => typeof r?.created_at === 'string')) {
+      throw new Error('反指標資料數值不完整');
+    }
     if (context.signal?.aborted || context.isCurrent?.() === false) return;
     raw = next;
     renderAll();

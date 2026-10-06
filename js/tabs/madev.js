@@ -7,6 +7,7 @@
 
 import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeMA } from '../utils/math.js';
+import { requestJSON } from '../utils/data.js';
 import { tsToLocalDate } from '../utils/dates.js';
 import { bindOnce } from '../utils/dom.js';
 
@@ -26,13 +27,16 @@ let range = '5Y';
 let computed = null;
 
 // ── data ──────────────────────────────────────────────────────────────
-async function loadData(t) {
+async function loadData(t, context = {}) {
   if (cache[t]) return cache[t];
-  const resp = await fetch(`data/${t}.json`, { cache: 'no-cache' });
-  if (!resp.ok) throw new Error(`${t}.json: HTTP ${resp.status}`);
-  const j = await resp.json();
-  cache[t] = (j.data || []).map(r => ({ date: r.date, close: r.close }));
-  return cache[t];
+  const j = await requestJSON(`data/${t}.json`, { signal: context.signal });
+  if (!Array.isArray(j?.data) || !j.data.length) throw new Error(`${t}.json: missing data rows`);
+  if (!j.data.every(r => typeof r?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date) &&
+      Number.isFinite(r.close) && r.close > 0)) throw new Error(`${t}.json: invalid close row`);
+  const rows = j.data.map(r => ({ date: r.date, close: r.close }));
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return null;
+  cache[t] = rows;
+  return rows;
 }
 
 // ── compute ───────────────────────────────────────────────────────────
@@ -317,4 +321,5 @@ export function onThemeChange(light) {
   if (computed) { render(computed); updateBadges(computed); }
 }
 export function resize() { chart?.resize(); }
+
 export function getCharts() { return chart ? [chart] : []; }

@@ -59,18 +59,20 @@ async function loadOptionalBusiness(context) {
 }
 
 export async function loadMacroData(context = {}) {
+  const next = {};
   for (const stem of ["US10Y", "US2Y", "M2", "CAPE"]) {
     if (macroLoaded[stem]) continue;
-    const resp = await fetch(`data/${stem}.json`, { cache: "no-cache" });
-    if (!resp.ok) throw new Error(`${stem}: HTTP ${resp.status}`);
-    const j = await resp.json();
-    macroLoaded[stem] = (j.data || []).map(r => [r.date, r.value]);
+    const path = `data/${stem}.json`;
+    const j = await requestJSON(path, { signal: context.signal });
+    if (!Array.isArray(j?.data) || !j.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.value))) { clearRequestCache(path); throw new Error(`${stem}: missing required rows`); }
+    next[stem] = j.data.map(r => [r.date, r.value]);
   }
   if (!macroLoaded["BIZ"]) {
     const rows = await loadOptionalBusiness(context);
-    requireCurrent(context);
-    if (rows) macroLoaded.BIZ = rows;
+    if (rows) next.BIZ = rows;
   }
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+  Object.assign(macroLoaded, next);
 }
 
 export function renderMacroTab() {
@@ -363,7 +365,7 @@ function wireMacroCrossSync() {
       syncing = true;
       try {
         for (const dst of charts) {
-          if (dst === src) continue;
+          if (dst === src || dst.isDisposed() || !dst.getOption()?.xAxis?.length) continue;
           const w = dst.getWidth();
           let px = dst.convertToPixel({ xAxisIndex: 0 }, xInfo.value);
           if (px == null || Number.isNaN(px) || px < -50 || px > w + 50) {
@@ -378,7 +380,7 @@ function wireMacroCrossSync() {
       }
     });
     src.getZr().on("globalout", () => {
-      for (const dst of charts) if (dst !== src) dst.dispatchAction({ type: "hideTip" });
+      for (const dst of charts) if (dst !== src && !dst.isDisposed() && dst.getOption()?.xAxis?.length) dst.dispatchAction({ type: "hideTip" });
     });
     // dataZoom (macroChart's slider drag or either chart's scroll/inside zoom) used to reach
     // the sibling chart only via echarts.connect(); relay it manually the same way as the
@@ -390,7 +392,7 @@ function wireMacroCrossSync() {
       const range = event.batch?.[0] ?? event;
       let { start, end } = range;
       if (start == null || end == null) {
-        const dz = src.getOption().dataZoom?.[0];
+        const dz = src.getOption()?.dataZoom?.[0];
         start = dz?.start;
         end = dz?.end;
       }
@@ -398,7 +400,7 @@ function wireMacroCrossSync() {
       syncingZoom = true;
       try {
         for (const dst of charts) {
-          if (dst === src) continue;
+          if (dst === src || dst.isDisposed() || !dst.getOption()?.dataZoom?.length) continue;
           dst.dispatchAction({ type: "dataZoom", start, end });
         }
       } finally {
@@ -452,6 +454,7 @@ export function resize() {
   macroChart?.resize();
   bizChart?.resize();
 }
+export function getCharts() { return [macroChart, bizChart].filter(Boolean); }
 
 document.getElementById("m2-toggle")?.addEventListener("click", () => {
   macroShowM2 = !macroShowM2;

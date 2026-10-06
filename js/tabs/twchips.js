@@ -25,6 +25,10 @@ async function loadAll(context = {}) {
   const paths = ["data/taiwan_fut_inst.json", "data/taiwan_basis.json",
     "data/taiwan_margin_total.json", "data/taiwan_retail_ls.json"];
   const payloads = await Promise.all(paths.map(path => requestJSON(path, { signal: context.signal })));
+  if (!payloads.every((p,i) => Array.isArray(p?.data) && p.data.some(r => typeof r?.date === 'string' && Number.isFinite(r?.[['foreign_net','basis','margin_money','mtx_ratio'][i]])))) {
+    paths.forEach(clearRequestCache);
+    throw new Error("Taiwan chips: missing required rows");
+  }
   const [futRows, basisRows, marginRows, retailRows] = payloads.map(p => p.data);
   let nextOpt = [], nextOptAvailable = false;
   try {

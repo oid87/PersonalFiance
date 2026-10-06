@@ -3,6 +3,7 @@ import { isLight, mob, PALETTE, echartsBase } from '../utils/theme.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 import { buildBreadthContext, getBreadthDenominator } from './breadthSignals.mjs';
 import { evaluateEventStudy, HORIZONS } from '../utils/eventStudy.mjs';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 const UNIVERSE_CONFIG = {
   SP500: { dataFile: 'data/breadth.json', overlayFile: 'data/SPY.json', overlayName: 'SPY', label: 'S&P 500' },
@@ -52,12 +53,43 @@ function breadthMomentumSignal(diff) {
 }
 
 
-async function readData(file) {
-  const response = await fetch(file, { cache: 'no-cache' });
-  if (!response.ok) throw new Error(`${file} HTTP ${response.status}`);
-  const json = await response.json();
-  if (!Array.isArray(json.data) || !json.data.length) throw new Error(`${file} 資料為空或格式錯誤`);
+async function readData(file, context = {}) {
+  const json = await requestJSON(file, { signal: context.signal });
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return null;
+  try {
+    validateData(file, json);
+  } catch (error) {
+    clearRequestCache(file);
+    throw error;
+  }
   return json;
+}
+
+function validDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const time = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(time) && new Date(time).toISOString().startsWith(value + 'T');
+}
+
+function validateData(file, payload) {
+  const rows = payload?.data;
+  if (!Array.isArray(rows) || !rows.length) throw new Error(`${file} 資料為空或格式錯誤`);
+  const breadth = /\/breadth(?:_\w+)?\.json$/.test(file);
+  const fieldNames = breadth
+    ? ['above20_count','above20_total','above20_pct','above50_count','above50_total','above50_pct','above200_count','above200_total','above200_pct','new_hi_count','new_lo_count','hl_total','bear_count','bear_pct','bear_total','total']
+    : [file.includes('fear_greed') ? 'value' : 'close'];
+  let usable = 0;
+  rows.forEach((row, index) => {
+    if (!validDate(row?.date)) throw new Error(`${file} 第 ${index + 1} 列日期錯誤`);
+    for (const field of fieldNames) {
+      const value = row[field];
+      if (value != null && (typeof value !== 'number' || !Number.isFinite(value)))
+        throw new Error(`${file} 第 ${index + 1} 列 ${field} 型別錯誤`);
+    }
+    if (breadth ? [20, 50, 200].some(window => Number.isFinite(row[`above${window}_pct`]))
+      : Number.isFinite(row[fieldNames[0]])) usable++;
+  });
+  if (usable < 2) throw new Error(`${file} 可用資料不足`);
 }
 
 function clearView() {
@@ -70,7 +102,7 @@ function clearView() {
   document.querySelectorAll('#breadth-top .bc-pct, #breadth-top .bc-count, #breadth-top .bc-signal').forEach(node => { node.textContent = '—'; });
 }
 
-async function selectUniverse(next) {
+async function selectUniverse(next, context = {}) {
   universe = next;
   const sequence = ++requestSequence;
   clearView();
@@ -79,19 +111,23 @@ async function selectUniverse(next) {
   try {
     if (!cache.has(next)) {
       const config = UNIVERSE_CONFIG[next];
-      const [data, pricesJson] = await Promise.all([readData(config.dataFile), readData(config.overlayFile)]);
+      const [data, pricesJson] = await Promise.all([readData(config.dataFile, context), readData(config.overlayFile, context)]);
+      if (sequence !== requestSequence || context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
       const prices = pricesJson.data;
       const contexts = Object.fromEntries([20, 50, 200].map(window => [window, buildBreadthContext(data.data, prices, window)]));
+      if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
       cache.set(next, { data, prices, contexts });
     }
-    if (sequence !== requestSequence) return;
+    if (sequence !== requestSequence || context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     loaded = cache.get(next);
     refreshView();
+    el('tab-breadth')?.querySelector('.tab-load-error')?.remove();
   } catch (error) {
-    if (sequence !== requestSequence) return;
+    if (sequence !== requestSequence || context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     clearView();
     el('breadth-status').textContent = `${cfg().label} 載入失敗：${error.message}`;
     el('breadth-retry').hidden = false;
+    if (context.signal || context.isCurrent) throw error;
   }
 }
 
@@ -235,7 +271,7 @@ async function toggleOverlay(name, button) {
   refreshStatus(); renderBreadthChart();
 }
 
-export async function init() {
+export async function init(context = {}) {
   initAdvancedPanel();
   chipPicker(el('breadth-universe-picker'), 'breadth-universe', value => selectUniverse(value));
   chipPicker(el('breadth-ma-picker'), 'breadth-ma', value => { maWindow = +value; refreshView(); });
@@ -251,7 +287,7 @@ export async function init() {
   for (const [name, id] of [['VIX','breadth-vix-toggle'],['F&G','breadth-fg-toggle']]) if (bindOnce(el(id))) el(id).addEventListener('click', () => toggleOverlay(name, el(id)));
   if (bindOnce(el('breadth-retry'))) el('breadth-retry').addEventListener('click', () => selectUniverse(universe));
   if (loaded) { refreshView(); resize(); return; }
-  await selectUniverse(universe);
+  await selectUniverse(universe, context);
 }
 
 export function onThemeChange(light) {

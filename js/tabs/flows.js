@@ -37,6 +37,9 @@ let sectorLoadPromise = null;
 async function loadAll(context = {}) {
   if (rawData) return;
   const next = await requestJSON('data/flows.json', { signal: context.signal });
+  if (!['semi', 'qqq', 'tw50'].every(k => Array.isArray(next?.[k]) && next[k].some(r => typeof r?.date === 'string' && Number.isFinite(r.flow)))) {
+    clearRequestCache('data/flows.json'); throw new Error('Flows: missing required series');
+  }
   const optional = async path => {
     try {
       const value = await requestJSON(path, { signal: context.signal });
@@ -318,6 +321,10 @@ async function loadSectorData(context = {}) {
   if (!sectorLoadPromise) {
     sectorLoadPromise = requestJSON('data/qqq_sector_flows.json', { signal: context.signal })
       .then(j => {
+        if (!j?.windows || !Array.isArray(j.windows['1d'])) {
+          clearRequestCache('data/qqq_sector_flows.json');
+          throw new Error('Sector flows: missing windows');
+        }
         return j;
       }).catch(e => { sectorLoadPromise = null; throw e; });
   }

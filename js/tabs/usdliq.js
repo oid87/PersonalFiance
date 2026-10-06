@@ -89,10 +89,15 @@ let daily = null, weekly = null, auctions = null, fails = null;
 async function loadAll(context = {}) {
   if (doc) return;
   const next = await requestJSON('data/usdliq.json', { signal: context.signal });
+  if (!Array.isArray(next?.daily) || !next.daily.some(r => typeof r?.date === 'string' && [r.effr,r.onrrp,r.sofr,r.tga].some(Number.isFinite)) ||
+      !Array.isArray(next?.weekly) || !next.weekly.some(r => typeof r?.date === 'string' && Number.isFinite(r.reserves))) {
+    clearRequestCache('data/usdliq.json');
+    throw new Error('USD liquidity: missing required daily/weekly rows');
+  }
   if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
   doc = next;
-  daily = doc.daily ?? [];
-  weekly = doc.weekly ?? [];
+  daily = next.daily;
+  weekly = next.weekly;
   auctions = next.auctions ?? [];
   fails = next.fails ?? [];
 }

@@ -26,6 +26,20 @@ async function loadAll(context = {}) {
     requestJSON('data/SPY_valuation.json', { signal: context.signal }),
     requestJSON('data/USREC.json', { signal: context.signal }),
   ]);
+  for (const [path, payload] of [['SOXX_valuation', soxx], ['SPY_valuation', spy], ['USREC', usrec]]) {
+    if (!Array.isArray(payload?.data) || !payload.data.length) throw new Error(`${path}: missing data rows`);
+  }
+  const validDate = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  for (const [path, payload] of [['SOXX_valuation', soxx], ['SPY_valuation', spy]]) {
+    if (!payload.data.some(r => Number.isFinite(r?.fpe)) ||
+        !payload.data.every(r => validDate(r?.date) &&
+        (r.fpe == null || Number.isFinite(r.fpe)) &&
+        (r.fpe_harmonic == null || Number.isFinite(r.fpe_harmonic)) &&
+        (r.tpe == null || Number.isFinite(r.tpe)))) throw new Error(`${path}: invalid numeric row`);
+  }
+  if (!usrec.data.every(r => validDate(r?.date) && (r.usrec === 0 || r.usrec === 1))) {
+    throw new Error('USREC: invalid recession row');
+  }
   if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
   const areas = computeRecessionIntervals(usrec.data, SINCE_DATE);
   soxxRows = soxx.data; spyRows = spy.data; recAreas = areas;

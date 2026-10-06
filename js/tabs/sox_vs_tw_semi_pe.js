@@ -22,21 +22,35 @@
 // { data: [...] } payload。
 
 import { isLight, echartsBase, PALETTE } from '../utils/theme.js';
-import { fetchJSON, toPoints, latestOf } from '../utils/data.js';
+import { requestJSON, toPoints, latestOf } from '../utils/data.js';
 
 const TAB_ID = 'sox_vs_tw_semi_pe';
 let chart = null;
 let soxxRows = null;   // [{date, fpe, fpe_harmonic, tpe, src}]
 let twSemiRows = null; // [{date, fpe, fpe_harmonic, coverage_pct, src}]
 
-async function loadAll() {
-  if (soxxRows && twSemiRows) return; // 首次切入才載入
+async function loadAll(context = {}) {
+  if (soxxRows && twSemiRows) return;
   const [soxx, twSemi] = await Promise.all([
-    fetchJSON('data/SOXX_valuation.json'),
-    fetchJSON('data/tw_semi_valuation.json'),
+    requestJSON('data/SOXX_valuation.json', { signal: context.signal }),
+    requestJSON('data/tw_semi_valuation.json', { signal: context.signal }),
   ]);
-  soxxRows = soxx;
-  twSemiRows = twSemi;
+  for (const [path, payload] of [['SOXX_valuation', soxx], ['tw_semi_valuation', twSemi]]) {
+    if (!Array.isArray(payload?.data) || !payload.data.length) throw new Error(`${path}: missing data rows`);
+  }
+  const validDate = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  for (const [path, payload] of [['SOXX_valuation', soxx], ['tw_semi_valuation', twSemi]]) {
+    if (!payload.data.some(r => Number.isFinite(r?.fpe_harmonic)) ||
+        !payload.data.every(r => validDate(r?.date) &&
+        (r.fpe == null || Number.isFinite(r.fpe)) &&
+        (r.fpe_harmonic == null || Number.isFinite(r.fpe_harmonic)) &&
+        (r.tpe == null || Number.isFinite(r.tpe)) &&
+        (r.coverage_pct == null || Number.isFinite(r.coverage_pct)))) {
+      throw new Error(`${path}: invalid numeric row`);
+    }
+  }
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  soxxRows = soxx.data; twSemiRows = twSemi.data;
 }
 
 function buildOption() {
@@ -132,16 +146,18 @@ function renderNote() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById(`${TAB_ID}-chart`);
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     chart.setOption(buildOption(), { notMerge: true });
     renderNote();
   } catch (e) {
-    console.error(`[${TAB_ID}] load failed`, e);
+    soxxRows = null; twSemiRows = null;
+    throw e;
   }
 }
 
@@ -153,3 +169,5 @@ export function onThemeChange(_light) {
 export function resize() {
   chart?.resize();
 }
+
+export function getCharts() { return chart ? [chart] : []; }

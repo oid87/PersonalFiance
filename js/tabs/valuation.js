@@ -111,6 +111,7 @@ function requiredFields(path) {
 }
 
 function validateFile(path, rows) {
+  if (!Array.isArray(rows) || !rows.length) throw new Error(`${path}: missing data rows`);
   const fields = requiredFields(path);
   const counts = Object.fromEntries(fields.map(field => [field, 0]));
   rows.forEach((row, index) => {
@@ -125,6 +126,7 @@ function validateFile(path, rows) {
       if (names.some(name => typeof row[name] === 'number' && Number.isFinite(row[name]))) counts[field]++;
     }
   });
+  for (const field of fields) if (!counts[field]) throw new Error(`${path}: no valid ${field} values`);
 }
 
 // 24-month rolling average (O(n) sliding window on dense daily data)

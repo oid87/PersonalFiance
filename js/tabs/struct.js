@@ -5,6 +5,7 @@
 
 import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeMA } from '../utils/math.js';
+import { requestJSON } from '../utils/data.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const VPVR_BINS = 40;
@@ -25,15 +26,21 @@ let lookback = 252;
 let allBars = null; // [{date,open,high,low,close,volume}] ascending, full history
 
 // ── data load ─────────────────────────────────────────────────────────
-async function loadData() {
+async function loadData(context = {}) {
   if (allBars) return allBars;
-  const resp = await fetch('data/QQQ.json', { cache: 'no-cache' });
-  if (!resp.ok) throw new Error(`QQQ.json: HTTP ${resp.status}`);
-  const j = await resp.json();
-  allBars = (j.data || []).map(r => ({
+  const j = await requestJSON('data/QQQ.json', { signal: context.signal });
+  if (!Array.isArray(j?.data) || !j.data.length) throw new Error('QQQ.json: missing data rows');
+  if (!j.data.every(r => typeof r?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date) &&
+      [r.open, r.high, r.low, r.close].every(v => Number.isFinite(v) && v > 0) &&
+      Number.isFinite(r.volume) && r.volume >= 0)) {
+    throw new Error('QQQ.json: invalid OHLCV row');
+  }
+  const rows = j.data.map(r => ({
     date: r.date, open: r.open, high: r.high, low: r.low, close: r.close, volume: r.volume || 0,
   }));
-  return allBars;
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return null;
+  allBars = rows;
+  return rows;
 }
 
 // ── A. VPVR 支撐/壓力 ─────────────────────────────────────────────────
@@ -594,4 +601,5 @@ export function onThemeChange(light) {
   if (allBars) render(allBars);
 }
 export function resize() { chart?.resize(); vpvrChart?.resize(); }
+
 export function getCharts() { return [chart, vpvrChart].filter(Boolean); }

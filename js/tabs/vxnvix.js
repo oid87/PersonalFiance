@@ -17,6 +17,8 @@ async function loadAll(context = {}) {
   if (payload) return;
   const url = "data/vxnvix.json";
   const j = await requestJSON(url, { signal: context.signal });
+  if (!(Array.isArray(j?.data) && j.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.spread)) &&
+        typeof j?.current?.date === 'string' && Number.isFinite(j.current.spread))) { clearRequestCache(url); throw new Error("vxnvix: missing required data"); }
   if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
   payload = j;
 }

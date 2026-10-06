@@ -1,12 +1,11 @@
 // 融資峰值 tab — FINRA Margin Debt YoY% 峰值/高檔 vs SPX(^GSPC)/QQQ 後續表現
-//   以固定規則回顧融資 YoY 高檔／峰值後的價格表現，非可交易訊號。
+//   以固定規則回顧 margin debt YoY 高檔及局部峰值後 SPX/QQQ 的表現。
 //   資料：data/liquidity.json（margin[]）+ data/SP500.json + data/QQQ.json，全現成 JSON，不另開 fetch。
-//
-// Methodology and fixed reference window: docs/marginpeak-methodology.md.
+//   沙盒歷史研究使用不同資料時點與價格調整口徑，其舊數字不可當作本頁目前 raw close 表格值。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
-import { HORIZONS, COLS, detectSignalA, detectSignalB, computeSignalRow, groupMedians, groupCounts, computeBaseline, buildEventStudyPure, EVENT_STUDY_WINDOW_TD, BASELINE_VERSION, BASELINE_START_MONTH, BASELINE_END_MONTH } from './marginpeak_calc.mjs';
-
+import { HORIZONS, groupCounts, BASELINE_VERSION, detectSignalA, detectSignalB, computeSignalRow, computeBaseline, groupMedians, findAnchorIdx, monthEnd, COLS, buildEventStudyPure, EVENT_STUDY_WINDOW_TD, BASELINE_START_MONTH, BASELINE_END_MONTH } from './marginpeak_calc.mjs';
+import { requestJSON } from '../utils/data.js';
 
 let chart = null;
 let state = null; // { dates, yoyData, absData, spxData, qqqData, sigA, sigB, medA, medB, curYoy, curDate }
@@ -14,21 +13,29 @@ let idxSel = 'QQQ';   // 顯示哪個指數（SPX / QQQ，一次一個）
 let marginMode = 'yoy'; // 紅線意義：'yoy' = Margin Debt YoY%；'abs' = 融資餘額絕對值($B)
 let viewMode = 'table'; // 'table' = 現有中位數對拍表格＋雙軸圖；'eventstudy' = 融資見頂事件研究 percentile band
 
+// 事件研究視窗長度（交易日）。投影片 x 軸大約到 220+ 天，這裡抓 ~12 個月的交易日數當上限；
+// 資料量不夠支撐更長窗口時，各相對位置樣本數自然遞減（見 buildEventStudy 的 filter(v => v != null)）。
 
 // ── data load ────────────────────────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   if (state) return;
-  const [liqRes, spxRes, qqqRes] = await Promise.all([
-    fetch('data/liquidity.json', { cache: 'no-cache' }),
-    fetch('data/SP500.json', { cache: 'no-cache' }),
-    fetch('data/QQQ.json', { cache: 'no-cache' }),
+  const [liq, spx, qqq] = await Promise.all([
+    requestJSON('data/liquidity.json', { signal: context.signal }),
+    requestJSON('data/SP500.json', { signal: context.signal }),
+    requestJSON('data/QQQ.json', { signal: context.signal }),
   ]);
-  if (!liqRes.ok) throw new Error(`liquidity.json: HTTP ${liqRes.status}`);
-  if (!spxRes.ok) throw new Error(`SP500.json: HTTP ${spxRes.status}`);
-  if (!qqqRes.ok) throw new Error(`QQQ.json: HTTP ${qqqRes.status}`);
-  const liq = await liqRes.json();
-  const spx = await spxRes.json();
-  const qqq = await qqqRes.json();
+  if (!Array.isArray(liq?.margin) || liq.margin.length < 13 ||
+      !Array.isArray(spx?.data) || !spx.data.length ||
+      !Array.isArray(qqq?.data) || !qqq.data.length) {
+    throw new Error('融資峰值資料格式不完整');
+  }
+  const validDate = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
+  if (!liq.margin.every(r => validDate(r?.date) &&
+      (r.debit == null || Number.isFinite(r.debit) && r.debit > 0)) ||
+      !spx.data.every(r => validDate(r?.date) && Number.isFinite(r.close) && r.close > 0) ||
+      !qqq.data.every(r => validDate(r?.date) && Number.isFinite(r.close) && r.close > 0)) {
+    throw new Error('融資峰值資料數值不完整');
+  }
 
   const margin = liq.margin ?? [];
   const spxSeries = (spx.data ?? []).map(r => ({ date: r.date, close: r.close })).sort((a, b) => a.date < b.date ? -1 : 1);
@@ -64,8 +71,9 @@ async function loadAll() {
   const qqqData = dates.map(d => qqqByMonth.get(d.slice(0, 7)) ?? null);
 
   const last = yoySeries[yoySeries.length - 1];
+  if (!last || !Number.isFinite(last.yoy)) throw new Error('融資峰值資料沒有可用數值');
 
-  state = {
+  const next = {
     dates, yoyData, absData, spxData, qqqData,
     sigA, sigB,
     sigADates: sigARaw.map(s => s.date),
@@ -77,6 +85,8 @@ async function loadAll() {
     baseline: computeBaseline(spxSeries, qqqSeries),
     curYoy: last?.yoy ?? null, curDate: last?.date ?? null,
   };
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
+  state = next;
 }
 
 function buildEventStudy(idxKey) { return buildEventStudyPure(idxKey, state); }
@@ -404,7 +414,7 @@ function ensureViewModeUI() {
   }
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('marginpeak-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
@@ -412,12 +422,15 @@ export async function activate() {
   wireControls();
   syncChips();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    chart?.resize(); render();
   } catch (e) {
     const s = document.getElementById('marginpeak-status');
     if (s) s.textContent = '載入失敗：' + (e.message || e);
     console.error('[marginpeak] load failed', e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -427,4 +440,5 @@ export function onThemeChange(light) {
   if (state) render();
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }
 export { render };

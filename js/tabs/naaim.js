@@ -44,9 +44,12 @@
 //      全部 1045 週或全部交易日。
 
 import { isLight, mob, PALETTE } from '../utils/theme.js';
-import { mean, std } from '../utils/math.js';
+import { requestJSON } from '../utils/data.js';
+import { computeForTickerPure, ffillPctRankDaily } from './naaim_calc.mjs';
 import { tsToLocalDate } from '../utils/dates.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
+export { rollingPctRank, findEntryDate, dedupeSignals, ffillPctRankDaily,
+  fwdRet, realizedVol, computeForTickerPure } from './naaim_calc.mjs';
 
 // ── 標的設定 ─────────────────────────────────────────────────────────
 const TICKERS = [
@@ -61,15 +64,6 @@ const VIX_NAME = "VIX收盤價";
 const FG_COLOR  = "#d2a8ff";
 const VIX_COLOR = "#ffa657";
 
-// ── 研究參數（逐項對齊 Financial_work/naaim_exposure_study.py）────────
-const NAAIM_WINDOW      = 156;  // 週
-const NAAIM_MIN_PERIODS = 104;  // 週
-const HORIZON_TD    = { 1: 5, 4: 20, 13: 65, 26: 130 };
-const HIGH_THRESHOLDS = [80, 90, 95];
-const LOW_THRESHOLDS  = [20, 10, 5];
-const DEDUPE_GAP_DAYS = 90;
-const MIN_SAMPLE_WARN = 20;
-
 // ── 模組狀態 ─────────────────────────────────────────────────────────
 let chart = null;
 let ticker = "SPY";
@@ -82,269 +76,68 @@ let vixData = null;      // { dates, closes } 2000起日頻
 let showTable = true;
 let rangeKey  = "ALL";   // "1Y" | "2Y" | "3Y" | "ALL"
 
-// ── 純計算函式（無 DOM/fetch 依賴，供 tab 本身與 node 對拍腳本共用）───
-
-// pandas `.rolling(window, min_periods).rank(pct=True) * 100` 精確重建：
-// 視窗內 tie（同值）取平均名次，不是簡化的 count(x<=v)/n。
-// check_reuse: keep — 與 js/utils/math.js 的 percentileRank(val, sortedAsc) 是不同演算法
-// （靜態全陣列、count(x<val)/len、無 tie 平均），也與 vixskew.js 的 cxRollingPctRank
-// 是不同演算法（該函式自己註解承認是簡化版 count(x<=v)/n，未做 tie 平均）。
-// 本函式是本 tab 唯一需要「與 pandas rolling.rank(pct=True) bit-exact」的用途，
-// 换成上述任一簡化版都會在門檻邊界（如 79.7 vs 80.2）造成事件是否入選的差異。
-export function rollingPctRank(vals, window, minPeriods) {
-  const n = vals.length;
-  const out = new Array(n).fill(null);
-  for (let i = 0; i < n; i++) {
-    const start = Math.max(0, i - window + 1);
-    const w = i - start + 1;
-    if (w < minPeriods) continue;
-    const v = vals[i];
-    let less = 0, equal = 0;
-    for (let j = start; j <= i; j++) {
-      if (vals[j] < v) less++;
-      else if (vals[j] === v) equal++;
-    }
-    const rank = less + (equal + 1) / 2;
-    out[i] = (rank / w) * 100;
-  }
-  return out;
-}
-
-// t0 = naaimDate + 2 天緩衝後，第一個嚴格大於該緩衝日的交易日。
-// 對齊 python find_entry_date：candidates = price_index[price_index > naaim_date + 2天]。
-export function findEntryDate(priceDatesAsc, naaimDate) {
-  const d = new Date(naaimDate + "T00:00:00Z");
-  d.setUTCDate(d.getUTCDate() + 2);
-  // 不是 dates.tsToLocalDate 的場景：tsToLocalDate 是把 ECharts 本地午夜 axisValue
-  // timestamp 轉回顯示用日期字串（依瀏覽器時區）；這裡要做的是 UTC 錨定的曆日加法，
-  // 逐字對齊 python pd.Timestamp + pd.Timedelta(days=2)（timezone-naive，等同 UTC
-  // 正規化）。換成 tsToLocalDate 會依瀏覽器時區位移計算出的曆日，在 UTC-負offset 地區
-  // （如美洲）可能把 cutoff 往前推一天，破壞已用 node 腳本對拍
-  // baseline_naaim_exposure_study.txt 驗證過的 bit-exact 結果。dates.presetStart 也
-  // 不適用：它是「往回 N 年」的 range cutoff，不是「往前 N 天」的日期加法。
-  // check_reuse: keep — UTC 錨定曆日加法，需與 python pd.Timestamp+Timedelta bit-exact，非顯示格式化
-  const cutoff = d.toISOString().slice(0, 10);
-  let lo = 0, hi = priceDatesAsc.length;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (priceDatesAsc[mid] <= cutoff) lo = mid + 1; else hi = mid;
-  }
-  return lo < priceDatesAsc.length ? priceDatesAsc[lo] : null;
-}
-
-// 同 python lab.dedupe_signals(dates, gap_days=90)：排序後與前一保留訊號相差
-// <gapDays 曆日則跳過。
-// check_reuse: keep — 與 vixskew.js 的 cxDedupeSignals 演算法相同但該函式是
-// module-private（未 export），且本檔案操作的是日期字串陣列而非索引陣列；
-// spec 範圍只做本 tab，不做跨檔抽公用函式的 refactor。
-export function dedupeSignals(datesAsc, gapDays) {
-  const out = [];
-  let lastMs = null;
-  for (const d of datesAsc) {
-    const ms = Date.parse(d + "T00:00:00Z");
-    if (lastMs === null || (ms - lastMs) / 86400000 >= gapDays) {
-      out.push(d);
-      lastMs = ms;
-    }
-  }
-  return out;
-}
-
-// forward-fill 週頻 NAAIM 百分位成交易日階梯（功能②，純顯示用）。
-// 🚨 只准餵給 render() 畫線/tooltip，不可流入任何統計計算——去重/基率/報酬差都要
-// 用原始週頻 naaimDates/pctRank（見檔頭紅線註解與 computeForTickerPure）。
-// 填值起點 = t0（findEntryDate 對齊點，NAAIM 日期+2天緩衝後第一個交易日），不是調查日
-// 當天，理由同 t0 本身的理由：調查日當天市場還不知道這個數字，從調查日就開始填是未來函數。
-// priceDatesAsc 必須跟呼叫端拿去畫價格線的日期陣列同一份（逐筆同 x），這樣 ECharts
-// axis-trigger tooltip 才能保證每個交易日都能同時對到價格與 NAAIM 兩條線的值，
-// 不會出現「非調查日 hover 只看到價格沒有 NAAIM」的原始 bug。
-// 回傳陣列與 priceDatesAsc 等長，每格 null（尚無可用值，即該值可被得知之前）或
-// { pct, naaimDate, isOriginal }：isOriginal=true 表示這天剛好就是該值的 t0
-// （非沿用），naaimDate 是該值所屬的原始 NAAIM 調查週日期（供 tooltip 標「沿用 MM-DD」）。
-export function ffillPctRankDaily(priceDatesAsc, naaimDatesAsc, pctRank, entryMap) {
-  const steps = [];
-  for (let i = 0; i < naaimDatesAsc.length; i++) {
-    const t0 = entryMap.get(naaimDatesAsc[i]);
-    if (t0 == null || pctRank[i] == null) continue;
-    steps.push({ t0, pct: pctRank[i], naaimDate: naaimDatesAsc[i] });
-  }
-  steps.sort((a, b) => (a.t0 < b.t0 ? -1 : a.t0 > b.t0 ? 1 : 0));
-  const out = new Array(priceDatesAsc.length).fill(null);
-  let si = -1;
-  for (let i = 0; i < priceDatesAsc.length; i++) {
-    const d = priceDatesAsc[i];
-    while (si + 1 < steps.length && steps[si + 1].t0 <= d) si++;
-    if (si >= 0) {
-      out[i] = { pct: steps[si].pct, naaimDate: steps[si].naaimDate, isOriginal: d === steps[si].t0 };
-    }
-  }
-  return out;
-}
-
-// 對齊 python lab.fwd_ret：future = price[index>dt]；不足 td 筆回 null；
-// 取 future 的第 td 筆（0-index td-1），單筆四捨五入到小數 2 位（python 端
-// 也是逐筆 round(...,2) 後才平均，逐筆對齊才能讓平均值與 baseline 對拍到 0.01pp內）。
-export function fwdRet(closes, idx0, td) {
-  if (idx0 == null) return null;
-  if (idx0 + td >= closes.length) return null;
-  const v = (closes[idx0 + td] / closes[idx0] - 1) * 100;
-  return Math.round(v * 100) / 100;
-}
-
-// 對齊 python realized_vol：t0 起 td 個交易日日報酬，std（ddof=1，對齊 pandas
-// Series.std() 預設樣本標準差）× sqrt(252) × 100。
-export function realizedVol(closes, idx0, td) {
-  if (idx0 == null) return null;
-  if (idx0 + td >= closes.length) return null;
-  const rets = [];
-  for (let i = idx0; i < idx0 + td; i++) rets.push(closes[i + 1] / closes[i] - 1);
-  if (rets.length < 2) return null;
-  const s = std(rets, 1);
-  return s == null ? null : s * Math.sqrt(252) * 100;
-}
-
-function computeBaseline(baseDates, entryMap, dateIdx, closes) {
-  const baseline = {};
-  for (const [weeksStr, td] of Object.entries(HORIZON_TD)) {
-    const weeks = Number(weeksStr);
-    const rets = [], vols = [];
-    for (const d of baseDates) {
-      const t0 = entryMap.get(d);
-      const idx0 = dateIdx.get(t0);
-      const r = fwdRet(closes, idx0, td);
-      if (r != null) rets.push(r);
-      const v = realizedVol(closes, idx0, td);
-      if (v != null) vols.push(v);
-    }
-    baseline[weeks] = {
-      meanRet: rets.length ? mean(rets) : null,
-      meanVol: vols.length ? mean(vols) : null,
-      n: rets.length,
-    };
-  }
-  return baseline;
-}
-
-function evaluateGroup(datesPreDedupe, entryMap, dateIdx, closes, baseline, direction, threshold) {
-  const nPre = datesPreDedupe.length;
-  const deduped = dedupeSignals(datesPreDedupe.slice().sort(), DEDUPE_GAP_DAYS);
-  const nPost = deduped.length;
-  const warn = nPost < MIN_SAMPLE_WARN;
-  const byHorizon = {};
-  for (const [weeksStr, td] of Object.entries(HORIZON_TD)) {
-    const weeks = Number(weeksStr);
-    const rets = [], vols = [];
-    for (const d of deduped) {
-      const t0 = entryMap.get(d);
-      const idx0 = dateIdx.get(t0);
-      const r = fwdRet(closes, idx0, td);
-      if (r != null) rets.push(r);
-      const v = realizedVol(closes, idx0, td);
-      if (v != null) vols.push(v);
-    }
-    const meanRet = rets.length ? mean(rets) : null;
-    const meanVol = vols.length ? mean(vols) : null;
-    const winrate = rets.length ? (rets.filter(r => r > 0).length / rets.length) * 100 : null;
-    const b = baseline[weeks];
-    byHorizon[weeks] = {
-      meanRet, meanVol, winrate,
-      retDiff: (meanRet != null && b.meanRet != null) ? meanRet - b.meanRet : null,
-      volDiff: (meanVol != null && b.meanVol != null) ? meanVol - b.meanVol : null,
-      n: rets.length,
-    };
-  }
-  return { direction, threshold, nPre, nPost, warn, deduped, byHorizon };
-}
-
-// 純計算入口：只吃平行陣列，無 fetch/DOM 依賴 —— 可在瀏覽器（本 tab）與 node
-// 對拍腳本（比對 Financial_work baseline_naaim_exposure_study.txt）共用同一份邏輯。
-export function computeForTickerPure({ naaimDates, naaimVals, priceDates, priceCloses }) {
-  const pctRank = rollingPctRank(naaimVals, NAAIM_WINDOW, NAAIM_MIN_PERIODS);
-  const entryMap = new Map();
-  for (const d of naaimDates) {
-    const t0 = findEntryDate(priceDates, d);
-    if (t0 != null) entryMap.set(d, t0);
-  }
-  const dateIdx = new Map(priceDates.map((d, i) => [d, i]));
-
-  const baseDates = [];
-  for (let i = 0; i < naaimDates.length; i++) {
-    if (pctRank[i] != null && entryMap.has(naaimDates[i])) baseDates.push(naaimDates[i]);
-  }
-  const baseline = computeBaseline(baseDates, entryMap, dateIdx, priceCloses);
-
-  const groups = [];
-  let high80Deduped = [];
-  for (const thr of HIGH_THRESHOLDS) {
-    const datesPre = [];
-    for (let i = 0; i < naaimDates.length; i++) {
-      if (pctRank[i] != null && pctRank[i] >= thr && entryMap.has(naaimDates[i])) datesPre.push(naaimDates[i]);
-    }
-    const g = evaluateGroup(datesPre, entryMap, dateIdx, priceCloses, baseline, "高曝險", thr);
-    groups.push(g);
-    if (thr === 80) high80Deduped = g.deduped;
-  }
-  for (const thr of LOW_THRESHOLDS) {
-    const datesPre = [];
-    for (let i = 0; i < naaimDates.length; i++) {
-      if (pctRank[i] != null && pctRank[i] <= thr && entryMap.has(naaimDates[i])) datesPre.push(naaimDates[i]);
-    }
-    const g = evaluateGroup(datesPre, entryMap, dateIdx, priceCloses, baseline, "低曝險", thr);
-    groups.push(g);
-  }
-  return { pctRank, entryMap, baseline, groups, high80Deduped, dateIdx };
-}
+// Pure research calculations are imported from naaim_calc.mjs.
 
 // ── fetch / cache ────────────────────────────────────────────────────
-async function loadNaaim() {
+async function loadNaaim(context = {}) {
   if (naaimDates) return;
-  const r = await fetch("data/bullbear.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`bullbear.json: HTTP ${r.status}`);
-  const j = await r.json();
-  const rows = (j.naaim || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  const j = await requestJSON("data/bullbear.json", { signal: context.signal });
+  if (!Array.isArray(j?.naaim) || !j.naaim.length) throw new Error("bullbear.json: missing naaim rows");
+  if (!j.naaim.every(r => typeof r?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date) &&
+      Number.isFinite(r.mean))) throw new Error('bullbear.json: invalid NAAIM row');
+  const rows = j.naaim.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
   naaimDates = rows.map(r => r.date);
-  naaimVals  = rows.map(r => +r.mean);
+  naaimVals = rows.map(r => +r.mean);
 }
 
-async function loadPrice(key) {
+async function loadPrice(key, context = {}) {
   if (priceCache[key]) return priceCache[key];
   const t = TICKERS.find(x => x.key === key);
-  const r = await fetch(t.file, { cache: "no-cache" });
-  if (!r.ok) throw new Error(`${t.file}: HTTP ${r.status}`);
-  const j = await r.json();
-  const rows = (j.data || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  const j = await requestJSON(t.file, { signal: context.signal });
+  if (!Array.isArray(j?.data) || !j.data.length) throw new Error(`${t.file}: missing price rows`);
+  if (!j.data.every(r => typeof r?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date) &&
+      Number.isFinite(r.close) && r.close > 0)) throw new Error(`${t.file}: invalid price row`);
+  const rows = j.data.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
   const dates = rows.map(x => x.date);
   const closes = rows.map(x => +x.close);
   const dateIdx = new Map(dates.map((d, i) => [d, i]));
   const entry = { dates, closes, dateIdx };
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return null;
   priceCache[key] = entry;
   return entry;
 }
 
-async function loadFG() {
+async function loadFG(context = {}) {
   if (fgData) return fgData;
-  const r = await fetch("data/fear_greed.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`fear_greed.json: HTTP ${r.status}`);
-  const j = await r.json();
-  const rows = (j.data || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  const j = await requestJSON("data/fear_greed.json", { signal: context.signal });
+  if (!Array.isArray(j?.data) || !j.data.length) throw new Error("fear_greed.json: missing data rows");
+  if (!j.data.every(r => typeof r?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date) &&
+      Number.isFinite(r.value))) throw new Error('fear_greed.json: invalid value row');
+  const rows = j.data.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return null;
   fgData = { dates: rows.map(x => x.date), vals: rows.map(x => +x.value) };
   return fgData;
 }
 
-async function loadVIX() {
+async function loadVIX(context = {}) {
   if (vixData) return vixData;
-  const r = await fetch("data/VIX.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`VIX.json: HTTP ${r.status}`);
-  const j = await r.json();
-  const rows = (j.data || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  const j = await requestJSON("data/VIX.json", { signal: context.signal });
+  if (!Array.isArray(j?.data) || !j.data.length) throw new Error("VIX.json: missing data rows");
+  if (!j.data.every(r => typeof r?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date) &&
+      Number.isFinite(r.close) && r.close > 0)) throw new Error('VIX.json: invalid close row');
+  const rows = j.data.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return null;
   vixData = { dates: rows.map(x => x.date), closes: rows.map(x => +x.close) };
   return vixData;
 }
 
-async function computeForTicker(key) {
+async function computeForTicker(key, context = {}) {
   if (resultCache[key]) return resultCache[key];
-  await loadNaaim();
-  const price = await loadPrice(key);
+  await loadNaaim(context);
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return null;
+  const price = await loadPrice(key, context);
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return null;
   const result = computeForTickerPure({
     naaimDates, naaimVals,
     priceDates: price.dates, priceCloses: price.closes,
@@ -648,17 +441,22 @@ function renderStatus(key, result) {
     + `（原始值 ${naaimVals[lastIdx].toFixed(2)}%）`;
 }
 
-async function refresh() {
+let refreshVersion = 0;
+async function refresh(context = {}) {
   const status = document.getElementById("naaim-status");
+  const version = ++refreshVersion;
+  const key = ticker;
   try {
-    const [result] = await Promise.all([computeForTicker(ticker), loadFG(), loadVIX()]);
-    render(ticker, result);
+    const [result] = await Promise.all([computeForTicker(key, context), loadFG(context), loadVIX(context)]);
+    if (version !== refreshVersion || context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    render(key, result);
     renderTable(result);
-    renderStatus(ticker, result);
-    applyRangeZoom();  // render() 的 notMerge:true 每次都會把 dataZoom 重置回全區間，切標的/主題後要重套目前選的範圍
+    renderStatus(key, result);
+    applyRangeZoom();
   } catch (e) {
+    if (version !== refreshVersion) return;
     if (status) status.textContent = `載入失敗：${e.message}`;
-    console.error("[naaim] refresh failed", e);
+    if (context.signal || context.isCurrent) throw e;
   }
 }
 
@@ -694,12 +492,12 @@ function buildControls() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────
-export async function init() {
+export async function init(context = {}) {
   const host = document.getElementById("naaim-chart");
   if (!host) return;
   if (!chart) { chart = echarts.init(host, isLight() ? null : "dark"); bindLegendHandler(); }
   buildControls();
-  await refresh();
+  await refresh(context);
 }
 
 export function onThemeChange(light) {
@@ -715,3 +513,5 @@ export function onThemeChange(light) {
 }
 
 export function resize() { chart?.resize(); }
+
+export function getCharts() { return chart ? [chart] : []; }

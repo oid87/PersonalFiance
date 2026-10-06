@@ -16,6 +16,7 @@
 //   - 僅涵蓋上市(TWSE MI_MARGN),不含上櫃;$-weighted 大盤 aggregate,非逐檔/逐投資人。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 
 let chartA = null, chartB = null, chartC = null;
 let state = null;
@@ -71,14 +72,21 @@ function activeIndexNow() {
 }
 
 // ── data load ────────────────────────────────────────────────────────
-async function loadAll() {
+async function loadAll(context = {}) {
   if (state) return;
-  const res = await fetch('data/margin_costmap.json', { cache: 'no-cache' });
-  if (!res.ok) throw new Error(`margin_costmap.json: HTTP ${res.status}`);
-  const d = await res.json();
+  const d = await requestJSON('data/margin_costmap.json', { signal: context.signal });
+  if (!Array.isArray(d?.history) || !d.history.length ||
+      !Array.isArray(d.profile) || !d.profile.length ||
+      !Array.isArray(d.cascade) || !d.cascade.length ||
+      !Array.isArray(d.daily) || !d.daily.length ||
+      !d.history.some(row => typeof row?.date === 'string' && Number.isFinite(row.recon))) {
+    throw new Error('融資斷頭地圖資料格式不完整');
+  }
+  const nextMap = new Map();
+  for (const row of d.daily) nextMap.set(row.d, row);
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
   state = d;
-  dailyMap = new Map();
-  for (const row of d.daily ?? []) dailyMap.set(row.d, row);
+  dailyMap = nextMap;
 }
 
 // ── summary card ─────────────────────────────────────────────────────
@@ -219,6 +227,15 @@ function renderChartA() {
   if (gfc) crashLines.push({ xAxis: gfc.date, name: `${gfc.date} 金融海嘯低點` });
   if (covid) crashLines.push({ xAxis: covid.date, name: `${covid.date} COVID 低點` });
 
+  let eventNotes = document.getElementById('marginmap-event-notes');
+  if (!eventNotes) {
+    eventNotes = document.createElement('p');
+    eventNotes.id = 'marginmap-event-notes';
+    eventNotes.style.cssText = 'margin:0 16px 12px;font-size:12px;line-height:1.6;overflow-wrap:anywhere;color:var(--muted)';
+    chartA.getDom().after(eventNotes);
+  }
+  eventNotes.textContent = crashLines.map(event => event.name).join(' · ');
+
   chartA.setOption({
     backgroundColor: 'transparent', animation: false,
     title: {
@@ -251,7 +268,7 @@ function renderChartA() {
     xAxis: {
       type: 'category', data: dates, boundaryGap: false,
       axisLine: { lineStyle: { color: axisClr } }, axisTick: { show: false },
-      axisLabel: { color: axisClr, fontSize: 10, rotate: 45 },
+      axisLabel: { color: axisClr, fontSize: 10, interval: 'auto', hideOverlap: true, formatter: date => date.slice(0, 7) },
       splitLine: { show: false },
     },
     yAxis: {
@@ -272,7 +289,7 @@ function renderChartA() {
         lineStyle: { color: reconClr, width: 1.6 }, z: 4,
         markLine: {
           silent: true, symbol: 'none',
-          label: { formatter: '{b}', color: textClr, fontSize: 10 },
+          label: { show: false },
           lineStyle: { color: '#f85149', type: 'dashed', width: 1.3 },
           data: crashLines,
         },
@@ -483,7 +500,7 @@ function handleChartAClick(e) {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const hostA = document.getElementById('marginmap-chartA');
   const hostB = document.getElementById('marginmap-chartB');
   const hostC = document.getElementById('marginmap-chartC');
@@ -492,15 +509,16 @@ export async function activate() {
   if (!chartB) chartB = echarts.init(hostB, isLight() ? null : 'dark');
   if (!chartC) chartC = echarts.init(hostC, isLight() ? null : 'dark');
   try {
-    await loadAll();
-    setTimeout(() => {
-      chartA?.resize(); chartB?.resize(); chartC?.resize();
-      render();
-    }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    chartA?.resize(); chartB?.resize(); chartC?.resize();
+    render();
   } catch (e) {
     const s = document.getElementById('marginmap-summary');
     if (s) s.innerHTML = `<div style="color:var(--muted)">載入失敗:${e.message || e}</div>`;
     console.error('[marginmap] load failed', e);
+    throw e;
   }
 }
 
@@ -517,5 +535,6 @@ export function onThemeChange(light) {
 export function resize() {
   chartA?.resize(); chartB?.resize(); chartC?.resize();
 }
+export function getCharts() { return [chartA, chartB, chartC].filter(Boolean); }
 
 export { render };

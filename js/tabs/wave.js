@@ -34,6 +34,7 @@ export async function init(context = {}) {
     }
     if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     const nextData = Object.fromEntries(TICKERS.map((t, i) => [t.key, jsons[i].data.filter(r => r.close > 0)]));
+    for (const [key, rows] of Object.entries(nextData)) if (!rows.length) throw new Error(`${key}: no positive prices`);
     rawData = nextData;
     setupControls();
     setupInteractors();

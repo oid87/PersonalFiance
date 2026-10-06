@@ -1,7 +1,7 @@
 // Started from js/scaffold/_template.js; the diagnostic stays in the shared pure module.
 import { isLight, echartsBase, PALETTE } from '../utils/theme.js';
-import { fetchJSON } from '../utils/data.js';
-import { bindOnce, chipPicker } from '../utils/dom.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
+import { chipPicker } from '../utils/dom.js';
 import { MACRO_DIAGNOSTIC_METHOD_VERSION, computeDiagnosticMA, isSupportedMacroDiagnosticMethodVersion, diagnoseUsMacro, deriveDivergenceHistory, verifyDiagnosticSnapshot, canonicalJSON } from '../utils/us_macro_diagnostic.js';
 
 const BASE = 'data/us_macro_diagnostic_snapshots/';
@@ -45,16 +45,54 @@ export function needsUsMacroRefresh(asOf, now = Date.now()) {
 }
 let loaded = false, activeSymbol = 'SPY', chart = null, diagnosis = null, sources = null;
 
-async function optionalJSON(path) {
-  try { const value = await fetchJSON(path); return Array.isArray(value) ? {data:value} : value; }
-  catch (error) { if (/HTTP 404\b/.test(error.message)) return null; throw error; }
+function validOptionalRows(rows, field, { positive = false, monthly = false } = {}) {
+  if (!Array.isArray(rows) || !rows.length) return false;
+  let previous = '';
+  return rows.every(row => {
+    const date = row?.date;
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date <= previous) return false;
+    const parsed = new Date(`${date}T00:00:00Z`);
+    // check_reuse: keep — 驗證 ISO 日曆日期需 UTC 往返比對；tsToLocalDate 是本地軸日期、presetStart 是窗口裁切，皆非 schema 驗證。
+    if (!Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date || (monthly && !date.endsWith('-01'))) return false;
+    previous = date;
+    return row[field] === null || (Number.isFinite(row[field]) && (!positive || row[field] > 0));
+  });
 }
-async function readInputs() {
+
+function validOptionalInput(path, value) {
+  if (path !== FILES.cpi) return validOptionalRows(value?.data, path === FILES.credit_spread ? 'hy' : 'close', { positive: path !== FILES.credit_spread });
+  if (!Array.isArray(value?.components) || value.components.some(c => !c || typeof c !== 'object')) return false;
+  const relevant = value.components.filter(c => ['headline', 'core'].includes(c.key));
+  return relevant.length > 0 && new Set(relevant.map(c => c.key)).size === relevant.length &&
+    relevant.every(c => validOptionalRows(c.data, 'yoy', { monthly: true }));
+}
+
+async function optionalJSON(path, context = {}) {
+  try {
+    const value = await requestJSON(path, { signal: context.signal });
+    if (!validOptionalInput(path, value)) throw new Error('invalid optional rows');
+    return value;
+  }
+  catch (error) {
+    if (context.signal?.aborted || context.isCurrent?.() === false || error.name === 'AbortError') throw error;
+    clearRequestCache(path);
+    console.warn(`[usmacro] optional ${path}: unavailable`, error);
+    return null;
+  }
+}
+async function readInputs(context = {}) {
   let macroSummary;
-  try { macroSummary = await fetchJSON(FILES.macro_summary); }
+  try { macroSummary = await requestJSON(FILES.macro_summary, { signal: context.signal }); }
   catch (error) { if (/HTTP 404\b/.test(error.message)) return null; throw error; }
-  const [spy, qqq, cpi, creditSpread] = await Promise.all([optionalJSON(FILES.SPY), optionalJSON(FILES.QQQ), optionalJSON(FILES.cpi), optionalJSON(FILES.credit_spread)]);
-  return {asOf:macroSummary.as_of,methodVersion:MACRO_DIAGNOSTIC_METHOD_VERSION,macroSummary,prices:{SPY:spy,QQQ:qqq},cpi,creditSpread};
+  if (!macroSummary?.indicators || !macroSummary?.as_of) {
+    clearRequestCache(FILES.macro_summary); throw new Error('美國總經摘要缺少必要欄位');
+  }
+  const [spy, qqq, cpi, creditSpread] = await Promise.all([
+    optionalJSON(FILES.SPY, context), optionalJSON(FILES.QQQ, context),
+    optionalJSON(FILES.cpi, context), optionalJSON(FILES.credit_spread, context)]);
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+  return {asOf:macroSummary.as_of,methodVersion:MACRO_DIAGNOSTIC_METHOD_VERSION,macroSummary,prices:{SPY:spy,QQQ:qqq},cpi,creditSpread,
+    unavailableOptional:[!spy&&'SPY',!qqq&&'QQQ',!cpi&&'CPI',!creditSpread&&'信用利差'].filter(Boolean)};
 }
 function evidence(id, indicator, summary) {
   const source = summary.indicators[id], metadata = source.metadata ?? {};
@@ -136,19 +174,20 @@ function drawChart() {
   }),{notMerge:true});
   chart.resize();
 }
-async function rawHash(path) {
-  const response = await fetch(path,{cache:'no-cache'});
+async function rawHash(path, context = {}) {
+  // Exact response bytes are required for SHA-256 comparison with signed snapshot metadata.
+  const response = await fetch(path,{cache:'no-cache', signal: context.signal});
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
   const bytes = await response.arrayBuffer();
   const hash = await crypto.subtle.digest('SHA-256',bytes);
   return `sha256:${[...new Uint8Array(hash)].map(x=>x.toString(16).padStart(2,'0')).join('')}`;
 }
-async function loadHistory() {
+async function loadHistory(context = {}) {
   const host = document.getElementById('usmacro-history');
   let index;
-  try { index = await fetchJSON(`${BASE}index.json`); }
-  catch (error) { if (/HTTP 404\b/.test(error.message)) { host.textContent='尚未開始累積正式快照'; return; } host.textContent=`歷史無法驗證：${error.message}`; return; }
+  try { index = await requestJSON(`${BASE}index.json`, { signal: context.signal }); }
+  catch (error) { if (context.signal?.aborted || context.isCurrent?.() === false) throw error; if (/HTTP 404\b/.test(error.message)) { host.textContent='尚未開始累積正式快照'; return; } host.textContent=`歷史無法驗證：${error.message}`; return; }
   try {
     if (index?.schema_version !== 1 || !Array.isArray(index.entries)) throw new Error('快照索引結構錯誤');
     let previous = '', seen = new Set();
@@ -162,7 +201,8 @@ async function loadHistory() {
     if (!index.entries.length) { host.textContent='尚未開始累積正式快照'; return; }
     const selected = index.entries.slice(-120), snapshots=[];
     for (const entry of selected) {
-      const response = await fetch(`${BASE}${entry.path}`,{cache:'no-cache'});
+      // Snapshot verification hashes the raw bytes before parsing JSON; requestJSON cannot preserve those bytes.
+      const response = await fetch(`${BASE}${entry.path}`,{cache:'no-cache', signal: context.signal});
       if (!response.ok) throw new Error(`快照 HTTP ${response.status}`);
       const bytes = await response.arrayBuffer();
       const digest = await crypto.subtle.digest('SHA-256',bytes);
@@ -173,18 +213,31 @@ async function loadHistory() {
       await verifyDiagnosticSnapshot(snapshot); snapshots.push(snapshot);
     }
     const last = snapshots.at(-1), hashes = {};
-    for (const [key,path] of Object.entries(FILES)) hashes[key] = await rawHash(path);
-    const liveMatches = last.as_of === diagnosis.as_of && last.method_version === diagnosis.method_version && canonicalJSON(last.diagnostic_output) === canonicalJSON(diagnosis) && Object.keys(FILES).every(k => last.source_file_sha256[k] === hashes[k]);
+    // A failed optional source has already been classified by readInputs. Do
+    // not fetch it again for live parity and consume the activation deadline.
+    const completeInputs = sources.unavailableOptional.length === 0;
+    if (completeInputs) for (const [key,path] of Object.entries(FILES)) hashes[key] = await rawHash(path, context);
+    const liveMatches = completeInputs && last.as_of === diagnosis.as_of && last.method_version === diagnosis.method_version && canonicalJSON(last.diagnostic_output) === canonicalJSON(diagnosis) && Object.keys(FILES).every(k => last.source_file_sha256[k] === hashes[k]);
     const history = await deriveDivergenceHistory(snapshots,null,new Date().toISOString().replace(/\.\d{3}Z$/,'Z'));
     const phase = {observed_start:'首次觀察到背離',persistent:'背離持續',converged:'已收斂',ended_unresolved:'背離結束，未對齊',changed_type:'背離類型改變',no_divergence:'未見背離',insufficient:'資料不足'};
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
     host.innerHTML=`<p>已保存歷史：${esc(dateText(selected[0].as_of))} 至 ${esc(dateText(last.as_of))}；檢視最近 ${snapshots.length} 份／索引共 ${index.entries.length} 份。${liveMatches ? '本次診斷與最後保存資料一致。' : '歷史截至最後保存時間；本次診斷尚未保存。'}</p>${['SPY','QQQ'].map(s=>{const h=history[s];return `<div class="um-history-row"><strong>${s}</strong> · ${esc(phase[h.phase]??'尚無可驗證狀態')}${h.observed_since ? ` · 首次觀察 ${esc(dateText(h.observed_since))} · ${h.observed_snapshots} 份已保存快照${h.left_censored?'（左側截斷，不能推定起始日）':''}` : ''}</div>`}).join('')}`;
-  } catch (error) { host.textContent=`歷史無法驗證：${error.message}`; }
+  } catch (error) { if (context.signal?.aborted || context.isCurrent?.() === false) throw error; host.textContent=`歷史無法驗證：${error.message}`; }
 }
 function render() {
   const m=diagnosis.macro, counts=m.counts;
   document.getElementById('usmacro-meta').innerHTML=`B 摘要擷取 ${esc(dateText(diagnosis.as_of))}<br>本頁快取重算 ${esc(dateText(new Date()))}<br>核心共同月份 ${esc(m.reference_month)}<br>摘要距今 ${Math.max(0,Math.floor((Date.now()-Date.parse(diagnosis.as_of))/3600000))} 小時`;
   const old=needsUsMacroRefresh(diagnosis.as_of);
   document.getElementById('usmacro-status').textContent=`${old?'B 摘要已超過 36 小時，或跨過週二至週六 06:00 台北排程日，尚未刷新。':''}以目前快取重算，資料日期依 B 摘要時間截取；不代表當時已保存的診斷。四組指標：${stateText(m.direction)}；${counts?`轉強 ${counts.positive}／轉弱 ${counts.negative}／持平 ${counts.neutral}／分歧 ${counts.divergent}，固定分母 ${counts.denominator}`:'方向資料不足，固定分母 4 未能計票'}。${m.broad_weakening===true?'符合狹義轉弱擴散條件。':m.broad_weakening===false?'未符合狹義轉弱擴散條件。':'擴散條件資料不足。'}`;
+  if (sources.unavailableOptional.length) {
+    const status = document.getElementById('usmacro-status');
+    status.append(` 部分來源暫不可用：${sources.unavailableOptional.join('、')}。 `);
+    const retry = document.createElement('button');
+    retry.type = 'button'; retry.className = 'chip'; retry.id = 'usmacro-optional-retry';
+    retry.textContent = '重試可選來源';
+    retry.addEventListener('click', () => { void import('../switcher.js').then(m => m.switchTo('usmacro')); });
+    status.append(retry);
+  }
   document.getElementById('usmacro-content').innerHTML=`<div class="um-section"><h3>四組實體經濟指標</h3><div class="um-grid">${Object.entries(FAMILY).map(([key,label])=>`<article class="um-card"><h3>${label}</h3><strong>${stateText(m.families[key].direction)}</strong><p class="um-muted">${m.families[key].indicators.map(id=>`${NAMES[id]}：${stateText(m.indicators[id].direction)}`).join(' · ')}</p></article>`).join('')}</div></div>
     <div class="um-section"><h3>六面向與補充證據</h3><div class="um-grid">${IDS.map(indicatorCard).join('')}</div></div>
     <div class="um-section"><h3>價格與總經並列</h3><div class="um-grid">${['SPY','QQQ'].map(priceCard).join('')}</div><div class="picker-row" id="usmacro-picker"><span class="chip active" data-usmacro-symbol="SPY">SPY</span><span class="chip" data-usmacro-symbol="QQQ">QQQ</span></div><div id="usmacro-chart" class="um-chart"></div><p class="um-muted">原始 close 與 SMA125／SMA150；先以完整可用資料計算，再只展示近一年。價格／月份參考日期可能不同。</p></div>
@@ -192,19 +245,28 @@ function render() {
     <div class="um-section"><h3>觀察傳導鏈</h3>${renderFlow()}<h3>下一驗證點</h3><p>${diagnosis.transmission.next_checks.map(x=>esc(CHECK[x.id]??x.id)).join('；')}</p></div>
     <div class="um-section"><h3>正式快照歷史</h3><div id="usmacro-history" class="um-alert">核對中…</div><p class="um-muted">快照只從正式保存當天開始累積；最新修訂資料不可回填成過去市場當時可知的診斷。</p></div>`;
   chipPicker(document.getElementById('usmacro-picker'),'usmacro-symbol',symbol=>{activeSymbol=symbol;drawChart();});
+  document.querySelectorAll('#usmacro-picker [data-usmacro-symbol]').forEach(el => el.classList.toggle('active', el.dataset.usmacroSymbol === activeSymbol));
   drawChart();
 }
-export async function activate() {
-  if (loaded) { chart?.resize(); return; }
+export async function activate(context = {}) {
+  if (loaded && !sources?.unavailableOptional.length) { chart?.resize(); return; }
   const status=document.getElementById('usmacro-status');
-  if (!bindOnce(status)) return;
   try {
-    sources=await readInputs();
-    if (!sources) { status.textContent='美國總經摘要無資料（B 摘要檔不存在）。'; loaded=true; return; }
-    diagnosis=diagnoseUsMacro(sources);
-    render(); loaded=true;
-    await loadHistory();
-  } catch(error) { status.textContent=`資料錯誤：${error.message}`; document.getElementById('usmacro-content').textContent='無法安全顯示診斷。'; loaded=true; }
+    const nextSources=await readInputs(context);
+    if (!nextSources) { status.textContent='美國總經摘要無資料（B 摘要檔不存在）。'; return; }
+    const nextDiagnosis=diagnoseUsMacro(nextSources);
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+    sources=nextSources; diagnosis=nextDiagnosis;
+    chart?.dispose(); chart=null;
+    render();
+    await loadHistory(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
+    loaded=true;
+  } catch(error) {
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw error;
+    status.textContent=`資料錯誤：${error.message}`; document.getElementById('usmacro-content').textContent='無法安全顯示診斷。'; sources=null; diagnosis=null; loaded=false; throw error;
+  }
 }
 export function onThemeChange() { if (chart && diagnosis) { chart.dispose(); chart=null; drawChart(); } }
 export function resize() { chart?.resize(); }
+export function getCharts() { return [chart].filter(Boolean); }

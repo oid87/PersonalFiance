@@ -32,6 +32,12 @@ async function loadAll(context = {}) {
     requestJSON('data/tw_sector_flow.json', { signal: context.signal }),
     requestJSON('data/taiwan_sector_index.json', { signal: context.signal }),
   ]);
+  if (!nextFlow?.sectors || !nextIndex?.data ||
+      !Object.keys(nextFlow.sectors).some(k => Array.isArray(nextFlow.sectors[k]) && nextFlow.sectors[k].some(r => Array.isArray(r) && typeof r[0] === 'string' && Number.isFinite(r[1])) &&
+        Array.isArray(nextIndex.data[k]) && nextIndex.data[k].some(r => Array.isArray(r) && typeof r[0] === 'string' && Number.isFinite(r[1])))) {
+    clearRequestCache('data/tw_sector_flow.json'); clearRequestCache('data/taiwan_sector_index.json');
+    throw new Error('Sector flow: missing required sectors');
+  }
   if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException('Activation expired', 'AbortError');
   flowData = nextFlow;
   indexData = nextIndex;
