@@ -12,7 +12,7 @@
 // js/utils/dates.js（math.js 沒有這個函式）——已核對兩檔內容，此處改從正確位置 import。
 
 import { echartsBase, isLight, PALETTE } from '../utils/theme.js';
-import { fetchJSON } from '../utils/data.js';
+import { requestJSON } from '../utils/data.js';
 import { lookupLE } from '../utils/dates.js';
 
 const WINDOW_DAYS = 153; // 8/1~12/31：Aug(31-1=30 剩餘)+Sep30+Oct31+Nov30+Dec31 = 153
@@ -35,12 +35,19 @@ function offsetToLabel(refYear, offset) {
   return offsetToDate(refYear, offset).slice(5).replace('-', '/');
 }
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (cache) return;
-  const [early, recent] = await Promise.all([
-    fetchJSON('data/VIX_early.json'),
-    fetchJSON('data/VIX.json'),
+  const [earlyPayload, recentPayload] = await Promise.all([
+    requestJSON('data/VIX_early.json', { signal: context.signal }),
+    requestJSON('data/VIX.json', { signal: context.signal }),
   ]);
+  const early = earlyPayload?.data;
+  const recent = recentPayload?.data;
+  const valid = row => typeof row?.date === 'string' && Number.isFinite(row.close);
+  if (!Array.isArray(early) || !early.some(valid) || !early.every(valid) ||
+      !Array.isArray(recent) || !recent.some(valid) || !recent.every(valid)) {
+    throw new Error('VIX季節性資料格式不完整');
+  }
   const pairs = [...early, ...recent]
     .map(r => [r.date, r.close])
     .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
@@ -81,6 +88,8 @@ async function loadAll() {
   // 11/3 期中選舉的 offset：Aug1(refYear) -> Nov3(refYear) 天數差，動態算（跟閏年無關，8~11月不含2月）
   const electionOffset = Math.round((Date.UTC(thisYear, 10, 3) - Date.UTC(thisYear, 7, 1)) / 86400000);
 
+  if (!seasonalAvg.some(Number.isFinite)) throw new Error('VIX季節性資料沒有可用數值');
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
   cache = { baseYears, thisYear, seasonalAvg, thisYearActual, labels, electionOffset };
 }
 
@@ -124,18 +133,20 @@ function renderStatus() {
     `資料來源：data/VIX_early.json + data/VIX.json`;
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('vixseason-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
     chart.setOption(buildOption(), { notMerge: true });
     renderStatus();
   } catch (e) {
     console.error('[vixseason] load failed', e);
     const s = document.getElementById('vixseason-status');
     if (s) s.textContent = '載入失敗：' + (e.message || e);
+    throw e;
   }
 }
 
@@ -147,3 +158,4 @@ export function onThemeChange(_light) {
 export function resize() {
   chart?.resize();
 }
+export function getCharts() { return chart ? [chart] : []; }

@@ -4,17 +4,21 @@
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { chipPicker } from '../utils/dom.js';
+import { requestJSON } from '../utils/data.js';
 
 let chart = null;
 let range = "MAX";
 let rows  = null;
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (rows) return;
-  const r = await fetch("data/taifex_foreign_oi.json", { cache: "no-cache" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const j = await r.json();
-  rows = (j?.data ?? []).filter(x => x.tx_foreign_net_oi != null).map(x => ({ ...x }));
+  const j = await requestJSON('data/taifex_foreign_oi.json', { signal: context.signal });
+  if (!Array.isArray(j?.data)) throw new Error('外資未平倉資料格式不完整');
+  const next = j.data.filter(x => typeof x?.date === 'string' &&
+    Number.isFinite(x.tx_foreign_net_oi)).map(x => ({ ...x }));
+  if (!next.length) throw new Error('外資未平倉資料沒有可用數值');
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
+  rows = next;
 }
 
 function cutoffDate(key) {
@@ -137,18 +141,21 @@ function buildControls() {
   chipPicker(rp, "taifex-range", v => { range = v; render(); });
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("taifex-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    await new Promise(resolve => requestAnimationFrame(resolve));
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    chart?.resize(); render();
   } catch (e) {
     const s = document.getElementById("taifex-status");
     if (s) s.textContent = "載入失敗：" + (e.message || e);
     console.error("[taifex_foreign_oi] load failed", e);
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -158,3 +165,4 @@ export function onThemeChange(light) {
   if (rows) render();
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }

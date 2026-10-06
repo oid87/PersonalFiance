@@ -40,23 +40,44 @@ let showVoo = true;
 let showQqq = true;
 let showFy2 = false;
 
+function validDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const time = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(time) && new Date(time).toISOString().startsWith(value + 'T');
+}
+
+function validateRow(row, ticker) {
+  if (!row || Array.isArray(row) || typeof row !== 'object' || !validDate(row.date)
+    || (row.price_asof != null && !validDate(row.price_asof)) || row.ticker !== ticker
+    || typeof row.valid_ntm !== 'boolean' || typeof row.valid_fy2 !== 'boolean') return false;
+  for (const field of ['forward_pe', 'forward_pe_ntm', 'forward_pe_fy2', 'coverage_ntm', 'coverage_fy2']) {
+    if (row[field] != null && (typeof row[field] !== 'number' || !Number.isFinite(row[field]))) return false;
+  }
+  return (!row.valid_ntm || (row.forward_pe_ntm != null && row.coverage_ntm != null))
+    && (!row.valid_fy2 || (row.forward_pe_fy2 != null && row.coverage_fy2 != null));
+}
+
 // ── data load ────────────────────────────────────────────────────────────
 // data/forward_pe_*.jsonl 是 JSONL（一行一個 JSON 物件），utils/data.js 的
 // fetchJSON 吃不了（它假設單一 JSON payload 帶 `.data` 欄位）。目前只有這個
 // tab 用 jsonl，故本檔自己寫一個小 helper，不上提到 utils/data.js（過早抽象）。
 // 回傳值語意:[] = 該標的確定無資料(404,可快取);null = 這次載入失敗(其他非 ok
 // 狀態碼或例外,不快取,下次切入 tab 要重抓)。
-async function loadJsonl(url) {
+async function loadJsonl(url, context = {}) {
   try {
-    const res = await fetch(url, { cache: 'no-cache' });
+    const res = await fetch(url, { cache: 'no-cache', signal: context.signal });
     if (res.status === 404) return []; // 404 → 視為該標的無資料，不炸掉整個 tab
     if (!res.ok) return null; // 其他非 ok 狀態(如 503)→ 這次失敗,不快取
     const text = await res.text();
-    return text
+    const rows = text
       .split('\n')
       .map(line => line.trim())
       .filter(Boolean)
       .map(line => JSON.parse(line));
+    if (!rows.length) throw new Error(`${url}: empty JSONL`);
+    const ticker = url.includes('_voo.') ? 'VOO' : 'QQQ';
+    if (!rows.every(row => validateRow(row, ticker))) throw new Error(`${url}: invalid row`);
+    return rows;
   } catch (e) {
     console.error(`[fwdpe] loadJsonl failed: ${url}`, e);
     return null;
@@ -88,12 +109,14 @@ function ntmSigma(rows) {
   };
 }
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (vooRows && qqqRows) return; // 兩支都成功過才不重抓
   const [voo, qqq] = await Promise.all([
-    vooRows ? Promise.resolve(vooRows) : loadJsonl('data/forward_pe_voo.jsonl'),
-    qqqRows ? Promise.resolve(qqqRows) : loadJsonl('data/forward_pe_qqq.jsonl'),
+    vooRows ? Promise.resolve(vooRows) : loadJsonl('data/forward_pe_voo.jsonl', context),
+    qqqRows ? Promise.resolve(qqqRows) : loadJsonl('data/forward_pe_qqq.jsonl', context),
   ]);
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  if (!voo?.length && !qqq?.length) throw new Error("forward P/E: both sources unavailable");
   vooRows = voo ? sortByEffDate(voo) : null;
   qqqRows = qqq ? sortByEffDate(qqq) : null;
 }
@@ -353,20 +376,21 @@ function buildControls() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('fwdpe-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   buildControls();
   const status = document.getElementById('fwdpe-status');
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     updateCards();
     chart.setOption(buildOption(), { notMerge: true });
     if (status) status.textContent = statusText();
   } catch (e) {
     if (status) status.textContent = '載入失敗：' + (e.message || e);
-    console.error('[fwdpe] load failed', e);
+    throw e;
   }
 }
 
@@ -378,3 +402,5 @@ export function onThemeChange(_light) {
 export function resize() {
   chart?.resize();
 }
+
+export function getCharts() { return chart ? [chart] : []; }

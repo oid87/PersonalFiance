@@ -8,6 +8,7 @@
 // 才偏離 0，是同步壓力指標；NFCI 涵蓋整個鬆緊光譜）。定位「環境理解」非交易訊號。
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 
 const COMPS = [
@@ -29,22 +30,35 @@ let rows       = null;   // [{date, nfci, anfci, risk, credit, leverage, ma4, ma
 let sp         = null;   // [[date, close]]
 
 // ── load + compute MA (rolling mean of the headline NFCI) ─────────────
-async function loadAll() {
-  if (rows) return;
-  const fetchJson = async (path, optional = false) => {
-    try {
-      const r = await fetch(path, { cache: "no-cache" });
-      if (!r.ok) { if (optional) return null; throw new Error(`${path}: HTTP ${r.status}`); }
-      return await r.json();
-    } catch (e) { if (optional) return null; throw e; }
-  };
-  const [nfciJson, spJson] = await Promise.all([
-    fetchJson("data/nfci.json"),
-    fetchJson("data/SP500.json", true),
+let optionalError = null;
+async function loadAll(context = {}) {
+  if (rows) {
+    if (optionalError) {
+      const optional = await requestJSON("data/SP500.json", { signal: context.signal })
+        .then(value => ({ value }), error => ({ error }));
+      if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+      const usable = Array.isArray(optional.value?.data) ? optional.value.data.filter(r => r?.date && Number.isFinite(r?.close)) : [];
+      if (!optional.error && !usable.length) clearRequestCache("data/SP500.json");
+      if (usable.length) { sp = usable.map(r => [r.date, r.close]); optionalError = null; }
+    }
+    return;
+  }
+  const [primary, optional] = await Promise.all([
+    requestJSON("data/nfci.json", { signal: context.signal }),
+    requestJSON("data/SP500.json", { signal: context.signal })
+      .then(value => ({ value }), error => ({ error })),
   ]);
-  rows = (nfciJson?.data ?? []).map(r => ({ ...r }));
-  computeMA(rows);
-  sp = (spJson?.data ?? []).map(r => [r.date, r.close]);
+  if (!Array.isArray(primary?.data) || !primary.data.length) throw new Error("nfci.json: missing data rows");
+  if (!primary.data.some(r => Number.isFinite(r?.nfci))) throw new Error("nfci.json: no usable NFCI rows");
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  const nextRows = primary.data.map(r => ({ ...r }));
+  computeMA(nextRows);
+  const optionalRows = Array.isArray(optional.value?.data) ? optional.value.data.filter(r => r?.date && Number.isFinite(r?.close)) : [];
+  if (!optional.error && !optionalRows.length) clearRequestCache("data/SP500.json");
+  const nextSp = optionalRows.map(r => [r.date, r.close]);
+  rows = nextRows;
+  sp = nextSp;
+  optionalError = optional.error || !optionalRows.length ? "S&P 500 疊圖暫無資料" : null;
 }
 
 // check_reuse: keep — 就地 mutate 物件陣列、一次跑一整組 period 並綁死欄位名,與 canonical math.computeMA(data, period) 是不同概念
@@ -140,7 +154,7 @@ export function render() {
 
   const status = document.getElementById("nfci-status");
   if (status) status.textContent =
-    `Chicago Fed 金融狀況指數 · ${dates.length} 週（${nfciRange}）· 總分＋MA4/13/52週均線 · 來源 FRED NFCI`;
+    `Chicago Fed 金融狀況指數 · ${dates.length} 週（${nfciRange}）· 總分＋MA4/13/52週均線 · 來源 FRED NFCI` + (optionalError ? ` · ${optionalError}` : "");
 
   const L = mob() ? 40 : 52, R = showSP ? (mob() ? 46 : 60) : (mob() ? 16 : 28);
   // two stacked grids, each with its OWN legend directly above it (總分+均線 上 / 細項 下)
@@ -275,18 +289,20 @@ function buildControls() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("nfci-chart");
   if (!host) return;
   if (!nfciChart) nfciChart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { nfciChart?.resize(); render(); }, 50);
+    await loadAll(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    nfciChart?.resize();
+    render();
   } catch (e) {
-    const s = document.getElementById("nfci-status");
-    if (s) s.textContent = "載入失敗：" + (e.message || e);
-    console.error("[nfci] load failed", e);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    rows = null;
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -296,3 +312,5 @@ export function onThemeChange(light) {
   if (rows) render();
 }
 export function resize() { nfciChart?.resize(); }
+
+export function getCharts() { return nfciChart ? [nfciChart] : []; }

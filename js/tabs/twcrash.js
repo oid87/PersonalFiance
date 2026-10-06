@@ -6,7 +6,7 @@
 // 差異僅在小數點四捨五入，例如 2008次貸風暴低點 spec 寫 4090、實際 4089.93）。
 
 import { echartsBase, isLight, PALETTE } from '../utils/theme.js';
-import { fetchJSON } from '../utils/data.js';
+import { requestJSON } from '../utils/data.js';
 
 const CRASHES = [
   { name: '2000科技泡沫',     peakDate: '2000-02-17', peak: 10202, troughDate: '2001-10-03', trough: 3446,  pct: -66.2 },
@@ -22,10 +22,16 @@ const CRASHES = [
 let chart = null;
 let cache = null; // { dates, closes }
 
-async function loadAll() {
+async function loadAll(context = {}) {
   if (cache) return;
-  const rows = await fetchJSON('data/TWII.json');
+  const payload = await requestJSON('data/TWII.json', { signal: context.signal });
+  if (!Array.isArray(payload?.data) || !payload.data.some(row =>
+    typeof row?.date === 'string' && Number.isFinite(row.close))) {
+    throw new Error('台股歷史資料格式不完整');
+  }
+  const rows = payload.data;
   const sorted = [...rows].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
   cache = {
     dates: sorted.map(r => r.date),
     closes: sorted.map(r => r.close),
@@ -40,7 +46,7 @@ function buildOption() {
   ]);
   return echartsBase({
     tooltip: { trigger: 'axis' },
-    grid: { top: '10%' },
+    grid: { left: 48, right: 24, top: '10%', containLabel: true },
     xAxis: { data: dates },
     yAxis: { type: 'log', name: 'TWII' },
     series: [
@@ -49,7 +55,7 @@ function buildOption() {
         showSymbol: false, itemStyle: { color: PALETTE.text }, lineStyle: { width: 1.2 },
         markArea: {
           silent: true,
-          label: { show: true, position: 'insideTop', color: PALETTE.text2, fontSize: 10 },
+          label: { show: false },
           data: areaData,
         },
       },
@@ -63,18 +69,31 @@ function renderNote() {
   el.textContent = '近 29 年（1997年至今）台股發生 8 次重大回撤，平均約 3–4 年一次；' +
     '長期回測「創新高」對個人投資年限的參考意義有限，應對照自己實際可用的投資年限判斷風險承受度，' +
     '而非假設自己有「100 年」可以等待均值回歸。';
+  const details = document.createElement('details');
+  const summary = document.createElement('summary');
+  summary.textContent = '查看 8 次重大回撤事件與跌幅';
+  const list = document.createElement('ol');
+  for (const event of CRASHES) {
+    const item = document.createElement('li');
+    item.textContent = `${event.name}：${event.peakDate} 至 ${event.troughDate}，${event.pct}%`;
+    list.appendChild(item);
+  }
+  details.append(summary, list);
+  el.appendChild(details);
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('twcrash-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
     chart.setOption(buildOption(), { notMerge: true });
     renderNote();
   } catch (e) {
     console.error('[twcrash] load failed', e);
+    throw e;
   }
 }
 
@@ -86,3 +105,4 @@ export function onThemeChange(_light) {
 export function resize() {
   chart?.resize();
 }
+export function getCharts() { return chart ? [chart] : []; }

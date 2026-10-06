@@ -8,20 +8,22 @@
 // 台灣是官方直接發布的年增率,日本/南韓是自算/複合估算的近似值。
 //
 // 非 SERIES 時間序列資料(是 {year, tw, jp, kr} 陣列),且需要連 note 欄位一起
-// 顯示給讀者看方法論揭露,故不用 utils/data.js 的 fetchJSON(它會把 j.data
-// 解包成純陣列、丟掉 note),改用原生 fetch() 讀整份 payload。
+// 顯示給讀者看方法論揭露；requestJSON 保留含 note 的完整 payload。
 
 import { isLight, echartsBase, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 const TAB_ID = 'tw_jp_kr_gdp';
 let chart = null;
 let payload = null; // { updated, note, data: [{year, tw, jp, kr}, ...] }
 
-async function loadAll() {
-  if (payload) return; // 首次切入才載入
-  const res = await fetch('data/tw_jp_kr_gdp_growth.json', { cache: 'no-cache' });
-  if (!res.ok) throw new Error(`fetch tw_jp_kr_gdp_growth.json: HTTP ${res.status}`);
-  payload = await res.json();
+async function loadAll(context = {}) {
+  if (payload) return;
+  const url = "data/tw_jp_kr_gdp_growth.json";
+  const j = await requestJSON(url, { signal: context.signal });
+  if (!(Array.isArray(j?.data) && j.data.some(r => r && Number.isFinite(r.year) && r.year >= 2010 && [r.tw, r.jp, r.kr].some(Number.isFinite)))) { clearRequestCache(url); throw new Error("tw_jp_kr_gdp: missing required data"); }
+  if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
+  payload = j;
 }
 
 function buildOption() {
@@ -80,16 +82,18 @@ function renderNote() {
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById(`${TAB_ID}-chart`);
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   try {
-    await loadAll();
+    await loadAll(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) throw new DOMException("Activation expired", "AbortError");
     chart.setOption(buildOption(), { notMerge: true });
     renderNote();
   } catch (e) {
     console.error(`[${TAB_ID}] load failed`, e);
+    throw e;
   }
 }
 
@@ -101,3 +105,5 @@ export function onThemeChange(_light) {
 export function resize() {
   chart?.resize();
 }
+
+export function getCharts() { return [chart].filter(Boolean); }

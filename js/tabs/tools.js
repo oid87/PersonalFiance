@@ -339,10 +339,12 @@ function setupEvents() {
 }
 
 // ── Lifecycle (switcher API) ───────────────────────────────────────────────
-export function activate() {
+export function activate(context = {}) {
+  if (context.signal?.aborted || context.isCurrent?.() === false) return;
   if (wired) return;
-  wired = true;
   renderAll();
   setupEvents();
   switchSec('indicators');
+  wired = true;
 }
+export function getCharts() { return []; }

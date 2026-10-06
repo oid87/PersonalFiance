@@ -2,7 +2,7 @@ import { SERIES, PENTA_TICKERS, loaded, loadedHLC } from '../state.js';
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate, toWeekly, toWeeklyHLC } from '../utils/dates.js';
 import { computeLinearRegression, computeChannelBands, computeRSI, computeKD, computeTDSetup } from '../utils/math.js';
-import { ensureLoaded, loadSeries } from '../utils/data.js';
+import { ensureLoaded, loadSeries, requestJSON } from '../utils/data.js';
 import { chipPicker } from '../utils/dom.js';
 import { pentaZone, lastBands, multiPeriodZones, computeDonchianBands, channelState, combinedSignal } from './pentagram_calc.mjs';
 
@@ -771,7 +771,7 @@ export function renderPentaTickerPicker() {
   }
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const el = document.getElementById("penta-chart");
   const status = document.getElementById("penta-status");
   if (!pentaChart) {
@@ -779,9 +779,11 @@ export async function activate() {
   }
   if (status) status.textContent = `載入 ${pentaActiveTicker}…`;
   try {
-    await ensureLoaded(pentaActiveTicker);
-    if (pentaFpeActive) await _ensureFpeData(pentaActiveTicker);
+    await ensureLoaded(pentaActiveTicker, context);
+    if (pentaFpeActive) await _ensureFpeData(pentaActiveTicker, context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     await new Promise(resolve => setTimeout(resolve, 50));
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     pentaChart.resize();
     renderPentagram();
   } catch (err) {
@@ -826,9 +828,16 @@ document.getElementById("penta-vix-toggle")?.addEventListener("click", async () 
   pentaVixActive = !pentaVixActive;
   document.getElementById("penta-vix-toggle").classList.toggle("vix-on", pentaVixActive);
   if (pentaVixActive && !loaded["VIX_H"]) {
-    const resp = await fetch("data/VIX.json", { cache: "no-cache" });
-    const j = await resp.json();
-    loaded["VIX_H"] = (j.data || []).map(r => [r.date, r.high]);
+    try {
+      const j = await requestJSON("data/VIX.json");
+      if (!Array.isArray(j?.data) || !j.data.length) throw new Error("VIX: missing data rows");
+      loaded["VIX_H"] = j.data.map(r => [r.date, r.high]);
+    } catch (err) {
+      pentaVixActive = false;
+      document.getElementById("penta-vix-toggle").classList.remove("vix-on");
+      document.getElementById("penta-status").textContent = `載入失敗：${err.message}`;
+      return;
+    }
   }
   renderPentagram();
 });
@@ -837,7 +846,13 @@ document.getElementById("penta-fg-toggle")?.addEventListener("click", async () =
   pentaFgActive = !pentaFgActive;
   document.getElementById("penta-fg-toggle").classList.toggle("fg-on", pentaFgActive);
   if (pentaFgActive && !loaded["F&G"]) {
-    await loadSeries(SERIES.find(x => x.key === "F&G"));
+    try { await loadSeries(SERIES.find(x => x.key === "F&G")); }
+    catch (err) {
+      pentaFgActive = false;
+      document.getElementById("penta-fg-toggle").classList.remove("fg-on");
+      document.getElementById("penta-status").textContent = `載入失敗：${err.message}`;
+      return;
+    }
   }
   renderPentagram();
 });
@@ -854,13 +869,18 @@ document.getElementById("penta-weekly-toggle")?.addEventListener("click", () => 
   renderPentagram();
 });
 
-async function _ensureFpeData(ticker) {
+async function _ensureFpeData(ticker, context = {}) {
   if (!FPE_FILES[ticker] || pentaFpeCache[ticker]) return;
   try {
-    const resp = await fetch(FPE_FILES[ticker], { cache: "no-cache" });
-    const j = await resp.json();
-    pentaFpeCache[ticker] = (j.data || []).sort((a, b) => a.date < b.date ? -1 : 1);
-  } catch (e) { /* data unavailable */ }
+    const j = await requestJSON(FPE_FILES[ticker], { signal: context.signal });
+    if (!Array.isArray(j?.data) || !j.data.length) throw new Error("valuation: missing data rows");
+    const rows = j.data.slice().sort((a, b) => a.date < b.date ? -1 : 1);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    pentaFpeCache[ticker] = rows;
+  } catch (err) {
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    document.getElementById("penta-status").textContent = `前瞻本益比暫無資料：${err.message}`;
+  }
 }
 
 export async function toggleFpe() {
@@ -869,3 +889,5 @@ export async function toggleFpe() {
   if (pentaFpeActive) await _ensureFpeData(pentaActiveTicker);
   renderPentagram();
 }
+
+export function getCharts() { return pentaChart ? [pentaChart] : []; }

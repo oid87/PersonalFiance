@@ -10,6 +10,7 @@ import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { computeRSI } from '../utils/math.js';
 import { toWeeklyOHLC } from '../utils/dates.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
+import { requestJSON } from '../utils/data.js';
 
 const TICKERS = [
   { key: "SPX", label: "SPX（^GSPC）", file: "data/SP500.json", color: "#58a6ff" },
@@ -271,37 +272,45 @@ function buildControls() {
   chipPicker(host, "wkrev-ticker", v => { ticker = v; refresh(); });
 }
 
-async function loadTicker(key) {
+async function loadTicker(key, context = {}) {
   if (cache[key]) return cache[key];
   const t = TICKERS.find(x => x.key === key);
-  const resp = await fetch(t.file, { cache: "no-cache" });
-  if (!resp.ok) throw new Error(`${key}: HTTP ${resp.status}`);
-  const j = await resp.json();
-  const daily = (j.data || []).map(r => [r.date, r.open, r.high, r.low, r.close, r.volume || 0]);
+  const j = await requestJSON(t.file, { signal: context.signal });
+  if (!Array.isArray(j?.data)) throw new Error(`${key}資料格式不完整`);
+  const daily = j.data.filter(r => typeof r?.date === 'string' &&
+    [r.open, r.high, r.low, r.close].every(v => Number.isFinite(v) && v > 0))
+    .map(r => [r.date, r.open, r.high, r.low, r.close, r.volume || 0]);
+  if (daily.length < 100) throw new Error(`${key}週K資料不足`);
   const weeks = toWeeklyOHLC(daily);
+  if (weeks.length < 20) throw new Error(`${key}完整週數不足`);
   const sig = computeSignals(weeks);
+  if (context.signal?.aborted || context.isCurrent?.() === false) return null;
   cache[key] = { weeks, sig };
   return cache[key];
 }
 
-async function refresh() {
+async function refresh(context = {}, propagate = false) {
   const status = document.getElementById("wkrev-status");
+  const key = ticker;
   try {
-    const { weeks, sig } = await loadTicker(ticker);
+    const loaded = await loadTicker(key, context);
+    if (!loaded || key !== ticker || context.signal?.aborted || context.isCurrent?.() === false) return;
+    const { weeks, sig } = loaded;
     render(weeks, sig);
     renderTable(buildWinRateRows(weeks, sig));
   } catch (e) {
     if (status) status.textContent = `載入失敗：${e.message}`;
+    if (propagate) throw e;
   }
 }
 
 // ── lifecycle ──────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("wkrev-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
-  await refresh();
+  await refresh(context, true);
 }
 export function onThemeChange(light) {
   if (!chart) return;
@@ -310,3 +319,4 @@ export function onThemeChange(light) {
   if (cache[ticker]) render(cache[ticker].weeks, cache[ticker].sig);
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }

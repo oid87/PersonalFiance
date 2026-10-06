@@ -21,6 +21,7 @@
 //   差異，不是計算邏輯錯誤；是否要換成還原息資料源是主 session 的決策點，非本檔案範圍。
 
 import { isLight, tc, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 
 const RF = 0.04;
 const WINDOWS = [63, 126, 252];
@@ -37,12 +38,15 @@ let allBars = null; // [{date, close}]
 let computed = null;
 
 // ── data load ─────────────────────────────────────────────────────────
-async function loadData() {
+async function loadData(context = {}) {
   if (allBars) return allBars;
-  const resp = await fetch('data/QQQ.json', { cache: 'no-cache' });
-  if (!resp.ok) throw new Error(`QQQ.json: HTTP ${resp.status}`);
-  const j = await resp.json();
-  allBars = (j.data || []).map(r => ({ date: r.date, close: r.close }));
+  const j = await requestJSON('data/QQQ.json', { signal: context.signal });
+  if (!Array.isArray(j?.data)) throw new Error('QQQ資料格式不完整');
+  const next = j.data.filter(r => typeof r?.date === 'string' && Number.isFinite(r.close) &&
+    r.close > 0).map(r => ({ date: r.date, close: r.close }));
+  if (next.length < 253) throw new Error('QQQ資料不足以計算凱利上限');
+  if (context.signal?.aborted || context.isCurrent?.() === false) return null;
+  allBars = next;
   return allBars;
 }
 
@@ -297,26 +301,29 @@ function render(res) {
 }
 
 // ── controls / lifecycle ─────────────────────────────────────────────
-async function refresh() {
+async function refresh(context = {}) {
   const status = document.getElementById('kelly-status');
   try {
-    const bars = await loadData();
-    computed = compute(bars);
+    const bars = await loadData(context);
+    if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    const next = compute(bars);
+    computed = next;
     render(computed);
     updateBadges(computed);
   } catch (e) {
     if (status) status.textContent = `載入失敗：${e.message}`;
     console.error('[kelly] load failed', e);
+    throw e;
   }
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById('kelly-chart');
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : 'dark');
   else chart.resize();
   if (computed) { render(computed); updateBadges(computed); return; }
-  await refresh();
+  await refresh(context);
 }
 export function onThemeChange(light) {
   if (!chart) return;
@@ -325,3 +332,4 @@ export function onThemeChange(light) {
   if (computed) { render(computed); updateBadges(computed); }
 }
 export function resize() { chart?.resize(); }
+export function getCharts() { return chart ? [chart] : []; }

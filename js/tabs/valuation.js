@@ -10,7 +10,7 @@
 import { loaded } from '../state.js';
 import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate, toMonthlyLast } from '../utils/dates.js';
-import { ensureLoaded } from '../utils/data.js';
+import { ensureLoaded, requestJSON, clearRequestCache } from '../utils/data.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 import { sigmaBands, SIGMA_KS } from '../utils/math.js';
 
@@ -82,13 +82,51 @@ const fileCache = {};   // path -> data array
 const SIGMA_LABELS = { MAX: "全期", "20Y": "20Y", "10Y": "10Y" };
 
 // ── Data loading ───────────────────────────────────────────────────
-async function loadFile(path) {
+async function loadFile(path, context = {}) {
   if (fileCache[path]) return fileCache[path];
-  const r = await fetch(path, { cache: "no-cache" });
-  if (!r.ok) throw new Error(`${path}: HTTP ${r.status}`);
-  const j = await r.json();
-  fileCache[path] = (j.data || []).slice().sort((a, b) => a.date < b.date ? -1 : 1);
-  return fileCache[path];
+  const j = await requestJSON(path, { signal: context.signal });
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return null;
+  try { validateFile(path, j?.data); }
+  catch (error) { clearRequestCache(path); throw error; }
+  const rows = j.data.slice().sort((a, b) => a.date < b.date ? -1 : 1);
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return null;
+  fileCache[path] = rows;
+  return rows;
+}
+
+function validDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const time = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(time) && new Date(time).toISOString().startsWith(value + 'T');
+}
+
+function requiredFields(path) {
+  if (path === BIZ_FILE) return ['score'];
+  if (path === 'data/TWII.json') return ['close|value'];
+  const fields = new Set();
+  for (const ticker of VAL_TICKERS) for (const key of ['fwd', 'trail']) {
+    if (ticker[key]?.file === path) fields.add(ticker[key].field);
+  }
+  return [...fields];
+}
+
+function validateFile(path, rows) {
+  if (!Array.isArray(rows) || !rows.length) throw new Error(`${path}: missing data rows`);
+  const fields = requiredFields(path);
+  const counts = Object.fromEntries(fields.map(field => [field, 0]));
+  rows.forEach((row, index) => {
+    if (!validDate(row?.date)) throw new Error(`${path}: invalid date at row ${index + 1}`);
+    for (const field of fields) {
+      const names = field.split('|');
+      for (const name of names) {
+        const value = row[name];
+        if (value != null && (typeof value !== 'number' || !Number.isFinite(value)))
+          throw new Error(`${path}: invalid ${name} at row ${index + 1}`);
+      }
+      if (names.some(name => typeof row[name] === 'number' && Number.isFinite(row[name]))) counts[field]++;
+    }
+  });
+  for (const field of fields) if (!counts[field]) throw new Error(`${path}: no valid ${field} values`);
 }
 
 // 24-month rolling average (O(n) sliding window on dense daily data)
@@ -196,7 +234,7 @@ function trailSigma(trlRows, field) {
 }
 
 // ── Render ─────────────────────────────────────────────────────────
-function render(price, fwdFull, trlFull, bizRows, realFrom, sig) {
+function render(price, fwdFull, trlFull, bizRows, realFrom, sig, bizUnavailable = false) {
   if (!valChart) return;
   const t = cfg();
   const BIZ_NAME = "景氣對策信號";
@@ -246,6 +284,7 @@ function render(price, fwdFull, trlFull, bizRows, realFrom, sig) {
       parts.push("σ 帶僅 SPY（其他標的歷史為現今成分股回推或後見值，不畫）");
     }
     if (showBiz) { const b = bizRows[bizRows.length - 1]; parts.push(`景氣 ${b.score} ${b.light}燈`); }
+    else if (bizUnavailable) parts.push('景氣資料暫缺（其餘資料正常）');
     statusEl.textContent = parts.join(" · ");
   }
 
@@ -499,43 +538,48 @@ function renderCompare(soxxFull, spyFull, soxxCfg, spyCfg) {
   valChart.setOption(option, { notMerge: true });
 }
 
-async function refreshCompare() {
+async function refreshCompare(context = {}) {
   const soxxCfg = VAL_TICKERS.find(t => t.key === "SOXX");
   const spyCfg  = VAL_TICKERS.find(t => t.key === "SPY");
   const statusEl = document.getElementById("val-status");
   try {
     const [soxxRows, spyRows] = await Promise.all([
-      loadFile(soxxCfg.fwd.file),
-      loadFile(spyCfg.fwd.file),
+      loadFile(soxxCfg.fwd.file, context),
+      loadFile(spyCfg.fwd.file, context),
     ]);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     const soxxSeries = buildSeries(soxxRows, soxxCfg.fwd.field);
     const spySeries  = buildSeries(spyRows, spyCfg.fwd.field);
     renderCompare(soxxSeries, spySeries, soxxCfg, spyCfg);
   } catch (e) {
     if (statusEl) statusEl.textContent = `載入失敗：${e.message}`;
+    if (context.signal || context.isCurrent) throw e;
   }
 }
 
-async function refresh() {
-  if (compareMode) { await refreshCompare(); return; }
+async function refresh(context = {}) {
+  if (compareMode) { await refreshCompare(context); return; }
   const t = cfg();
   const statusEl = document.getElementById("val-status");
   const showBiz = t.key === "TWII";
   try {
     let price;
     if (t.priceFile) {                       // index served from its own file (not in SERIES)
-      const rows = await loadFile(t.priceFile);
+      const rows = await loadFile(t.priceFile, context);
+      if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
       // check_reuse: keep — loadSeries 是寫進全域 loaded[s.key] 不回傳,本站處理的是不在 SERIES 的獨立檔無 key;且 r.close ?? r.value 與 loadSeries 的 !==undefined 在 close===null 時行為不同
       price = rows.map(r => [r.date, r.close ?? r.value]);
     } else {
-      await ensureLoaded(t.priceKey);
+      await ensureLoaded(t.priceKey, context);
       price = (loaded[t.priceKey] || []).slice();
     }
+    let bizUnavailable = false;
     const [fwdRows, trlRows, bizRows] = await Promise.all([
-      t.fwd   ? loadFile(t.fwd.file)   : Promise.resolve(null),
-      t.trail ? loadFile(t.trail.file) : Promise.resolve(null),
-      showBiz ? loadFile(BIZ_FILE).catch(() => null) : Promise.resolve(null),
+      t.fwd   ? loadFile(t.fwd.file, context)   : Promise.resolve(null),
+      t.trail ? loadFile(t.trail.file, context) : Promise.resolve(null),
+      showBiz ? loadFile(BIZ_FILE, context).catch(() => { bizUnavailable = true; return null; }) : Promise.resolve(null),
     ]);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     const fwd = t.fwd   ? buildSeries(fwdRows, t.fwd.field)   : [];
     const trl = t.trail ? buildSeries(trlRows, t.trail.field) : [];
     const realFrom = {
@@ -543,23 +587,24 @@ async function refresh() {
       trl: t.trail ? realFromDate(trlRows, t.trail.field) : "9999",
     };
     const sig = (t.sigma && valSigma !== "OFF" && t.trail) ? trailSigma(trlRows, t.trail.field) : null;
-    render(price, fwd, trl, bizRows, realFrom, sig);
+    render(price, fwd, trl, bizRows, realFrom, sig, bizUnavailable);
   } catch (e) {
     if (statusEl) statusEl.textContent = `載入失敗：${e.message}`;
+    if (context.signal || context.isCurrent) throw e;
   }
 }
 
 // ── Lifecycle ──────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const container = document.getElementById("val-chart");
   if (!container) return;
   if (!valChart) valChart = echarts.init(container, null, { renderer: "canvas" });
   renderTickerPicker();
   chipPicker(document.getElementById("val-sigma-picker"), "val-sigma", v => { valSigma = v; refresh(); });
-  await refresh();
+  await refresh(context);
 }
 
-export function onThemeChange() { if (valChart) refresh(); }
+export function onThemeChange() { if (valChart) return refresh(); }
 export function resize() { valChart?.resize(); }
 
 export function setRange(key) { valRange = key; refresh(); }
@@ -576,3 +621,5 @@ function renderTickerPicker() {
   chipPicker(host, "val-ticker", v => setTicker(v));
   chipPicker(host, "val-compare", () => setCompareMode(true));
 }
+
+export function getCharts() { return valChart ? [valChart] : []; }

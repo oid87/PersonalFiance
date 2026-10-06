@@ -1,6 +1,6 @@
 # PersonalFiance
 
-個人總經儀表板（長期願景：個人版 [財經 M 平方](https://www.macromicro.me/)）：情緒、流動性、位階、分析四大類，數十個 tab 的圖表與指標。
+個人總經儀表板（長期願景：個人版 [財經 M 平方](https://www.macromicro.me/)）：8 個分類、72 個畫面的圖表與指標，支援搜尋、收藏與畫面深連結。
 
 - 線上版：<https://personal-fiance-nine.vercel.app>（Vercel，push 到 `main` 即自動部署）
 - 純前端 SPA，**無建置步驟**：`index.html` + `js/boot.js` + `js/tabs/*.js`（ES module）+ ECharts（CDN）
@@ -16,8 +16,21 @@
 | Codex / ChatGPT | `AGENTS.md`、`.agents/skills/`、`.codex/agents/` | `AGENTS.md` 與 `.agents/skills/` 是**產生檔** |
 
 - **唯一來源是 `CLAUDE.md` 與 `.claude/skills/`**。改完後跑 `python3 scripts/sync_agent_docs.py` 重新產生 `AGENTS.md` 與 `.agents/skills/`；`scripts/tests/test_agent_docs.py` 會在兩邊不同步時失敗。
-- 兩邊共用同一套協作流程（spec → executor 實作 → verifier 驗收）與同一份 repo 規則：新增 tab、新增資料源、`js/utils` 共用函式速查表、重構驗收方法，都寫在 `CLAUDE.md` / `AGENTS.md`。
-- 工作守則：只 stage 該功能相關的檔案（不要 `git add -A`）；`data/` 只由 GitHub Actions 寫入，本地實跑腳本產生的 `data/` 變動不要 commit。
+- `.codex/agents/` 與 `.claude/agents/` 由人工保持同義，不屬於 sync script 範圍。當次使用者 scope 與授權優先。
+
+## 工程知識入口
+
+先讀適用的 repo 規則與 dated snapshot，再按任務選入口；不用每次重讀全部頁面。
+
+| 文件 | 責任／何時讀 |
+| --- | --- |
+| [PROJECT_CONTEXT](PROJECT_CONTEXT.md) | 產品用途、8 類／72 頁、資料流與金融語意 |
+| [ARCHITECTURE](ARCHITECTURE.md) | 「改 X → 讀哪些模組」、核心／擴充點、重複與抽象邊界 |
+| [AGENT_RULES](AGENT_RULES.md) | PM／Coding／QA handoff、file ownership、WIP 與交付證據 |
+| [TESTING](TESTING.md) | scope 對應 checks、環境前提、browser／IME 證據限制 |
+| [CURRENT_STATE](CURRENT_STATE.md) | 日期、驗證來源、工程主幹、剩餘 WIP 與限制 |
+
+細節規則的唯一來源仍是 CLAUDE.md；根文件是短摘要與索引，深契約保留在 `docs/`，原碼與本次驗證決定現況。
 
 ## 快速開始
 
@@ -25,31 +38,9 @@
 python3 -m http.server 8899   # 然後開 http://localhost:8899
 ```
 
-更新本地資料（僅供預覽；`data/` 由 CI 發佈，本地**不** commit）：
-
-```bash
-pip install -r scripts/requirements.txt
-bash scripts/update_all.sh
-```
-
-FinMind 來源的腳本需要 token：放在 repo 根目錄的 `.finmind_token`（或環境變數 `FINMIND_TOKEN`）；沒有則匿名呼叫（額度低）。
-
-## 專案結構
-
-| 路徑 | 內容 |
-|---|---|
-| `index.html` | 每個 tab 一個 `<section id="tab-<id>">`；導覽列由 `js/boot.js` 的 `CATEGORIES` 動態產生 |
-| `js/boot.js`、`js/switcher.js` | tab 註冊、分類導覽、切換與懶載入 |
-| `js/tabs/*.js` | 各 tab（export `init`，選用 `onThemeChange` / `resize`）；新 tab 從 `js/scaffold/_template.js` 起手 |
-| `js/utils/` | 共用函式：`theme`（色票 `PALETTE`）、`dates`、`math`、`data`、`dom`（`bindOnce` / `chipPicker`） |
-| `css/main.css` | 樣式；主題色用 CSS 變數（`--bg/--panel/--border/--text/--muted`） |
-| `scripts/fetch_*.py`、`compute_*.py` | 資料抓取／計算；共用模組 `_common.py`、`_breadth.py` |
-| `scripts/update_all.sh` | 本地一次跑完主資料更新（不 commit；forward P/E 由 `forward_pe.yml` 獨立更新，本地不含） |
-| `data/*.json` | 前端讀的資料檔，慣例為 `{ "updated": "YYYY-MM-DD", "data": [{ "date": "YYYY-MM-DD", ... }] }` |
-| `api/` | Vercel serverless（`trend` tab 即時查任意 ticker） |
-| `.github/workflows/` | `fetch.yml`（每日資料）、`forward_pe.yml`（forward P/E） |
-
-清單會隨時間增加，**現況以程式碼為準**：`ls js/tabs/`、`ls scripts/`、`.github/workflows/*.yml`。
+環境準備與本地資料預覽見 [development](docs/development.md)。fetch 會連網及寫入 `data/`，不是啟動 UI 或驗收的必要步驟；本地資料不 commit。
+資料／token 來源與不可任改的金融語意見 [PROJECT_CONTEXT](PROJECT_CONTEXT.md) 及 CLAUDE.md。
+專案結構與功能改動入口見 [ARCHITECTURE](ARCHITECTURE.md)，不以 `js/tabs/` 的檔案數當作頁數。
 
 ## 資料更新
 
@@ -58,20 +49,14 @@ GitHub Actions 每天自動抓取並 commit `data/`（時間皆為台北）：
 - `fetch.yml`：06:00 週二–週六（美股收盤後）、18:00 週一–週五（台股收盤後）
 - `forward_pe.yml`：13:00 週一–週五
 
-新增資料來源時三處都要加：`scripts/fetch_*.py` → `.github/workflows/fetch.yml`（`continue-on-error: true`）→ `scripts/update_all.sh`。
+新增資料來源須更新 `scripts/source_manifest.json` 與對應 workflow／本地路由，並通過 `scripts/check_pipeline.py`；[資料契約](docs/source-contracts.md) 說明 profile、缺檔與例外。
 
-## 測試
+本地更新預設不執行 Git 操作；`--dry-run` 可只列步驟。只有明確指定 `--sync-data` 且 main 的 data 無變動，才允許 fast-forward pull。
 
-```bash
-node --test $(find js -name '*.test.mjs')           # 前端單元測試
-python3 -m unittest discover -s scripts/tests        # Python 單元測試（含 agent 文件同步檢查）
-python3 ../Financial_work/check_reuse.py             # 共用函式 lint（需要相鄰的 Financial_work repo）
-```
+## 測試與細部契約
 
-前端重構的行為等價驗收用 `js/__tests__/ui_harness.cjs`（Playwright；用法見檔頭與 `CLAUDE.md`）。
+離線檢查、局部 tests、reuse／data validators、browser before／after 與安全 fallback 見 [TESTING](TESTING.md)。
+依改動 scope 選必要 checks，回報實際 runtime、命令／結果與未驗項；沒有 build 步驟。
+手機驗收包含 390×844、844×390 與短高度；Chromium 模擬不等同實機 Safari。
 
-## 資料注意事項
-
-- 股價皆為**原始收盤價**（`auto_adjust=False`，未做股息／分割調整；0050 的 2014 分割另有修補）。
-- CNN 恐懼貪婪指數最早只到 2011（資料源限制）。
-- 其他資料源的陷阱與不可變事實見 `CLAUDE.md`「不可變事實與陷阱」。
+[載入與圖表生命週期](docs/runtime-contracts.md)、[選單操作](docs/navigation.md)、[共用 UI](docs/ui-components.md)、[資料來源](docs/source-contracts.md)、[Python 共用函式](docs/shared-python.md) 是各領域詳細契約。

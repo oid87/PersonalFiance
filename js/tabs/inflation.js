@@ -4,6 +4,7 @@
 //   資料：data/inflation_exp.json（fetch_inflation_exp.py 抓 FRED CSV，免 key）
 
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { cutoffDate } from '../utils/dates.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 
@@ -23,22 +24,35 @@ let showMA  = false;
 let rows    = null;
 let spData  = null;
 
-async function loadAll() {
-  if (rows) return;
-  const fetchJson = async (path, optional = false) => {
-    try {
-      const r = await fetch(path, { cache: "no-cache" });
-      if (!r.ok) { if (optional) return null; throw new Error(`${path}: HTTP ${r.status}`); }
-      return r.json();
-    } catch (e) { if (optional) return null; throw e; }
-  };
-  const [infJson, spJson] = await Promise.all([
-    fetchJson("data/inflation_exp.json"),
-    fetchJson("data/SP500.json", true),
+let optionalError = null;
+async function loadAll(context = {}) {
+  if (rows) {
+    if (optionalError) {
+      const optional = await requestJSON("data/SP500.json", { signal: context.signal })
+        .then(value => ({ value }), error => ({ error }));
+      if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+      const usable = Array.isArray(optional.value?.data) ? optional.value.data.filter(r => r?.date && Number.isFinite(r?.close)) : [];
+      if (!optional.error && !usable.length) clearRequestCache("data/SP500.json");
+      if (usable.length) { spData = new Map(usable.map(r => [r.date, r.close])); optionalError = null; }
+    }
+    return;
+  }
+  const [primary, optional] = await Promise.all([
+    requestJSON("data/inflation_exp.json", { signal: context.signal }),
+    requestJSON("data/SP500.json", { signal: context.signal })
+      .then(value => ({ value }), error => ({ error })),
   ]);
-  rows = (infJson?.data ?? []).filter(r => r.be5y != null || r.be10y != null).map(r => ({ ...r }));
-  computeMA(rows);
-  spData = spJson?.data ? new Map(spJson.data.map(r => [r.date, r.close])) : null;
+  if (!Array.isArray(primary?.data) || !primary.data.length) throw new Error("inflation_exp.json: missing data rows");
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  const nextRows = primary.data.filter(r => r.be5y != null || r.be10y != null).map(r => ({ ...r }));
+  if (!nextRows.length) throw new Error("inflation_exp.json: no usable data rows");
+  computeMA(nextRows);
+  const optionalRows = Array.isArray(optional.value?.data) ? optional.value.data.filter(r => r?.date && Number.isFinite(r?.close)) : [];
+  if (!optional.error && !optionalRows.length) clearRequestCache("data/SP500.json");
+  const nextSp = optionalRows.length ? new Map(optionalRows.map(r => [r.date, r.close])) : null;
+  rows = nextRows;
+  spData = nextSp;
+  optionalError = optional.error || !optionalRows.length ? "S&P 500 疊圖暫無資料" : null;
 }
 
 // check_reuse: keep — 就地 mutate 物件陣列、一次跑一整組 period 並綁死欄位名,與 canonical math.computeMA(data, period) 是不同概念
@@ -124,7 +138,7 @@ export function render() {
 
   const status = document.getElementById("inf-status");
   if (status) status.textContent =
-    `通膨預期 · ${dates.length} 個交易日（${range}）· 資料 FRED TIPS breakeven`;
+    `通膨預期 · ${dates.length} 個交易日（${range}）· 資料 FRED TIPS breakeven` + (optionalError ? ` · ${optionalError}` : "");
 
   const L = mob() ? 40 : 52;
   let R = mob() ? 16 : 28;
@@ -256,18 +270,20 @@ function buildControls() {
 }
 
 // ── lifecycle ─────────────────────────────────────────────────────────
-export async function activate() {
+export async function activate(context = {}) {
   const host = document.getElementById("inf-chart");
   if (!host) return;
   if (!chart) chart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
   try {
-    await loadAll();
-    setTimeout(() => { chart?.resize(); render(); }, 50);
+    await loadAll(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    chart?.resize();
+    render();
   } catch (e) {
-    const s = document.getElementById("inf-status");
-    if (s) s.textContent = "載入失敗：" + (e.message || e);
-    console.error("[inflation] load failed", e);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    rows = null;
+    throw e;
   }
 }
 export function onThemeChange(light) {
@@ -277,3 +293,5 @@ export function onThemeChange(light) {
   if (rows) render();
 }
 export function resize() { chart?.resize(); }
+
+export function getCharts() { return chart ? [chart] : []; }

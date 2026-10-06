@@ -1,6 +1,6 @@
 import { isLight, echartsBase, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate } from '../utils/dates.js';
-import { fetchJSON } from '../utils/data.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 const TAB_ID = 'marketstructure';
 const TIMEOUT_MS = 12000;
@@ -338,29 +338,25 @@ function isUsableDataset(key, data) {
   return key === 'ici' && data && typeof data === 'object';
 }
 
-async function fetchWithTimeout(url) {
-  let timer;
-  try {
-    return await Promise.race([
-      fetchJSON(url),
-      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS); }),
-    ]);
-  } finally {
-    clearTimeout(timer);
-  }
+async function fetchWithTimeout(url, context = {}) {
+  const payload = await requestJSON(url, { signal: context.signal, timeoutMs: TIMEOUT_MS, force: context.force });
+  return payload.data || payload; // retain the former fetchJSON envelope contract
 }
 
-async function loadDataset(key, version) {
+async function loadDataset(key, version, context = {}) {
   const previous = state[key].data;
   state[key] = { phase: 'loading', data: previous };
   setSourceStatus(key);
   try {
-    const data = await fetchWithTimeout(SOURCES[key].url);
-    if (version !== requestVersion) return;
-    if (!isUsableDataset(key, data)) throw new Error('invalid or empty payload');
+    const data = await fetchWithTimeout(SOURCES[key].url, context);
+    if (version !== requestVersion || context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+    if (!isUsableDataset(key, data)) {
+      clearRequestCache(SOURCES[key].url);
+      throw new Error('invalid or empty payload');
+    }
     state[key] = { phase: 'ready', data };
   } catch (error) {
-    if (version !== requestVersion) return;
+    if (version !== requestVersion || context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
     state[key] = isUsableDataset(key, previous)
       ? { phase: 'stale', data: previous }
       : { phase: 'error', data: null };
@@ -369,11 +365,11 @@ async function loadDataset(key, version) {
   if (version === requestVersion) renderers[key]();
 }
 
-async function loadAll() {
+async function loadAll(context = {}) {
   const version = ++requestVersion;
   setText('marketstructure-overall-status', '正在更新各資料區塊…');
-  const results = await Promise.allSettled(Object.keys(SOURCES).map(key => loadDataset(key, version)));
-  if (version !== requestVersion) return;
+  const results = await Promise.allSettled(Object.keys(SOURCES).map(key => loadDataset(key, version, context)));
+  if (version !== requestVersion || context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
   const items = Object.values(state);
   const unavailable = items.filter(item => item.phase === 'error' || item.data?.status === 'unavailable').length;
   const stale = items.filter(item => item.phase === 'stale' || item.data?.status === 'stale').length;
@@ -382,12 +378,13 @@ async function loadAll() {
   if (stale) notes.push(`${stale} 個資料區塊沿用既有資料`);
   setText('marketstructure-overall-status', notes.length ? `${notes.join('；')}。其餘區塊已更新。` : '各資料區塊已更新。');
   void results;
+  if (unavailable === items.length) throw new Error('所有資料區塊暫時無法取得');
 }
 
 function bindListeners() {
   if (listenersBound) return;
   listenersBound = true;
-  document.getElementById('marketstructure-retry')?.addEventListener('click', loadAll);
+  document.getElementById('marketstructure-retry')?.addEventListener('click', () => { void loadAll({ force: true }).catch(error => setText('marketstructure-overall-status', `載入失敗：${error.message}`)); });
   document.querySelectorAll('[data-ms-cot]').forEach(button => button.addEventListener('click', () => {
     selectedCot = button.dataset.msCot;
     renderCotChart();
@@ -398,14 +395,14 @@ function bindListeners() {
   }));
 }
 
-export async function activate() {
+export async function activate(context = {}) {
   if (!document.getElementById('tab-marketstructure')) return;
   bindListeners();
   if (Object.values(state).some(item => item.phase === 'ready')) {
     resize();
     return;
   }
-  await loadAll();
+  await loadAll(context);
 }
 
 export function onThemeChange(_light) {
@@ -419,3 +416,5 @@ export function onThemeChange(_light) {
 export function resize() {
   Object.values(charts).forEach(chart => chart?.resize());
 }
+
+export function getCharts() { return Object.values(charts).filter(Boolean); }

@@ -1,30 +1,52 @@
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { requestJSON } from '../utils/data.js';
 import { tsToLocalDate } from '../utils/dates.js';
+import { bindOnce } from '../utils/dom.js';
 
 let sentChart       = null;
 let sentGaugeChart  = null;
 let sentData        = null;
 let sentRangePreset = "5Y";
 
-export async function init() {
+export async function init(context = {}) {
   const status = document.getElementById("sent-status");
   if (sentData) { renderSentimentTab(); return; }
   status.textContent = "載入中…";
   try {
-    const [sResp, spyResp, fgResp] = await Promise.all([
-      fetch("data/sentiment.json"),
-      fetch("data/SPY.json"),
-      fetch("data/fear_greed.json"),
+    const [sent, spyJson, fgJson] = await Promise.all([
+      requestJSON("data/sentiment.json", { signal: context.signal }),
+      requestJSON("data/SPY.json", { signal: context.signal }),
+      requestJSON("data/fear_greed.json", { signal: context.signal }),
     ]);
-    sentData = await sResp.json();
-    const spyJson = await spyResp.json();
-    const fgJson  = await fgResp.json();
-    sentData._spy = {};
-    for (const r of spyJson.data) sentData._spy[r.date] = r.close;
-    sentData._fg = {};
-    for (const r of fgJson.data) sentData._fg[r.date] = r.value;
-
+    for (const [path, rows] of [["sentiment", sent?.data], ["SPY", spyJson?.data], ["fear_greed", fgJson?.data]]) {
+      if (!Array.isArray(rows) || !rows.length) throw new Error(`${path}: missing data rows`);
+    }
+    const validDate = date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
+    const pctKeys = ['vix_pct', 'credit_pct', 'trend_pct', 'safety_pct'];
+    if (!sent.data.every(r => validDate(r?.date) && Number.isFinite(r.composite) &&
+        pctKeys.every(key => r[key] == null || Number.isFinite(r[key]))) ||
+        !sent.latest || !validDate(sent.latest.date) ||
+        !Number.isFinite(sent.latest.composite) ||
+        !pctKeys.every(key => sent.latest[key] == null || Number.isFinite(sent.latest[key])) ||
+        !spyJson.data.every(r => validDate(r?.date) && Number.isFinite(r.close) && r.close > 0) ||
+        !fgJson.data.every(r => validDate(r?.date) && Number.isFinite(r.value)) ||
+        !sent.backtest || !['fear_signals', 'greed_signals'].every(key =>
+          Array.isArray(sent.backtest[key]) && sent.backtest[key].every(r =>
+            validDate(r?.date) && Number.isFinite(r.composite) &&
+            ['spy_ret_1m', 'spy_ret_3m', 'spy_ret_6m', 'spy_ret_1y'].every(field =>
+              r[field] == null || Number.isFinite(r[field]))))) {
+      throw new Error('sentiment: invalid numeric row');
+    }
+    if (!sent.latest || context.signal?.aborted || (context.isCurrent && !context.isCurrent())) {
+      if (!sent.latest) throw new Error("sentiment: missing latest row");
+      return;
+    }
+    const next = { ...sent, _spy: {}, _fg: {} };
+    for (const r of spyJson.data) next._spy[r.date] = r.close;
+    for (const r of fgJson.data) next._fg[r.date] = r.value;
+    sentData = next;
     document.querySelectorAll("[data-sent-range]").forEach(el => {
+      if (!bindOnce(el)) return;
       el.addEventListener("click", () => {
         sentRangePreset = el.dataset.sentRange;
         document.querySelectorAll("[data-sent-range]").forEach(e =>
@@ -32,11 +54,12 @@ export async function init() {
         renderSentimentChart();
       });
     });
-
     renderSentimentTab();
     status.textContent = `已載入 ${sentData.data.length} 日資料 · 更新至 ${sentData.updated}`;
   } catch (err) {
+    sentData = null;
     status.textContent = `載入失敗：${err.message}`;
+    throw err;
   }
 }
 
@@ -253,3 +276,5 @@ export function resize() {
   sentChart?.resize();
   sentGaugeChart?.resize();
 }
+
+export function getCharts() { return [sentChart, sentGaugeChart].filter(Boolean); }

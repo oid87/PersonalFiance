@@ -63,6 +63,7 @@ from pathlib import Path
 import requests
 
 from _common import fetch_fred_csv
+import _common
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -325,12 +326,7 @@ def fetch_release_dates(today: date) -> list[str]:
 
 
 def load_existing() -> dict:
-    if not OUT.exists():
-        return {}
-    try:
-        return json.loads(OUT.read_text())
-    except Exception:
-        return {}
+    return _common.load_existing_object(OUT)
 
 
 def merge_by_date(existing: list[dict], fresh: list[dict], date_key: str = "date") -> list[dict]:
