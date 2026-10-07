@@ -70,3 +70,36 @@ clean export 不含 ignored `.claude/skills/`，sync 會略過 skills；這只�
 BLOCKED items：工程主幹無剩餘 scope／dependency blocker；policy、data/provenance、金融行為、extra MA、experiments 與其餘未整合 WIP 保留原身份，未納入本輪提交。
 Agent-ready baseline：`YES`。判斷依據是已提交 B3 source HEAD 的 clean install／full runner／npm／browser 證據，以及九個文件候選在隔離 staged tree `45d92e2b22ba313e9738b56eb4fb3d1cec8ef695` 的 sync、4/4 agent-doc tests、188 個必要 project links 與 full runner PASS（`/Users/orangembpm2/work/code/personal_financial/qa-artifacts/baseline-consolidation-2026-10-04/D9N-docs.json`、`/Users/orangembpm2/work/code/personal_financial/qa-artifacts/baseline-consolidation-2026-10-04/D9N-full.json`）。該 tree 是狀態欄及 Vela 文件事實更新前的已驗文件 proposal，不是本文件自己的 commit SHA。Vela 範圍已依實際兩頁 pilot 修正 canonical 並重新生成 AGENTS。這些文件更新亦須在實際最終 staged tree 驗證後提交。文件提交後的 fresh final HEAD 驗證不屬此 dated checkpoint；實際結果另見最終 report。
 後續工作仍依使用者當次授權與 [AGENT_RULES](AGENT_RULES.md)；不沿用歷史輪次的停止／無 commit 授權文字作為目前授權。
+
+
+## 2026-10-07 Cloud tools 候選（未提交／未同步本地）
+
+Cloud checkout `/workspace/PersonalFiance`，origin `oid87/PersonalFiance`，branch
+`work`，HEAD `7904738cc8fef78ae7b9dd64d3deed9e654fd9f1`，為接受基準
+`63ecab26` 的 100 個 data 檔案直接後繼；本輪不改 data。
+使用者後續授權先完成安全、可操作的 Cloud 工具。新增 [tools.html](tools.html)：
+分組 ticker 清單與既有本地價格選取、既有槓桿回測／波動率診斷控制、已計算月報酬
+JSON 熱圖（明示合成示範）、未接入總經未來事件來源狀態與官方人工參考連結。
+波動率 production tab 與摘要共用同一 calculator，原 helper 固定 fixture 供獨立等價驗證。
+主 dashboard 只有工具 section 的一行入口連結；catalogue 仍 72 頁。
+
+完整 scope、共享 hunks、待決策與獨立 GPT-6.1 Sol low QA 指令見
+[Cloud spec](docs/cloud-remaining-spec.md) 與 [Claude handoff](CLAUDE_HANDOFF.md)。
+本 coding session 沒有執行 suites 或 browser；凍結後另交指定模型 QA，unit/static
+不能聲稱 UI 已驗。舊 14 檔候選與 QA artifacts 保留，這輪另存證據。
+
+待接收精確本地 8 檔 Taiwan overview＋9 檔公開 ETF patch＋5 檔私有 payload；
+Cloud 尚未含該程式，不從 prose 重建、不請求原 excluded WIP repo。私有檔不進公開
+repo／site。SEC 403、台灣 issuer 權利、每日價格月報酬口徑與總經 feed 仍各自
+BLOCKED／待 owner 決策；local LLM 為方案與唯讀 API 契約，未安裝／實作。
+未 stage／commit／push／deploy；本地 source 整合與同步尚待精確材料與後續驗證。
+
+### 2026-10-07 後續授權：台灣觀察表
+
+[研究工具](tools.html#taiwan) 新增既有加權指數、上市融資多頭維持率重建代理、上市
+融資餘額與月頻期底 M1B／M2 年增率、已存 M1B−M2 百分點差值。各列觀測日／月份
+與檔案更新分開；來源可個別失敗／重試，最新缺值不退回舊值、月資料不填入日序列。
+[來源與方法](docs/references/taiwan-observations.md) 說明官方整戶及新版 MacroMicro
+上市＋上櫃系列未接入。事件研究只留 handoff 摘要，沒有 −30 門檻、2× 推算、加速度
+或清槓桿完成標籤。前輪 27 檔候選與 review package 保留為恢復 checkpoint；本輪
+凍結後另交 GPT-6.1 Sol low 獨立 QA。未改 data、CI、環境或進行 shipping。
