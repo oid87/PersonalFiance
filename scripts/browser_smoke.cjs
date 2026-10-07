@@ -280,7 +280,7 @@ async function run(options = {}) {
     return [
       [label + ' MA150 default OFF and existing defaults', async () => {
         base = await maState();
-        assert(same(await page.locator('#ma-picker [data-ma]').evaluateAll(es => es.map(e => +e.dataset.ma)), [20, 50, 150, 200]), 'Unexpected MA periods');
+        assert(same(await page.locator('#ma-picker [data-ma]').evaluateAll(es => es.map(e => +e.dataset.ma)), [20, 50, 100, 125, 150, 200, 300]), 'Unexpected MA periods');
         assert(!base.selected.length && !base.names.some(n => n.startsWith('__ma_')), 'MA default changed');
         return { ...base, nonMA: hash(JSON.stringify(base.nonMA)) };
       }],

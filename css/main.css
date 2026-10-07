@@ -600,6 +600,8 @@
       }
       .controls::-webkit-scrollbar { display: none; }
       #series-picker { flex: none; flex-wrap: nowrap; width: max-content; }
+      /* Seven MA chips cannot fit one 390px row: wrap inside one viewport width. */
+      #ma-picker { width: calc(100vw - 36px); max-width: none; }
       .fp-header { padding: 6px 12px 4px; }
       .fp-table-wrap { padding: 0 12px 8px; }
       #ck-summary { padding: 8px 12px; gap: 12px; }
@@ -646,6 +648,8 @@
       }
       .controls::-webkit-scrollbar { display: none; }
       #series-picker { flex: none; flex-wrap: nowrap; width: max-content; }
+      /* Seven MA chips cannot fit one 390px row: wrap inside one viewport width. */
+      #ma-picker { width: calc(100vw - 36px); max-width: none; }
 
       #chart { height: calc(100dvh - 120px - var(--cat-bar-h) - var(--fear-h)); min-height: 360px; }
       #penta-chart, #macro-chart, #corr-chart, #sector-chart {
@@ -871,6 +875,8 @@
 
     /* Layout */
     .picker-row { display: flex; gap: 4px; }
+    #ma-picker { flex: none; flex-wrap: wrap; align-items: center; max-width: 100%; }
+    #ma-picker .chip { min-height: 44px; min-width: 44px; }
     .picker-row--end { margin-left: auto; }
     .period-control { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1); min-width: 0; }
     .period-control--end { margin-left: auto; }

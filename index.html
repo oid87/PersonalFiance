@@ -53,11 +53,15 @@
         <span id="custom-ticker-btn" class="chip" style="padding:4px 10px;cursor:pointer;flex-shrink:0" data-tooltip="輸入任意 Yahoo Finance 代號並載入">＋</span>
       </div>
 
-      <div class="picker-row" id="ma-picker">
-        <span class="chip" data-ma="20" data-tooltip="20日均線：短期趨勢，常見支撐壓力位">MA20</span>
-        <span class="chip" data-ma="50" data-tooltip="50日均線：中期趨勢，機構常用基準線">MA50</span>
-        <span class="chip" data-ma="150" data-tooltip="最近150筆資料的簡單移動平均線；可多選，再點一次取消">MA150</span>
-        <span class="chip" data-ma="200" data-tooltip="200日均線：長期牛熊分界，站上為多頭訊號">MA200</span>
+      <div class="picker-row" id="ma-picker" role="group" aria-label="移動平均線週期，可多選">
+        <span class="text-muted-sm">均線（可多選）</span>
+        <button type="button" class="chip" data-ma="20" aria-label="MA20：最近 20 筆資料的移動平均線" data-tooltip="最近 20 筆資料的算術平均；滿 20 筆後顯示，可多選，再點一次取消。">MA20</button>
+        <button type="button" class="chip" data-ma="50" aria-label="MA50：最近 50 筆資料的移動平均線" data-tooltip="最近 50 筆資料的算術平均；滿 50 筆後顯示，可多選，再點一次取消。">MA50</button>
+        <button type="button" class="chip" data-ma="100" aria-label="MA100：最近 100 筆資料的移動平均線" data-tooltip="最近 100 筆資料的算術平均；滿 100 筆後顯示，可多選，再點一次取消。">MA100</button>
+        <button type="button" class="chip" data-ma="125" aria-label="MA125：最近 125 筆資料的移動平均線" data-tooltip="最近 125 筆資料的算術平均；滿 125 筆後顯示，可多選，再點一次取消。">MA125</button>
+        <button type="button" class="chip" data-ma="150" aria-label="MA150：最近 150 筆資料的移動平均線" data-tooltip="最近 150 筆資料的算術平均；滿 150 筆後顯示，可多選，再點一次取消。">MA150</button>
+        <button type="button" class="chip" data-ma="200" aria-label="MA200：最近 200 筆資料的移動平均線" data-tooltip="最近 200 筆資料的算術平均；滿 200 筆後顯示，可多選，再點一次取消。">MA200</button>
+        <button type="button" class="chip" data-ma="300" aria-label="MA300：最近 300 筆資料的移動平均線" data-tooltip="最近 300 筆資料的算術平均；滿 300 筆後顯示，可多選，再點一次取消。">MA300</button>
       </div>
 
       <span id="fear-toggle" class="chip" title="標示 F&G 極度恐懼區間">恐懼區</span>

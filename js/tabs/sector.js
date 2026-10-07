@@ -1,6 +1,7 @@
 import { SECTOR_ETFS, SECTOR_LABEL, sectorLoaded } from '../state.js';
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { chipPicker } from '../utils/dom.js';
+import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 // ── State ──────────────────────────────────────────────────────────────
 let market        = "us";
@@ -8,6 +9,7 @@ let sortCol       = "1M";
 let treemapChart   = null;
 let heatmapChart   = null;
 let liveHoldings   = null;
+let holdingsUnavailable = false;
 let twData         = null;
 let curSortedKeys  = [];
 let showSparklines = null;
@@ -238,27 +240,48 @@ function cellLabelColor(color) {
 const googleUrl = sym => `https://www.google.com/search?q=${encodeURIComponent(sym + " stock")}`;
 
 // ── Data loading ────────────────────────────────────────────────────────
-async function loadUS() {
-  await Promise.all(SECTOR_ETFS.map(async etf => {
-    if (sectorLoaded[etf]) return;
-    const resp = await fetch(`data/${etf}.json`, { cache: "no-cache" });
-    if (!resp.ok) throw new Error(`${etf}: HTTP ${resp.status}`);
-    const j = await resp.json();
-    sectorLoaded[etf] = (j.data || []).map(r => [r.date, r.close]);
+async function loadUS(context = {}) {
+  const missing = SECTOR_ETFS.filter(etf => !sectorLoaded[etf]);
+  const entries = await Promise.all(missing.map(async etf => {
+    const payload = await requestJSON(`data/${etf}.json`, { signal: context.signal });
+    if (!Array.isArray(payload?.data) || !payload.data.length) throw new Error(`${etf}: missing data rows`);
+    if (!payload.data.every(r => typeof r?.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date) &&
+        Number.isFinite(r.close) && r.close > 0)) throw new Error(`${etf}: invalid close row`);
+    return [etf, payload.data.map(r => [r.date, r.close])];
   }));
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  for (const [etf, rows] of entries) sectorLoaded[etf] = rows;
   if (!liveHoldings) {
     try {
-      const r = await fetch("data/sector_holdings.json", { cache: "no-cache" });
-      if (r.ok) liveHoldings = (await r.json()).data || null;
-    } catch { /* fallback */ }
+      const payload = await requestJSON("data/sector_holdings.json", { signal: context.signal });
+      if (!payload?.data || typeof payload.data !== 'object' ||
+          !Object.values(payload.data).every(rows => !rows || (Array.isArray(rows) && rows.every(r =>
+            typeof r?.sym === 'string' && Number.isFinite(r.w) && r.w >= 0)))) {
+        // Falsy per-ETF entries keep the built-in list for that ETF only.
+        clearRequestCache('data/sector_holdings.json');
+        throw new Error('sector_holdings: invalid numeric row');
+      }
+      if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+      liveHoldings = payload.data;
+      holdingsUnavailable = false;
+    } catch {
+      holdingsUnavailable = true; // static holdings remain available and visibly marked
+    }
   }
 }
 
-async function loadTW() {
+async function loadTW(context = {}) {
   if (twData) return;
-  const resp = await fetch("data/taiwan_sector_index.json", { cache: "no-cache" });
-  if (!resp.ok) throw new Error("台股產業指數載入失敗");
-  twData = await resp.json();
+  const payload = await requestJSON("data/taiwan_sector_index.json", { signal: context.signal });
+  if (!payload?.data || typeof payload.data !== 'object' || !Object.keys(payload.data).length)
+    throw new Error("台股產業指數載入失敗");
+  if (!Object.values(payload.data).every(rows => Array.isArray(rows) && rows.length > 0 &&
+      rows.every(row => Array.isArray(row) && typeof row[0] === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(row[0]) && Number.isFinite(row[1]) && row[1] > 0))) {
+    throw new Error('台股產業指數數值不完整');
+  }
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  twData = payload;
 }
 
 // ── Line chart modal ────────────────────────────────────────────────────
@@ -584,20 +607,22 @@ function drawSparkline(cvs, data, color) {
 }
 
 // ── Main render ─────────────────────────────────────────────────────────
-export async function renderSectorTab() {
+export async function renderSectorTab(context = {}) {
   const statusEl = document.getElementById("sector-status");
   statusEl.textContent = "載入中…";
 
   try {
-    if (market === "us") await loadUS();
-    else await loadTW();
+    if (market === "us") await loadUS(context);
+    else await loadTW(context);
+    if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
   } catch (e) {
     statusEl.textContent = `載入失敗：${e.message}`;
+    if (context.signal || context.isCurrent) throw e;
     return;
   }
 
   const ks = keys();
-  if (!ks.length) { statusEl.textContent = "無資料"; return; }
+  if (!ks.length) { statusEl.textContent = "無資料"; if (context.signal || context.isCurrent) throw new Error("sector: no series"); return; }
 
   const returns = {};
   for (const k of ks) {
@@ -616,7 +641,8 @@ export async function renderSectorTab() {
   const latestDates = ks.map(k => series(k)?.at(-1)?.[0]).filter(Boolean).sort();
   const latest = latestDates.at(-1) ?? "—";
   const mktLabel = market === "us" ? "美股11大產業 ETF" : `台股${ks.length}大產業指數`;
-  statusEl.textContent = `${mktLabel} · 以${sortCol}排序 · 截至 ${latest} · 點任一板塊看走勢+MA`;
+  statusEl.textContent = `${mktLabel} · 以${sortCol}排序 · 截至 ${latest} · 點任一板塊看走勢+MA` +
+    (market === 'us' && holdingsUnavailable ? ' · 即時持股暫缺，使用靜態持股' : '');
 }
 
 // ── Lifecycle ───────────────────────────────────────────────────────────
@@ -630,19 +656,22 @@ function initCharts() {
   if (!heatmapChart) heatmapChart = echarts.init(hmEl, theme);
 }
 
-export function activate() {
+export async function activate(context = {}) {
   if (showSparklines === null) showSparklines = !mob();
   const tog = document.getElementById("sector-sparkline-toggle");
   if (tog) tog.classList.toggle("active", showSparklines);
   initCharts();
-  setTimeout(() => { treemapChart?.resize(); heatmapChart?.resize(); renderSectorTab(); }, 50);
+  await new Promise(resolve => setTimeout(resolve, 50));
+  if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
+  treemapChart?.resize(); heatmapChart?.resize();
+  await renderSectorTab(context);
 }
 
 export function onThemeChange(light) {
   const theme = light ? null : "dark";
   if (treemapChart) { treemapChart.dispose(); treemapChart = echarts.init(document.getElementById("sector-treemap"), theme); }
   if (heatmapChart) { heatmapChart.dispose(); heatmapChart = echarts.init(document.getElementById("sector-chart"), theme); }
-  renderSectorTab();
+  return renderSectorTab();
 }
 
 export function resize() {

@@ -31,6 +31,29 @@ test('FPE UTC interpolation and rounding match snapshot oracle', () => {
   ]]) assert.deepEqual(interpFpe(rows), plain(old(rows)));
 });
 
+test('FPE gaps never interpolate across missing endpoints and keep observed values', () => {
+  const dates = ['2024-01-01', '2024-01-04', '2024-01-07'];
+  for (const missing of [undefined, null, NaN, Infinity, '21']) {
+    const rows = [{ date: dates[0], fpe: 20 }, { date: dates[1], fpe: missing }, { date: dates[2], fpe: 26 }];
+    assert.deepEqual(interpFpe(rows), [
+      ['2024-01-01', 20], ['2024-01-02', null], ['2024-01-03', null],
+      ['2024-01-04', null], ['2024-01-05', null], ['2024-01-06', null], ['2024-01-07', 26],
+    ]);
+    assert.deepEqual(interpFpe([{ date: dates[0], fpe: missing }, { date: dates[1], fpe: 18 }]), [
+      ['2024-01-01', null], ['2024-01-02', null], ['2024-01-03', null], ['2024-01-04', 18],
+    ]);
+    assert.deepEqual(interpFpe([{ date: dates[0], fpe: 18 }, { date: dates[1], fpe: missing }]), [
+      ['2024-01-01', 18], ['2024-01-02', null], ['2024-01-03', null], ['2024-01-04', null],
+    ]);
+  }
+  assert.deepEqual(interpFpe(null), []);
+  assert.deepEqual(interpFpe([{ date: dates[0] }]), [[dates[0], null]]);
+  // Input zero is missing (Product Sprint 1); see trend_fpe_endpoints.test.mjs.
+  assert.deepEqual(interpFpe([{ date: dates[0], fpe: 18 }, { date: dates[1], fpe: 21 }]), [
+    ['2024-01-01', 18], ['2024-01-02', 19], ['2024-01-03', 20], ['2024-01-04', 21],
+  ]);
+});
+
 test('prior-only drawdown, score zone and signal snapshot keep boundary semantics', () => {
   const qqq = Array.from({ length: 64 }, (_, i) => [`2024-03-${String(i + 1).padStart(2, '0')}`, 100 + i]);
   const oldBuildSource = block('function buildSigMaps()', 'export function renderSignalPanel(date)');

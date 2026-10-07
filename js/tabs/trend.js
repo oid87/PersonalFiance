@@ -11,13 +11,26 @@ import {
 import {
   computeMA, computeRSI, computeKD, computeTDSetup, computeDDZones, computeBounceSignals,
 } from '../utils/math.js';
-import { loadSeries, ensureLoaded } from '../utils/data.js';
+import { loadSeries, ensureLoaded, requestJSON } from '../utils/data.js';
 import { chipPicker } from '../utils/dom.js';
 import { captureChartState, restoreChartState } from '../utils/chartLifecycle.js';
 import { interpFpe } from './trend_calc.mjs';
+import { fearZones as calcFearZones, fearEpisodes as calcFearEpisodes, buildSigMaps as calcBuildSigMaps, signalSnapshot, scoreZones } from './trend_calc.mjs';
 
 const chartEl = document.getElementById("chart");
 let chart = echarts.init(chartEl, null); // light by default
+
+// The host height animates during rotation and fear-panel changes. Measure the
+// final layout as well as intermediate frames, including after theme recreation.
+if (chartEl && typeof ResizeObserver !== 'undefined') {
+  const observer = new ResizeObserver(() => {
+    if (!chart || chart.isDisposed() || !chartEl.getClientRects().length) return;
+    const width = chartEl.clientWidth, height = chartEl.clientHeight;
+    if (width > 0 && height > 0 &&
+        (chart.getWidth() !== width || chart.getHeight() !== height)) chart.resize();
+  });
+  observer.observe(chartEl);
+}
 
 let fearActive    = false;
 let fearThreshold = 20;
@@ -40,39 +53,8 @@ chart.on("updateAxisPointer", evt => {
 chart.on("globalout", () => { if (state.sigMaps) renderSignalPanel(); });
 
 // ── Fear helpers ───────────────────────────────────────────────
-function fearZones(threshold) {
-  const fg = loaded["F&G"];
-  if (!fg) return [];
-  const out = [];
-  let s = null, last = null;
-  for (const [d, v] of fg) {
-    if (v <= threshold) { if (!s) s = d; last = d; }
-    else if (s)         { out.push([s, last]); s = null; }
-  }
-  if (s) out.push([s, last]);
-  return out;
-}
-
-function fearEpisodes(threshold) {
-  const fg = loaded["F&G"];
-  if (!fg) return [];
-  const out = [];
-  let s = null, fgMin = 100, last = null;
-  for (const [d, v] of fg) {
-    if (v <= threshold) {
-      if (!s) { s = d; fgMin = 100; }
-      if (v < fgMin) fgMin = v;
-      last = d;
-    } else if (s) {
-      out.push({ start: s, end: last, fgMin,
-        days: Math.round((new Date(last) - new Date(s)) / 86400000) + 1 });
-      s = null;
-    }
-  }
-  if (s) out.push({ start: s, end: last, fgMin,
-    days: Math.round((new Date(last) - new Date(s)) / 86400000) + 1 });
-  return out;
-}
+function fearZones(threshold) { return calcFearZones(loaded["F&G"], threshold); }
+function fearEpisodes(threshold) { return calcFearEpisodes(loaded["F&G"], threshold); }
 
 function updateChartHeight() {
   const h = (fearActive && loaded["F&G"]) ? 212 : 0;
@@ -137,65 +119,12 @@ function renderFearPanel() {
 
 // ── Signal panel data builder ──────────────────────────────────
 function buildSigMaps() {
-  const qqq = loaded["QQQ"];
-  if (!qqq?.length) return;
-  const weekly = toWeekly(qqq);
-  const wHLC   = loadedHLC["QQQ"] ? toWeeklyHLC(loadedHLC["QQQ"]) : null;
-
-  const kdArr  = wHLC ? computeKD(wHLC, 9) : [];
-  const rsiArr = computeRSI(weekly, 14);
-  const tdArr  = computeTDSetup(weekly);
-  const rsiMap = new Map(rsiArr.map(r => [r[0], r[1]]));
-  const tdMap  = new Map(tdArr.map(r => [r.date, r]));
-  const weeklySignals = kdArr.map(r => {
-    const td = tdMap.get(r[0]);
-    return [r[0], r[1], r[2], rsiMap.get(r[0]) ?? null, td?.count ?? 0, td?.dir ?? null];
-  });
-
-  const ma200 = computeMA(qqq, 200);
-
-  const makeDDArr = (n) => {
-    const arr = [];
-    for (let i = 0; i < qqq.length; i++) {
-      if (i < n) { arr.push([qqq[i][0], null]); continue; }
-      let peak = 0;
-      for (let j = i - n; j < i; j++) if (qqq[j][1] > peak) peak = qqq[j][1];
-      arr.push([qqq[i][0], (qqq[i][1] - peak) / peak * 100]);
-    }
-    return arr;
-  };
-  const ddArr   = makeDDArr(60);
-
-  const fg  = loaded["F&G"]    || [];
-  const vix = loaded["VIX"]    || [];
-  const vol = loadedVol["QQQ"] || [];
-
-  const scoreArr = [];
-  for (const [date, close] of qqq) {
-    const ws     = lookupLE(weeklySignals, date);
-    const fgV    = lookupLE(fg,     date)?.[1] ?? null;
-    const vixV   = lookupLE(vix,    date)?.[1] ?? null;
-    const ma200V = lookupLE(ma200,  date)?.[1] ?? null;
-    const volV   = lookupLE(vol,    date)?.[1] ?? null;
-    const ddV    = lookupLE(ddArr,  date)?.[1] ?? null;
-    const dev    = (ma200V && close) ? (close - ma200V) / ma200V * 100 : null;
-    const score = [
-      ws?.[1] != null && ws[1] < 30,
-      ws?.[3] != null && ws[3] < 30,
-      fgV   != null && fgV  < 25,
-      vixV  != null && vixV > 20,
-      dev   != null && dev  < 0,
-      ws?.[5] === 'down' && (ws[4] ?? 0) >= 7,
-      ddV   != null && ddV  <= -10,
-      volV  != null && volV >= 80_000_000,
-    ].filter(Boolean).length;
-    scoreArr.push([date, score]);
-  }
-
-  const dailyRetArr = qqq.slice(1).map((r, i) => [r[0], (r[1] - qqq[i][1]) / qqq[i][1]]);
-  const { bounceSignals: bSigs } = computeBounceSignals(qqq, fg, ma200);
-  const bounceSignalSet = new Set(bSigs.map(r => r[0]));
-  state.sigMaps = { qqq, weeklySignals, ma200, ddArr, fg, vix, vol, scoreArr, dailyRetArr, bounceSignalSet };
+  if (!loaded["QQQ"]?.length) return;
+  state.sigMaps = calcBuildSigMaps({
+    qqq: loaded["QQQ"], qqqHLC: loadedHLC["QQQ"],
+    fg: loaded["F&G"] || [], vix: loaded["VIX"] || [], vol: loadedVol["QQQ"] || [],
+  }, { toWeekly, toWeeklyHLC, computeKD, computeRSI, computeTDSetup,
+    computeMA, lookupLE, computeBounceSignals });
 }
 
 export function renderSignalPanel(date) {
@@ -206,37 +135,10 @@ export function renderSignalPanel(date) {
   const d = date || state.sigMaps.qqq.at(-1)?.[0];
   if (!d) return;
 
-  const ws     = lookupLE(state.sigMaps.weeklySignals, d);
-  const fgRow  = lookupLE(state.sigMaps.fg,   d);
-  const vixRow = lookupLE(state.sigMaps.vix,  d);
-  const ma200R = lookupLE(state.sigMaps.ma200, d);
-  const volRow  = lookupLE(state.sigMaps.vol,   d);
-  const ddRow   = lookupLE(state.sigMaps.ddArr, d);
-  const qRow    = lookupLE(state.sigMaps.qqq,   d);
-
-  const kdK     = ws?.[1]  ?? null;
-  const rsiVal  = ws?.[3]  ?? null;
-  const tdCount = ws?.[4]  ?? 0;
-  const tdDir   = ws?.[5]  ?? null;
-  const fgVal   = fgRow?.[1]   ?? null;
-  const vixVal  = vixRow?.[1]  ?? null;
-  const ma200V  = ma200R?.[1]  ?? null;
-  const qClose  = qRow?.[1]    ?? null;
-  const ma200Dev = (ma200V && qClose) ? (qClose - ma200V) / ma200V * 100 : null;
-  const volVal  = volRow?.[1] ?? null;
-  const ddVal   = ddRow?.[1]  ?? null;
-  const dailyRetRow = lookupLE(state.sigMaps.dailyRetArr, d);
-  const dailyRetV   = dailyRetRow?.[0] === d ? dailyRetRow[1] : null;
-
-  const kdHit  = kdK      != null && kdK      < 30;
-  const rsiHit = rsiVal   != null && rsiVal   < 30;
-  const fgHit  = fgVal    != null && fgVal    < 25;
-  const vixHit = vixVal   != null && vixVal   > 20;
-  const maHit  = ma200Dev != null && ma200Dev < 0;
-  const tdHit  = tdDir === 'down' && tdCount >= 7;
-  const ddHit  = ddVal    != null && ddVal    <= -10;
-  const volHit    = volVal   != null && volVal   >= 80_000_000;
-  const bounceHit = state.sigMaps.bounceSignalSet?.has(d) ?? false;
+  const snapshot = signalSnapshot(state.sigMaps, d, lookupLE);
+  const { kdK, rsiVal, tdCount, tdDir, fgVal, vixVal, ma200Dev,
+    volVal, ddVal, dailyRetV, bounceHit, hits: [kdHit, rsiHit, fgHit,
+    vixHit, maHit, tdHit, ddHit, volHit] } = snapshot;
 
   const set = (id, label, txt, hit) => {
     const el = document.getElementById(id); if (!el) return;
@@ -252,7 +154,7 @@ export function renderSignalPanel(date) {
   set("sig-dd",   "12W",   ddVal    != null ? `${ddVal.toFixed(1)}%`    : null, ddHit);
   set("sig-vol",  "量",    volVal   != null ? `${(volVal / 1e6).toFixed(0)}M` : null, volHit);
   set("sig-bounce", "恐慌反彈", bounceHit ? `F&G:${fgVal.toFixed(0)} +${(dailyRetV * 100).toFixed(1)}%` : null, bounceHit);
-  const hits = [kdHit, rsiHit, fgHit, vixHit, maHit, tdHit, ddHit, volHit].filter(Boolean).length;
+  const hits = snapshot.count;
   const countEl = document.getElementById("sig-count");
   if (countEl) {
     countEl.textContent = `${hits}/8`;
@@ -316,7 +218,7 @@ export function render() {
     const MA_SKIP = new Set(["F&G", "VIX"]);
     for (const s of [...SERIES, ...customSeries]) {
       if (!active.has(s.key) || !loaded[s.key] || MA_SKIP.has(s.key)) continue;
-      for (const period of [20, 50, 150, 200]) {
+      for (const period of [20, 50, 100, 125, 150, 200, 300]) {
         if (!maActive.has(period)) continue;
         const maData   = computeMA(loaded[s.key], period);
         const filtered = filterRange(maData);
@@ -365,14 +267,7 @@ export function render() {
   if (sigZoneActive && loaded["QQQ"]) {
     if (!state.sigMaps) buildSigMaps();
     if (state.sigMaps?.scoreArr) {
-      const zones = [];
-      let zStart = null, prev = null;
-      for (const [date, score] of state.sigMaps.scoreArr) {
-        if (score >= 4) { if (!zStart) zStart = date; }
-        else            { if (zStart) { zones.push([zStart, prev]); zStart = null; } }
-        prev = date;
-      }
-      if (zStart) zones.push([zStart, prev]);
+      const zones = scoreZones(state.sigMaps.scoreArr);
       if (zones.length) {
         series.push({
           name: "__sigZone", type: "line", data: [], yAxisIndex: 0,
@@ -494,7 +389,10 @@ export function renderSeriesPicker() {
     el.style.color       = on ? s.color : "";
     el.onclick = async () => {
       if (active.has(s.key)) { active.delete(s.key); }
-      else { active.add(s.key); await loadSeries(s); }
+      else {
+        try { await loadSeries(s); active.add(s.key); }
+        catch (err) { document.getElementById("status").textContent = `載入失敗：${err.message}`; return; }
+      }
       renderSeriesPicker();
       render();
       if (fearActive) renderFearPanel();
@@ -544,17 +442,13 @@ async function loadCustomTicker(rawSymbol) {
 
   try {
     let j;
-    const staticResp = await fetch(`data/${key}.json`, { cache: "no-cache" });
-    if (staticResp.ok) {
-      j = await staticResp.json();
-    } else {
-      const apiResp = await fetch(`/api/stock?ticker=${encodeURIComponent(key)}`);
-      if (!apiResp.ok) {
-        const e = await apiResp.json().catch(() => ({}));
-        throw new Error(e.error || `HTTP ${apiResp.status}`);
-      }
-      j = await apiResp.json();
+    try {
+      j = await requestJSON(`data/${key}.json`);
+    } catch (error) {
+      if (!/HTTP 404/.test(error.message)) throw error;
+      j = await requestJSON(`/api/stock?ticker=${encodeURIComponent(key)}`);
     }
+    if (!Array.isArray(j?.data)) throw new Error("無資料");
 
     const rows = (j.data || []).filter(r => r.close != null);
     if (!rows.length) throw new Error("無資料");
@@ -613,12 +507,13 @@ export async function toggleTrendFpe() {
   document.getElementById("trend-fpe-toggle")?.classList.toggle("active", trendFpeActive);
   if (trendFpeActive && !trendFpeData) {
     try {
-      const r = await fetch("data/QQQ_valuation.json", { cache: "no-cache" });
-      const j = await r.json();
-      trendFpeData = (j.data || []).sort((a, b) => a.date < b.date ? -1 : 1);
+      const j = await requestJSON("data/QQQ_valuation.json");
+      if (!Array.isArray(j?.data) || !j.data.length) throw new Error("QQQ_valuation: missing data rows");
+      trendFpeData = j.data.slice().sort((a, b) => a.date < b.date ? -1 : 1);
     } catch (e) {
       trendFpeActive = false;
       document.getElementById("trend-fpe-toggle")?.classList.remove("active");
+      document.getElementById("status").textContent = `前瞻本益比暫無資料：${e.message}`;
       return;
     }
   }
@@ -637,6 +532,8 @@ document.getElementById("ma-picker")?.addEventListener("click", e => {
   const chartState = captureChartState(chart);
   render();
   restoreChartState(chart, chartState);
+  // On phones the wrapped picker sits in a horizontally scrolling row; keep all seven chips visible.
+  document.getElementById("ma-picker")?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
 });
 
 (function () {
@@ -647,7 +544,7 @@ document.getElementById("ma-picker")?.addEventListener("click", e => {
     const val = input.value.trim();
     if (!val) return;
     input.value = "";
-    loadCustomTicker(val);
+    void loadCustomTicker(val);
   }
   btn.addEventListener("click", submit);
   input.addEventListener("keydown", e => { if (e.key === "Enter") submit(); });
@@ -657,7 +554,13 @@ document.getElementById("fear-toggle")?.addEventListener("click", async () => {
   fearActive = !fearActive;
   document.getElementById("fear-toggle").classList.toggle("fear-on", fearActive);
   if (fearActive) {
-    await Promise.all([ensureLoaded("F&G"), ensureLoaded("SPY")]);
+    try { await Promise.all([ensureLoaded("F&G"), ensureLoaded("SPY")]); }
+    catch (err) {
+      fearActive = false;
+      document.getElementById("fear-toggle").classList.remove("fear-on");
+      document.getElementById("status").textContent = `載入失敗：${err.message}`;
+      return;
+    }
   }
   render();
   renderFearPanel();
