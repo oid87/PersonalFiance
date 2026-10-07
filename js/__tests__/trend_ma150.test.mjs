@@ -5,6 +5,7 @@ import vm from 'node:vm';
 import * as math from '../utils/math.js';
 import * as dates from '../utils/dates.js';
 import * as lifecycle from '../utils/chartLifecycle.js';
+import * as calc from '../tabs/trend_calc.mjs';
 
 const source = readFileSync(new URL('../tabs/trend.js', import.meta.url), 'utf8');
 const legacy = readFileSync(new URL('./fixtures/calculations-three/trend.js', import.meta.url), 'utf8');
@@ -34,7 +35,9 @@ function harness(code = source) {
   };
   // Chart option object uses one legend object; ECharts getOption exposes arrays.
   chart.getOption = function () { return { ...this.option, legend: [this.option.legend] }; };
-  const ctx = { ...math, ...dates, ...lifecycle, maActive,
+  const ctx = { ...math, ...dates, ...lifecycle, ...calc, maActive,
+    calcFearZones: calc.fearZones, calcFearEpisodes: calc.fearEpisodes, calcBuildSigMaps: calc.buildSigMaps,
+    requestJSON: async () => { throw new Error('network is forbidden in scoped tests'); },
     SERIES: [{ key: 'QQQ', color: '#f778ba', yAxis: 0 }], customSeries: [], active: new Set(['QQQ']),
     loaded: { QQQ: rows, 'F&G': rows.map(([date], i) => [date, i % 100]) }, loadedHLC: {}, loadedVol: {},
     state: { sigMaps: null }, filterRange: data => data,
@@ -62,7 +65,7 @@ test('MA150 warmup, known observations and independent sum/N oracle', () => {
 
 test('picker adds only MA150 and preserves initial OFF and existing legend policy', () => {
   const picker = html.match(/id="ma-picker"[\s\S]*?<\/div>/)[0];
-  assert.deepEqual([...picker.matchAll(/data-ma="(\d+)"/g)].map(m => +m[1]), [20, 50, 150, 200]);
+  assert.deepEqual([...picker.matchAll(/data-ma="(\d+)"/g)].map(m => +m[1]), [20, 50, 100, 125, 150, 200, 300]);
   assert.doesNotMatch(picker, /class="chip active"/);
   const h = harness(); h.render();
   assert.equal(h.maActive.size, 0);
