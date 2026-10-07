@@ -22,8 +22,10 @@ jobs:
       - run: python -m pip install -r requirements-dev.txt
       - run: npm ci --ignore-scripts
       - run: python scripts/run_checks.py
+      - run: npm test
+      - run: python -m unittest discover -s scripts/tests -p test_agent_docs.py
   browser:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/agent/pf-cloud-browser-2026-10-07'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/agent/pf-cloud-browser-2026-10-07' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     defaults:
@@ -31,6 +33,7 @@ jobs:
         shell: bash
     permissions:
       contents: read
+      statuses: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,6 +55,14 @@ jobs:
       - name: Actual tools browser smoke
         if: ${{ !cancelled() && steps.browser_install.outcome == 'success' }}
         run: node scripts/test_tools_workspace_browser.cjs --output "$RUNNER_TEMP/pf-tools" 2>&1 | tee "$RUNNER_TEMP/pf-tools.log"
+      - name: Published-site probe self-test
+        if: ${{ !cancelled() && steps.browser_install.outcome == 'success' }}
+        run: node scripts/test_published_tools_browser.cjs --self-test --output "$RUNNER_TEMP/pf-published-probe" 2>&1 | tee "$RUNNER_TEMP/pf-published-probe.log"
+      - name: Verify exact-SHA Vercel publication and published tools UI
+        if: ${{ !cancelled() && steps.browser_install.outcome == 'success' && github.ref == 'refs/heads/main' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/test_published_tools_browser.cjs --url https://personal-fiance-nine.vercel.app --expected-sha "${{ github.sha }}" --output "$RUNNER_TEMP/pf-published" 2>&1 | tee "$RUNNER_TEMP/pf-published.log"
       - name: Preserve browser evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -63,5 +74,9 @@ jobs:
             ${{ runner.temp }}/pf-tools.log
             ${{ runner.temp }}/pf-pilot
             ${{ runner.temp }}/pf-tools
+            ${{ runner.temp }}/pf-published-probe.log
+            ${{ runner.temp }}/pf-published-probe
+            ${{ runner.temp }}/pf-published.log
+            ${{ runner.temp }}/pf-published
           retention-days: 7
           if-no-files-found: warn

@@ -1,4 +1,4 @@
-# Claude handoff — Cloud tools candidate, 2026-10-07
+# Claude handoff — Cloud research tools, 2026-10-07
 
 Start with [AGENT_RULES](AGENT_RULES.md), [TESTING](TESTING.md),
 [scope/acceptance](docs/cloud-remaining-spec.md) and
@@ -7,12 +7,23 @@ Start with [AGENT_RULES](AGENT_RULES.md), [TESTING](TESTING.md),
 ## Repository and delivered implementation
 
 Saved Cloud environment: `/workspace/PersonalFiance`; origin
-`https://github.com/oid87/PersonalFiance.git`; branch `work`; HEAD
-`7904738cc8fef78ae7b9dd64d3deed9e654fd9f1`; tree
-`cf57159c4c9c4cb67423b8263dfc1206e354d7de`.
-Direct data-only successor of `63ecab26f76ba2ad4e7df864241247a8ab936747`;
+`https://github.com/oid87/PersonalFiance.git`. Accepted feature checkpoint:
+branch `agent/pf-cloud-browser-2026-10-07`; HEAD
+`4b1d73fc9adc645957f55fc5108b35f4fd8878f9`; tree
+`d938d10bbe1191e92f7c4345f3efeb4cf0381d76`.
+Its base `7904738cc8fef78ae7b9dd64d3deed9e654fd9f1` is the direct data-only
+successor of `63ecab26f76ba2ad4e7df864241247a8ab936747`;
 100 data files changed in that successor, original non-data source identical.
-No commit/stage/push/deploy or data refresh from this task.
+The approved product and scoped CI changes were committed and pushed on that
+feature branch. Independent GPT-6.1 Sol low acceptance of
+[run37582576074](https://github.com/oid87/PersonalFiance/actions/runs/37582576074)
+confirmed Python151, JavaScript345, pilot51/51 and tools14/14, strict console0,
+served HTTP identity, sandboxed Chromium and cleanup.
+The owner subsequently approved merging into `main` including its existing
+automatic Vercel publication. The merge/deployment checkpoint must be verified
+from current GitHub refs and exact-SHA runs; the accepted feature checkpoint
+above does not claim later merged or published results. No market-data acquisition
+or changes to data-refresh/stock-failure policy were authorized by this UI work.
 
 Open [tools.html](tools.html) through an ordinary static server at this checkout
 root. The dashboard tools section has one new link. No catalogue page was added.
@@ -45,9 +56,10 @@ exact original source bytes for independent equivalence checks. Existing backtes
 engine remains unchanged. Dates/basis and synthetic coverage are explicitly
 separate between backtest and full-history volatility.
 
-Only four pre-existing tracked files change: dashboard anchor, production
-volatility wrapper, its VM lifecycle-test import injection and CURRENT_STATE dated
-append. New/untracked candidate files are listed in the review manifest. The
+The product's pre-existing source edits are the dashboard anchor, production
+volatility wrapper and its VM lifecycle-test import injection. Dated handoff/state
+documents and scoped acceptance CI are also maintained. Added files are listed
+in the exact review manifest. The
 precise shared hunks are in `shared-integration.patch`; source/data hashes and
 prior-candidate snapshots are packaged separately from live source.
 
@@ -114,7 +126,8 @@ npm run test:browser -- --output /tmp/personalfiance-pilot-browser-NEW
 Use fresh output directories; record commands/exit/cwd/runtime, before/after source
 and data fingerprints, model identity, line/link/static wiring review. Full offline
 runner covers discovered JS syntax/unit files plus Python and manifest, not browser
-or data acquisition. No test result is claimed from this coding session.
+or data acquisition. The accepted remote checkpoint above is separate from this
+portable command list; always report actual results for the current checkout.
 
 Actual tools probe has 14 cases: dashboard link/entry, group CRUD/price selection,
 reload persistence, malformed-storage session protection, monthly raw/null/zero/
@@ -128,10 +141,14 @@ must equal disk. Synthetic page transitions do not prove native bfcache; Chromiu
 emulation does not prove Safari/native IME/screen reader/real touch. Earlier isolated
 9-case probe remains available but does not replace this actual page probe.
 
-Prior QA had no working browser: pinned Playwright Chromium absent; authorized
+Earlier Cloud QA had no working browser: pinned Playwright Chromium absent; authorized
 normal download failed HTTP403 Domain forbidden from cdn.playwright.dev. Existing
 system Chromium151 also failed normal sandbox startup. Prior failed reports are
-preserved. If no normal supported launch works, browser cases stay NOT RUN/BLOCKED;
+preserved. Those blockers were subsequently resolved in GitHub Actions using
+Ubuntu22.04 with the normal Chromium sandbox and explicit bash pipefail; no
+security bypass was used. The first misleading green run and second failed
+harness run remain recorded in the review package. If a later checkout has no
+normal supported launch, its browser cases stay NOT RUN/BLOCKED;
 zero console events before any page opened are not clean-UI evidence. No repeated
 acquisition, alternate mirror or sandbox bypass is required to finish safe work.
 
@@ -142,4 +159,23 @@ its own frozen source/manifest/exact patches and fresh independent QA evidence.
 The parent must reconcile exact incoming local public patches, preserve private
 material separately and perform local smoke after transfer. Do not claim local
 sync or final Taiwan/ETF integration complete until target bytes/evidence exist.
-No commit/push/deploy is authorized by this handoff.
+The current owner approval covers this feature merge and the existing automatic
+Vercel publication. It does not authorize private ETF publication, excluded local
+WIP overwrites or additional market-data acquisition. Local success still needs
+separate WIP-preserving integration and actual local smoke evidence.
+
+## Exact merged and published verification
+
+The scoped acceptance workflow runs full offline checks, explicit npm/agent-doc
+checks and sandboxed pilot/tools checks on feature and `main` push events.
+`scripts/test_published_tools_browser.cjs --self-test --output <new-directory>`
+checks the eight-case published-site probe against its own allowlisted localhost
+server; that report is explicitly harness verification, not production evidence.
+On `main`, the same probe waits for a successful Vercel status on the exact checked
+out SHA, verifies all24 tools assets/data plus dashboard bytes against that
+checkout and exercises the actual published tools UI in fresh browser storage.
+Use `--url https://personal-fiance-nine.vercel.app --expected-sha <HEAD>
+--output <new-directory>` for the published run. Zero console error/warning,
+pageerror and failed requests are required. Traces/screenshots and failure reports
+are always preserved. Safari/native IME/screen readers/physical touch, native
+BFCache and the full72-page browser matrix remain outside these focused probes.
