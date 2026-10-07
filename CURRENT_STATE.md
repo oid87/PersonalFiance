@@ -72,7 +72,7 @@ Agent-ready baseline：`YES`。判斷依據是已提交 B3 source HEAD 的 clean
 後續工作仍依使用者當次授權與 [AGENT_RULES](AGENT_RULES.md)；不沿用歷史輪次的停止／無 commit 授權文字作為目前授權。
 
 
-## 2026-10-07 Cloud tools 候選（未提交／未同步本地）
+## 2026-10-07 Cloud tools 歷史 coding checkpoint
 
 Cloud checkout `/workspace/PersonalFiance`，origin `oid87/PersonalFiance`，branch
 `work`，HEAD `7904738cc8fef78ae7b9dd64d3deed9e654fd9f1`，為接受基準
@@ -103,3 +103,21 @@ BLOCKED／待 owner 決策；local LLM 為方案與唯讀 API 契約，未安裝
 上市＋上櫃系列未接入。事件研究只留 handoff 摘要，沒有 −30 門檻、2× 推算、加速度
 或清槓桿完成標籤。前輪 27 檔候選與 review package 保留為恢復 checkpoint；本輪
 凍結後另交 GPT-6.1 Sol low 獨立 QA。未改 data、CI、環境或進行 shipping。
+
+### 後續 feature 驗收與發布授權
+
+以上兩段是提交前的歷史 checkpoint。後續已提交並推送
+`agent/pf-cloud-browser-2026-10-07`，接受 checkpoint HEAD
+`4b1d73fc9adc645957f55fc5108b35f4fd8878f9`、tree
+`d938d10bbe1191e92f7c4345f3efeb4cf0381d76`。
+[Actions run37582576074](https://github.com/oid87/PersonalFiance/actions/runs/37582576074)
+由指定 GPT-6.1 Sol low 獨立抽查：Python151、JS345、pilot51/51、tools14/14，
+console error/warning/pageerror及request failures為0，HTTP身份與cleanup通過。
+CI使用Ubuntu22.04正常Chromium sandbox與明確bash pipefail；先前兩次失敗證據保留。
+
+owner已明確授權本feature合併main，包含既有Vercel自動發布，並要求合併後驗證。
+受限CI增加main的同SHA驗收，以及八項published-site probe；self-test只驗探針，
+正式published run必須確認同SHA Vercel成功、served bytes一致及實際UI/console。
+當前merge/deploy結果以GitHub實際refs及精確SHA報告為準，不從上述feature結果推定。
+未改市場資料、來源、金融方法、資料刷新及stock failure policy。older22-file本地
+overview/ETF候選仍未接入；44-WIP保留，本地同步與實跑成功須另有證據。
