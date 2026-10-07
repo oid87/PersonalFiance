@@ -22,3 +22,43 @@ jobs:
       - run: python -m pip install -r requirements-dev.txt
       - run: npm ci --ignore-scripts
       - run: python scripts/run_checks.py
+  browser:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/agent/pf-cloud-browser-2026-10-07'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Install pinned Playwright Chromium and host dependencies
+        id: browser_install
+        run: node node_modules/playwright/cli.js install --with-deps chromium 2>&1 | tee "$RUNNER_TEMP/pf-browser-install.log"
+      - name: Pilot browser smoke
+        if: ${{ !cancelled() && steps.browser_install.outcome == 'success' }}
+        run: npm run test:browser -- --output "$RUNNER_TEMP/pf-pilot" 2>&1 | tee "$RUNNER_TEMP/pf-pilot.log"
+      - name: Actual tools browser smoke
+        if: ${{ !cancelled() && steps.browser_install.outcome == 'success' }}
+        run: node scripts/test_tools_workspace_browser.cjs --output "$RUNNER_TEMP/pf-tools" 2>&1 | tee "$RUNNER_TEMP/pf-tools.log"
+      - name: Preserve browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-evidence-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/pf-browser-install.log
+            ${{ runner.temp }}/pf-pilot.log
+            ${{ runner.temp }}/pf-tools.log
+            ${{ runner.temp }}/pf-pilot
+            ${{ runner.temp }}/pf-tools
+          retention-days: 7
+          if-no-files-found: warn
