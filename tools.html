@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>研究工具 · PersonalFiance</title>
+  <link rel="stylesheet" href="css/tools-workspace.css">
+  <script type="module" src="js/tools_workspace.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#workspace">跳至研究工具</a>
+  <header>
+    <a href="index.html">← 回到市場儀表板</a>
+    <h1>研究工具</h1>
+    <p>使用此 checkout 已有的資料與計算；資料日期及合成區間分別標示。</p>
+    <button id="tools-theme" type="button" aria-pressed="false">切換深色</button>
+    <p id="theme-status" role="status"></p>
+    <nav aria-label="研究工具"><a href="#taiwan">台灣觀察</a><a href="#watchlists">觀察清單</a><a href="#diagnostics">槓桿診斷</a><a href="#monthly">月報酬</a><a href="#macro">總經來源</a></nav>
+  </header>
+  <main id="workspace">
+    <section id="taiwan" class="card" aria-labelledby="taiwan-title">
+      <h2 id="taiwan-title">台灣觀察表</h2>
+      <div id="taiwan-result"></div>
+    </section>
+    <section id="watchlists" class="card" aria-labelledby="watchlist-title">
+      <h2 id="watchlist-title">分組標的觀察清單</h2>
+      <p>在此瀏覽器保存群組與標的。選取標的可查看現有價格檔，不會觸發供應商查詢。</p>
+      <div id="watchlist-host"></div>
+      <section aria-labelledby="quote-title">
+        <h3 id="quote-title" tabindex="-1">標的資料</h3>
+        <form id="quote-form"><label>查看標的 <select id="quote-symbol" name="symbol"></select></label><button type="submit">查看／重試</button></form>
+        <p id="quote-status" role="status" aria-live="polite">請選取標的。</p>
+        <div id="quote-result"></div>
+        <a href="index.html#tab=trend">在主儀表板查看走勢</a>
+      </section>
+    </section>
+    <section id="diagnostics" class="card" aria-labelledby="diagnostics-title">
+      <h2 id="diagnostics-title">合併既有槓桿診斷</h2>
+      <p>回測沿用既有引擎；波動率倍數使用全期重疊真實資料。兩個期間分別顯示。</p>
+      <p id="leverage-status" role="status" aria-live="polite">正在讀取本地資料。</p>
+      <button id="leverage-retry" type="button">重新讀取本地槓桿資料</button>
+      <form id="leverage-form">
+        <fieldset id="leverage-controls" disabled>
+          <legend>回測設定</legend>
+          <label>ETF <select name="etf" id="leverage-etf"></select></label>
+          <label>起日（空白使用既有全期）<input type="date" name="from"></label>
+          <label>迄日（空白使用既有全期）<input type="date" name="to"></label>
+          <label>初始投入<input type="number" name="initial" value="10000" min="0.01" step="any" required></label>
+          <label class="check"><input type="checkbox" name="dca">啟用既有每月定投</label>
+          <label>每月投入<input type="number" name="dcaAmount" value="1000" min="0" step="any" required></label>
+          <button type="submit">更新診斷</button>
+        </fieldset>
+      </form>
+      <div id="leverage-result"></div>
+      <p><a href="index.html#tab=leverage">原槓桿實驗室</a> · <a href="index.html#tab=levvol">原波動率倍數頁</a></p>
+    </section>
+    <section id="monthly" class="card" aria-labelledby="monthly-title">
+      <h2 id="monthly-title">已計算月報酬熱圖</h2>
+      <p>貼上已計算百分比資料。本頁只呈現原值；起迄點、缺月與未完整月份由輸入者標示。每日價格自動換算仍待口徑決策。</p>
+      <form id="monthly-form">
+        <label for="monthly-json">月報酬 JSON（僅本次畫面，不儲存）</label>
+        <textarea id="monthly-json" name="payload" rows="11" spellcheck="false" required aria-describedby="monthly-help"></textarea>
+        <p id="monthly-help">schemaVersion: 1；kind: supplied 或 synthetic；source、basis、calculationLabel 必填；rows 中每筆須有 month、returnPct（百分比或 null）、partial（boolean）。from／to 可選。</p>
+        <button type="submit">呈現資料</button><button id="monthly-demo" type="button">載入明確標示的合成示範</button><button id="monthly-clear" type="button">清除輸入與結果</button>
+      </form>
+      <p id="monthly-status" role="status" aria-live="polite">尚未提供月報酬。</p>
+      <div id="monthly-result"></div>
+    </section>
+    <section id="macro" class="card" aria-labelledby="macro-title">
+      <h2 id="macro-title">總經行事曆來源狀態</h2>
+      <div id="macro-result"></div>
+    </section>
+    <section class="card" aria-labelledby="reference-title">
+      <h2 id="reference-title">參考與交接</h2>
+      <ul>
+        <li><a href="docs/references/remaining-dashboard.md">計算口徑、來源與待決策清單</a></li>
+        <li><a href="docs/references/local-finance-assistant.md">本地小型語言模型方案與唯讀 API 契約（規劃）</a></li>
+        <li><a href="CLAUDE_HANDOFF.md">Claude 接手文件</a></li>
+      </ul>
+    </section>
+  </main>
+  <noscript>研究工具需要 JavaScript；資料與文件仍可從主儀表板／參考連結讀取。</noscript>
+</body>
+</html>

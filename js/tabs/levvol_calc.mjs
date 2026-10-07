@@ -1,0 +1,91 @@
+// Isolated copy of committed levvol.js calculation, pending wrapper integration.
+// Existing windows, alignment, admission and statistics are deliberately unchanged.
+export const WINDOWS = [5, 21, 63, 126, 252];
+export const WINDOW_LABEL = { 5: '5日', 21: '21日(月)', 63: '63日(季)', 126: '126日(半年)', 252: '252日(年)' };
+
+// ── math helpers ─────────────────────────────────────────────────────────
+function logReturns(pairs) {
+  // pairs: [[date, price], ...] sorted ascending, aligned. Returns {dates, rets}
+  const dates = [], rets = [];
+  for (let i = 1; i < pairs.length; i++) {
+    const p0 = pairs[i - 1][1], p1 = pairs[i][1];
+    if (p0 > 0 && p1 > 0) { dates.push(pairs[i][0]); rets.push(Math.log(p1 / p0)); }
+  }
+  return { dates, rets };
+}
+function std(arr) {
+  const n = arr.length;
+  if (n === 0) return null;
+  const m = arr.reduce((a, b) => a + b, 0) / n;
+  const v = arr.reduce((a, b) => a + (b - m) * (b - m), 0) / n;
+  return Math.sqrt(v);
+}
+function rollingRatio(etfRets, underRets, w) {
+  // etfRets/underRets already date-aligned same length. Returns array length n with null before window fills.
+  const n = etfRets.length, out = new Array(n).fill(null);
+  for (let i = w - 1; i < n; i++) {
+    const eSlice = etfRets.slice(i - w + 1, i + 1);
+    const uSlice = underRets.slice(i - w + 1, i + 1);
+    const sU = std(uSlice);
+    out[i] = sU > 0 ? std(eSlice) / sU : null;
+  }
+  return out;
+}
+function median(sorted) {
+  const n = sorted.length;
+  if (n === 0) return null;
+  const mid = Math.floor(n / 2);
+  return n % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+function percentile(sorted, p) {
+  const n = sorted.length;
+  if (n === 0) return null;
+  const idx = p * (n - 1), lo = Math.floor(idx), hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  const frac = idx - lo;
+  return sorted[lo] * (1 - frac) + sorted[hi] * frac;
+}
+function mean(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null; }
+
+// ── pair alignment + compute ─────────────────────────────────────────────
+function innerJoinByDate(a, b) {
+  // a, b: [[date, price], ...] sorted ascending. Returns aligned {aVals, bVals} in date order.
+  const bMap = new Map(b);
+  const aVals = [], bVals = [];
+  for (const [d, v] of a) {
+    if (bMap.has(d)) { aVals.push([d, v]); bVals.push([d, bMap.get(d)]); }
+  }
+  return { aVals, bVals };
+}
+
+export function computeVolatilityPair(bundle, etf) {
+  const under = bundle.underlyings[etf.underlying];
+  if (!under) return null;
+  const { aVals: etfPairs, bVals: underPairs } = innerJoinByDate(etf.real, under.data);
+  if (etfPairs.length < WINDOWS[WINDOWS.length - 1] + 5) return null;
+
+  const { dates, rets: etfRets } = logReturns(etfPairs);
+  const { rets: underRets } = logReturns(underPairs);
+  // dates/etfRets/underRets are all aligned (same source pairs → same index).
+
+  const dailyBaseline = (() => {
+    const sU = std(underRets);
+    return sU > 0 ? std(etfRets) / sU : null;
+  })();
+
+  const windows = WINDOWS.map(w => {
+    const ratioArr = rollingRatio(etfRets, underRets, w);
+    const clean = ratioArr.filter(v => v != null).sort((a, b) => a - b);
+    return {
+      w,
+      series: dates.map((d, i) => [d, ratioArr[i]]),
+      median: median(clean),
+      mean: mean(clean),
+      p5: percentile(clean, 0.05),
+      p95: percentile(clean, 0.95),
+      n: clean.length,
+    };
+  });
+
+  return { dates, etfRets, underRets, dailyBaseline, windows, startDate: dates[0], endDate: dates[dates.length - 1] };
+}
