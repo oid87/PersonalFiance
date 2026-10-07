@@ -200,11 +200,15 @@ async function main() {
     });
     await scenario(CASES[5], async () => {
       await page.route('**/data/leverage.json', route => route.fulfill({status:200,headers:{'content-type':'application/json','x-qa-fixture':'malformed-bundle'},body:'{}'}));
+      try {
+        await page.locator('#leverage-retry').click();
+        await page.waitForFunction(() => document.querySelector('#leverage-status').textContent.includes('不可用'));
+        // fieldset owns the native disabled property; check its descendant control too.
+        assert.equal(await page.locator('#leverage-controls').evaluate(el => el.disabled), true);
+        assert.equal(await page.locator('#leverage-etf').isDisabled(), true);
+        assert.equal(await page.locator('#leverage-result > *').count(), 0);
+      } finally { await page.unroute('**/data/leverage.json'); }
       await page.locator('#leverage-retry').click();
-      await page.waitForFunction(() => document.querySelector('#leverage-status').textContent.includes('不可用'));
-      assert.equal(await page.locator('#leverage-controls').isDisabled(), true);
-      assert.equal(await page.locator('#leverage-result > *').count(), 0);
-      await page.unroute('**/data/leverage.json'); await page.locator('#leverage-retry').click();
       await page.waitForFunction(() => !document.querySelector('#leverage-controls').disabled);
       await page.locator('#leverage-form input[name="from"]').fill('1900-01-01');
       await page.locator('#leverage-form input[name="to"]').fill('1900-01-02');
