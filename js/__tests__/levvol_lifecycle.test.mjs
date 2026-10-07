@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import test from 'node:test';
+import { WINDOWS, WINDOW_LABEL, computeVolatilityPair } from '../tabs/levvol_calc.mjs';
 
 const source = fs.readFileSync(new URL('../tabs/levvol.js', import.meta.url), 'utf8')
   .replace(/^import .*;\n/gm, '').replace(/export /g, '');
@@ -31,7 +32,7 @@ function setup(fetcher = async () => response()) {
     addEventListener(name, listener) { this.listeners[name] = listener; this.listenerCounts[name] = (this.listenerCounts[name] || 0) + 1; },
   }]));
   const context = vm.createContext({
-    AbortController, DOMException, Promise,
+    AbortController, DOMException, Promise, WINDOWS, WINDOW_LABEL, computeVolatilityPair,
     document: { getElementById: id => elements[id] || null },
     isLight: () => false, tc: dark => dark, mob: () => false, PALETTE: {}, tsToLocalDate: date => date,
     bindOnce: element => { if (!element || element.dataset.built) return false; element.dataset.built = '1'; return true; },
