@@ -1,7 +1,7 @@
 {
   "source": "TAIFEX futContractsDateDown(三大法人未平倉) + futDataDown(全市場未平倉/價/量), MTX 小型臺指期貨 & TMF 微型臺指期貨",
   "note": "散戶多空比 = -(三大法人多空未平倉淨額) / 全市場未平倉 × 100. 正=散戶淨多. 期交所三大法人僅滾動3年查詢視窗; TMF 約2024年中上市, 更早無資料. close=近月月份契約一般時段收盤; volume=當日全時段總成交量(排除價差契約).",
-  "updated": "2026-10-07",
+  "updated": "2026-10-08",
   "data": [
     {
       "date": "2023-08-04",
@@ -10038,6 +10038,19 @@
       "tmf_total_oi": 88010,
       "tmf_close": 49978,
       "tmf_volume": 226120
+    },
+    {
+      "date": "2026-10-08",
+      "mtx_ratio": 23.36,
+      "mtx_retail_net": 8912,
+      "mtx_total_oi": 38150,
+      "mtx_close": 49344,
+      "mtx_volume": 175090,
+      "tmf_ratio": 24.57,
+      "tmf_retail_net": 24636,
+      "tmf_total_oi": 100287,
+      "tmf_close": 49344,
+      "tmf_volume": 317772
     }
   ]
 }
