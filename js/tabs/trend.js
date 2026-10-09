@@ -40,6 +40,23 @@ let sigZoneActive   = false;
 let trendFpeActive  = false;
 let trendFpeData    = null;
 
+// Trend-only extras (kept out of SERIES so corr/tools don't pick them up).
+// `high` entries plot the intraday high of their `src` series from loadedHLC.
+const VXN_SERIES = Object.freeze({ key: "VXN", file: "data/VXN.json", color: "#8b949e", yAxis: 1 });
+const TREND_EXTRA = Object.freeze([
+  VXN_SERIES,
+  // Same key/file as SERIES "VIX", so both share loaded["VIX"] and the request cache.
+  { key: "VIX高", src: { key: "VIX", file: "data/VIX.json" }, color: "#f0883e", yAxis: 1, high: true },
+  { key: "VXN高", src: VXN_SERIES, color: "#8b949e", yAxis: 1, high: true },
+]);
+const MA_SKIP = new Set(["F&G", "VIX", "VXN", "VIX高", "VXN高"]);
+
+function seriesData(s) {
+  if (!s.high) return loaded[s.key];
+  const hlc = loadedHLC[s.src.key];
+  return hlc ? hlc.map(r => [r[0], r[1]]) : undefined;
+}
+
 const dateFrom = document.getElementById("date-from");
 const dateTo   = document.getElementById("date-to");
 
@@ -179,7 +196,7 @@ export function render() {
       min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1),
       axisLine: { lineStyle: { color: axisClr } },
       splitLine: { lineStyle: { color: gridClr } } },
-    { id: "vix",  name: "VIX",  position: "right",
+    { id: "vix",  name: "VIX/VXN",  position: "right",
       min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1),
       axisLine: { lineStyle: { color: "#f0883e" } }, splitLine: { show: false } },
     { id: "fg",   name: "F&G",  position: "right", offset: isMob ? 35 : 55, min: 0, max: 100,
@@ -200,26 +217,25 @@ export function render() {
       axisLine: { lineStyle:{ color:"#58a6ff" } }, splitLine:{ show:false } });
   }
 
-  for (const s of [...SERIES, ...customSeries]) {
-    if (!active.has(s.key) || !loaded[s.key]) continue;
+  for (const s of [...SERIES, ...TREND_EXTRA, ...customSeries]) {
+    const rows = seriesData(s);
+    if (!active.has(s.key) || !rows) continue;
     series.push({
       name: s.key,
       type: "line",
-      data: filterRange(loaded[s.key]),
+      data: filterRange(rows),
       yAxisIndex: s.yAxis,
       showSymbol: false,
-      lineStyle: { width: 1.5, color: s.color },
+      lineStyle: s.high ? { width: 1, color: s.color, type: "dotted" } : { width: 1.5, color: s.color },
       itemStyle: { color: s.color },
       emphasis: { focus: "series" },
     });
   }
 
   if (maActive.size > 0) {
-    const MA_SKIP = new Set(["F&G", "VIX"]);
     for (const s of [...SERIES, ...customSeries]) {
       if (!active.has(s.key) || !loaded[s.key] || MA_SKIP.has(s.key)) continue;
-      for (const period of [20, 50, 100, 125, 150, 200, 300]) {
-        if (!maActive.has(period)) continue;
+      for (const period of maActive) {
         const maData   = computeMA(loaded[s.key], period);
         const filtered = filterRange(maData);
         series.push({
@@ -399,6 +415,25 @@ export function renderSeriesPicker() {
     };
     wrap.appendChild(el);
   }
+  for (const s of TREND_EXTRA) {
+    const on = active.has(s.key);
+    const el = document.createElement("span");
+    el.className = "chip";
+    el.textContent = s.key;
+    if (s.high) el.dataset.tooltip = `${s.src.key} 當日盤中最高價（虛線）`;
+    el.style.borderColor = on ? s.color : "";
+    el.style.color       = on ? s.color : "";
+    el.onclick = async () => {
+      if (active.has(s.key)) { active.delete(s.key); }
+      else {
+        try { await loadSeries(s.high ? s.src : s); active.add(s.key); }
+        catch (err) { document.getElementById("status").textContent = `載入失敗：${err.message}`; return; }
+      }
+      renderSeriesPicker();
+      render();
+    };
+    wrap.appendChild(el);
+  }
   for (const s of customSeries) {
     const on = active.has(s.key);
     const el = document.createElement("span");
@@ -430,7 +465,14 @@ export function renderSeriesPicker() {
 async function loadCustomTicker(rawSymbol) {
   const key = rawSymbol.trim().toUpperCase();
   if (!key) return;
-  if (SERIES.find(s => s.key === key) || customSeries.find(s => s.key === key)) {
+  const extra = TREND_EXTRA.find(s => s.key === key);
+  if (extra) {
+    try { await loadSeries(extra); } catch (err) {
+      document.getElementById("status").textContent = `⚠ 無法載入 ${key}：${err.message}`;
+      return;
+    }
+  }
+  if (extra || SERIES.find(s => s.key === key) || customSeries.find(s => s.key === key)) {
     active.add(key);
     renderSeriesPicker();
     render();
@@ -474,7 +516,9 @@ async function loadCustomTicker(rawSymbol) {
 
 // ── Tab module API ─────────────────────────────────────────────
 export async function activate(context = {}) {
-  await Promise.all(SERIES.filter(s => active.has(s.key)).map(s => loadSeries(s, context)));
+  const sources = new Set([...SERIES, ...TREND_EXTRA].filter(s => active.has(s.key))
+    .map(s => s.high ? s.src : s));
+  await Promise.all([...sources].map(s => loadSeries(s, context)));
   if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
   await new Promise(resolve => setTimeout(resolve, 50));
   if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
@@ -521,20 +565,44 @@ export async function toggleTrendFpe() {
 }
 
 // ── Wire trend-tab controls ────────────────────────────────────
-document.getElementById("ma-picker")?.addEventListener("click", e => {
-  // check_reuse: keep — 多選切換(Set),只切被點那顆的 active;chipPicker 是單選
-  const t = e.target.closest(".chip[data-ma]");
-  if (!t) return;
-  const p = +t.dataset.ma;
-  if (maActive.has(p)) maActive.delete(p); else maActive.add(p);
-  document.querySelectorAll("#ma-picker .chip[data-ma]").forEach(el =>
-    el.classList.toggle("active", maActive.has(+el.dataset.ma)));
+// Single moving average: preset periods in a <select>, or a custom period.
+function setMA(period) {
+  maActive.clear();
+  if (Number.isInteger(period) && period >= 2) maActive.add(period);
   const chartState = captureChartState(chart);
   render();
   restoreChartState(chart, chartState);
-  // On phones the wrapped picker sits in a horizontally scrolling row; keep all seven chips visible.
-  document.getElementById("ma-picker")?.scrollIntoView?.({ block: "nearest", inline: "nearest" });
-});
+}
+
+(function () {
+  const select = document.getElementById("ma-select");
+  const custom = document.getElementById("ma-custom");
+  if (!select) return;
+  const customPeriod = () => {
+    const n = Number(custom?.value);
+    return Number.isInteger(n) && n >= 2 && n <= 2000 ? n : null;
+  };
+  const applyCustom = () => { const n = customPeriod(); if (n) setMA(n); };
+  select.addEventListener("change", () => {
+    const v = select.value;
+    if (custom) custom.hidden = v !== "custom";
+    if (v === "custom") {
+      const n = customPeriod();
+      setMA(n);
+      if (!n) custom?.focus();
+      return;
+    }
+    setMA(v ? +v : null);
+  });
+  let maTimer = null;
+  custom?.addEventListener("input", () => {
+    clearTimeout(maTimer);
+    maTimer = setTimeout(applyCustom, 300);
+  });
+  custom?.addEventListener("keydown", e => {
+    if (e.key === "Enter") { clearTimeout(maTimer); applyCustom(); }
+  });
+})();
 
 (function () {
   const input = document.getElementById("custom-ticker-input");
