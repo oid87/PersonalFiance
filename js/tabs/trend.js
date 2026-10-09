@@ -467,7 +467,7 @@ async function loadCustomTicker(rawSymbol) {
   if (!key) return;
   const extra = TREND_EXTRA.find(s => s.key === key);
   if (extra) {
-    try { await loadSeries(extra); } catch (err) {
+    try { await loadSeries(extra.high ? extra.src : extra); } catch (err) {
       document.getElementById("status").textContent = `⚠ 無法載入 ${key}：${err.message}`;
       return;
     }
@@ -516,9 +516,9 @@ async function loadCustomTicker(rawSymbol) {
 
 // ── Tab module API ─────────────────────────────────────────────
 export async function activate(context = {}) {
-  const sources = new Set([...SERIES, ...TREND_EXTRA].filter(s => active.has(s.key))
-    .map(s => s.high ? s.src : s));
-  await Promise.all([...sources].map(s => loadSeries(s, context)));
+  const sources = new Map([...SERIES, ...TREND_EXTRA].filter(s => active.has(s.key))
+    .map(s => s.high ? s.src : s).map(s => [s.key, s]));
+  await Promise.all([...sources.values()].map(s => loadSeries(s, context)));
   if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
   await new Promise(resolve => setTimeout(resolve, 50));
   if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
