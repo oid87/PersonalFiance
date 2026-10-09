@@ -53,15 +53,20 @@
         <span id="custom-ticker-btn" class="chip" style="padding:4px 10px;cursor:pointer;flex-shrink:0" data-tooltip="輸入任意 Yahoo Finance 代號並載入">＋</span>
       </div>
 
-      <div class="picker-row" id="ma-picker" role="group" aria-label="移動平均線週期，可多選">
-        <span class="text-muted-sm">均線（可多選）</span>
-        <button type="button" class="chip" data-ma="20" aria-label="MA20：最近 20 筆資料的移動平均線" data-tooltip="最近 20 筆資料的算術平均；滿 20 筆後顯示，可多選，再點一次取消。">MA20</button>
-        <button type="button" class="chip" data-ma="50" aria-label="MA50：最近 50 筆資料的移動平均線" data-tooltip="最近 50 筆資料的算術平均；滿 50 筆後顯示，可多選，再點一次取消。">MA50</button>
-        <button type="button" class="chip" data-ma="100" aria-label="MA100：最近 100 筆資料的移動平均線" data-tooltip="最近 100 筆資料的算術平均；滿 100 筆後顯示，可多選，再點一次取消。">MA100</button>
-        <button type="button" class="chip" data-ma="125" aria-label="MA125：最近 125 筆資料的移動平均線" data-tooltip="最近 125 筆資料的算術平均；滿 125 筆後顯示，可多選，再點一次取消。">MA125</button>
-        <button type="button" class="chip" data-ma="150" aria-label="MA150：最近 150 筆資料的移動平均線" data-tooltip="最近 150 筆資料的算術平均；滿 150 筆後顯示，可多選，再點一次取消。">MA150</button>
-        <button type="button" class="chip" data-ma="200" aria-label="MA200：最近 200 筆資料的移動平均線" data-tooltip="最近 200 筆資料的算術平均；滿 200 筆後顯示，可多選，再點一次取消。">MA200</button>
-        <button type="button" class="chip" data-ma="300" aria-label="MA300：最近 300 筆資料的移動平均線" data-tooltip="最近 300 筆資料的算術平均；滿 300 筆後顯示，可多選，再點一次取消。">MA300</button>
+      <div class="picker-row" id="ma-picker" role="group" aria-label="移動平均線">
+        <label for="ma-select" class="text-muted-sm">均線</label>
+        <select id="ma-select" data-tooltip="最近 N 筆資料的算術平均（VIX／VXN／F&amp;G 不畫）；選「自訂」可輸入任意天數。">
+          <option value="">無</option>
+          <option value="20">MA20</option>
+          <option value="50">MA50</option>
+          <option value="100">MA100</option>
+          <option value="125">MA125</option>
+          <option value="150">MA150</option>
+          <option value="200">MA200</option>
+          <option value="300">MA300</option>
+          <option value="custom">自訂…</option>
+        </select>
+        <input type="number" id="ma-custom" min="2" max="2000" step="1" placeholder="天數" aria-label="自訂均線天數" hidden />
       </div>
 
       <span id="fear-toggle" class="chip" title="標示 F&G 極度恐懼區間">恐懼區</span>

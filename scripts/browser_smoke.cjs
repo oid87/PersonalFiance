@@ -268,71 +268,77 @@ async function run(options = {}) {
     ];
   }
   function ma150Cases(label) {
-    let base, all, changed;
-    const chip = n => page.locator(`#ma-picker [data-ma="${n}"]`);
+    let base, changed;
+    const pick = v => page.locator('#ma-select').selectOption(String(v));
     const maState = () => page.evaluate(() => {
       const c = echarts.getInstanceByDom(document.getElementById('chart')), o = c.getOption();
-      return { selected: [...document.querySelectorAll('#ma-picker .active')].map(e => +e.dataset.ma),
+      return { selected: o.series.filter(s => s.name.startsWith('__ma_QQQ_')).map(s => +s.name.split('_').pop()),
+        select: document.getElementById('ma-select').value, customHidden: document.getElementById('ma-custom').hidden,
         names: o.series.map(s => s.name), legendData: o.legend[0].data,
         nonMA: o.series.filter(s => !s.name.startsWith('__ma_')).map(s => ({ name: s.name, data: s.data })),
         signal: document.getElementById('signal-panel').innerText };
     });
+    const maOracle = n => page.evaluate(async n => {
+      const { loaded } = await import('/js/state.js');
+      const input = loaded.QQQ, c = echarts.getInstanceByDom(document.getElementById('chart'));
+      const ma = c.getOption().series.find(s => s.name === '__ma_QQQ_' + n);
+      const expected = new Map(input.slice(n - 1).map((row, i) => [row[0], +(input.slice(i, i + n).reduce((sum, r) => sum + r[1], 0) / n).toFixed(4)]));
+      return { count: ma?.data.length, correct: !!ma?.data.length && ma.data.every(([date, value]) => expected.get(date) === value) };
+    }, n);
     return [
-      [label + ' MA150 default OFF and existing defaults', async () => {
+      [label + ' MA select default OFF and existing defaults', async () => {
         base = await maState();
-        assert(same(await page.locator('#ma-picker [data-ma]').evaluateAll(es => es.map(e => +e.dataset.ma)), [20, 50, 100, 125, 150, 200, 300]), 'Unexpected MA periods');
-        assert(!base.selected.length && !base.names.some(n => n.startsWith('__ma_')), 'MA default changed');
+        assert(same(await page.locator('#ma-select option').evaluateAll(es => es.map(e => e.value)), ['', '20', '50', '100', '125', '150', '200', '300', 'custom']), 'Unexpected MA options');
+        assert(!base.selected.length && !base.names.some(n => n.startsWith('__ma_')) && base.customHidden, 'MA default changed');
         return { ...base, nonMA: hash(JSON.stringify(base.nonMA)) };
       }],
-      [label + ' MA150 ON/OFF multi-select oracle and no duplicate/state leak', async () => {
+      [label + ' MA single-select presets, custom period and no duplicate/state leak', async () => {
         assert(base, 'Default baseline missing');
-        await chip(150).click(); await frame();
-        const oracle = await page.evaluate(async () => {
-          const { loaded } = await import('/js/state.js');
-          const input = loaded.QQQ, c = echarts.getInstanceByDom(document.getElementById('chart'));
-          const ma = c.getOption().series.find(s => s.name === '__ma_QQQ_150');
-          const expected = new Map(input.slice(149).map((row, i) => [row[0], +(input.slice(i, i + 150).reduce((sum, r) => sum + r[1], 0) / 150).toFixed(4)]));
-          return { count: ma?.data.length, correct: !!ma?.data.length && ma.data.every(([date, value]) => expected.get(date) === value), firstFullDate: input[149][0] };
-        });
+        await pick(150); await frame();
+        const oracle = await maOracle(150);
         assert(oracle.correct, 'Rendered MA150 differs from independent full-history oracle');
-        await chip(150).click(); await frame();
-        assert(!(await maState()).names.includes('__ma_QQQ_150'), 'MA150 did not disappear');
-        for (const n of [20, 50, 150, 200]) { await chip(n).click(); await frame(); }
-        all = await maState();
-        assert(same(all.selected, [20, 50, 150, 200]), 'Multi-select failed');
-        assert(all.names.filter(n => n.startsWith('__ma_QQQ_')).length === 4, 'Incorrect MA series count');
-        assert(!all.legendData.some(n => n.startsWith('__ma_')), 'Existing hidden MA legend policy changed');
-        for (let i = 0; i < 6; i++) { await chip(150).click(); await frame(); const s = await maState();
+        await pick(20); await frame();
+        assert(same((await maState()).selected, [20]), 'Select is not single-choice');
+        await pick(''); await frame();
+        assert(!(await maState()).names.some(n => n.startsWith('__ma_')), 'MA did not disappear');
+        await pick('custom'); await frame();
+        assert(!(await maState()).customHidden, 'Custom input not shown');
+        await page.locator('#ma-custom').fill('37'); await page.locator('#ma-custom').press('Enter'); await frame();
+        const custom = await maOracle(37);
+        assert(custom.correct && same((await maState()).selected, [37]), 'Custom MA37 wrong');
+        for (let i = 0; i < 6; i++) { await pick(i % 2 ? 150 : 200); await frame(); const s = await maState();
           assert(new Set(s.names).size === s.names.length, 'Duplicate series');
-          assert(s.names.includes('__ma_QQQ_150') === (i % 2 === 1), 'Toggle state leaked');
+          assert(same(s.selected, [i % 2 ? 150 : 200]), 'Selection state leaked');
           assert(same(s.nonMA, base.nonMA) && s.signal === base.signal, 'Non-MA series or fixed signals changed');
+          assert(!s.legendData.some(n => n.startsWith('__ma_')), 'Existing hidden MA legend policy changed');
         }
-        return { oracle, selected: all.selected, seriesNames: all.names, nonMAUnchanged: true, signalsUnchanged: true };
+        return { oracle, custom, nonMAUnchanged: true, signalsUnchanged: true };
       }],
-      [label + ' MA150 keyboard toggle preserves zoom and legend', async () => {
+      [label + ' MA change preserves zoom and legend', async () => {
         await page.evaluate(() => { const c = echarts.getInstanceByDom(document.getElementById('chart')); c.dispatchAction({ type: 'dataZoom', start: 24, end: 83 }); c.dispatchAction({ type: 'legendUnSelect', name: 'QQQ' }); });
         await frame(); changed = await snap('chart');
-        await chip(150).focus(); await page.keyboard.press('Enter'); await frame();
-        await page.keyboard.press('Space'); await frame(); const after = await snap('chart');
-        assert(same(changed.zoom, after.zoom) && same(changed.legend, after.legend), 'MA toggle reset zoom/legend');
-        assert(same((await maState()).selected, [20, 50, 150, 200]), 'Keyboard did not restore selection');
+        await pick(200); await frame(); const after = await snap('chart');
+        assert(same(changed.zoom, after.zoom) && same(changed.legend, after.legend), 'MA change reset zoom/legend');
+        assert(same((await maState()).selected, [200]), 'Select did not apply');
         return { before: changed, after };
       }],
-      [label + ' MA150 controls fit and chart remains usable', async () => {
+      [label + ' MA controls fit on one row and chart remains usable', async () => {
         const result = await geometry('trend');
         const controls = await page.locator('#ma-picker').evaluate(host => {
           const rect = e => { const r = e.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height }; };
-          return { rect: rect(host), scrollWidth: host.scrollWidth, clientWidth: host.clientWidth, chips: [...host.children].map(rect), viewport: innerWidth };
+          return { rect: rect(host), scrollWidth: host.scrollWidth, clientWidth: host.clientWidth,
+            items: [...host.children].filter(e => !e.hidden).map(rect), viewport: innerWidth };
         });
-        assert(controls.scrollWidth <= controls.clientWidth + 1 && controls.rect.left >= -1 && controls.rect.right <= controls.viewport + 1, 'MA control overflow/clipping');
-        for (let i = 0; i < controls.chips.length; i++) {
-          const a = controls.chips[i]; assert(a.left >= controls.rect.left - 1 && a.right <= controls.rect.right + 1 && a.top >= controls.rect.top - 1 && a.bottom <= controls.rect.bottom + 1, 'MA chip clipped');
-          for (const b of controls.chips.slice(i + 1)) assert(a.right <= b.left + 1 || b.right <= a.left + 1 || a.bottom <= b.top + 1 || b.bottom <= a.top + 1, 'MA controls overlap');
+        assert(controls.scrollWidth <= controls.clientWidth + 1 && controls.rect.left >= -1, 'MA control overflow/clipping');
+        assert(controls.rect.height <= 50, 'MA control wraps onto several rows');
+        for (let i = 0; i < controls.items.length; i++) {
+          const a = controls.items[i]; assert(a.left >= controls.rect.left - 1 && a.right <= controls.rect.right + 1 && a.top >= controls.rect.top - 1 && a.bottom <= controls.rect.bottom + 1, 'MA control clipped');
+          for (const b of controls.items.slice(i + 1)) assert(a.right <= b.left + 1 || b.right <= a.left + 1 || a.bottom <= b.top + 1 || b.bottom <= a.top + 1, 'MA controls overlap');
         }
         assert(result.host.rect.height >= 200, 'Chart viewport unreasonably compressed');
         return { controls, chart: result.host };
       }],
-      [label + ' MA150 route re-entry and theme keep selection', async () => {
+      [label + ' MA route re-entry and theme keep selection', async () => {
         const before = await maState();
         await page.evaluate(() => { location.hash = '#tab=stressdash'; }); await chartReady('stressdash');
         await page.evaluate(() => { location.hash = '#tab=trend'; }); await chartReady('trend');
@@ -365,7 +371,7 @@ async function run(options = {}) {
       const fpe = o.series.find(s => s.name === 'QQQ FPE');
       return { fpe: fpe && { data: fpe.data, connectNulls: fpe.connectNulls },
         nonFPE: o.series.filter(s => s.name !== 'QQQ FPE').map(s => ({ name: s.name, data: s.data, markArea: s.markArea, markLine: s.markLine })),
-        selectedMA: [...document.querySelectorAll('#ma-picker .active')].map(e => +e.dataset.ma) };
+        selectedMA: o.series.filter(s => s.name.startsWith('__ma_QQQ_')).map(s => +s.name.split('_').pop()) };
     });
     async function hover(date) {
       await page.evaluate(date => {
@@ -384,12 +390,12 @@ async function run(options = {}) {
       [label + ' FPE actual series/endpoint fixtures and non-FPE regression', async () => {
         await page.locator('#date-from').fill('2024-01-01'); await page.locator('#date-from').dispatchEvent('change');
         await page.locator('#date-to').fill('2024-02-25'); await page.locator('#date-to').dispatchEvent('change');
-        for (const n of [20, 50, 150, 200]) await page.locator(`#ma-picker [data-ma="${n}"]`).click();
+        await page.locator('#ma-select').selectOption('150');
         before = await seriesState();
         const signals = await page.evaluate(async () => { const t = await import('/js/tabs/trend.js'); t.renderSignalPanel(); return document.getElementById('signal-panel').innerText; });
         await page.locator('#trend-fpe-toggle').click(); await page.waitForFunction(() => echarts.getInstanceByDom(document.getElementById('chart')).getOption().series.some(s => s.name === 'QQQ FPE')); await frame();
         const actual = await seriesState(); assert(actual.fpe?.connectNulls === false, 'FPE connectNulls must be false');
-        assert(same(actual.nonFPE, before.nonFPE) && same(actual.selectedMA, [20, 50, 150, 200]), 'FPE changed other series or MA selection');
+        assert(same(actual.nonFPE, before.nonFPE) && same(actual.selectedMA, [150]), 'FPE changed other series or MA selection');
         const signalAfter = await page.evaluate(async () => { const t = await import('/js/tabs/trend.js'); t.renderSignalPanel(); return document.getElementById('signal-panel').innerText; });
         assert(signalAfter === signals, 'Fixed MA200/signals changed');
         if (!mixed) assert(same(actual.fpe.data, [['2024-01-02', 20.001], ['2024-01-03', 21.042], ['2024-01-04', 22.083], ['2024-01-05', 23.1234]]), 'Complete valid fixture changed original UTC/rounding results');
@@ -443,7 +449,7 @@ async function run(options = {}) {
         await page.locator('#theme-btn').click(); await frame();
         for (let i = 0; i < 4; i++) { await page.locator('#trend-fpe-toggle').click(); await frame(); const now = await seriesState();
           assert((!!now.fpe) === (i % 2 === 1), 'FPE toggle state leaked');
-          assert(same(now.nonFPE, before.nonFPE) && same(now.selectedMA, [20, 50, 150, 200]), 'FPE toggle changed other series');
+          assert(same(now.nonFPE, before.nonFPE) && same(now.selectedMA, [150]), 'FPE toggle changed other series');
         }
         assert(same(await seriesState(), original), 'Repeated FPE toggle changed series');
         return { preserved: true, selectedMA: original.selectedMA };
