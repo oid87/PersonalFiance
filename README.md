@@ -1,6 +1,6 @@
 # PersonalFiance
 
-個人總經儀表板（長期願景：個人版 [財經 M 平方](https://www.macromicro.me/)）：8 個分類、72 個畫面的圖表與指標，支援搜尋、收藏與畫面深連結。
+個人總經儀表板（長期願景：個人版 [財經 M 平方](https://www.macromicro.me/)）：8 個分類、73 個畫面的圖表與指標，支援搜尋、收藏與畫面深連結。
 
 - 線上版：<https://personal-fiance-nine.vercel.app>（Vercel，push 到 `main` 即自動部署）
 - 純前端 SPA，**無建置步驟**：`index.html` + `js/boot.js` + `js/tabs/*.js`（ES module）+ ECharts（CDN）
@@ -24,7 +24,7 @@
 
 | 文件 | 責任／何時讀 |
 | --- | --- |
-| [PROJECT_CONTEXT](PROJECT_CONTEXT.md) | 產品用途、8 類／72 頁、資料流與金融語意 |
+| [PROJECT_CONTEXT](PROJECT_CONTEXT.md) | 產品用途、8 類／73 頁、資料流與金融語意 |
 | [ARCHITECTURE](ARCHITECTURE.md) | 「改 X → 讀哪些模組」、核心／擴充點、重複與抽象邊界 |
 | [AGENT_RULES](AGENT_RULES.md) | PM／Coding／QA handoff、file ownership、WIP 與交付證據 |
 | [TESTING](TESTING.md) | scope 對應 checks、環境前提、browser／IME 證據限制 |

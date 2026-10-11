@@ -3356,6 +3356,76 @@
     </div>
   </section>
 
+  <!-- ── QQQ 短線籌碼雷達 tab ─────────────────────────────────────── -->
+  <section id="tab-qqqradar" class="tab-section" hidden>
+    <div class="controls controls--wrap">
+      <div class="picker-row" id="qr-horizon-picker" aria-label="突破統計期間">
+        <span class="chip" data-qr-horizon="5D">5日 ±2%</span>
+        <span class="chip active" data-qr-horizon="10D">10日 ±3%</span>
+        <span class="chip" data-qr-horizon="20D">20日 ±5%</span>
+      </div>
+      <div class="picker-row picker-row--end" id="qr-range-picker" aria-label="圖表期間">
+        <span class="chip" data-qr-range="6M">6M</span>
+        <span class="chip active" data-qr-range="1Y">1Y</span>
+        <span class="chip" data-qr-range="3Y">3Y</span>
+        <span class="chip" data-qr-range="MAX">MAX</span>
+      </div>
+    </div>
+    <div class="top-row" id="qr-top">
+      <div class="breadth-card">
+        <div class="bc-label">綜合分數（六軸等權）</div>
+        <div class="bc-main"><span class="bc-pct" id="qr-comp-val">—</span></div>
+        <div class="bc-count" id="qr-comp-sub">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label" id="qr-up-label">向上突破（歷史命中率）</div>
+        <div class="bc-main"><span class="bc-pct" id="qr-up-val">—</span><span class="bc-unit">%</span></div>
+        <div class="bc-count" id="qr-up-sub">—</div>
+      </div>
+      <div class="breadth-card">
+        <div class="bc-label" id="qr-down-label">向下跌破（歷史命中率）</div>
+        <div class="bc-main"><span class="bc-pct" id="qr-down-val">—</span><span class="bc-unit">%</span></div>
+        <div class="bc-count" id="qr-down-sub">—</div>
+      </div>
+    </div>
+    <div class="chart-h520" id="qr-radar-chart"></div>
+    <div class="note-muted" id="qr-dates" style="padding:0 16px;font-size:12px">—</div>
+    <div id="qr-breakout-chart" style="height:340px"></div>
+    <div class="controls controls--wrap">
+      <div class="picker-row" id="qr-axis-picker" aria-label="單軸分數">
+        <span class="chip active" data-qr-axis="composite">綜合</span>
+        <span class="chip" data-qr-axis="offex">場外空賣比</span>
+        <span class="chip" data-qr-axis="short">空單壓力</span>
+        <span class="chip" data-qr-axis="options">期權情緒</span>
+        <span class="chip" data-qr-axis="technical">技術面</span>
+        <span class="chip" data-qr-axis="vxn">科技波動</span>
+        <span class="chip" data-qr-axis="breadth">NDX廣度</span>
+      </div>
+    </div>
+    <div id="qr-axis-chart" style="height:320px"></div>
+    <div class="table-scroll" id="qr-bucket-table" tabindex="0" style="padding:0 16px"></div>
+    <div class="status" id="qr-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> QQQ 短線雷達怎麼看？</div>
+      <div class="info-panel-body">
+        <p>參考 Prospero.Ai 的短線雷達，但只用<b>免費、可回測、沒有未來函數</b>的代理指標；不是 Prospero 的原始分數。六軸都是 0–100，<b>分數越高越偏多、越偏風險偏好</b>。社群熱度與暗池方向沒有可信的免費來源，所以不做。</p>
+        <table class="info-table">
+          <thead><tr><th>軸</th><th>來源</th><th>計算</th><th>方向</th></tr></thead>
+          <tbody>
+            <tr><td>場外空賣比</td><td>FINRA Reg SHO 每日 short volume（QQQ）</td><td>short volume ÷ total volume 的 5 日均，近 3 年百分位</td><td>越高分越高</td></tr>
+            <tr><td>空單壓力</td><td>FINRA 空單餘額（QQQ，每月兩次）</td><td>days to cover，近 72 次結算的百分位；日期先從結算日往後移 8 個營業日（FINRA 公布延遲），再往後展延最多 25 天</td><td>越高分越低（取反）</td></tr>
+            <tr><td>期權情緒</td><td>equity Put/Call（<b>全市場</b>）</td><td>5 日均，近 3 年百分位</td><td>越高分越低（取反）</td></tr>
+            <tr><td>技術面</td><td>QQQ 收盤價</td><td>站上 MA50／MA200、MACD 柱體為正各 25 分，加上 RSI14 × 0.25</td><td>—</td></tr>
+            <tr><td>科技波動</td><td>Cboe VXN 收盤</td><td>近 3 年百分位</td><td>越高分越低（取反）</td></tr>
+            <tr><td>NDX 廣度</td><td>Nasdaq-100 成分股站上 20 日線比例</td><td>原值，本身就是 0–100</td><td>越高分越高</td></tr>
+          </tbody>
+        </table>
+        <p><b>向上突破／向下跌破</b>：把綜合分數分成 0–20、20–40…80–100 五組，統計歷史上同一組的日子，在接下來 N 個交易日內，QQQ 盤中最高價曾漲到收盤價 +X% 以上（向上），或最低價曾跌到 −X% 以下（向下）的比例。每天只用當天收盤前已經走完前瞻期間的過去樣本，樣本少於 30 筆就不顯示。這是<b>歷史條件統計，不是預測</b>，兩個方向可以同時發生。</p>
+        <p class="note-muted">⚠️ FINRA short volume 不是暗池買盤，也不是空單餘額。它大多是做市商為了對買單避險而記為放空，比率高通常代表買方主動。期權情緒是全市場指標，不分 QQQ。資料從 2019-12 起（受 NDX 廣度與一年暖身期限制），樣本只有幾年，極端組（0–20、80–100）的樣本很少，看的時候要搭配表格的 n。NDX 廣度用的是<b>今天的成分股</b>回推歷史，早期數值有倖存者偏差，不是當時真實的成分股廣度。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 全球央行資產表 tab ────────────────────────────────────────── -->
   <section id="tab-central_banks" class="tab-section" hidden>
     <div class="controls controls--wrap">

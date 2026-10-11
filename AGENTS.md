@@ -48,7 +48,7 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 本文件**不再維護** tab／資料檔的完整對照表 — 歷史證明必 drift（上一版只覆蓋 26 個 tab 中的 7 個）。要查現況，直接看程式碼：
 
 - `ls js/tabs/` = 目前所有 tab 清單
-- `js/navigation-catalog.mjs` 的 `CATEGORIES` = 導覽結構（8 分類、72 個畫面）；`js/navigation.js` 動態渲染分類、sub-nav 與「全部畫面」搜尋，**`index.html` 沒有靜態 tab 按鈕**
+- `js/navigation-catalog.mjs` 的 `CATEGORIES` = 導覽結構（8 分類、73 個畫面）；`js/navigation.js` 動態渲染分類、sub-nav 與「全部畫面」搜尋，**`index.html` 沒有靜態 tab 按鈕**
 - `ls scripts/` = 所有抓取腳本
 - `.github/workflows/fetch.yml` + `forward_pe.yml` = CI 實際跑的清單
 
