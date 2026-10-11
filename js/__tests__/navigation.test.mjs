@@ -17,6 +17,7 @@ const ORIGINAL_LABELS = {
   "banini": "反指標(8zz)",
   "putcall": "Put/Call",
   "flowradar": "資金雷達",
+  "qqqradar": "QQQ短線雷達",
   "liquidity": "流動性×槓桿",
   "marginheat": "融資熱度",
   "breadth": "市場廣度",
@@ -83,8 +84,8 @@ const ids = query => searchNavigation(query).map(item => item.id);
 
 test('all original screens occur once with unchanged labels', () => {
   assert.equal(CATEGORIES.length, 8);
-  assert.equal(NAV_ITEMS.length, 72);
-  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 72);
+  assert.equal(NAV_ITEMS.length, 73);
+  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 73);
   assert.deepEqual(Object.fromEntries(NAV_ITEMS.map(item => [item.id, item.label])), ORIGINAL_LABELS);
   assert.deepEqual(ids(''), NAV_ITEMS.map(item => item.id));
   for (const item of NAV_ITEMS) {

@@ -211,6 +211,10 @@ export const CATEGORIES = [
         "label": "資金雷達"
       },
       {
+        "id": "qqqradar",
+        "label": "QQQ短線雷達"
+      },
+      {
         "id": "flows",
         "label": "資金脈衝"
       },
@@ -352,6 +356,7 @@ const ALIASES = {
   marginpeak: ['融資', '台灣', '台股'], marginconc: ['融資', '台灣', '台股'],
   marginmap: ['融資', '台灣', '台股'],
   margincost: ['融資'], marginglobal: ['融資'],
+  qqqradar: ['VXN', '籌碼'],
 };
 
 // Keep the sole id-to-file exception beside the labels and categories.
