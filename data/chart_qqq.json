@@ -24,7 +24,8 @@
     "2026-10-07",
     "2026-10-08",
     "2026-10-09",
-    "2026-10-12"
+    "2026-10-12",
+    "2026-10-13"
   ],
   "datasets": [
     {
@@ -54,7 +55,8 @@
         23.64,
         23.59,
         23.28,
-        23.44
+        23.44,
+        23.36
       ],
       "spanGaps": false
     },
@@ -85,13 +87,15 @@
         21.76,
         21.68,
         21.38,
-        21.56
+        21.56,
+        21.51
       ],
       "spanGaps": false
     },
     {
       "label": "5y avg",
       "data": [
+        null,
         null,
         null,
         null,
@@ -150,6 +154,7 @@
         null,
         null,
         null,
+        null,
         null
       ],
       "borderDash": [
@@ -167,7 +172,7 @@
     "price_asof_note": "date 是腳本執行日；股價/EPS 實際反映的交易日記錄在每筆entry 的 price_asof（通常是執行日的前一個交易日收盤，遇連假/週末會差更多天，兩者各自記錄、不假設固定關係）。",
     "holdings_source": "slickcharts.com/nasdaq100 (NDX index weights)",
     "series_start": "2026-09-06",
-    "points": 25,
+    "points": 26,
     "avg_5y_available_after": 1260,
     "avg_10y_available_after": 2520,
     "note": "Invesco holdings 端點被擋，改用 NDX 指數權重（QQQ 完全複製）。"
