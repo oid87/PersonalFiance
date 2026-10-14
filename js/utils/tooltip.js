@@ -1,4 +1,7 @@
 const TOOLTIP_ID = 'shared-tooltip';
+// Touch has no mouseout/blur: a tooltip opened by a tap would stay until the next
+// tap elsewhere and can cover sub-navigation. Hide it after a short reading time.
+export const TOUCH_TOOLTIP_MS = 2500;
 
 export function tooltipPosition(anchor, size, viewport) {
   if (anchor.bottom < 0 || anchor.top > viewport.height ||
@@ -23,6 +26,8 @@ export function initTooltips() {
 
   let host = null;
   let touchModeUntil = 0;
+  let touchShown = false;
+  let touchTimer = null;
 
   function removeDescription(el) {
     if (!el) return;
@@ -33,6 +38,9 @@ export function initTooltips() {
   }
 
   function hide() {
+    clearTimeout(touchTimer);
+    touchTimer = null;
+    touchShown = false;
     removeDescription(host);
     host = null;
     tooltip.hidden = true;
@@ -55,6 +63,10 @@ export function initTooltips() {
     host = el;
     tooltip.textContent = message;
     tooltip.hidden = false;
+    clearTimeout(touchTimer);
+    touchTimer = null;
+    touchShown = performance.now() < touchModeUntil;
+    if (touchShown) touchTimer = setTimeout(hide, TOUCH_TOOLTIP_MS);
     const ids = (el.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
     if (!ids.includes(TOOLTIP_ID)) el.setAttribute('aria-describedby', [...ids, TOOLTIP_ID].join(' '));
     place();
@@ -91,6 +103,8 @@ export function initTooltips() {
     const el = event.target.closest?.('[data-tooltip]');
     if (el) show(el);
   });
-  document.addEventListener('scroll', place, true);
+  // Scrolling dismisses a tap-opened tooltip; hover/focus tooltips are repositioned.
+  document.addEventListener('scroll', () => { if (touchShown) hide(); else place(); }, true);
   window.addEventListener('resize', place);
+  window.addEventListener('hashchange', hide);
 }

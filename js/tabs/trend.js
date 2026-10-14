@@ -182,6 +182,67 @@ export function renderSignalPanel(date) {
 }
 
 // ── Chart render ───────────────────────────────────────────────
+// y-axis indexes that at least one series with data is plotted on.
+function usedAxisIndexes(series) {
+  const used = new Set();
+  for (const s of series) {
+    if (Array.isArray(s.data) && s.data.length > 0) used.add(s.yAxisIndex ?? 0);
+  }
+  return used;
+}
+
+// ── Grid margins that fit the visible axes ─────────────────────
+// Axes outside the plot are placed `offset` px away from the grid edge. The grid
+// margin must cover offset + tick + label gap + the widest tick label, otherwise
+// the outermost labels run off the canvas. Widths are estimated from the same
+// min/max functions the axes declare (not changed), so nothing is clipped even
+// when VIX, F&G, BTC and TWD are all on.
+const AXIS_TICK_PX = 5, AXIS_LABEL_GAP_PX = 8, AXIS_LABEL_PAD_PX = 4, AXIS_FONT_PX = 12;
+let measureCtx = null;
+function textWidth(text, px = AXIS_FONT_PX) {
+  try {
+    measureCtx ||= document.createElement("canvas").getContext("2d");
+    measureCtx.font = `${px}px sans-serif`;
+    return measureCtx.measureText(text).width;
+  } catch (_) {
+    return String(text).length * px * 0.62; // no canvas (tests): conservative estimate
+  }
+}
+
+function seriesExtent(series, axisIndex) {
+  let min = Infinity, max = -Infinity;
+  for (const s of series) {
+    if ((s.yAxisIndex ?? 0) !== axisIndex || !Array.isArray(s.data)) continue;
+    for (const point of s.data) {
+      const v = point?.[1];
+      if (typeof v === "number" && Number.isFinite(v)) { if (v < min) min = v; if (v > max) max = v; }
+    }
+  }
+  return min <= max ? { min, max } : null;
+}
+
+function axisLabelWidth(axis, extent) {
+  const bound = b => typeof b === "function" ? (extent ? b(extent) : null) : b;
+  const fmt = axis.axisLabel?.formatter || (v => Number(v).toLocaleString("en-US"));
+  const px = axis.axisLabel?.fontSize || AXIS_FONT_PX;
+  const texts = [bound(axis.min), bound(axis.max)].filter(Number.isFinite).map(v => String(fmt(v)));
+  if (!texts.length) return 0;
+  // the widest end label, plus room for one decimal place on narrow ranges
+  return Math.max(...texts.map(t => textWidth(t, px))) + textWidth(".0", px);
+}
+
+function trendGridMargins(yAxisDef, series, usedAxes, floor) {
+  const need = { left: floor.left, right: floor.right };
+  yAxisDef.forEach((axis, i) => {
+    if (!usedAxes.has(i)) return;
+    const side = axis.position === "left" ? "left" : "right";
+    const labels = AXIS_TICK_PX + AXIS_LABEL_GAP_PX + axisLabelWidth(axis, seriesExtent(series, i)) + AXIS_LABEL_PAD_PX;
+    const name = textWidth(axis.name || "") / 2 + 2; // axis names are centred on the axis line
+    need[side] = Math.max(need[side], (axis.offset || 0) + Math.max(labels, name));
+  });
+  return { left: Math.ceil(need.left), right: Math.ceil(need.right) };
+}
+
 export function render() {
   const series = [];
   const axisClr  = PALETTE.muted;
@@ -353,6 +414,12 @@ export function render() {
     }
   }
 
+  // Presentation only: an axis that nothing plots on is hidden (line, ticks, labels, name).
+  // Axis declarations, offsets and min/max functions are untouched.
+  const usedAxes = usedAxisIndexes(series);
+  yAxisDef.forEach((axis, i) => { if (!usedAxes.has(i)) axis.show = false; });
+  const gridMargins = trendGridMargins(yAxisDef, series, usedAxes, { left: 8, right: 8 });
+
   chart.setOption({
     backgroundColor: "transparent",
     tooltip: {
@@ -377,7 +444,7 @@ export function render() {
       textStyle: { color: tipText },
       top: 6,
     },
-    grid: { left: isMob ? 75 : 115, right: isMob ? 100 : 160, top: 44, bottom: 56 },
+    grid: { left: gridMargins.left, right: gridMargins.right, top: 44, bottom: 56 },
     xAxis: {
       type: "time",
       axisLine: { lineStyle: { color: axisClr } },
@@ -407,7 +474,7 @@ export function renderSeriesPicker() {
       if (active.has(s.key)) { active.delete(s.key); }
       else {
         try { await loadSeries(s); active.add(s.key); }
-        catch (err) { document.getElementById("status").textContent = `載入失敗：${err.message}`; return; }
+        catch (err) { showLoadError(s.key, err); return; }
       }
       renderSeriesPicker();
       render();
@@ -427,7 +494,7 @@ export function renderSeriesPicker() {
       if (active.has(s.key)) { active.delete(s.key); }
       else {
         try { await loadSeries(s.high ? s.src : s); active.add(s.key); }
-        catch (err) { document.getElementById("status").textContent = `載入失敗：${err.message}`; return; }
+        catch (err) { showLoadError(s.key, err); return; }
       }
       renderSeriesPicker();
       render();
@@ -444,6 +511,7 @@ export function renderSeriesPicker() {
     const label = document.createTextNode(s.key + " ");
     const x = document.createElement("span");
     x.textContent = "×";
+    x.className = "chip-x";
     x.style.cssText = "opacity:.55;cursor:pointer;font-style:normal";
     x.onclick = e => {
       e.stopPropagation();
@@ -462,55 +530,182 @@ export function renderSeriesPicker() {
   }
 }
 
+// ── Load-failure wording for #status ───────────────────────────
+// requestJSON (data.js) throws plain Errors without a status field, so the kind is read
+// from its known, anchored formats ("<label>: HTTP 404", "<label>: invalid JSON" with a
+// SyntaxError cause, "<label>: request timed out after Nms" with an AbortError cause, a
+// TypeError cause for network failures) and from loadSeries' own validation messages.
+// Anything else is "unknown": fixed wording, no raw message text (it may contain URLs).
+const LOAD_REASON = {
+  timeout: "連線逾時", network: "網路連線失敗", json: "資料格式錯誤",
+  incomplete: "資料內容不完整", nodata: "無資料",
+};
+function classifyLoadError(err) {
+  if (err?.name === "AbortError") return { kind: "abort" };
+  if (err?.tickerNotFound) return { kind: "notfound" };
+  if (err?.noData) return { kind: "nodata" };
+  const message = typeof err?.message === "string" ? err.message : "";
+  const causeName = err?.cause?.name;
+  const http = message.match(/^\S+: HTTP (\d{3})$/);
+  if (http) return { kind: "http", status: Number(http[1]) };
+  if (causeName === "AbortError" && /^\S+: request timed out after \d+ms$/.test(message)) return { kind: "timeout" };
+  if (causeName === "AbortError") return { kind: "abort" }; // cancelled from outside (e.g. navigation), not our timeout
+  if (causeName === "SyntaxError" && /^\S+: invalid JSON$/.test(message)) return { kind: "json" };
+  if (causeName === "TypeError" && /^\S+: /.test(message)) return { kind: "network" };
+  if (/^\S+: (missing or empty data rows|missing data rows|invalid (HLC |volume )?row \d+)$/.test(message)) return { kind: "incomplete" };
+  return { kind: "unknown" };
+}
+
+// Text for the status line, or null when nothing should be shown (cancelled by navigation).
+function loadErrorText(subject, err) {
+  const info = classifyLoadError(err);
+  console.debug("[trend] load failed:", subject, err);
+  if (info.kind === "abort") return null;
+  if (info.kind === "notfound") return `⚠ 找不到代號 ${subject}（本地無資料，Yahoo 也查無此代號）`;
+  if (info.kind === "http") return `⚠ 無法載入 ${subject}：伺服器回應 ${info.status}`;
+  if (LOAD_REASON[info.kind]) return `⚠ 無法載入 ${subject}：${LOAD_REASON[info.kind]}`;
+  return `⚠ 載入 ${subject} 失敗，請稍後再試`;
+}
+// Chip / FPE / fear failures report at the moment they happen. They take part in the ticker
+// box's status rule (below) as an immediately final participant with the next sequence number:
+// while a ticker request is pending, a later ticker result cannot overwrite them, and a ticker
+// submitted afterwards (higher number) shows its own progress and result as usual. A cancelled
+// load (text === null) takes no number and shows nothing.
+function showLoadError(subject, err) {
+  const text = loadErrorText(subject, err);
+  if (text === null) return;
+  const status = document.getElementById("status");
+  const run = ++tickerPeriod.seq;
+  if (hasPendingTickerRun()) {
+    tickerPeriod.runs.set(run, { state: "final", progress: null, text });
+    recomputeTickerStatus(status);
+  } else {
+    if (status.textContent !== text) status.textContent = text; // no busy period: written directly, becomes the next baseline
+  }
+}
+
+// ── Ticker-box requests: one status rule, one data rule ───────────────────
+// A "busy period" starts when a request is submitted while none is pending (the text on
+// screen then is its baseline) and ends when none is pending. Every request finishes as
+//   final  - its success or error message, or
+//   silent - cancelled, or superseded by a newer request for the same code.
+// Chip / FPE / fear load errors join the same numbering (see showLoadError) as immediately
+// final participants. After every submit, settle and such error, the status line is
+// recomputed from one rule:
+// the request with the highest sequence number that is not silent decides - its
+// "loading…" line while pending, its message once final; if every request of the period
+// is silent, the baseline. So a "loading…" line never outlives its request, and an older
+// request never overwrites a newer one.
+const tickerPeriod = { seq: 0, baseline: "", runs: new Map() }; // run -> { state, progress, text }
+// Data: only the newest request for a code may write loaded*/customSeries (strict
+// latest-wins, whether the newer one succeeds, fails or is cancelled), so an older, slower
+// request for the same code never puts old rows on the chart.
+const latestRunByCode = new Map();
+
+const hasPendingTickerRun = () => [...tickerPeriod.runs.values()].some(r => r.state === "pending");
+function recomputeTickerStatus(status) {
+  let best = null;
+  for (const [run, r] of tickerPeriod.runs) if (r.state !== "silent" && (best === null || run > best)) best = run;
+  const r = best === null ? null : tickerPeriod.runs.get(best);
+  const text = r === null ? tickerPeriod.baseline : (r.state === "pending" ? r.progress : r.text);
+  if (status.textContent !== text) status.textContent = text; // no redundant DOM write / re-announcement
+  if (!hasPendingTickerRun()) tickerPeriod.runs.clear(); // period over
+}
+function beginTickerRun(status, progress) {
+  if (!hasPendingTickerRun()) { tickerPeriod.runs.clear(); tickerPeriod.baseline = status.textContent; }
+  const run = ++tickerPeriod.seq;
+  tickerPeriod.runs.set(run, { state: "pending", progress, text: null });
+  recomputeTickerStatus(status);
+  return run;
+}
+// text === null: silent (nothing to report).
+function settleTickerRun(status, run, text) {
+  const r = tickerPeriod.runs.get(run);
+  if (!r || r.state !== "pending") return;
+  if (text === null) r.state = "silent"; else { r.state = "final"; r.text = text; }
+  recomputeTickerStatus(status);
+}
+
 async function loadCustomTicker(rawSymbol) {
   const key = rawSymbol.trim().toUpperCase();
   if (!key) return;
-  const extra = TREND_EXTRA.find(s => s.key === key);
-  if (extra) {
-    try { await loadSeries(extra.high ? extra.src : extra); } catch (err) {
-      document.getElementById("status").textContent = `⚠ 無法載入 ${key}：${err.message}`;
-      return;
-    }
-  }
-  if (extra || SERIES.find(s => s.key === key) || customSeries.find(s => s.key === key)) {
-    active.add(key);
-    renderSeriesPicker();
-    render();
-    return;
-  }
-
   const status = document.getElementById("status");
-  status.textContent = `載入 ${key} 中…`;
+  const run = beginTickerRun(status, `載入 ${key} 中…`);
+  latestRunByCode.set(key, run);
+  let settled = false;
+  // A request superseded by a newer one for the same code is silent whatever its outcome.
+  const finish = text => {
+    if (settled) return;
+    settled = true;
+    settleTickerRun(status, run, latestRunByCode.get(key) === run ? text : null);
+  };
 
   try {
+    // Built-in series (SERIES / TREND_EXTRA) go through the same loader as their chips.
+    // loadSeries shares requestJSON's per-URL de-duplication, so concurrent requests for the
+    // same built-in code receive the same payload and need no commit ordering here.
+    const known = TREND_EXTRA.find(s => s.key === key) || SERIES.find(s => s.key === key);
+    if (known) {
+      const source = known.high ? known.src : known;
+      await loadSeries(source);
+      active.add(key);
+      renderSeriesPicker();
+      render();
+      if (fearActive && SERIES.includes(known)) renderFearPanel();
+      finish(`已顯示 ${key}`);
+      return;
+    }
+    if (customSeries.find(s => s.key === key)) {
+      active.add(key);
+      renderSeriesPicker();
+      render();
+      finish(`已顯示 ${key}`);
+      return;
+    }
+
     let j;
     try {
       j = await requestJSON(`data/${key}.json`);
     } catch (error) {
-      if (!/HTTP 404/.test(error.message)) throw error;
-      j = await requestJSON(`/api/stock?ticker=${encodeURIComponent(key)}`);
+      const local = classifyLoadError(error);
+      if (local.kind !== "http" || local.status !== 404) throw error;
+      try {
+        j = await requestJSON(`/api/stock?ticker=${encodeURIComponent(key)}`);
+      } catch (apiError) {
+        // "Not found" only when the local file and the API each answered 404.
+        const api = classifyLoadError(apiError);
+        if (api.kind === "http" && api.status === 404) throw Object.assign(new Error("ticker not found"), { tickerNotFound: true });
+        throw apiError;
+      }
     }
-    if (!Array.isArray(j?.data)) throw new Error("無資料");
+    if (!Array.isArray(j?.data)) throw Object.assign(new Error("no data"), { noData: true });
 
     const rows = (j.data || []).filter(r => r.close != null);
-    if (!rows.length) throw new Error("無資料");
+    if (!rows.length) throw Object.assign(new Error("no data"), { noData: true });
+
+    // A newer request for this code exists: it alone decides what is shown for this code.
+    if (latestRunByCode.get(key) !== run) { finish(null); return; }
 
     loaded[key]    = rows.map(r => [r.date, r.close]);
     loadedHLC[key] = rows.map(r => [r.date, r.high, r.low, r.close]);
     loadedVol[key] = rows.map(r => [r.date, r.volume ?? 0]);
     state.sigMaps = null;
 
-    const color = CUSTOM_COLORS[customSeries.length % CUSTOM_COLORS.length];
-    customSeries.push({ key, file: null, color, yAxis: 0, custom: true });
+    if (!customSeries.find(s => s.key === key)) {
+      const color = CUSTOM_COLORS[customSeries.length % CUSTOM_COLORS.length];
+      customSeries.push({ key, file: null, color, yAxis: 0, custom: true });
+    }
     active.add(key);
 
     renderSeriesPicker();
     render();
     const latest = rows[rows.length - 1].date;
-    status.textContent = `已載入 ${key}（${rows.length} 筆，至 ${latest}）`;
+    finish(`已載入 ${key}（${rows.length} 筆，至 ${latest}）`);
   } catch (err) {
-    status.textContent = `⚠ 無法載入 ${key}：${err.message}`;
-    setTimeout(() => { status.textContent = ""; }, 5000);
+    // Keep the error until the next load action overwrites it.
+    finish(loadErrorText(key, err));
+  } finally {
+    finish(null); // any path that did not report (e.g. cancelled): never leave "loading…" behind
   }
 }
 
@@ -557,7 +752,7 @@ export async function toggleTrendFpe() {
     } catch (e) {
       trendFpeActive = false;
       document.getElementById("trend-fpe-toggle")?.classList.remove("active");
-      document.getElementById("status").textContent = `前瞻本益比暫無資料：${e.message}`;
+      showLoadError("前瞻本益比", e);
       return;
     }
   }
@@ -626,7 +821,7 @@ document.getElementById("fear-toggle")?.addEventListener("click", async () => {
     catch (err) {
       fearActive = false;
       document.getElementById("fear-toggle").classList.remove("fear-on");
-      document.getElementById("status").textContent = `載入失敗：${err.message}`;
+      showLoadError("F&G／SPY", err);
       return;
     }
   }

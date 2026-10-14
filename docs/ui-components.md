@@ -4,7 +4,7 @@
 
 ## Tooltip
 
-在元素上設定 `data-tooltip="說明"`。`js/utils/tooltip.js` 在 body 建立唯一的 `role="tooltip"` 浮層，以純文字顯示，依視窗邊界定位與換行。滑鼠移入、鍵盤聚焦或觸控點按時顯示；離開、失焦、Escape 或觸控點按別處時隱藏；捲動與縮放時重新定位，來源離開視窗時隱藏。浮層顯示期間會把自身 ID 加入 `aria-describedby`，隱藏時只移除該 ID，保留原有描述。
+在元素上設定 `data-tooltip="說明"`。`js/utils/tooltip.js` 在 body 建立唯一的 `role="tooltip"` 浮層，以純文字顯示，依視窗邊界定位與換行。滑鼠移入、鍵盤聚焦或觸控點按時顯示；離開、失焦、Escape 或觸控點按別處時隱藏。觸控開啟的 tooltip 沒有離開事件：顯示 2.5 秒後自動隱藏；捲動時隱藏；觸控點按別處（包含點選導覽切換畫面）時隱藏；瀏覽器上一頁／下一頁造成 hashchange 時也隱藏。滑鼠 hover、鍵盤聚焦與 Escape 的行為不變。非觸控的 tooltip 捲動與縮放時重新定位，來源離開視窗時隱藏。浮層顯示期間會把自身 ID 加入 `aria-describedby`，隱藏時只移除該 ID，保留原有描述。
 
 純說明文字可以聚焦閱讀 tooltip，但不會被標成按鈕。不要把說明放進 CSS 偽元素；即使透明，偽元素仍可能撐寬頁面。
 
