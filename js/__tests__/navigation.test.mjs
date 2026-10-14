@@ -77,6 +77,7 @@ const ORIGINAL_LABELS = {
   "semi_vs_spx_pe": "半導體估值",
   "tw_jp_kr_gdp": "台日韓GDP對照",
   "sox_vs_tw_semi_pe": "半導體估值(全球vs台灣)",
+  "trendonify_pe": "Trendonify PE",
   "marketstructure": "市場結構"
 };
 
@@ -84,8 +85,8 @@ const ids = query => searchNavigation(query).map(item => item.id);
 
 test('all original screens occur once with unchanged labels', () => {
   assert.equal(CATEGORIES.length, 8);
-  assert.equal(NAV_ITEMS.length, 73);
-  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 73);
+  assert.equal(NAV_ITEMS.length, 74);
+  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 74);
   assert.deepEqual(Object.fromEntries(NAV_ITEMS.map(item => [item.id, item.label])), ORIGINAL_LABELS);
   assert.deepEqual(ids(''), NAV_ITEMS.map(item => item.id));
   for (const item of NAV_ITEMS) {
