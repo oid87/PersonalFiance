@@ -68,7 +68,7 @@ TICKERS: dict[str, tuple[str, str]] = {
     "DX-Y.NYB": ("DXY",     "2000-01-03"),  # ICE US Dollar Index — 相關係數頁 CORR_EXTRA 的 DXY 序列；2026-06-20 起曾無 producer
     # Taiwan weighted index — used in 估值/位階/台股壓力
     "^TWII":   ("TWII",    "1997-07-02"),
-    "^TWOII":  ("TWOII",   "2013-03-05"),  # Taiwan OTC(櫃買)weighted index — 融資餘額儀表板用
+    # ^TWOII 已由 fetch_twoii.py（FinMind TPEx）接手；yfinance 2026-07 起無資料
     "^N225":     ("N225",     "1965-01-05"),  # Nikkei 225 — 日本融資餘額儀表板用
     "^KS11":     ("KS11",     "1996-12-11"),  # KOSPI — 韓國融資餘額儀表板用
     "000001.SS": ("SSE",      "1997-07-02"),  # 上證指數 — 中國融資餘額儀表板用
