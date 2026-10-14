@@ -1,11 +1,58 @@
 import { SERIES, CORR_EXTRA, loaded } from '../state.js';
-import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { isLight, tc, PALETTE } from '../utils/theme.js';
 import { loadSeries } from '../utils/data.js';
 import { toArithReturns, pearsonCorr } from '../utils/math.js';
 import { chipPicker } from '../utils/dom.js';
 
 let corrChart  = null;
 let corrPeriod = "1Y";
+
+// Cell values need roughly 640px of chart width (13 columns at >= 11px text);
+// narrower charts keep the cells clean and rely on the tooltip.
+const CELL_LABEL_MIN_WIDTH = 640;
+const showCellLabels = () => !!corrChart && corrChart.getWidth() >= CELL_LABEL_MIN_WIDTH;
+// 12px as before; 11px (never below 10) when the chart is short, e.g. phone landscape.
+const cellLabelSize = () => (corrChart && corrChart.getHeight() < 480 ? 11 : 12);
+
+// The visualMap scale is fixed (identical in both page themes), so cell text must not follow
+// the theme either. For each cell the text colour is whichever of black/white has the higher
+// WCAG contrast against that cell's actual colour, computed from the same linear RGB
+// interpolation between the scale stops that visualMap uses. Black and white cross at
+// relative luminance ~0.179, so the worst case over any background is 4.58:1 (>= AA 4.5).
+const CELL_SCALE = ["#1565c0", "#c8d8f0", "#f5f5f5", "#f5c0c0", "#c62828"]; // r = -1 ... +1
+const CELL_TEXT_BLACK = "#000000";
+const CELL_TEXT_WHITE = "#ffffff";
+const hexToRgb = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+const SCALE_RGB = CELL_SCALE.map(hexToRgb);
+
+function cellRgb(r) {
+  const t = (Math.max(-1, Math.min(1, r)) + 1) / 2 * (SCALE_RGB.length - 1);
+  const i = Math.min(Math.floor(t), SCALE_RGB.length - 2), f = t - i;
+  return SCALE_RGB[i].map((c, k) => c + (SCALE_RGB[i + 1][k] - c) * f);
+}
+function relativeLuminance([R, G, B]) {
+  const lin = c => { const x = c / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * lin(R) + 0.7152 * lin(G) + 0.0722 * lin(B);
+}
+// "k" = black text, "w" = white text
+function cellTextTag(r) {
+  const L = relativeLuminance(cellRgb(r));
+  return (L + 0.05) / 0.05 >= 1.05 / (L + 0.05) ? "k" : "w";
+}
+
+function cellLabel() {
+  const fontSize = cellLabelSize();
+  return {
+    show: showCellLabels(),
+    fontSize,
+    formatter: p => {
+      const v = p.value?.[2];
+      return v == null ? "{n|—}" : `{${cellTextTag(v)}|${v.toFixed(2)}}`;
+    },
+    // "n" (no value, no cell colour) sits on the page background, so it follows the theme.
+    rich: { k: { color: CELL_TEXT_BLACK, fontSize }, w: { color: CELL_TEXT_WHITE, fontSize }, n: { color: PALETTE.text, fontSize } },
+  };
+}
 
 export async function renderCorrTab(context = {}) {
   if (!corrChart) return;
@@ -85,9 +132,10 @@ export async function renderCorrTab(context = {}) {
       min: -1, max: 1, orient: "horizontal", left: "center", bottom: 14,
       itemWidth: 12, itemHeight: 100,
       text: ["+1", "−1"], textStyle: { color: tipText, fontSize: 11 },
-      inRange: { color: ["#1565c0", "#c8d8f0", "#f5f5f5", "#f5c0c0", "#c62828"] },
+      inRange: { color: CELL_SCALE },
     },
-    grid: { top: 24, bottom: 72, left: mob() ? 40 : 56, right: 20 },
+    // containLabel keeps long row labels (US10Y, MAGS, SOXX) inside the canvas.
+    grid: { top: 24, bottom: 72, left: 8, right: 20, containLabel: true },
     xAxis: {
       type: "category", data: keys, splitArea: { show: true },
       axisLine: { lineStyle: { color: axisClr } },
@@ -101,11 +149,7 @@ export async function renderCorrTab(context = {}) {
     series: [{
       type: "heatmap",
       data: heatData,
-      label: {
-        show: !mob(),
-        fontSize: 12,
-        formatter: p => p.value?.[2] != null ? p.value[2].toFixed(2) : "—",
-      },
+      label: cellLabel(),
       emphasis: { itemStyle: { shadowBlur: 6, shadowColor: "rgba(0,0,0,.3)" } },
     }],
   }, { notMerge: true });
@@ -136,7 +180,7 @@ export function resize() {
   if (!corrChart) return;
   // Shrink the previous canvas before reading the current layout viewport.
   corrChart.resize();
-  corrChart.setOption({ series: [{ label: { show: !mob() } }] });
+  corrChart.setOption({ series: [{ label: cellLabel() }] });
 }
 
 // Wire period picker once at module load

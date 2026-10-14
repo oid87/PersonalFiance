@@ -367,6 +367,13 @@
       font-size: 12px;
       border-top: 1px solid var(--border);
     }
+    /* Trend status sits directly under the controls so load/error messages are seen
+       next to the ticker box without scrolling to the chart. */
+    #tab-trend > #status {
+      border-top: 0;
+      border-bottom: 1px solid var(--border);
+      overflow-wrap: anywhere;
+    }
 
     /* ── 槓桿模擬 tab ─────────────────────────────────────────────── */
     .lev-banner {
@@ -677,6 +684,13 @@
         min-height: 44px;
       }
       .chip { display: inline-flex; align-items: center; justify-content: center; }
+      /* Custom trend chip: the x is its own 44px-wide target inside the chip's right padding;
+         the label keeps the rest of the chip, so remove and toggle never overlap. */
+      .chip > .chip-x {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 44px; min-height: 44px; margin: -6px -13px -6px 8px;
+      }
+      #mg-table tr[data-mg-id] > td { height: 44px; }
       details > summary { min-height: 44px; padding-block: 12px; line-height: 20px; }
       .lev-checkbox { min-height: 44px; }
       .lev-field input[type=range] { height: 44px; min-height: 44px; margin: 0; }
@@ -701,6 +715,15 @@
       #tab-trend .range-wrap { flex: none; flex-wrap: nowrap; margin-left: 0; }
       #range-picker { display: flex; flex-wrap: nowrap; width: max-content; gap: 4px; }
       #tab-trend .date-inputs { flex: none; }
+    }
+    /* Short landscape (phone): the whole chart, including x axis and zoom slider, fits one
+       screen once scrolled to. 16px leaves room for the browser bar; never below 260px. */
+    @media (max-height: 500px) and (orientation: landscape) {
+      #chart, #corr-chart { height: calc(100dvh - 16px); min-height: 260px; }
+      #mg-chart { height: calc(100dvh - 16px) !important; min-height: 260px; }
+      /* Keep the trend status line plus the 放大圖表 button on the first screen at 844x340. */
+      #tab-trend > #status { padding: 1px 12px; line-height: 14px; }
+      #tab-trend .chart-focus-toolbar { padding-block: 2px; }
     }
     @media (max-height: 500px) {
       #signal-panel { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }

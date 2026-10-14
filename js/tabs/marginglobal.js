@@ -25,13 +25,13 @@ const MARKETS = [
   },
   {
     id: 'tw_otc', label: '台股上櫃',
-    marginFile: 'data/tpex_margin.json', marginField: 'margin_lots', marginUnit: '張(非金額！)',
+    marginFile: 'data/tpex_margin.json', marginField: 'margin_lots', marginUnit: '張，非金額', tableUnit: '張',
     indexFile: 'data/TWOII.json', indexLabel: '櫃買指數',
     isProxy: true,
   },
   {
     id: 'cn', label: '中國滬深',
-    marginFile: 'data/margin_global_cn.json', marginUnit: '元(人民幣)',
+    marginFile: 'data/margin_global_cn.json', marginUnit: '元，人民幣', tableUnit: '元(人民幣)',
     needsExchangeSum: true,
     indexFile: 'data/SSE.json', indexLabel: '上證指數',
   },
@@ -167,7 +167,7 @@ function renderTable() {
     return `
       <tr data-mg-id="${m.id}" style="cursor:pointer;background:${active ? 'rgba(88,166,255,0.12)' : 'transparent'}">
         <td style="padding:6px 8px;font-weight:${active ? '700' : '400'};color:var(--text)">${m.label}</td>
-        <td style="padding:6px 8px;color:var(--text)">${latest ? fmtNumber(latest[1]) : '—'} ${m.marginUnit}${proxyBadge}</td>
+        <td style="padding:6px 8px;color:var(--text)">${latest ? fmtNumber(latest[1]) : '—'} ${m.tableUnit ?? m.marginUnit}${proxyBadge}</td>
         <td style="padding:6px 8px;color:var(--muted)">${latest ? latest[0] : '（無資料）'}</td>
         <td style="padding:6px 8px;color:${chgColor}">${chgStr}</td>
       </tr>`;
@@ -200,8 +200,20 @@ function renderTable() {
       renderChart();
       renderPctChart();
       updateAnchorClearVisibility();
+      revealChartOnTouch();
     });
   }
+}
+
+// Phone/touch feedback: after picking a market, bring the chart into view if it is
+// (partly) off-screen. Desktop keeps its scroll position.
+function revealChartOnTouch() {
+  if (!mob() && !globalThis.matchMedia?.('(pointer: coarse)').matches) return;
+  const host = document.getElementById('mg-chart');
+  if (!host) return;
+  const rect = host.getBoundingClientRect();
+  if (rect.top >= 0 && rect.bottom <= innerHeight) return;
+  host.scrollIntoView({ block: 'start', behavior: 'auto' });
 }
 
 // ── anchor % 比較 ────────────────────────────────────────────────────────
@@ -344,7 +356,8 @@ function renderChart() {
       top: 2, left: 'center',
       textStyle: { color: PALETTE.text2, fontSize: 11 }, inactiveColor: PALETTE.muted,
     },
-    grid: { left: isMob ? 44 : 58, right: isMob ? 44 : 58, top: '14%', bottom: isMob ? '18%' : '12%' },
+    // containLabel: tick labels (e.g. 2,500,000) are measured and kept inside the canvas.
+    grid: { left: isMob ? 8 : 16, right: isMob ? 8 : 16, top: '14%', bottom: isMob ? '18%' : '12%', containLabel: true },
     xAxis: {
       type: 'time',
       axisLabel: { color: PALETTE.muted, fontSize: 11, rotate: isMob ? 30 : 0 },
@@ -352,7 +365,7 @@ function renderChart() {
       splitLine: { show: false },
     },
     yAxis: [
-      { type: 'value', scale: true, name: `融資餘額(${market.marginUnit})`,
+      { type: 'value', scale: true, name: `融資餘額（${market.marginUnit}）`,
         nameTextStyle: { color: MARGIN_COLOR, fontSize: 10 },
         axisLabel: { color: MARGIN_COLOR, fontSize: 11 },
         axisLine: { show: false }, axisTick: { show: false },
