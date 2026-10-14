@@ -1,4 +1,5 @@
-const yahooFinance = require('yahoo-finance2').default;
+const YahooFinance = require('yahoo-finance2').default;
+const yahooFinance = new YahooFinance({ suppressNotices: ['yahooSurvey'] });
 
 module.exports = async function handler(req, res) {
   const { ticker } = req.query;
@@ -9,10 +10,11 @@ module.exports = async function handler(req, res) {
   period1.setFullYear(period1.getFullYear() - 10);
 
   try {
-    const rows = await yahooFinance.historical(symbol, {
+    const result = await yahooFinance.chart(symbol, {
       period1: period1.toISOString().slice(0, 10),
       interval: '1d',
-    }, { validateResult: false });
+    });
+    const rows = result?.quotes ?? [];
 
     if (!rows?.length) {
       return res.status(404).json({ error: `No data found for ${symbol}` });
