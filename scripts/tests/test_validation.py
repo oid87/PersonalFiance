@@ -28,7 +28,7 @@ class ValidationTest(unittest.TestCase):
 
     def full_stock_fixture(self):
         stems = stock_stems(ROOT)
-        self.assertEqual(len(stems), 41)
+        self.assertEqual(len(stems), 42)
         for stem in stems:
             self.write(f'{stem}.json', [{"date": "2026-09-30", "open": 1, "high": 2,
                                         "low": 1, "close": 1.5, "volume": 10}])

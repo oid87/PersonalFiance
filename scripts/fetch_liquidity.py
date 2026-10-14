@@ -8,7 +8,7 @@ FRED net-liquidity components come in MIXED native units and are normalized to
 USD billions here (see UNIT_TO_B) — the classic net-liquidity mistake is
 subtracting millions from billions. A magnitude sanity-check guards against it.
 
-M2 / US2Y are already fetched by fetch_yields.py; DXY by fetch_stocks.py — this
+M2 / US2Y are already fetched by fetch_yields.py; DXY by fetch_stocks.py (DX-Y.NYB) — this
 script only adds what nothing else provides: the net-liquidity components and the
 FINRA margin-debt series. Each section degrades gracefully: if one source is down
 the previously-committed section is kept rather than wiped.

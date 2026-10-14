@@ -65,6 +65,7 @@ TICKERS: dict[str, tuple[str, str]] = {
     "META":    ("META",    "2012-05-18"),
     "TSLA":    ("TSLA",    "2010-06-29"),
     "^VVIX":   ("VVIX",    "2007-01-01"),  # VIX of VIX (volatility uncertainty) — vvixregime tab
+    "DX-Y.NYB": ("DXY",     "2000-01-03"),  # ICE US Dollar Index — 相關係數頁 CORR_EXTRA 的 DXY 序列；2026-06-20 起曾無 producer
     # Taiwan weighted index — used in 估值/位階/台股壓力
     "^TWII":   ("TWII",    "1997-07-02"),
     "^TWOII":  ("TWOII",   "2013-03-05"),  # Taiwan OTC(櫃買)weighted index — 融資餘額儀表板用
