@@ -6,7 +6,7 @@ import { parseTabHash, tabHash, readFavorites, visibleDialogGeometry } from '../
 
 test('registry is lazy and boot has no static tab imports', () => {
   const entries = registryEntries();
-  assert.equal(entries.length, 73);
+  assert.equal(entries.length, 74);
   assert.deepEqual(entries.map(entry => entry.id), NAV_ITEMS.map(item => item.id));
   assert.ok(entries.every(entry => typeof entry.load === 'function'));
   const boot = readFileSync(new URL('../boot.js', import.meta.url), 'utf8');

@@ -281,6 +281,10 @@ export const CATEGORIES = [
         "label": "半導體估值(全球vs台灣)"
       },
       {
+        "id": "trendonify_pe",
+        "label": "Trendonify PE"
+      },
+      {
         "id": "earnings",
         "label": "財報日"
       },
