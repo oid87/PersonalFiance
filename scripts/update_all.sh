@@ -52,6 +52,7 @@ run_script optional fetch_taiwan_fut_inst.py
 run_script optional fetch_taiwan_retail_ls.py
 run_script optional fetch_taiwan_basis.py
 run_script optional fetch_taiwan_margin_total.py
+run_script optional fetch_twoii.py
 run_script optional fetch_tdcc_holders.py
 run_script optional fetch_tw_daytrading.py
 run_script optional fetch_margin_concentration.py

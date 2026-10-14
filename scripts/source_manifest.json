@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 87,
+  "source_count": 88,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -2467,6 +2467,39 @@
             "fpe",
             "tpe"
           ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_twoii.py",
+      "outputs": [
+        "data/TWOII.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/TWOII.json": {
+          "profile": "ohlcv",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
         }
       }
     },

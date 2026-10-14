@@ -241,8 +241,8 @@ jobs:
         run: python scripts/fetch_margin_cost.py
 
       # 全球融資餘額儀表板:中/日/美/韓 4 個非台股市場,不需要 FINMIND_TOKEN,跟台股無關,
-      # 放在 us job(兩個 job 都跑 fetch_stocks.py,對應的 ^TWOII/^N225/^KS11/SSE/SZSE
-      # 指數 ticker 已經在 fetch_stocks.py 裡,這裡只補融資餘額本體)。
+      # 放在 us job(兩個 job 都跑 fetch_stocks.py,對應的 ^N225/^KS11/SSE/SZSE
+      # 指數 ticker 已經在 fetch_stocks.py 裡(^TWOII 已移到 tw job 的 fetch_twoii.py,FinMind TPEx),這裡只補融資餘額本體)。
       - name: Fetch China (SSE+SZSE) margin financing balance (akshare)
         continue-on-error: true
         run: python scripts/fetch_margin_cn.py
@@ -326,6 +326,12 @@ jobs:
       - name: Fetch stock data
         continue-on-error: true
         run: python scripts/fetch_stocks.py
+
+      - name: Fetch Taiwan OTC index (FinMind TPEx, 櫃買指數)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_twoii.py
 
       - name: Fetch TW valuation (0050/TWII PE, TWSE weighted)
         continue-on-error: true
