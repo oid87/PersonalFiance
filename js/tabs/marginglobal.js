@@ -11,6 +11,11 @@ import { bindOnce, chipPicker } from '../utils/dom.js';
 import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { normalizeMarginRows, monthChange, rebaseToPercent, computeDivergence, computeVWAC } from './marginglobal_calc.mjs';
 
+// x-axis date labels: rotated only on narrow (portrait) charts, horizontal otherwise. With containLabel the
+// labels are already reserved, so the bottom margin is only the gap under them: ECharts over-reserves
+// room for rotated labels (about 23px), so rotated labels need none, horizontal ones a few px.
+const mgXRotate = () => (window.innerWidth < 600 ? 30 : 0);
+const mgGridBottom = rotate => (rotate ? 0 : 6);
 const MARGIN_COLOR = '#f778ba';
 const INDEX_COLOR  = '#58a6ff';
 const DIVERGE_UP    = '#f0883e'; // 差值為正:融資成長快於指數 → 槓桿堆積
@@ -193,27 +198,45 @@ function renderTable() {
     host.addEventListener('click', e => {
       const tr = e.target.closest('tr[data-mg-id]');
       if (!tr) return;
-      activeMarket = tr.dataset.mgId;
-      anchorDate = null; // 換市場後錨點語意不通用,重設
-      activeAltIndexKey = 'sp500'; // 換市場後代理指數選擇語意不通用,重設回預設
-      renderTable();
-      renderChart();
-      renderPctChart();
-      updateAnchorClearVisibility();
-      revealChartOnTouch();
+      selectMarket(tr.dataset.mgId);
     });
   }
 }
 
-// Phone/touch feedback: after picking a market, bring the chart into view if it is
-// (partly) off-screen. Desktop keeps its scroll position.
+// The one place the selected market changes: table rows and the chips above the chart both
+// call this, so there is a single state (activeMarket) and both views are re-synced from it.
+function selectMarket(id) {
+  if (!MARKETS.some(m => m.id === id)) return;
+  activeMarket = id;
+  anchorDate = null; // 換市場後錨點語意不通用,重設
+  activeAltIndexKey = 'sp500'; // 換市場後代理指數選擇語意不通用,重設回預設
+  syncMarketChips();
+  renderTable();
+  renderChart();
+  renderPctChart();
+  updateAnchorClearVisibility();
+  revealChartOnTouch();
+}
+
+// Chips above the chart mirror activeMarket (the table highlights from the same variable).
+function syncMarketChips() {
+  document.getElementById('mg-market-picker')?.querySelectorAll('.chip[data-mg-market]').forEach(c => {
+    c.classList.toggle('active', c.dataset.mgMarket === activeMarket);
+  });
+}
+
+// Phone/touch feedback: after picking a market, keep the market chips and the whole chart on
+// screen together (short landscape: chips + chart fit one screen, see main.css). Nothing moves
+// when they are already fully visible; desktop keeps its scroll position.
 function revealChartOnTouch() {
   if (!mob() && !globalThis.matchMedia?.('(pointer: coarse)').matches) return;
   const host = document.getElementById('mg-chart');
   if (!host) return;
-  const rect = host.getBoundingClientRect();
-  if (rect.top >= 0 && rect.bottom <= innerHeight) return;
-  host.scrollIntoView({ block: 'start', behavior: 'auto' });
+  const target = document.getElementById('mg-market-picker') || host;
+  const top = target.getBoundingClientRect().top;
+  const bottom = host.getBoundingClientRect().bottom;
+  if (top >= 0 && bottom <= innerHeight) return;
+  target.scrollIntoView({ block: 'start', behavior: 'auto' });
 }
 
 // ── anchor % 比較 ────────────────────────────────────────────────────────
@@ -302,6 +325,7 @@ function renderChart() {
   } : {};
 
   const isMob = mob();
+  const xRotate = mgXRotate();
   const option = echartsBase({
     animation: false,
     tooltip: {
@@ -356,11 +380,12 @@ function renderChart() {
       top: 2, left: 'center',
       textStyle: { color: PALETTE.text2, fontSize: 11 }, inactiveColor: PALETTE.muted,
     },
-    // containLabel: tick labels (e.g. 2,500,000) are measured and kept inside the canvas.
-    grid: { left: isMob ? 8 : 16, right: isMob ? 8 : 16, top: '14%', bottom: isMob ? '18%' : '12%', containLabel: true },
+    // containLabel: tick labels (e.g. 2,500,000) and the (rotated) date labels are measured and
+    // kept inside the canvas, so the bottom margin is only a small gap, not a % reserve.
+    grid: { left: isMob ? 8 : 16, right: isMob ? 8 : 16, top: '14%', bottom: mgGridBottom(xRotate), containLabel: true },
     xAxis: {
       type: 'time',
-      axisLabel: { color: PALETTE.muted, fontSize: 11, rotate: isMob ? 30 : 0 },
+      axisLabel: { color: PALETTE.muted, fontSize: 11, rotate: xRotate },
       axisLine: { lineStyle: { color: PALETTE.muted } },
       splitLine: { show: false },
     },
@@ -436,6 +461,7 @@ function renderPctChart() {
 
   const divergence = computeDivergence(marginPct, indexPct);
   const isMob = mob();
+  const xRotate = mgXRotate();
 
   const option = echartsBase({
     animation: false,
@@ -445,10 +471,10 @@ function renderPctChart() {
       top: 2, left: 'center',
       textStyle: { color: PALETTE.text2, fontSize: 11 }, inactiveColor: PALETTE.muted,
     },
-    grid: { left: isMob ? 44 : 58, right: isMob ? 20 : 30, top: '20%', bottom: isMob ? '18%' : '12%' },
+    grid: { left: isMob ? 8 : 16, right: isMob ? 8 : 16, top: '20%', bottom: mgGridBottom(xRotate), containLabel: true },
     xAxis: {
       type: 'time',
-      axisLabel: { color: PALETTE.muted, fontSize: 11, rotate: isMob ? 30 : 0 },
+      axisLabel: { color: PALETTE.muted, fontSize: 11, rotate: xRotate },
       axisLine: { lineStyle: { color: PALETTE.muted } },
       splitLine: { show: false },
     },
@@ -506,12 +532,13 @@ let _dmDragging = false;
 let _dmStart = null; // { date, marginVal, indexVal, pixelX }
 let _mgDocMupHandler = null;
 
+function _mgGridRect() {
+  try { return chart.getModel().getComponent('grid').coordinateSystem.getRect(); } catch (e) { return null; }
+}
+
 function _mgLookupAt(offsetX, offsetY) {
   if (!chart) return null;
-  let grid;
-  try {
-    grid = chart.getModel().getComponent('grid').coordinateSystem.getRect();
-  } catch (e) { return null; }
+  const grid = _mgGridRect();
   if (!grid || offsetX < grid.x || offsetX > grid.x + grid.width || offsetY < grid.y || offsetY > grid.y + grid.height) {
     return null; // 點在繪圖區外(標題/legend/軸標籤/dataZoom 滑桿等)不處理
   }
@@ -580,7 +607,8 @@ function attachMarginDragMeasure() {
     const marginPct = (cur.marginVal - _dmStart.marginVal) / _dmStart.marginVal * 100;
 
     const x1 = _dmStart.pixelX, x2 = e.offsetX;
-    const yTop = 20, yBot = cv.height - 50;
+    const gridRect = _mgGridRect();
+    const yTop = gridRect ? gridRect.y : 20, yBot = gridRect ? gridRect.y + gridRect.height : cv.height - 50;
     ctx.clearRect(0, 0, cv.width, cv.height);
     ctx.save();
     ctx.setLineDash([4, 3]);
@@ -655,6 +683,14 @@ function buildControls() {
     chipPicker(rp, 'mg-range', v => { range = v; renderChart(); }, { onlyMatching: true });
   }
 
+  // Market chips (same labels as the table rows, one tap target each).
+  const marketPicker = document.getElementById('mg-market-picker');
+  if (bindOnce(marketPicker)) {
+    marketPicker.innerHTML = MARKETS.map(m =>
+      `<span class="chip${m.id === activeMarket ? ' active' : ''}" data-mg-market="${m.id}">${m.label}</span>`).join('');
+    chipPicker(marketPicker, 'mg-market', id => selectMarket(id), { onlyMatching: true });
+  }
+
   const altPicker = document.getElementById('mg-altindex-picker');
   if (bindOnce(altPicker)) {
     altPicker.addEventListener('click', async e => {
@@ -686,6 +722,7 @@ export async function activate(context = {}) {
   try {
     await loadAll(context);
     if (context.signal?.aborted || context.isCurrent?.() === false) return;
+    syncMarketChips();
     renderTable();
     await new Promise(resolve => requestAnimationFrame(resolve));
     if (context.signal?.aborted || context.isCurrent?.() === false) return;

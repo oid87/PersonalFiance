@@ -2,7 +2,7 @@ import {
   SERIES, CUSTOM_COLORS, customSeries, active, maActive,
   loaded, loadedHLC, loadedVol, state,
 } from '../state.js';
-import { tc, mob, PALETTE } from '../utils/theme.js';
+import { tc, PALETTE } from '../utils/theme.js';
 import {
   tsToLocalDate, currentWindow, filterRange,
   dateAddDays, closestOnOrAfter, minBetween, lookupLE,
@@ -28,6 +28,7 @@ if (chartEl && typeof ResizeObserver !== 'undefined') {
     const width = chartEl.clientWidth, height = chartEl.clientHeight;
     if (width > 0 && height > 0 &&
         (chart.getWidth() !== width || chart.getHeight() !== height)) chart.resize();
+    relayoutAxes();
   });
   observer.observe(chartEl);
 }
@@ -191,13 +192,21 @@ function usedAxisIndexes(series) {
   return used;
 }
 
-// ── Grid margins that fit the visible axes ─────────────────────
-// Axes outside the plot are placed `offset` px away from the grid edge. The grid
-// margin must cover offset + tick + label gap + the widest tick label, otherwise
-// the outermost labels run off the canvas. Widths are estimated from the same
-// min/max functions the axes declare (not changed), so nothing is clipped even
-// when VIX, F&G, BTC and TWD are all on.
+// ── Axis layout that fits the visible axes ─────────────────────
+// axis-layout:begin
+// Value axes outside the plot are stacked by `offset` (px from the grid edge, inner axis
+// first). Each visible axis claims tick + label gap + its widest tick label, and the next
+// axis on that side starts after it, so tick labels never overlap; neighbouring axis names
+// (centred on their axis line) are kept apart too. The grid margin then covers the
+// outermost axis, and axis names that would share a row with the legend are moved down
+// under it. Widths come from the axes' own min/max functions and formatters (unchanged), so
+// nothing is clipped even when VIX, F&G, BTC, TWD and FPE are all on. Presentation only.
 const AXIS_TICK_PX = 5, AXIS_LABEL_GAP_PX = 8, AXIS_LABEL_PAD_PX = 4, AXIS_FONT_PX = 12;
+const AXIS_BLOCK_GAP_PX = 4;  // clear space between one axis' label block and the next axis line
+const AXIS_NAME_GAP_PX = 6;   // clear space between neighbouring axis names
+const NAME_DEFAULT_GAP_PX = 15, NAME_UNDER_LEGEND_GAP_PX = 8, NAME_HEIGHT_PX = 14; // 15 = ECharts' own default
+const LEGEND_TOP_PX = 6, LEGEND_ROW_PX = 24, LEGEND_ITEM_PX = 30, LEGEND_ITEM_GAP_PX = 10, LEGEND_SAFETY_PX = 6;
+const GRID_TOP_PX = 44;
 let measureCtx = null;
 function textWidth(text, px = AXIS_FONT_PX) {
   try {
@@ -231,16 +240,73 @@ function axisLabelWidth(axis, extent) {
   return Math.max(...texts.map(t => textWidth(t, px))) + textWidth(".0", px);
 }
 
-function trendGridMargins(yAxisDef, series, usedAxes, floor) {
+// Legend rows at chart width `width` (greedy wrap, like the horizontal legend) and the
+// horizontal extent of the first row, which is centred.
+function legendFootprint(names, width) {
+  const items = names.map(n => LEGEND_ITEM_PX + textWidth(n));
+  const usable = Math.max(1, width - 10 - LEGEND_SAFETY_PX);
+  let rows = items.length ? 1 : 0, rowW = 0;
+  for (const w of items) {
+    const next = rowW ? rowW + LEGEND_ITEM_GAP_PX + w : w;
+    if (rowW && next > usable) { rows += 1; rowW = w; } else rowW = next;
+  }
+  const total = items.reduce((a, w) => a + w, 0) + LEGEND_ITEM_GAP_PX * Math.max(0, items.length - 1);
+  const spanW = rows > 1 ? width : Math.min(width, total + 2 * LEGEND_SAFETY_PX);
+  return { rows, left: (width - spanW) / 2, right: (width + spanW) / 2, bottom: rows ? LEGEND_TOP_PX + LEGEND_ROW_PX * rows : 0 };
+}
+
+// axes: [{ position: "left"|"right", name, labelW, used }] in declaration order (inner axis
+// first on each side). Returns one offset per axis (0 for unused ones), the grid margins
+// and top, and the name gap to use.
+function computeAxisLayout(axes, legendNames, width, floor = { left: 8, right: 8 }) {
+  const offsets = axes.map(() => 0);
   const need = { left: floor.left, right: floor.right };
-  yAxisDef.forEach((axis, i) => {
-    if (!usedAxes.has(i)) return;
+  const edge = { left: [], right: [] }; // per side: [{ i, block, nameW }]
+  axes.forEach((axis, i) => {
+    if (!axis.used) return;
     const side = axis.position === "left" ? "left" : "right";
-    const labels = AXIS_TICK_PX + AXIS_LABEL_GAP_PX + axisLabelWidth(axis, seriesExtent(series, i)) + AXIS_LABEL_PAD_PX;
-    const name = textWidth(axis.name || "") / 2 + 2; // axis names are centred on the axis line
-    need[side] = Math.max(need[side], (axis.offset || 0) + Math.max(labels, name));
+    const block = AXIS_TICK_PX + AXIS_LABEL_GAP_PX + axis.labelW + AXIS_LABEL_PAD_PX;
+    const nameW = textWidth(axis.name || "");
+    const prev = edge[side][edge[side].length - 1];
+    offsets[i] = prev
+      ? offsets[prev.i] + Math.max(prev.block + AXIS_BLOCK_GAP_PX, (prev.nameW + nameW) / 2 + AXIS_NAME_GAP_PX)
+      : 0;
+    edge[side].push({ i, block, nameW });
+    need[side] = Math.max(need[side], offsets[i] + Math.max(block, nameW / 2 + 2));
   });
-  return { left: Math.ceil(need.left), right: Math.ceil(need.right) };
+  const left = Math.ceil(need.left), right = Math.ceil(need.right);
+  // Names sit just above the plot. If any name could land under the legend (same row), put
+  // the names on their own row below the legend and push the plot down accordingly.
+  const legend = legendFootprint(legendNames, width);
+  let clash = false;
+  for (const side of ["left", "right"]) for (const { i, nameW } of edge[side]) {
+    const cx = side === "left" ? left - offsets[i] : width - right + offsets[i];
+    if (cx + nameW / 2 > legend.left && cx - nameW / 2 < legend.right) clash = true;
+  }
+  const stacked = clash || legend.rows > 1;
+  const top = stacked
+    ? Math.max(GRID_TOP_PX, Math.ceil(legend.bottom + 2 + NAME_HEIGHT_PX + NAME_UNDER_LEGEND_GAP_PX))
+    : GRID_TOP_PX;
+  return { offsets, left, right, top, nameGap: stacked ? NAME_UNDER_LEGEND_GAP_PX : NAME_DEFAULT_GAP_PX, stacked, legendRows: legend.rows };
+}
+// axis-layout:end
+
+// The legend wrap and the name row depend on the chart width, which changes without a
+// re-render (放大圖表, rotation, window resize). Re-derive just the layout and merge it in;
+// zoom state and series are untouched.
+let axisLayoutInput = null, layoutAppliedKey = "";
+const layoutKey = (layout, width) => JSON.stringify([width, layout.offsets, layout.left, layout.right, layout.top, layout.nameGap]);
+function relayoutAxes() {
+  if (!axisLayoutInput || !chart || chart.isDisposed()) return;
+  const width = chart.getWidth();
+  const layout = computeAxisLayout(axisLayoutInput.axes, axisLayoutInput.legendNames, width);
+  const key = layoutKey(layout, width);
+  if (key === layoutAppliedKey) return;
+  layoutAppliedKey = key;
+  chart.setOption({
+    grid: { left: layout.left, right: layout.right, top: layout.top },
+    yAxis: axisLayoutInput.ids.map((id, i) => ({ id, offset: layout.offsets[i], nameGap: layout.nameGap })),
+  });
 }
 
 export function render() {
@@ -251,7 +317,6 @@ export function render() {
   const tipBdr   = PALETTE.border;
   const tipText  = PALETTE.text;
 
-  const isMob = mob();
   const yAxisDef = [
     { id: "price", name: "USD Price", position: "left",
       min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1),
@@ -260,19 +325,19 @@ export function render() {
     { id: "vix",  name: "VIX/VXN",  position: "right",
       min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1),
       axisLine: { lineStyle: { color: "#f0883e" } }, splitLine: { show: false } },
-    { id: "fg",   name: "F&G",  position: "right", offset: isMob ? 35 : 55, min: 0, max: 100,
+    { id: "fg",   name: "F&G",  position: "right", min: 0, max: 100,
       axisLine: { lineStyle: { color: "#e3b341" } }, splitLine: { show: false } },
-    { id: "tw",   name: "TWD",  position: "left",  offset: isMob ? 45 : 70,
+    { id: "tw",   name: "TWD",  position: "left",
       min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1),
       axisLine: { lineStyle: { color: "#3fb950" } }, splitLine: { show: false } },
-    { id: "btc",  name: "BTC",  position: "right", offset: isMob ? 65 : 110,
+    { id: "btc",  name: "BTC",  position: "right",
       min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1),
       axisLine: { lineStyle: { color: "#f7931a" } }, splitLine: { show: false } },
   ];
 
   const fpeYIdx = trendFpeActive && trendFpeData ? yAxisDef.length : -1;
   if (fpeYIdx >= 0) {
-    yAxisDef.push({ id:"fpe", name:"FPE", position:"right", offset: isMob ? 95 : 150,
+    yAxisDef.push({ id:"fpe", name:"FPE", position:"right",
       min: v => Math.floor(v.min - 1), max: v => Math.ceil(v.max + 1),
       axisLabel: { formatter: v => `${v}x`, color:"#58a6ff", fontSize:11 },
       axisLine: { lineStyle:{ color:"#58a6ff" } }, splitLine:{ show:false } });
@@ -415,10 +480,21 @@ export function render() {
   }
 
   // Presentation only: an axis that nothing plots on is hidden (line, ticks, labels, name).
-  // Axis declarations, offsets and min/max functions are untouched.
+  // Axis ids, positions, min/max functions and series bindings are untouched; only `offset`
+  // (stacking of the visible axes), name placement and the grid margins are derived below.
   const usedAxes = usedAxisIndexes(series);
   yAxisDef.forEach((axis, i) => { if (!usedAxes.has(i)) axis.show = false; });
-  const gridMargins = trendGridMargins(yAxisDef, series, usedAxes, { left: 8, right: 8 });
+  const legendNames = series.filter(s => !s.name.startsWith("__")).map(s => s.name);
+  axisLayoutInput = {
+    ids: yAxisDef.map(axis => axis.id), legendNames,
+    axes: yAxisDef.map((axis, i) => ({
+      position: axis.position, name: axis.name, used: usedAxes.has(i),
+      labelW: usedAxes.has(i) ? axisLabelWidth(axis, seriesExtent(series, i)) : 0,
+    })),
+  };
+  const layout = computeAxisLayout(axisLayoutInput.axes, legendNames, chart.getWidth());
+  layoutAppliedKey = layoutKey(layout, chart.getWidth());
+  yAxisDef.forEach((axis, i) => { axis.offset = layout.offsets[i]; axis.nameGap = layout.nameGap; });
 
   chart.setOption({
     backgroundColor: "transparent",
@@ -444,10 +520,11 @@ export function render() {
       textStyle: { color: tipText },
       top: 6,
     },
-    grid: { left: gridMargins.left, right: gridMargins.right, top: 44, bottom: 56 },
+    grid: { left: layout.left, right: layout.right, top: layout.top, bottom: 56 },
     xAxis: {
       type: "time",
       axisLine: { lineStyle: { color: axisClr } },
+      axisLabel: { hideOverlap: true }, // many y axes leave a narrow plot (phone portrait): drop date labels that would collide
       splitLine: { show: false },
     },
     yAxis: yAxisDef,
@@ -739,6 +816,7 @@ export function onThemeChange(light) {
 
 export function resize() {
   chart?.resize();
+  relayoutAxes();
 }
 
 export async function toggleTrendFpe() {
