@@ -31,7 +31,7 @@ function harness(code = source) {
   const status = { textContent: '' };
   const fearHandlers = new Map();
   const fearToggle = { classList: { toggle() {}, remove() {} }, addEventListener: (name, fn) => fearHandlers.set(name, fn) };
-  const chart = { on() {}, resize() {}, getDom() { return null; },
+  const chart = { on() {}, resize() {}, getDom() { return null; }, getWidth() { return 844; }, isDisposed() { return false; },
     getOption() { return this.option; },
     setOption(option, flags) { this.option = option; this.flags = flags; },
     dispatchAction(action) {
@@ -88,8 +88,12 @@ const expectedDefaultGrid = () => {
 const sameAxisNames = option => {
   const o = plain(option);
   o.yAxis[1].name = 'VIX';
-  for (const axis of o.yAxis) if (axis.show === false) delete axis.show;
+  for (const axis of o.yAxis) {
+    if (axis.show === false) delete axis.show;
+    delete axis.offset; delete axis.nameGap; // presentation: derived from the visible axes (trend_axis_layout.test.mjs)
+  }
   delete o.grid.left; delete o.grid.right;
+  delete o.xAxis.axisLabel; // hideOverlap for date labels is presentation only
   return o;
 };
 
@@ -136,11 +140,11 @@ test('single selection matches legacy per period and repeated switching keeps se
   assert.deepEqual(h.signal(), old.signal());
 });
 
-test('y axes without a plotted series are hidden; declarations, offsets and min/max stay', () => {
+test('y axes without a plotted series are hidden; ids, names, positions and min/max stay (offsets derive from the visible axes)', () => {
   const h = harness(); h.render();
   const shown = () => [...h.chart.option.yAxis].map(a => a.show !== false);
   assert.deepEqual(shown(), [true, false, false, false, false], 'only QQQ is active: price axis only');
-  const declare = () => [...h.chart.option.yAxis].map(a => [a.id, a.name, a.position, a.offset, typeof a.min, typeof a.max]);
+  const declare = () => [...h.chart.option.yAxis].map(a => [a.id, a.name, a.position, typeof a.min, typeof a.max]);
   const declared = declare();
   h.ctx.SERIES.push({ key: 'BTC', color: '#f7931a', yAxis: 4 }, { key: 'TWII', color: '#3fb950', yAxis: 3 });
   h.ctx.loaded.BTC = rows; h.ctx.loaded.TWII = rows;
@@ -374,8 +378,10 @@ test('grid margins follow the visible axes: every outer axis fits, default layou
   h.render();
   const grid = plain(h.chart.option.grid), axes = [...h.chart.option.yAxis];
   const width = text => String(text).length * 12 * 0.62; // the test environment's conservative fallback
-  assert.ok(grid.right >= 110 + 13 + width('130,000'), 'BTC (offset 110) labels fit on the right');
-  assert.ok(grid.left >= 70 + 13 + width('100'), 'TWD (offset 70) labels fit on the left');
+  const at = id => axes.find(a => a.id === id);
+  assert.ok(grid.right >= at('btc').offset + 13 + width('130,000'), `BTC (offset ${at('btc').offset}) labels fit on the right`);
+  assert.ok(grid.left >= at('tw').offset + 13 + width('100'), `TWD (offset ${at('tw').offset}) labels fit on the left`);
+  assert.ok(at('fg').offset > at('vix').offset && at('btc').offset > at('fg').offset, 'right axes stack outward: vix, fg, btc');
   assert.deepEqual([...axes].map(a => a.show !== false), [true, true, true, true, true]);
 });
 

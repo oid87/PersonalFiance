@@ -720,7 +720,11 @@
        screen once scrolled to. 16px leaves room for the browser bar; never below 260px. */
     @media (max-height: 500px) and (orientation: landscape) {
       #chart, #corr-chart { height: calc(100dvh - 16px); min-height: 260px; }
-      #mg-chart { height: calc(100dvh - 16px) !important; min-height: 260px; }
+      /* Chips + chart share one screen after a market is picked: the chart gives up the
+         chip row's 52px (44px chips + 4px padding either side). */
+      #mg-market-picker { box-sizing: border-box; height: 52px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      #mg-market-picker > .chip { flex: none; }
+      #mg-chart { height: calc(100dvh - 16px - 52px) !important; min-height: 260px; }
       /* Keep the trend status line plus the 放大圖表 button on the first screen at 844x340. */
       #tab-trend > #status { padding: 1px 12px; line-height: 14px; }
       #tab-trend .chart-focus-toolbar { padding-block: 2px; }
@@ -903,6 +907,8 @@
     .picker-row--end { margin-left: auto; }
     .period-control { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1); min-width: 0; }
     .period-control--end { margin-left: auto; }
+    /* Market chips directly above the global-margin chart: switch market without scrolling back to the table. */
+    #mg-market-picker { padding: 4px 16px; }
     #penta-period-picker { gap: 6px; flex-shrink: 0; }
     .top-row { display: flex; gap: 12px; padding: 12px 16px; flex-wrap: wrap; }
     .flex-wrap-gap6 { display: flex; gap: 6px; flex-wrap: wrap; }

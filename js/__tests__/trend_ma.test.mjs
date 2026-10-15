@@ -55,7 +55,7 @@ function harness(rows = history(350)) {
       querySelector: () => null,
     },
     echarts: { init() {
-      const chart = { on() {}, resize() {}, dispose() { this.disposed = true; },
+      const chart = { on() {}, resize() {}, getWidth() { return 844; }, isDisposed() { return false; }, dispose() { this.disposed = true; },
         setOption(option, flags) { this.option = option; this.flags = flags; } };
       charts.push(chart); return chart;
     } },

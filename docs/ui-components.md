@@ -22,3 +22,8 @@
 - 間距使用 `--space-1/2/3/4/6`，文字大小使用 `--text-sm/base`。`--fg` 保留為 `--text` 的相容別名，明暗主題同步更新。
 
 手機版以局部捲動或換行處理寬內容，不在 body 設定全站水平裁切。觸控環境的導覽、chip、日期欄位及折疊標題至少高 44px；趨勢控制列與寬表格可橫向滑動。圖表上的垂直單指滑動交給頁面捲動，水平滑動仍交給圖表；雙指圖表手勢不攔截。`viewport-fit=cover` 搭配 body 的 safe-area padding，讓橫向瀏海側仍可操作。
+
+## 圖表軸版面（趨勢／全球融資）
+
+- 趨勢圖的多條 y 軸不寫死 `offset`：`render()` 依「目前有序列的軸」由內而外計算（每條軸佔刻度＋標籤間距＋最寬刻度標籤＋間隔，相鄰軸名也留間隔），`grid.left/right` 由最外側軸推導；軸名若會和圖例同列就整排移到圖例下方並加大 `grid.top`（圖例換行也計入）。寬度改變（放大圖表、旋轉、視窗縮放）時 `relayoutAxes()` 只合併 grid／offset／nameGap，不重畫序列、不動縮放。軸 id／position／min／max／序列綁定、刻度格式與單位字樣都不改。
+- 全球融資圖與錨點％圖用 `containLabel` 加固定 8px 的 `grid.bottom`（不用百分比，避免短橫向圖下方留白）。圖上方有一排市場 chips（`#mg-market-picker`，`.chip` 單選，鍵盤與 `aria-pressed` 由共用 chip 機制處理）；chips 與表格列都呼叫同一個 `selectMarket()`，狀態只有 `activeMarket`。觸控環境選市場後，若 chips＋圖不在畫面內才捲到 chips 列；短橫向（高度 ≤500）時圖高扣掉 52px 的 chips 列，使 chips 與整張圖同屏。桌面（非觸控且寬螢幕）不自動捲動。
