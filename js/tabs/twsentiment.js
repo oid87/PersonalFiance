@@ -1,9 +1,10 @@
 // 台股情緒 tab — 台股恐懼貪婪指數 (P/C + 散戶多空 + 趨勢 + 融資 合成) + 加權指數參照
 // + 原始元件面板：選擇權 P/C ratio / 台指期散戶多空+外資 / 大盤融資餘額。
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
-import { tsToLocalDate } from '../utils/dates.js';
+import { tsToLocalDate, lookupLE } from '../utils/dates.js';
 import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { bindOnce } from '../utils/dom.js';
+import { forcedRangeStats, KILL_RULE, BIG_KILL_RULE } from './twforced_calc.mjs';
 
 let chart = null, gauge = null, mcChart = null, basisChart = null, chipsChart = null, forcedChart = null;
 let sent = null;            // taiwan_sentiment.json
@@ -13,6 +14,10 @@ let basisData = null;       // taiwan_basis.json: {data:[{date,futures,spot,basi
 let tdccData = null;        // tdcc_holders.json: {data:{"0050":[{date,holders}],"00631L":[...],"00675L":[...]}}
 let daytradeData = null;    // tw_daytrading.json: {data:[{date,shares_ratio,amount,amount_ratio}], skip_dates}
 let rangePreset = "5Y";
+let marPairs = null;                 // [[date, 上市融資餘額(億)]],供拖曳區間統計
+let forcedSel = null;                // 融資×斷頭圖拖曳選取的區間 {a, b}(交易日字串,未排序)
+let forcedHasMr = false;             // 目前融資×斷頭圖是否含維持率格
+let forcedVisible = { min: null, max: null };   // 目前可拖曳的日期範圍
 
 const C = {
   twii: "#58a6ff", comp: "#f778ba", pcv: "#f0883e", pco: "#d2a8ff",
@@ -121,6 +126,7 @@ export async function init(context = {}) {
     pc = p.data;
     fut = f.data;
     mar = m.data;
+    marPairs = m.data.map(r => [r.date, r.margin_money]);
     mr = spliceMarginRatio(mmRatio, dailyRatio);
     mcData = mcPayload;
     basisData = basisPayload?.data ?? null;
@@ -143,7 +149,7 @@ export async function init(context = {}) {
     status.textContent = `台股恐懼貪婪 ${sent.data.length} 日 · 更新至 ${sent.updated}` +
       (optionalMissing ? ` · ${optionalMissing} 項可選資料暫缺` : '');
   } catch (err) {
-    sent = twii = pc = fut = mar = mr = mcData = basisData = tdccData = daytradeData = null;
+    sent = twii = pc = fut = mar = mr = mcData = basisData = tdccData = daytradeData = marPairs = null;
     status.textContent = `載入失敗：${err.message}`;
     throw err;
   }
@@ -211,8 +217,6 @@ function renderForced() {
   const mgnBase = mgnAtPeak ? mgnAtPeak[1] : mgn[0][1];
   const mgnNow = mgn.at(-1)[1];
   const mgnDrop = (mgnNow / mgnBase - 1) * 100;              // 融資自高點 %
-  // 「沒洗乾淨」訊號:指數明顯跌、融資卻幾乎沒降
-  const dirty = twDrop <= -8 && mgnDrop > twDrop / 2;
   const mrLat = mrt.length ? mrt.at(-1) : null;
 
   const dropSpan = (v, inv) => {
@@ -226,10 +230,6 @@ function renderForced() {
      <span style="color:var(--muted)">·</span>
      <span style="font-size:13px">融資餘額 ${dropSpan(mgnDrop, true)}</span>
      ${mrLat ? `<span style="color:var(--muted)">·</span><span style="font-size:13px">維持率 <b style="color:${C.maint}">${mrLat[1].toFixed(0)}%</b></span>` : ""}
-     <span style="margin-left:12px;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;
-       background:${dirty ? "rgba(248,81,73,0.15)" : "rgba(63,185,80,0.15)"};
-       color:${dirty ? "#f85149" : "#3fb950"}">
-       ${dirty ? "⚠ 指數跌、融資未降 → 籌碼未洗清" : "融資隨指數同步收縮"}</span>
      <div style="margin-top:5px;color:var(--muted);font-size:11px;line-height:1.45">
        融資維持率＝玩股網式(融資現值 ÷ 放款金額);含/扣 ETF 幾乎相同(≈180%,因 ETF 與個股維持率此刻近乎一致)。
        M平方 159% 係<b>不同公式、非同口徑</b>,勿跨家比絕對值——此線非券商整戶維持率,勿貼 130% 追繳線,看<b>相對位階與有無翻頭</b>即可。</div>`;
@@ -238,6 +238,7 @@ function renderForced() {
     forcedChart = echarts.init(chartEl, isLight() ? null : "dark");
     window.addEventListener("resize", () => forcedChart && forcedChart.resize());
   }
+  bindForcedRange(chartEl);
 
   const xmin = from || mgn[0][0];
   const xmax = [twS.at(-1)[0], mgn.at(-1)[0]].sort().at(-1);
@@ -245,6 +246,8 @@ function renderForced() {
   const tipTx = PALETTE.text, axCl = PALETTE.muted;
   const gridCl = tc("rgba(48,54,61,0.5)", "rgba(208,215,222,0.4)");
   const hasMr = mrt.length > 0;
+  forcedHasMr = hasMr;
+  forcedVisible = { min: xmin, max: xmax };
   const xAx = i => ({ type: "time", gridIndex: i, min: xmin, max: xmax,
     axisLabel: { show: i === (hasMr ? 1 : 0), color: axCl, fontSize: 11 },
     axisLine: { lineStyle: { color: gridCl } }, splitLine: { show: false } });
@@ -308,11 +311,138 @@ function renderForced() {
         }] : []) } },
     ] : []),
     dataZoom: [
-      { type: "inside", xAxisIndex: hasMr ? [0, 1] : [0] },
+      // 左鍵拖曳留給區間選取,所以關掉拖曳平移;滾輪縮放與底部 slider 照常
+      { type: "inside", xAxisIndex: hasMr ? [0, 1] : [0], moveOnMouseMove: false },
       { type: "slider", xAxisIndex: hasMr ? [0, 1] : [0], height: 16, bottom: 6,
         fillerColor: "rgba(88,166,255,0.1)", borderColor: PALETTE.border },
     ],
   }, true);
+  paintForcedSelection();
+  renderForcedRange();
+}
+
+// 滑鼠左鍵按住左右拖曳選區間;點一下同一天即清除。日期取指數交易日並夾在可視範圍內。
+function bindForcedRange(chartEl) {
+  if (!bindOnce(chartEl)) return;
+  chartEl.style.touchAction = "pan-y";   // 手機上橫向拖曳選區、縱向仍可捲頁
+  chartEl.style.userSelect = "none";
+  let anchor = null;
+  chartEl.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    const d = forcedDateAt(chartEl, e);
+    if (!d) return;
+    anchor = d;
+    setForcedSelection(d, d);
+    try { chartEl.setPointerCapture(e.pointerId); }   // 拖出圖外仍能收到 pointerup;非作用中指標會丟錯,略過
+    catch { /* no active pointer */ }
+  });
+  chartEl.addEventListener("pointermove", e => {
+    if (anchor == null) return;
+    const d = forcedDateAt(chartEl, e);
+    if (d && d !== forcedSel?.b) setForcedSelection(anchor, d);
+  });
+  const finish = e => {
+    if (anchor == null) return;
+    const d = forcedDateAt(chartEl, e) ?? anchor;
+    anchor = null;
+    if (d === forcedSel?.a) clearForcedSelection();
+  };
+  chartEl.addEventListener("pointerup", finish);
+  chartEl.addEventListener("pointercancel", () => { anchor = null; });
+}
+
+function forcedDateAt(chartEl, e) {
+  if (!forcedChart || !twii) return null;
+  const rect = chartEl.getBoundingClientRect();
+  const px = e.clientX - rect.left, py = e.clientY - rect.top;
+  if (py < 30 || py > rect.height - 26) return null;   // 上方 legend、底部 slider 不攔截
+  const ts = forcedChart.convertFromPixel({ xAxisIndex: 0 }, px);   // 單軸 finder 只吃數值,吃陣列會回 null
+  if (!Number.isFinite(ts)) return null;
+  let d = tsToLocalDate(ts);
+  if (forcedVisible.min && d < forcedVisible.min) d = forcedVisible.min;
+  if (forcedVisible.max && d > forcedVisible.max) d = forcedVisible.max;
+  const row = lookupLE(twii, d);
+  return row ? row[0] : null;
+}
+
+function setForcedSelection(a, b) {
+  forcedSel = { a, b };
+  paintForcedSelection();
+  renderForcedRange();
+}
+
+function clearForcedSelection() {
+  forcedSel = null;
+  paintForcedSelection();
+  renderForcedRange();
+}
+
+// 選區以 markArea 畫在融資與維持率兩格;只更新 markArea,不重建整張圖
+function paintForcedSelection() {
+  if (!forcedChart) return;
+  const area = forcedSel
+    ? [[{ xAxis: forcedSel.a <= forcedSel.b ? forcedSel.a : forcedSel.b },
+        { xAxis: forcedSel.a <= forcedSel.b ? forcedSel.b : forcedSel.a }]]
+    : [];
+  const mark = { silent: true, itemStyle: { color: "rgba(88,166,255,0.14)" }, data: area };
+  const series = [{ name: "融資餘額", markArea: mark }];
+  if (forcedHasMr) series.push({ name: "融資維持率", markArea: mark });
+  forcedChart.setOption({ series });
+}
+
+// 台股紅漲綠跌:正值紅、負值綠
+const signedColor = v => (v >= 0 ? "#f85149" : "#3fb950");
+const fmtSigned = (v, digits = 0) => v == null ? "—" :
+  `${v >= 0 ? "+" : "−"}${Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits })}`;
+const fmtPct = v => v == null ? "—" : `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(2)}%`;
+const ruleTxt = v => `${v < 0 ? "−" : "+"}${Math.abs(v)}%`;
+
+function renderForcedRange() {
+  const el = document.getElementById("twsent-forced-range");
+  if (!el) return;
+  if (!forcedSel || !twii || !marPairs) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:12px">
+      按住滑鼠左鍵在上方圖表左右拖曳，選取一段區間：看加權指數點數與百分比、上市融資餘額增減金額與百分比、
+      融資維持率增減，並判讀是否達殺爆門檻。點一下同一天即清除。</div>`;
+    return;
+  }
+  const s = forcedRangeStats({ twii, margin: marPairs, ratio: mr || [] }, forcedSel.a, forcedSel.b);
+  if (!s) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:12px">所選區間早於加權指數資料起點</div>`;
+    return;
+  }
+  const v = s.verdict;
+  const badgeColor = { big: "#f85149", kill: "#f85149", no: "#e3b341", none: "#8b949e", na: "#8b949e" }[v.level];
+  const badgeBg = { big: "rgba(248,81,73,0.15)", kill: "rgba(248,81,73,0.15)", no: "rgba(227,179,65,0.15)",
+    none: "rgba(139,148,158,0.15)", na: "rgba(139,148,158,0.15)" }[v.level];
+  const cell = (title, main, sub) => `
+    <div style="flex:1 1 200px;min-width:0;padding:8px 10px;border:1px solid var(--border);border-radius:6px">
+      <div style="color:var(--muted);font-size:11px">${title}</div>
+      <div style="font-size:15px;font-weight:700;margin-top:2px">${main}</div>
+      <div style="color:var(--muted);font-size:11px;margin-top:2px">${sub}</div>
+    </div>`;
+  const idxCell = cell("加權指數",
+    `<span style="color:${signedColor(s.idxPts)}">${fmtSigned(s.idxPts)} 點 · ${fmtPct(s.idxPct)}</span>`,
+    `${s.idx0.toLocaleString("en-US", { maximumFractionDigits: 0 })} → ${s.idx1.toLocaleString("en-US", { maximumFractionDigits: 0 })}`);
+  const mgnCell = cell("上市融資餘額",
+    `<span style="color:${signedColor(s.mgnAmt)}">${fmtSigned(s.mgnAmt, 1)} 億 · ${fmtPct(s.mgnPct)}</span>`,
+    s.mg0 == null || s.mg1 == null ? "—" :
+      `${s.mg0.toLocaleString("en-US", { maximumFractionDigits: 1 })} → ${s.mg1.toLocaleString("en-US", { maximumFractionDigits: 1 })} 億`);
+  const mrCell = cell("融資維持率(重建)",
+    s.mrPts == null ? "—" :
+      `<span style="color:${signedColor(s.mrPts)}">${fmtSigned(s.mrPts, 1)} 百分點 · ${fmtPct(s.mrPct)}</span>`,
+    s.mrPts == null ? "此區間無維持率資料" :
+      `${s.mr0.toFixed(1)}% → ${s.mr1.toFixed(1)}%（資料日 ${s.mrDate0} → ${s.mrDate1}）`);
+  const calibNote = s.calibrated ? "" : `<span style="color:#e3b341">（超過 10 個交易日校準視窗，僅供參考）</span>`;
+  el.innerHTML = `
+    <div style="display:flex;gap:10px;flex-wrap:wrap">${idxCell}${mgnCell}${mrCell}</div>
+    <div style="margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="padding:2px 8px;border-radius:4px;font-size:12px;font-weight:700;background:${badgeBg};color:${badgeColor}">${v.label}</span>
+      <span style="color:var(--muted);font-size:12px">區間 ${s.d0} → ${s.d1}（${s.tradingDays} 個交易日）${calibNote}</span>
+    </div>
+    <div style="color:var(--muted);font-size:11px;margin-top:4px;line-height:1.5">
+      判定門檻：指數 ≤ ${ruleTxt(KILL_RULE.idxPct)} 且融資餘額 ≤ ${ruleTxt(KILL_RULE.mgnPct)} ＝ 殺爆融資；指數 ≤ ${ruleTxt(BIG_KILL_RULE.idxPct)} 且融資餘額 ≤ ${ruleTxt(BIG_KILL_RULE.mgnPct)} ＝ 大殺爆融資（以 10 個交易日視窗校準）。
+    </div>`;
 }
 
 function renderMktcap() {
