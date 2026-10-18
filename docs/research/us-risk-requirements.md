@@ -90,7 +90,7 @@
 
 ## 更新作業
 
-producer=`scripts/compute_us_risk_observations.py`，只讀repo既有JSON，不打外部API或讀憑證。登錄source_manifest並接在US所有來源之後、data validator與commit之前；沿用既有週二至週六台北06:00排程。local update_all同樣在來源之後執行，無git副作用。新的受限來源不可因本頁而自動加入。上游來源URL／延遲／授權見產品設計來源表。
+producer=`scripts/compute_us_risk_observations.py`，只讀repo既有JSON，不打外部API或讀憑證。登錄source_manifest並接在US所有來源之後、data validator與commit之前；沿用既有週二至週六台北06:00排程。本地 update_all **不執行**此 producer（首次觀測時間只能來自排程；本機預設拒絕寫入共享檔，實驗請用 `--data-dir` 暫存目錄）；workflow 步驟為 continue-on-error，封存失敗不會阻擋主要資料發佈。新的受限來源不可因本頁而自動加入。上游來源URL／延遲／授權見產品設計來源表。
 
 ## 可再現與驗收案例
 

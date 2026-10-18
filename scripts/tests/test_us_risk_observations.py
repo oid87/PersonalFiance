@@ -76,6 +76,33 @@ class ObservationTests(unittest.TestCase):
             self.assertEqual(result['series'][key]['records'], [])
             self.assertTrue(result['series'][key]['meta']['reason'])
 
+    def test_cli_refuses_shared_archive_outside_ci_and_never_touches_it(self):
+        import os
+        from unittest import mock
+        shared = module.ROOT / 'data' / module.OUTPUT
+        before = shared.read_bytes() if shared.exists() else None
+        with mock.patch.dict(os.environ, {'GITHUB_ACTIONS': ''}):
+            self.assertEqual(module.main([]), 2)
+        self.assertEqual(shared.read_bytes() if shared.exists() else None, before)
+
+    def test_cli_writes_scratch_dir_and_a_corrupt_archive_fails_without_overwrite(self):
+        out = self.path / module.OUTPUT
+        self.assertEqual(module.main(['--data-dir', str(self.path)]), 0)
+        good = out.read_bytes()
+        out.write_text('{"truncated":')
+        corrupt = out.read_bytes()
+        self.assertEqual(module.main(['--data-dir', str(self.path)]), 1)   # warning + nonzero, step is continue-on-error in CI
+        self.assertEqual(out.read_bytes(), corrupt)                          # not silently replaced
+        out.write_bytes(good)
+        self.assertEqual(module.main(['--data-dir', str(self.path)]), 0)
+        self.assertEqual(list(self.path.glob('.us-risk-*.tmp')), [])         # no temp leftovers
+
+    def test_ci_environment_may_write_shared_default_dir_flag_logic(self):
+        import os
+        from unittest import mock
+        with mock.patch.dict(os.environ, {'GITHUB_ACTIONS': 'true'}), mock.patch.object(module, 'build_bundle', side_effect=ValueError('x')):
+            self.assertEqual(module.main([]), 1)   # reaches the build step (not the local-write guard)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -23,7 +23,7 @@
 | `scripts/research/backtest_us_risk.mjs`、`verify_us_risk.py` | 固定輸入SHA256＋config重現；獨立數值oracle |
 | `scripts/test_usrisk_browser.cjs` | 新頁39案例／四viewport／HTTP身分／失敗重試 |
 | catalogue、index、scoped CSS、navigation/lazy tests | 新頁lazy接線，保留舊畫面標籤 |
-| source_manifest、US fetch workflow、update_all | 在上游後封存，驗證後才由既有workflow發佈；本地更新無git動作 |
+| source_manifest、US fetch workflow、update_all | 在上游後封存（continue-on-error，失敗不阻擋主資料），驗證後才由既有workflow發佈；本機 update_all 不執行此 producer，本機預設拒絕寫入共享封存檔 |
 
 既有美股研究分支 `research/us-delever-weekly` 的commit `595e6b47` 已唯讀查閱；它有推估發布時間與修訂後資料，沒有被直接當成嚴格回測引擎。未修改或重發舊研究結論。
 
