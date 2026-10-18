@@ -1,0 +1,474 @@
+name: Fetch market data
+
+on:
+  schedule:
+    # 22:00 UTC Mon-Fri = 06:00 Tue-Sat Taipei（美股收盤後）→ us job
+    - cron: "0 22 * * 1-5"
+    # 10:00 UTC Mon-Fri = 18:00 Taipei（台股收盤後）→ tw job
+    - cron: "0 10 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# 兩個 job 各綁一個排程,避免同一批腳本一天被抓兩次(省 FinMind 免費 quota + Actions 時間)。
+# 手動 workflow_dispatch 時兩個都跑(完整刷新)。台股/美股各自寫的 data 檔不相交,
+# 併發時 commit 用 pull --rebase 重試化解競態。
+
+jobs:
+  # ── 美股 / 總經:只在 06:00 台北(美股收盤後)跑 ──────────────────────
+  us:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 22 * * 1-5'
+    runs-on: ubuntu-latest
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.14.0"
+
+      - name: Install deps
+        run: pip install -r scripts/requirements.txt
+
+      - name: Check source manifest
+        run: python scripts/check_pipeline.py
+
+      # 跨市場:價格總表(US + 0050 + BTC/GLD/VIX),兩個 job 都跑取各自最新收盤
+      - name: Fetch stock data
+        run: python scripts/fetch_stocks.py
+
+      - name: Prep QQQ/SPY relative-strength ratio (relstrength tab)
+        continue-on-error: true
+        run: python scripts/prep_relstrength.py
+
+      - name: Prep VXN-VIX spread (vxnvix tab)
+        continue-on-error: true
+        run: python scripts/prep_vxnvix.py
+
+      - name: Fetch leverage simulator data (total-return underlyings + 3x/2x ETFs)
+        continue-on-error: true
+        run: python scripts/fetch_leverage.py
+
+      - name: Fetch Fear & Greed
+        continue-on-error: true
+        run: python scripts/fetch_fear_greed.py
+
+      - name: Fetch CFTC index positions
+        continue-on-error: true
+        run: python scripts/fetch_cftc_positions.py
+
+      - name: Fetch Cboe Equity and SPX Put/Call
+        continue-on-error: true
+        run: python scripts/fetch_cboe_putcall.py
+
+      - name: Fetch AAII sentiment survey
+        continue-on-error: true
+        run: python scripts/fetch_aaii.py
+
+      - name: Fetch yield data
+        continue-on-error: true
+        run: python scripts/fetch_yields.py
+
+      - name: Fetch CAPE data
+        continue-on-error: true
+        run: python scripts/fetch_cape.py
+
+      - name: Fetch QQQ valuation (forward PE)
+        continue-on-error: true
+        run: python scripts/fetch_qqq_valuation.py
+
+      - name: Fetch SPY valuation (forward PE)
+        continue-on-error: true
+        run: python scripts/fetch_spy_valuation.py
+
+      - name: Fetch WSJ index PE snapshot (official index-level, weekly as-of)
+        continue-on-error: true
+        run: python scripts/fetch_wsj_pe.py
+
+      - name: Fetch SOXX valuation (forward PE)
+        continue-on-error: true
+        run: python scripts/fetch_soxx_valuation.py
+
+      - name: Fetch MAGS valuation (Mag7 forward/trailing PE)
+        continue-on-error: true
+        run: python scripts/fetch_mags_valuation.py
+
+      - name: Fetch S&P 500 trailing PE
+        continue-on-error: true
+        run: python scripts/fetch_sp500_pe.py
+
+      - name: Compute sentiment score
+        continue-on-error: true
+        run: python scripts/compute_sentiment.py
+
+      - name: Fetch earnings dates
+        continue-on-error: true
+        run: python scripts/fetch_earnings.py
+
+      - name: Compute S&P 500 market breadth
+        continue-on-error: true
+        run: python scripts/fetch_breadth.py
+
+      - name: Compute S&P 500 advance/decline (self-calculated)
+        continue-on-error: true
+        run: python scripts/fetch_sp500_ad.py
+
+      - name: Compute Nasdaq-100 market breadth
+        continue-on-error: true
+        run: python scripts/fetch_breadth_ndx.py
+
+      - name: Compute S&P 500 Top-50 (XLG) market breadth
+        continue-on-error: true
+        run: python scripts/fetch_breadth_xlg.py
+
+      - name: Fetch sector ETF holdings (yfinance, 產業輪動持股彈窗)
+        continue-on-error: true
+        run: python scripts/fetch_sector_holdings.py
+
+      - name: Fetch Bull & Bear indicator (CFTC COT, FRED HY/SLOOS/UMCSENT/MMF)
+        continue-on-error: true
+        run: python scripts/fetch_bullbear.py
+
+      - name: Fetch liquidity data (Fed balance sheet, TGA, RRP, FINRA margin, M2, DXY)
+        continue-on-error: true
+        run: python scripts/fetch_liquidity.py
+
+      # 跨市場:TW/US/JP 融資超額×流動性,兩個 job 都跑(各自市場新鮮時重算)
+      - name: Fetch multi-market margin-excess x liquidity (TW/US/JP index+margin+money supply)
+        continue-on-error: true
+        run: python scripts/fetch_liquidity_leverage.py
+
+      - name: Fetch VIX-SKEW sequential divergence signal (yfinance SKEW+SPY, stitched VIX)
+        continue-on-error: true
+        run: python scripts/fetch_vix_skew.py
+
+      - name: Fetch US total Put/Call ratio (CBOE archive 2006-2019 + OCC daily, spliced)
+        continue-on-error: true
+        run: python scripts/fetch_putcall.py
+
+      - name: Fetch FINRA Reg SHO short volume + consolidated short interest (SPY/QQQ)
+        continue-on-error: true
+        run: python scripts/fetch_finra_short.py
+
+      - name: Fetch OFR Financial Stress Index (financialresearch.gov, daily, total + 5 categories)
+        continue-on-error: true
+        run: python scripts/fetch_fsi.py
+
+      - name: Fetch Chicago Fed National Financial Conditions Index (FRED, weekly, 1971+)
+        continue-on-error: true
+        run: python scripts/fetch_nfci.py
+
+      - name: Fetch STLFSI4 + KCFSI (FRED, weekly+monthly financial stress indices)
+        continue-on-error: true
+        run: python scripts/fetch_stlfsi_kcfsi.py
+
+      - name: Fetch UMich Consumer Sentiment + NBER recessions + SPY monthly (FRED, free)
+        continue-on-error: true
+        run: python scripts/fetch_umich.py
+
+      # 跨市場:signed dollar volume(SOXX+SMH, QQQ, 0050.TW),週頻,兩個 job 都跑
+      - name: Fetch weekly signed dollar volume (SOXX+SMH, QQQ, 0050.TW — yfinance, free)
+        continue-on-error: true
+        run: python scripts/fetch_flows.py
+
+      - name: Fetch QQQ sub-industry signed dollar volume ranking (Wikipedia NDX list + yfinance, free)
+        continue-on-error: true
+        run: python scripts/fetch_qqq_sector_flows.py
+
+      - name: Fetch US breakeven inflation expectations (FRED T5YIE/T10YIE/T5YIFR, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_inflation_exp.py
+
+      - name: Fetch US credit spreads (FRED BAMLH0A0HYM2/BAMLC0A0CM) + delinquency rates
+        continue-on-error: true
+        run: python scripts/fetch_credit.py
+
+      - name: Fetch BDC P/NAV ratios (ARCC OBDC BXSL FSK MAIN, private credit proxy)
+        continue-on-error: true
+        run: python scripts/fetch_bdc.py
+
+      - name: Fetch banini-tracker reverse indicator dataset (cablate, AGPL-3.0)
+        continue-on-error: true
+        run: python scripts/fetch_banini.py
+
+      - name: Fetch Fed net liquidity (FRED WALCL/WTREGEN/RRPONTSYD, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_net_liquidity.py
+
+      - name: Fetch US yield curve (FRED DGS3MO/DGS2/DGS5/DGS10/DGS30, T10Y2Y/T10Y3M, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_yield_curve.py
+
+      - name: Fetch VIX term structure (CBOE VIX9D/VIX/VIX3M/VIX6M, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_vix_term.py
+
+      - name: Fetch US real yields (FRED DFII5/DFII10/DFII30, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_real_rates.py
+
+      - name: Fetch money market rates (FRED SOFR/IORB/EFFR, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_money_market.py
+
+      - name: Fetch USD liquidity stack (FRED H.4.1 + NY Fed rates/RRP/seclending + Treasury DTS/auctions)
+        continue-on-error: true
+        run: python scripts/fetch_usdliq.py
+
+      - name: Fetch global central bank balance sheets (FRED Fed/ECB/BOJ, free)
+        continue-on-error: true
+        run: python scripts/fetch_central_banks.py
+
+      - name: Fetch Cleveland Fed inflation nowcast (free)
+        continue-on-error: true
+        run: python scripts/fetch_infl_nowcast.py
+
+      - name: Fetch CPI components (FRED + BLS, monthly, free)
+        continue-on-error: true
+        run: python scripts/fetch_cpi.py
+
+      - name: Fetch US margin-cost benchmark rates (FRED SOFR/EFFR/IORB/SOFR99/DFF, daily, free)
+        continue-on-error: true
+        run: python scripts/fetch_margin_cost.py
+
+      # 全球融資餘額儀表板:中/日/美/韓 4 個非台股市場,不需要 FINMIND_TOKEN,跟台股無關,
+      # 放在 us job(兩個 job 都跑 fetch_stocks.py,對應的 ^TWOII/^N225/^KS11/SSE/SZSE
+      # 指數 ticker 已經在 fetch_stocks.py 裡,這裡只補融資餘額本體)。
+      - name: Fetch China (SSE+SZSE) margin financing balance (akshare)
+        continue-on-error: true
+        run: python scripts/fetch_margin_cn.py
+
+      - name: Fetch Japan margin trading balance (JPX weekly xls)
+        continue-on-error: true
+        run: python scripts/fetch_margin_jp.py
+
+      - name: Fetch US margin debt balance (FINRA via third-party mirror, Cloudflare-blocked at source)
+        continue-on-error: true
+        run: python scripts/fetch_margin_us.py
+
+      - name: Fetch Korea margin financing balance (KOFIA FreeSIS API)
+        continue-on-error: true
+        run: python scripts/fetch_margin_kr.py
+
+      - name: Fetch US GDP/productivity/labor-force decomposition (FRED GDPC1/OPHNFB/CLF16OV, quarterly, free)
+        continue-on-error: true
+        run: python scripts/fetch_gdp_productivity.py
+
+      - name: Fetch US recession indicator (FRED USREC, monthly, free)
+        continue-on-error: true
+        run: python scripts/fetch_usrec.py
+
+      - name: Fetch Taiwan/Japan/Korea annual GDP growth (DGBAS XML + FRED, yearly, free)
+        continue-on-error: true
+        run: python scripts/fetch_tw_jp_kr_gdp.py
+
+      - name: Fetch Taiwan semiconductor basket forward PE (self-built market-cap-weighted basket, yfinance)
+        continue-on-error: true
+        run: python scripts/fetch_tw_semi_valuation.py
+
+      - name: Fetch and capture US macro diagnostic
+        continue-on-error: true
+        run: |
+          set -e
+          bash scripts/run_us_macro_pipeline.sh
+
+      - name: Validate data integrity (abort commit if corrupt)
+        run: python scripts/validate_data.py
+
+      - name: Commit updates
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: daily data update (US) [skip ci]"
+            ok=0
+            for i in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push; then ok=1; break; fi
+              [ "$i" -lt 3 ] && sleep 5
+            done
+            [ "$ok" = 1 ] || { echo "::error::git push failed after 3 attempts"; exit 1; }
+          fi
+
+  # ── 台股:只在 18:00 台北(台股收盤後)跑 ──────────────────────────────
+  tw:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 10 * * 1-5'
+    runs-on: ubuntu-latest
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: scripts/requirements.txt
+
+      - name: Install deps
+        run: pip install -r scripts/requirements.txt
+
+      - name: Check source manifest
+        run: python scripts/check_pipeline.py
+
+      # 跨市場:價格總表(0050 台股收盤後最新 + US 昨收),兩個 job 都跑
+      - name: Fetch stock data
+        run: python scripts/fetch_stocks.py
+
+      - name: Fetch TW valuation (0050/TWII PE, TWSE weighted)
+        continue-on-error: true
+        run: python scripts/fetch_tw_valuation.py
+
+      - name: Fetch investor conference dates (法說日, MOPS)
+        continue-on-error: true
+        run: python scripts/fetch_investor_conf.py
+
+      - name: Compute 臺灣50 (0050) market breadth
+        continue-on-error: true
+        run: python scripts/fetch_breadth_tw50.py
+
+      - name: Fetch Taiwan business cycle signal (景氣對策信號, NDC)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_business_signal.py
+
+      - name: Fetch Taiwan sector indices (TWSE, 台股產業輪動)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_sector_index.py
+
+      - name: Fetch Taiwan options Put/Call ratio (TAIFEX, 台股情緒)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_pcratio.py
+
+      - name: Fetch TAIFEX foreign investor TXF net open interest
+        continue-on-error: true
+        run: python scripts/fetch_taifex_foreign_oi.py
+
+      - name: Fetch TAIFEX options institutional CALL/PUT net open interest
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_opt_inst.py
+
+      - name: Fetch Taiwan futures institutional / retail positioning (FinMind, 台股情緒)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_fut_inst.py
+
+      - name: Fetch Taiwan MTX/TMF retail long-short ratio (TAIFEX, 小台/微台散戶多空比)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_retail_ls.py
+
+      - name: Fetch Taiwan index-futures basis (台指期近月正逆價差)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_basis.py
+
+      - name: Fetch Taiwan market margin balance (FinMind, 大盤融資餘額)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_margin_total.py
+
+      - name: Fetch Taiwan individual-stock margin concentration + clearance days (FinMind, 融資集中度)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_margin_concentration.py
+
+      - name: Reconstruct Taiwan margin maintenance ratio (TWSE 大盤融資維持率, 重建)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_margin_ratio.py
+
+      - name: Build Taiwan margin cost-basis / forced-liquidation map (TWSE MI_MARGN flow, 融資斷頭地圖)
+        continue-on-error: true
+        run: python scripts/fetch_margin_costmap.py
+
+      - name: Fetch TPEx (上櫃) margin balance / market cap (TPEx www, 分母缺源見腳本 docstring)
+        continue-on-error: true
+        run: python scripts/fetch_tpex_margin.py
+
+      - name: Fetch TWSE (上市) real market cap (股本週更+市值日出, 取代 K(t) 插值估算)
+        continue-on-error: true
+        run: python scripts/fetch_twse_mktcap.py
+
+      - name: Fetch TDCC leveraged-ETF holder counts (集保股權分散, 00631L/00675L/0050)
+        continue-on-error: true
+        run: python scripts/fetch_tdcc_holders.py
+
+      - name: Fetch Taiwan day-trading ratio (TWSE TWTB4U, 當沖占比)
+        continue-on-error: true
+        run: python scripts/fetch_tw_daytrading.py
+
+      - name: Fetch Taiwan foreign investor net buy/sell (FinMind, 外資買賣超)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_taiwan_investors.py
+
+      - name: Fetch Taiwan sector foreign flow (TWSE T86, 外資板塊流向)
+        continue-on-error: true
+        run: python scripts/fetch_tw_sector_flow.py
+
+      - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_mktcap_anchor.py
+
+      - name: Compute Taiwan margin/market-cap ratio (融資 ÷ 上市市值, 槓桿密度)
+        continue-on-error: true
+        run: python scripts/compute_taiwan_margin_mktcap.py
+
+      - name: Fetch Taiwan M1B/M2 money supply (CBC EBOOKXLS, monthly YoY spread)
+        continue-on-error: true
+        run: python scripts/fetch_taiwan_money_supply.py
+
+      # 跨市場:TW/US/JP 融資超額×流動性,兩個 job 都跑
+      - name: Fetch multi-market margin-excess x liquidity (TW/US/JP index+margin+money supply)
+        continue-on-error: true
+        run: python scripts/fetch_liquidity_leverage.py
+
+      - name: Fetch USD/TWD spot (Yahoo TWD=X, for Taiwan stress FX leg)
+        continue-on-error: true
+        run: python scripts/fetch_usdtwd.py
+
+      - name: Compute Taiwan financial-stress composite (FX/equity vol + margin ratio + foreign futures)
+        continue-on-error: true
+        run: python scripts/compute_taiwan_stress.py
+
+      - name: Compute Taiwan fear & greed composite
+        continue-on-error: true
+        run: python scripts/compute_taiwan_sentiment.py
+
+      # 跨市場:signed dollar volume(含 0050.TW),週頻,兩個 job 都跑
+      - name: Fetch weekly signed dollar volume (SOXX+SMH, QQQ, 0050.TW — yfinance, free)
+        continue-on-error: true
+        run: python scripts/fetch_flows.py
+
+      - name: Validate data integrity (abort commit if corrupt)
+        run: python scripts/validate_data.py
+
+      - name: Commit updates
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: daily data update (TW) [skip ci]"
+            ok=0
+            for i in 1 2 3; do
+              if git pull --rebase --autostash origin main && git push; then ok=1; break; fi
+              [ "$i" -lt 3 ] && sleep 5
+            done
+            [ "$ok" = 1 ] || { echo "::error::git push failed after 3 attempts"; exit 1; }
+          fi

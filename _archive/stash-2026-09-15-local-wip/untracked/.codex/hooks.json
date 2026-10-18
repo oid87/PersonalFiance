@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 '/Users/orangembpm2/work/code/personal_financial/PersonalFiance/.codex/hooks/check_reuse_hook.py'"
+          }
+        ]
+      }
+    ]
+  }
+}
