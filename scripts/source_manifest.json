@@ -2987,8 +2987,7 @@
       ],
       "validation_profile": "per_output",
       "routes": [
-        "us",
-        "local"
+        "us"
       ],
       "status": "scheduled",
       "output_contracts": {

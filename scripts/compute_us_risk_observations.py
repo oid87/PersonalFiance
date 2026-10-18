@@ -2,6 +2,10 @@
 
 First import of historical rows proves availability NOW, never on the observation date.
 Unchanged values keep their original observed_at. Revisions append; old values survive.
+
+Provenance rule: observed_at must come from the scheduled pipeline, so by default this script only
+writes the shared data/ archive when running in GitHub Actions. Local experiments use
+`--data-dir <scratch copy>` (any non-default directory) or the explicit `--allow-local-write`.
 """
 from __future__ import annotations
 
@@ -196,13 +200,24 @@ def build_bundle(data_dir, previous=None, now=None):
     return bundle
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
-    args = parser.parse_args()
+    parser.add_argument("--allow-local-write", action="store_true", help="write the shared archive from a non-CI environment (provenance warning)")
+    args = parser.parse_args(argv)
+    shared = args.data_dir.resolve() == (ROOT / "data").resolve()
+    if shared and os.environ.get("GITHUB_ACTIONS") != "true" and not args.allow_local_write:
+        print("Refusing to write the shared data/us_risk_observations.json outside GitHub Actions "
+              "(first-observation times must come from the scheduled pipeline). Use --data-dir <scratch> or --allow-local-write.")
+        return 2
     out = args.data_dir / OUTPUT
-    previous = json.loads(out.read_text()) if out.exists() else None
-    bundle = build_bundle(args.data_dir, previous)
+    try:
+        previous = json.loads(out.read_text()) if out.exists() else None
+        bundle = build_bundle(args.data_dir, previous)
+    except (OSError, ValueError) as exc:
+        # Previous archive stays untouched; the workflow step is continue-on-error so primary data still publishes.
+        print(f"::warning::US risk archive NOT updated: {type(exc).__name__}: {exc}")
+        return 1
     fd, temp_path = tempfile.mkstemp(prefix=".us-risk-", suffix=".tmp", dir=args.data_dir)
     try:
         with os.fdopen(fd, "w") as handle:
@@ -213,7 +228,8 @@ def main():
         if os.path.exists(temp_path):
             os.unlink(temp_path)
     print(f"Wrote {out.name}: {sum(len(s['records']) for s in bundle['series'].values())} observed versions")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
