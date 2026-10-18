@@ -2261,6 +2261,34 @@
   </section>
 
   <!-- ── 壓力總覽 tab (NFCI/STLFSI4/KCFSI × SPY/QQQ/SOXX) ────────────── -->
+  <section id="tab-usrisk" class="tab-section" hidden>
+    <header><h2 class="section-title">美股風險／去槓桿觀察</h2>
+      <p class="section-subtitle">日頻風險監控 · 週月滯後確認 · 透明歷史事件研究</p>
+      <p class="callout-warn">觀察警報不是買入或加槓桿訊號。沒有證據證明這些指標能領先低點；不修改正式交易條件。</p>
+      <p id="usrisk-captured" class="status"></p>
+    </header>
+    <h3>每日風險概況</h3><div id="usrisk-overview" class="usrisk-grid"></div>
+    <h3>可調歷史事件研究</h3><div id="usrisk-controls" class="usrisk-controls"></div>
+    <p id="usrisk-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <p id="usrisk-study-note" class="callout-warn"></p><div id="usrisk-strict-banner" class="callout-warn" hidden></div><p id="usrisk-sample-warning" class="note-muted"></p>
+    <p class="note-muted">下圖線條為最新歷史版本的背景重建；警報標記與下方統計依所選資料口徑。嚴格模式缺歷史版本時不會回填警報。</p>
+    <div id="usrisk-risk-chart" class="usrisk-chart" role="img" aria-label="所選標的回撤與壓力指標歷史圖"></div>
+    <div id="usrisk-stats" class="table-scroll" tabindex="0" aria-label="警報與基準組結果比較"></div>
+    <p id="usrisk-censoring" class="note-muted"></p>
+    <details class="ui-details"><summary>視窗不重疊樣本與逐筆分布</summary><p id="usrisk-nonoverlap"></p></details>
+    <p id="usrisk-diagnostics" class="note-muted"></p>
+    <div id="usrisk-distribution-chart" class="usrisk-small-chart" role="img" aria-label="完整事件後續報酬分布"></div>
+    <details class="ui-details"><summary>事件明細：當時可得與事後確認</summary><div id="usrisk-events" class="table-scroll" tabindex="0" aria-label="觀察警報事件表"></div></details>
+    <h3>週月背景與滯後確認</h3>
+    <p class="note-muted">CFTC 持倉收縮不等於強制平倉；合計為多單＋空單張數，未含 spreading，並非全市場美元曝險。NFCI 不是融資維持率且歷史會重估。FINRA 為月頻鏡站資料，不推估公布日期。</p>
+    <div id="usrisk-confirmation" class="table-scroll" tabindex="0" aria-label="目前已取得的週月資料"></div>
+    <div id="usrisk-background-control" class="usrisk-controls"></div>
+    <p id="usrisk-background-note" class="note-muted"></p>
+    <div id="usrisk-background-chart" class="usrisk-chart" role="img" aria-label="週月背景與轉倉污染標記"></div>
+    <details class="ui-details"><summary>來源、授權、資料覆蓋與發布時間</summary><div id="usrisk-sources" class="table-scroll" tabindex="0" aria-label="所有資料來源與限制"></div></details>
+    <details class="ui-details"><summary>方法與可再現性</summary><p>回撤採120交易日高點。指標與比值不跨日補值；門檻只用過去資料。事件冷卻固定10交易日，另列按研究視窗排除重疊的樣本；兩者均不保證統計獨立。最早下一交易日開盤，結果是原始價格報酬，不含股息與成本。完整視窗中任何 OHLC 異常或缺價皆 unavailable，不跳過交易日。未來結果只作事後評估，不參與警報。完整資料快照與參數可由 repository 的研究 CLI 重現。</p><p><a href="docs/research/us-risk-product-design.md">產品設計／六題分析與來源調查</a> · <a href="docs/research/us-risk-requirements.md">需求、ⓘ逐字文案與資料契約</a></p></details>
+  </section>
+
   <section id="tab-stressdash" class="tab-section" hidden>
     <div class="controls controls--wrap">
       <div class="picker-row" id="stressdash-ticker-toggle">
