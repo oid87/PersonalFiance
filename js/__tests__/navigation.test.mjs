@@ -71,6 +71,7 @@ const ORIGINAL_LABELS = {
   "qqqmacd": "MACD死叉",
   "marginpeak": "融資峰值",
   "marginconc": "融資集中度",
+  "marginalert": "台股融資去槓桿警報",
   "vvixregime": "VVIX波動象限",
   "roc4": "ROC4急漲急跌",
   "gdp_productivity_decomp": "美國GDP拆解",
@@ -85,8 +86,8 @@ const ids = query => searchNavigation(query).map(item => item.id);
 
 test('all original screens occur once with unchanged labels', () => {
   assert.equal(CATEGORIES.length, 8);
-  assert.equal(NAV_ITEMS.length, 74);
-  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 74);
+  assert.equal(NAV_ITEMS.length, 75);
+  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 75);
   assert.deepEqual(Object.fromEntries(NAV_ITEMS.map(item => [item.id, item.label])), ORIGINAL_LABELS);
   assert.deepEqual(ids(''), NAV_ITEMS.map(item => item.id));
   for (const item of NAV_ITEMS) {
@@ -103,7 +104,7 @@ test('search handles names, ids, category context, aliases, case and spaces', ()
     ['AAII', 'aaii'], ['NAAIM', 'naaim'], ['VIX', 'vixskew'], ['MACD', 'qqqmacd'],
     ['P/E', 'fwdpe'], ['P/E', 'valuation'], ['台灣', 'twsent'], ['台股', 'twchips'],
     ['台股', 'marginheat'], ['台股', 'marginpeak'], ['台股', 'marginconc'],
-    ['台股', 'marginmap'], ['融資', 'marginheat'],
+    ['台股', 'marginmap'], ['融資', 'marginheat'], ['去槓桿', 'marginalert'], ['回測', 'marginalert'],
     ['  美 國  GDP ', 'gdp_productivity_decomp'],
   ]) assert.ok(ids(query).includes(expected), query);
   assert.equal(ids('P/E 台灣').includes('sox_vs_tw_semi_pe'), true);
