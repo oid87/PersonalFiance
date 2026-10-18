@@ -1039,3 +1039,9 @@
 
 #tab-usrisk > header { display:block; padding:12px 0; }
 #tab-usrisk > header .section-title { font-size:18px; padding:0; border-top:0; }
+
+/* Shared click-to-toggle ⓘ help (js/utils/info_popover.js). */
+.info-pop-btn { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 50%; min-width: 28px; min-height: 28px; padding: 0; cursor: pointer; vertical-align: middle; }
+.info-pop-btn[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.info-pop-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.info-pop { position: fixed; z-index: 1000; max-width: min(340px, calc(100vw - 16px)); padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); font-size: 12px; line-height: 1.6; box-shadow: 0 6px 20px rgba(0,0,0,.25); }

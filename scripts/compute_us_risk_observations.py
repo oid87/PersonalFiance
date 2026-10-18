@@ -200,6 +200,19 @@ def build_bundle(data_dir, previous=None, now=None):
     return bundle
 
 
+def dump_archive(bundle):
+    """Valid JSON with one observation record per line, so a daily append is a small line diff in git
+    (a single 4.7MB line cannot be delta-compressed or reviewed). Parsers see exactly `bundle`."""
+    compact = dict(ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+    head = ",".join(f"{json.dumps(k)}:{json.dumps(v, **compact)}" for k, v in bundle.items() if k != "series")
+    blocks = []
+    for key, item in bundle["series"].items():
+        records = ",\n".join(json.dumps(r, **compact) for r in item["records"])
+        body = f"[\n{records}\n]" if records else "[]"
+        blocks.append(f'{json.dumps(key)}:{{"meta":{json.dumps(item["meta"], **compact)},"records":{body}}}')
+    return "{" + head + ',"series":{\n' + ",\n".join(blocks) + "\n}}\n"
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir", type=Path, default=ROOT / "data")
@@ -220,9 +233,11 @@ def main(argv=None):
         return 1
     fd, temp_path = tempfile.mkstemp(prefix=".us-risk-", suffix=".tmp", dir=args.data_dir)
     try:
+        text = dump_archive(bundle)
+        if json.loads(text) != bundle:   # never publish a serialization that differs from what was validated
+            raise ValueError("archive serialization mismatch")
         with os.fdopen(fd, "w") as handle:
-            json.dump(bundle, handle, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
-            handle.write("\n")
+            handle.write(text)
         os.replace(temp_path, out)
     finally:
         if os.path.exists(temp_path):

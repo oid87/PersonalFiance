@@ -6,7 +6,7 @@ const NY = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year
 const finite = v => typeof v === 'number' && Number.isFinite(v);
 const validDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && Number.isFinite(Date.parse(s)) && new Date(s).toISOString().slice(0, 10) === s;
 const validTime = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}T.*(?:Z|\+00:00)$/.test(s) && Number.isFinite(Date.parse(s)) && validDate(s.slice(0, 10));
-const nyDate = t => { const p = Object.fromEntries(NY.formatToParts(new Date(t)).map(x => [x.type, x.value])); return `${p.year}-${p.month}-${p.day}`; };
+export const nyDate = t => { const p = Object.fromEntries(NY.formatToParts(new Date(t)).map(x => [x.type, x.value])); return `${p.year}-${p.month}-${p.day}`; };
 // Find next local midnight, including the spring/fall DST transitions, without host timezone assumptions.
 function cutoff(date) {
   const next = new Date(Date.parse(date) + DAY).toISOString().slice(0, 10);
@@ -15,7 +15,7 @@ function cutoff(date) {
   return hi - 1;
 }
 const available = (r, t) => Date.parse(r.observed_at) <= t && (!r.published_at || Date.parse(r.published_at) <= t);
-const goodBar = r => r && ['open', 'high', 'low', 'close'].every(k => finite(r.values[k]) && r.values[k] > 0) && r.values.low <= Math.min(r.values.open, r.values.close) && r.values.high >= Math.max(r.values.open, r.values.close);
+export const goodBar = r => r && ['open', 'high', 'low', 'close'].every(k => finite(r.values[k]) && r.values[k] > 0) && r.values.low <= Math.min(r.values.open, r.values.close) && r.values.high >= Math.max(r.values.open, r.values.close);
 const scalar = r => r && finite(r.values.value) ? r.values.value : null;
 const byVersion = (a, b) => Date.parse(a.observed_at) - Date.parse(b.observed_at) || JSON.stringify(a.values).localeCompare(JSON.stringify(b.values));
 function indexBundle(bundle) {
@@ -41,6 +41,7 @@ export function validateBundle(bundle) {
   for (const id of ['SPY', 'QQQ']) if (!bundle.series[id]?.records?.length) throw new Error(`Unavailable core source: ${id}`);
   for (const [id, s] of Object.entries(bundle.series)) {
     if (!s.meta || !['daily', 'weekly', 'monthly'].includes(s.meta.frequency) || !Array.isArray(s.records)) throw new Error(`Invalid series: ${id}`);
+    for (const key of ['source_url', 'mirror_url']) if (s.meta[key] != null && !/^https:\/\//.test(String(s.meta[key]))) throw new Error(`Invalid ${key} scheme: ${id}`);
     const versions = new Set();
     for (const r of s.records) {
       const key = `${r.date}|${r.observed_at}`;
@@ -51,6 +52,19 @@ export function validateBundle(bundle) {
     }
   }
   return bundle;
+}
+/** Latest observed version of every date of one series, as of the archive snapshot (not point-in-time). */
+export function latestVersions(bundle, id) {
+  validateBundle(bundle);
+  const ix = indexBundle(bundle);
+  return (ix[id]?.axis || []).map(date => recordAt(ix, id, date, ix[id].finalTime, true)).filter(Boolean);
+}
+/** When could the strict mode first have a full 120-bar lookback? (first observed bar + 120 sessions ≈ 168 calendar days) */
+export function strictOutlook(bundle) {
+  validateBundle(bundle);
+  const times = ['SPY', 'QQQ'].flatMap(id => bundle.series[id].records.map(r => Date.parse(r.observed_at)));
+  const first = Math.min(...times);
+  return { firstObserved: nyDate(first), earliestFixedThreshold: nyDate(first + 168 * DAY), earliestPercentile: nyDate(first + 168 * DAY + 176 * DAY) };
 }
 export function rollContaminated(date) {
   if (!validDate(date)) throw new Error('Invalid report date');

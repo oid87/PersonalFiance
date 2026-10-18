@@ -102,7 +102,7 @@ producer=`scripts/compute_us_risk_observations.py`，只讀repo既有JSON，不�
 - CFTC第三週五到期週與次週、比較兩端乾淨且正好隔週才計變動。
 - next-open、含entry日起5/10/20/60根、右設限、最大虧損與收盤MDD分開、警報low用訊號時版本。
 - 三組基準共用eligible母體、空N與零覆蓋、未結束／部分覆蓋波段不算漏報、determinism。
-- Browser：lazy load、desktop/390×844/844×390/短高度、下拉全部模式、tooltip、主題、resize、切出重返、zoom/legend、503與畸形payload重試、缺optional來源明示、來源HTTP與磁碟hash、console零非預期訊息。
+- Browser：lazy load、desktop/390×844/844×390/短高度、下拉全部模式、ⓘ 點擊開關說明（再點／Esc 關閉）、嚴格模式 N=0 橫幅、主題、resize、切出重返、zoom/legend、503與畸形payload重試、缺optional來源明示、來源HTTP與磁碟hash、console零非預期訊息。
 
 沒有build步驟。檢查入口：run_checks.py（Python/JS/manifest）、reuse lint、validate_data.py、新頁browser probe、獨立sanity oracle。實際執行結果另存validation文件。
 
