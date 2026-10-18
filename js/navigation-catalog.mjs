@@ -161,6 +161,10 @@ export const CATEGORIES = [
     "label": "波動與風險",
     "tabs": [
       {
+        "id": "usrisk",
+        "label": "美股風險觀察"
+      },
+      {
         "id": "stressdash",
         "label": "壓力總覽"
       },
@@ -351,6 +355,7 @@ export const CATEGORIES = [
 ];
 
 const ALIASES = {
+  usrisk: ["美股去槓桿", "US risk", "CFTC", "FINRA", "科技壓力"],
   fsi: ['FSI'], nfci: ['NFCI'], cpi: ['CPI'],
   gdp_productivity_decomp: ['GDP'], tw_jp_kr_gdp: ['GDP', '台灣'],
   aaii: ['AAII'], naaim: ['NAAIM'], vixskew: ['VIX'],
