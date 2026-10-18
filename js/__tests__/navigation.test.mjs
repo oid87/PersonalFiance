@@ -89,8 +89,8 @@ const ids = query => searchNavigation(query).map(item => item.id);
 
 test('all original screens occur once with unchanged labels', () => {
   assert.equal(CATEGORIES.length, 8);
-  assert.equal(NAV_ITEMS.length, 76);
-  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 76);
+  assert.equal(NAV_ITEMS.length, 78);
+  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 78);
   assert.deepEqual(Object.fromEntries(NAV_ITEMS.map(item => [item.id, item.label])), ORIGINAL_LABELS);
   assert.deepEqual(ids(''), NAV_ITEMS.map(item => item.id));
   for (const item of NAV_ITEMS) {
