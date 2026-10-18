@@ -71,6 +71,8 @@ const ORIGINAL_LABELS = {
   "qqqmacd": "MACD死叉",
   "marginpeak": "融資峰值",
   "marginconc": "融資集中度",
+  "twforeign": "外資買賣超",
+  "twbreadthls": "台股多空家數",
   "vvixregime": "VVIX波動象限",
   "roc4": "ROC4急漲急跌",
   "gdp_productivity_decomp": "美國GDP拆解",
@@ -85,8 +87,8 @@ const ids = query => searchNavigation(query).map(item => item.id);
 
 test('all original screens occur once with unchanged labels', () => {
   assert.equal(CATEGORIES.length, 8);
-  assert.equal(NAV_ITEMS.length, 74);
-  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 74);
+  assert.equal(NAV_ITEMS.length, 76);
+  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 76);
   assert.deepEqual(Object.fromEntries(NAV_ITEMS.map(item => [item.id, item.label])), ORIGINAL_LABELS);
   assert.deepEqual(ids(''), NAV_ITEMS.map(item => item.id));
   for (const item of NAV_ITEMS) {
