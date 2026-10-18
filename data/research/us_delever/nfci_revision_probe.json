@@ -1,0 +1,54 @@
+{
+ "oldest_commit": "198ec27a",
+ "oldest_date": "2026-07-10",
+ "newest_commit": "afdb6c4c",
+ "newest_date": "2026-10-17",
+ "commits": 69,
+ "common_weeks": 340,
+ "series": {
+  "NFCI": {
+   "level_mean_abs_revision": 0.00126,
+   "level_max_abs_revision": 0.01,
+   "level_max_week": "2026-06-05",
+   "level_revised_weeks": 254,
+   "weekly_change_mean_abs_revision": 0.00043,
+   "weekly_change_max_abs_revision": 0.004,
+   "weekly_change_std": 0.02465,
+   "max_revision_in_std": 0.16,
+   "weeks_revision_over_half_std": 0
+  },
+  "NFCIRISK": {
+   "level_mean_abs_revision": 0.00237,
+   "level_max_abs_revision": 0.005,
+   "level_max_week": "2024-06-28",
+   "level_revised_weeks": 329,
+   "weekly_change_mean_abs_revision": 0.00035,
+   "weekly_change_max_abs_revision": 0.002,
+   "weekly_change_std": 0.02355,
+   "max_revision_in_std": 0.08,
+   "weeks_revision_over_half_std": 0
+  },
+  "NFCICREDIT": {
+   "level_mean_abs_revision": 0.00176,
+   "level_max_abs_revision": 0.011,
+   "level_max_week": "2026-05-29",
+   "level_revised_weeks": 315,
+   "weekly_change_mean_abs_revision": 0.00037,
+   "weekly_change_max_abs_revision": 0.002,
+   "weekly_change_std": 0.01763,
+   "max_revision_in_std": 0.11,
+   "weeks_revision_over_half_std": 0
+  },
+  "NFCILEVERAGE": {
+   "level_mean_abs_revision": 0.00933,
+   "level_max_abs_revision": 0.206,
+   "level_max_week": "2026-07-03",
+   "level_revised_weeks": 312,
+   "weekly_change_mean_abs_revision": 0.0013,
+   "weekly_change_max_abs_revision": 0.019,
+   "weekly_change_std": 0.0412,
+   "max_revision_in_std": 0.46,
+   "weeks_revision_over_half_std": 0
+  }
+ }
+}
