@@ -4,9 +4,12 @@
 
 | 檢查 | 實際結果 |
 |---|---|
-| `python scripts/run_checks.py` | PASS：manifest、187 Python tests、全部 JS syntax、459 JS tests |
-| `node --test js/tabs/usrisk_calc.test.mjs` | PASS：19個方法與as-of邊界案例 |
+| `python scripts/run_checks.py` | PASS：manifest、187 Python tests、全部 JS syntax、459 JS tests（補強前完整入口） |
+| `node --test js/tabs/usrisk_calc.test.mjs` | PASS：20個方法與as-of邊界案例（含最後發布時間補強） |
 | observation producer tests | PASS：7個首次匯入／冪等／修訂／失敗保留／壞檔／缺來源案例，已包含於187 |
+| 最終 `npm test` | PASS：全部JS syntax與460 JS tests；新增非PIT也不得超過凍結快照發布時間的防線 |
+| CLI獨立程序重現 | PASS：固定輸入與config兩次輸出byte-for-byte相同 |
+| 初版GitHub CI | PASS：`f1c9a408`，Python3.11／Node22設定，[run 39094204949](https://github.com/oid87/PersonalFiance/actions/runs/39094204949)；後續版本看PR最新checks |
 | 指定新tab reuse lint | PASS；未修改check強度或既有測試期望之外的金融語意 |
 | `scripts/check_pipeline.py` | PASS：manifest、US workflow與local路由一致 |
 | `scripts/validate_data.py --no-shrink` | PASS：141 root JSON，JSONL與macro archive |

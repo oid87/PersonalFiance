@@ -133,3 +133,10 @@ test('an episode first observed after unknown prior drawdowns is left-censored',
   assert.equal(result.episodes[0].censored, true);
   assert.equal(result.diagnostics.evaluatedEpisodes, 0);
 });
+
+test('even non-PIT reconstruction cannot use a release after the frozen bundle time', () => {
+  const b = fixture(), date = b.series.VIX.records[130].date;
+  b.series.VIX.records[130].published_at = '2027-01-01T00:00:00Z';
+  const r = runStudy(b, { ...cfg, dataMode: 'historical' });
+  assert.equal(r.days.find(d => d.date === date).indicator, null);
+});

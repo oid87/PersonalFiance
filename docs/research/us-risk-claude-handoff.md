@@ -5,7 +5,8 @@
 ## 身分與邊界
 
 - repo：https://github.com/oid87/PersonalFiance
-- branch：`research/us-risk-observer`；base：`8008803b`。
+- PR：https://github.com/oid87/PersonalFiance/pull/4 （draft，未合併）。
+- branch：`research/us-risk-observer`；base：`8008803b`。初次完整實作commit=`f1c9a408`，後續補強與本交接以PR最新HEAD為準。
 - 研究工作目錄：本聊天工作目錄下 `work/pf`。主 checkout 另有其他Claude/session的台股WIP，請不要reset、stash或直接覆寫。
 - 本PR無main merge、production deploy、正式交易／加碼條件修改。請先read-only review；重大問題請列檔案／行號／證據，不直接改別人的WIP。
 - 先讀repo README／CLAUDE／AGENTS／TESTING，以及 [產品設計與六題](us-risk-product-design.md)、[需求與逐字ⓘ](us-risk-requirements.md)、[驗證紀錄](us-risk-validation.md)、[定案規格與台帳](us-risk-engine-spec.md)。

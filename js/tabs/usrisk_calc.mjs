@@ -23,12 +23,12 @@ function indexBundle(bundle) {
     const dates = new Map();
     for (const r of s.records) { if (!dates.has(r.date)) dates.set(r.date, []); dates.get(r.date).push(r); }
     for (const versions of dates.values()) versions.sort(byVersion);
-    return [id, { meta: s.meta, dates, axis: [...dates.keys()].sort() }];
+    return [id, { meta: s.meta, dates, axis: [...dates.keys()].sort(), finalTime: Date.parse(bundle.generated_at) }];
   }));
 }
 function recordAt(ix, id, date, t, historical = false) {
   const rows = ix[id]?.dates.get(date) || [];
-  for (let i = rows.length - 1; i >= 0; i--) if (historical || available(rows[i], t)) return rows[i];
+  for (let i = rows.length - 1; i >= 0; i--) if (available(rows[i], historical ? ix[id].finalTime : t)) return rows[i];
   return null;
 }
 function newest(ix, id, date, t) {
