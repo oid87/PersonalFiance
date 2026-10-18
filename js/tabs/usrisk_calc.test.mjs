@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateBundle, runStudy, confirmationAt, latestOverview, rollContaminated } from './usrisk_calc.mjs';
+import { validateBundle, runStudy, confirmationAt, latestOverview, rollContaminated, latestVersions, strictOutlook, nyDate, goodBar } from './usrisk_calc.mjs';
 
 const HASH = 'a'.repeat(64);
 const row = (date, values, observed_at = `${date}T21:00:00Z`, published_at = null) => ({ date, values, observed_at, published_at, source_hash: HASH });
@@ -139,4 +139,26 @@ test('even non-PIT reconstruction cannot use a release after the frozen bundle t
   b.series.VIX.records[130].published_at = '2027-01-01T00:00:00Z';
   const r = runStudy(b, { ...cfg, dataMode: 'historical' });
   assert.equal(r.days.find(d => d.date === date).indicator, null);
+});
+
+test('latestVersions returns the newest observed version per date; rejects non-https source links', () => {
+  const b = fixture(5);
+  b.series.SPY.records.push(row(b.series.SPY.records[2].date, bar(120), `${b.series.SPY.records[2].date}T22:30:00Z`));
+  const rows = latestVersions(b, 'SPY');
+  assert.equal(rows.length, 5); assert.equal(rows[2].values.close, 120);
+  assert.deepEqual(latestVersions(b, 'NOPE'), []);
+  const x = structuredClone(b); x.series.SPY.meta.source_url = 'javascript:alert(1)';
+  assert.throws(() => validateBundle(x), /source_url/);
+  x.series.SPY.meta.source_url = 'https://example.com/ok'; x.series.SPY.meta.mirror_url = 'http://insecure.example/x';
+  assert.throws(() => validateBundle(x), /mirror_url/);
+  x.series.SPY.meta.mirror_url = 'https://example.com/m'; assert.doesNotThrow(() => validateBundle(x));
+});
+test('strictOutlook estimates when a full 120-bar strict history can exist; nyDate/goodBar are the shared helpers', () => {
+  const b = fixture(5); for (const id of ['SPY', 'QQQ']) for (const r of b.series[id].records) r.observed_at = '2026-10-18T07:00:00Z';
+  b.generated_at = '2026-10-18T07:00:00Z';
+  const o = strictOutlook(b);
+  assert.equal(o.firstObserved, '2026-10-18'); assert.equal(o.earliestFixedThreshold, '2027-04-04'); assert.ok(o.earliestPercentile > o.earliestFixedThreshold);
+  assert.equal(nyDate(Date.parse('2026-10-18T02:00:00Z')), '2026-10-17');      // 美東仍是前一天
+  assert.equal(goodBar({ values: { open: 10, high: 11, low: 9, close: 10 } }), true);
+  assert.equal(goodBar({ values: { open: 10, high: 9, low: 9, close: 10 } }), false);
 });

@@ -104,5 +104,20 @@ class ObservationTests(unittest.TestCase):
             self.assertEqual(module.main([]), 1)   # reaches the build step (not the local-write guard)
 
 
+    def test_archive_is_valid_json_with_one_record_per_line(self):
+        bundle = module.build_bundle(self.path, now=self.now)
+        text = module.dump_archive(bundle)
+        self.assertEqual(json.loads(text), bundle)
+        record_lines = [line for line in text.splitlines() if line.startswith('{"date"')]
+        self.assertEqual(len(record_lines), sum(len(s['records']) for s in bundle['series'].values()))
+        self.assertTrue(all(len(line) < 2000 for line in text.splitlines()))
+        # an appended observation changes only a few lines
+        self.write('SPY', [self.row, dict(date='2020-03-23', open=90, high=95, low=88, close=93)])
+        later = module.build_bundle(self.path, previous=bundle, now=datetime(2026, 10, 19, 7, tzinfo=timezone.utc))
+        import difflib
+        changed = [d for d in difflib.unified_diff(text.splitlines(), module.dump_archive(later).splitlines(), lineterm='', n=0) if d[:1] in '+-' and d[:3] not in ('+++', '---')]
+        self.assertLess(len(changed), 12)
+
+
 if __name__ == '__main__':
     unittest.main()
