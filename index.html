@@ -2454,6 +2454,44 @@
     </div>
   </section>
 
+  <!-- ── 台股融資去槓桿警報 tab (可調參數的歷史回測；研究／風險警示用，不改正式交易條件) ── -->
+  <section id="tab-marginalert" class="tab-section" hidden>
+    <h2 style="margin:0;padding:12px 16px 0;font-size:16px">台股融資去槓桿警報</h2>
+    <div id="marginalert-status" style="padding:8px 16px;color:var(--muted);font-size:12px"></div>
+    <details class="ui-details" id="marginalert-params">
+      <summary>回測參數：<span id="marginalert-params-line" class="text-muted-sm"></span></summary>
+      <div class="table-pad" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px 16px">
+        <div class="lev-field"><label>單日融資減幅 警報門檻 <button type="button" class="ma-info" data-info="當日上市融資餘額比前一交易日減少達此比例，就算一次警報。數字越大越少見、越像劇烈去槓桿；2% 很常見，4%以上多半是急殺。" aria-expanded="false" aria-label="說明：單日融資減幅 警報門檻">ⓘ</button></label><select id="marginalert-th-select" aria-label="單日融資減幅門檻"><option value="2">≥ 2%</option><option value="3">≥ 3%</option><option value="4">≥ 4%</option><option value="5">≥ 5%</option><option value="custom">自訂…</option></select><input type="number" id="marginalert-th-input" min="0.5" max="20" step="0.5" aria-label="自訂單日融資減幅門檻（%）" style="display:none"></div>
+        <div class="lev-field"><label>回撤閘門 <button type="button" class="ma-info" data-info="警報當天加權指數須已距「過去高點」回撤達此幅度才算數。用來濾掉指數沒怎麼跌時的小震盪；只用當時已知的高點。" aria-expanded="false" aria-label="說明：回撤閘門">ⓘ</button></label><select id="marginalert-gate-select" aria-label="回撤閘門"><option value="0">無</option><option value="5">≥ 5%</option><option value="10">≥ 10%</option><option value="15">≥ 15%</option></select></div>
+        <div class="lev-field"><label>恐懼貪婪（CNN） <button type="button" class="ma-info" data-info="顯示：多一張 F&amp;G 子圖，並把指數低於「恐懼區門檻」的日子用紫色陰影標在所有圖上，看恐懼時是否也是去槓桿時。滑桿 5～25（預設 15）。隱藏：關掉子圖與陰影。" aria-expanded="false" aria-label="說明：恐懼貪婪（CNN）">ⓘ</button></label><select id="marginalert-fg-select" aria-label="恐懼貪婪顯示"><option value="on">顯示</option><option value="off">隱藏</option></select><label for="marginalert-fear-range" style="display:flex;align-items:center;gap:8px">恐懼區 &lt; <b id="marginalert-fear-val">15</b><input type="range" id="marginalert-fear-range" min="5" max="25" step="1" value="15" style="flex:1;accent-color:var(--accent)" aria-label="恐懼區門檻（5到25）"></label></div>
+        <div class="lev-field"><label>回撤高點窗 <button type="button" class="ma-info" data-info="計算「距高點回撤」用的過去最高收盤視窗（含當日，不看未來）。252 較長、回撤數字較大。" aria-expanded="false" aria-label="說明：回撤高點窗">ⓘ</button></label><select id="marginalert-lb-select" aria-label="高點窗"><option value="120">120 交易日</option><option value="252">252 交易日</option></select></div>
+        <div class="lev-field"><label>進場方式 <button type="button" class="ma-info" data-info="警報用收盤後才取得的資料，所以最早從下一交易日進場；決定警報後 5/10/20/60 日報酬以開盤還是收盤為起點。" aria-expanded="false" aria-label="說明：進場方式">ⓘ</button></label><select id="marginalert-entry-select" aria-label="進場"><option value="nextOpen">隔日開盤</option><option value="nextClose">隔日收盤</option></select></div>
+        <div class="lev-field"><label>R 最低指數跌幅 <button type="button" class="ma-info" data-info="R＝|融資變動|÷|指數變動|。指數跌太少時 R 會爆大而失真，低於此跌幅的期間不計 R。只影響「1～5 日收縮與 R／D」表。" aria-expanded="false" aria-label="說明：R 最低指數跌幅">ⓘ</button></label><select id="marginalert-mind-select" aria-label="R 最低指數跌幅"><option value="1">1%</option><option value="0.5">0.5%</option></select></div>
+        <div class="lev-field"><label>事件冷卻（交易日） <button type="button" class="ma-info" data-info="同一波下跌會連續觸發；兩次觸發相隔超過這麼多交易日，才算新的獨立事件（避免把一波當很多次）。" aria-expanded="false" aria-label="說明：事件冷卻（交易日）">ⓘ</button></label><input type="number" id="marginalert-cooldown" min="0" max="60" step="1"></div>
+        <div class="lev-field"><label>回測區間 <button type="button" class="ma-info" data-info="只統計這段期間內的訊號；回撤高點等特徵仍使用起點之前的真實歷史。" aria-expanded="false" aria-label="說明：回測區間">ⓘ</button></label><div style="display:flex;flex-direction:column;gap:6px"><input type="date" id="marginalert-start" min="2008-01-02" aria-label="回測起"><input type="date" id="marginalert-end" aria-label="回測迄"></div></div>
+        <div class="lev-field" style="justify-content:flex-end"><div style="display:flex;gap:8px"><button class="lev-btn" id="marginalert-run" type="button">重跑回測</button><button class="lev-btn" id="marginalert-reset" type="button" style="background:var(--panel);color:var(--text);border:1px solid var(--border)">重設</button></div><small class="text-muted-sm"><span id="marginalert-timing"></span> 改參數會立刻重跑 <button type="button" class="ma-info" data-info="改任一下拉選單、滑桿或數字都會立刻重跑；「重跑回測」按鈕用於手動輸入日期／數字後確認，「重設」回到預設參數。" aria-expanded="false" aria-label="說明：重跑與重設">ⓘ</button></small></div>
+      </div>
+    </details>
+    <div id="marginalert-summary" style="padding:12px 16px 0;display:flex;gap:10px;flex-wrap:wrap"></div>
+    <div id="marginalert-chart" style="width:100%;height:640px;min-height:480px"></div>
+    <div style="padding:0 16px 24px">
+      <details class="ui-details" open><summary>警報事件與警報後表現（目前門檻／閘門）</summary><div id="marginalert-t-events" class="table-pad"></div></details>
+      <details class="ui-details" open><summary>個案：2024/7～8、2026/7～8 與壓力測試</summary>
+        <div class="table-pad">
+          <div class="lev-field" style="max-width:300px;margin-bottom:8px"><label for="marginalert-case-select">個案 <button type="button" class="ma-info" data-info="選擇後上方圖表會自動放大到該段；壓力測試（2020/3、2025/4）不作門檻設計依據，只用來檢查規則在極端行情是否失效。" aria-expanded="false" aria-label="說明：個案">ⓘ</button></label><select id="marginalert-case-select" aria-label="個案"><option value="A">Case A 2024/7～8</option><option value="B">Case B 2026/7～8</option><option value="S1">壓力測試 2020/3 疫情</option><option value="S2">壓力測試 2025/4 關稅戰</option></select></div>
+          <div id="marginalert-t-case"></div>
+        </div></details>
+      <details class="ui-details"><summary>恐懼貪婪（&lt;15 可調）× 去槓桿：恐懼時段是否對應</summary><div id="marginalert-t-fear" class="table-pad"></div></details>
+      <details class="ui-details"><summary>2%／3%／4% 門檻比較與回撤閘門</summary><div id="marginalert-t-thresholds" class="table-pad"></div></details>
+      <details class="ui-details"><summary>每年警報統計</summary><div id="marginalert-t-annual" class="table-pad"></div></details>
+      <details class="ui-details"><summary>指數回撤區間 vs 融資清洗</summary><div id="marginalert-t-bands" class="table-pad"></div></details>
+      <details class="ui-details"><summary>1～5 日融資快速收縮與 R／D</summary><div id="marginalert-t-windows" class="table-pad"></div></details>
+      <details class="ui-details"><summary>與原始 2/3 進場規則比較</summary><div id="marginalert-t-rules" class="table-pad"></div></details>
+      <details class="ui-details"><summary>資料來源、定義與限制</summary><div id="marginalert-sources" class="table-pad" style="line-height:1.7"></div></details>
+      <p class="text-muted-sm" style="padding:8px 4px">研究／風險警示工具：融資減少不等於斷頭，警報不等於買入訊號；樣本少（獨立事件個位數到二十餘件）、事件間高度重疊，數字是描述而非預測。不影響任何正式交易條件。</p>
+    </div>
+  </section>
+
   <!-- ── 融資斷頭地圖 tab (每日融資買進/賣出/償還還原成本位階 vintage) ── -->
   <section id="tab-marginmap" class="tab-section" hidden>
     <div id="marginmap-summary" style="display:flex;gap:16px;padding:16px 24px;border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:stretch"><!-- JS 填 --></div>
