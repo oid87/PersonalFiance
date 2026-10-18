@@ -62,6 +62,8 @@ const ORIGINAL_LABELS = {
   "corr": "相關係數",
   "sector": "產業輪動",
   "twsectorflow": "外資板塊流向",
+  "twforeign": "外資買賣超",
+  "twbreadthls": "台股多空家數",
   "cashking": "現金為王",
   "earnings": "財報日",
   "wave": "波浪理論",

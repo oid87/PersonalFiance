@@ -235,6 +235,14 @@ export const CATEGORIES = [
         "label": "外資板塊流向"
       },
       {
+        "id": "twforeign",
+        "label": "外資買賣超"
+      },
+      {
+        "id": "twbreadthls",
+        "label": "台股多空家數"
+      },
+      {
         "id": "marginheat",
         "label": "融資熱度"
       },
@@ -364,6 +372,8 @@ const ALIASES = {
   semi_vs_spx_pe: ['P/E', 'PE'], sox_vs_tw_semi_pe: ['P/E', 'PE', '台灣'],
   twsent: ['台灣', '台股'], twstress: ['台灣', '台股'],
   twchips: ['台灣', '台股'], twsectorflow: ['台灣', '台股'],
+  twforeign: ['台灣', '台股', '外資', '買賣超', '三大法人'],
+  twbreadthls: ['台灣', '台股', '多空', '家數', '紫線', 'breadth'],
   twcycle: ['台灣', '台股'], twcrash: ['台灣', '台股'],
   taifex_foreign_oi: ['台灣', '台股'], marginheat: ['融資', '台灣', '台股'],
   marginpeak: ['融資', '台灣', '台股'], marginconc: ['融資', '台灣', '台股'],
