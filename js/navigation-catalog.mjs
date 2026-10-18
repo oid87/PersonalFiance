@@ -247,6 +247,10 @@ export const CATEGORIES = [
         "label": "融資斷頭地圖"
       },
       {
+        "id": "marginalert",
+        "label": "台股融資去槓桿警報"
+      },
+      {
         "id": "margincost",
         "label": "美國融資成本"
       },
@@ -359,6 +363,7 @@ const ALIASES = {
   taifex_foreign_oi: ['台灣', '台股'], marginheat: ['融資', '台灣', '台股'],
   marginpeak: ['融資', '台灣', '台股'], marginconc: ['融資', '台灣', '台股'],
   marginmap: ['融資', '台灣', '台股'],
+  marginalert: ['融資', '台灣', '台股', '回測', '去槓桿'],
   margincost: ['融資'], marginglobal: ['融資'],
   qqqradar: ['VXN', '籌碼'],
 };
