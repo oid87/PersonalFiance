@@ -1015,3 +1015,27 @@
     display: inline-flex; align-items: center; min-height: 44px; box-sizing: border-box;
   }
 }
+
+/* Scoped US risk observation page. */
+#tab-usrisk .usrisk-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--space-3,12px); }
+#tab-usrisk .usrisk-grid .ui-card { min-width:0; padding:var(--space-3,12px); }
+#tab-usrisk .usrisk-value { font-size:1.5rem; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+#tab-usrisk .usrisk-controls { display:flex; flex-wrap:wrap; gap:var(--space-3,12px); margin:16px 0; }
+#tab-usrisk .usrisk-control { flex:1 1 190px; min-width:0; max-width:100%; }
+#tab-usrisk .usrisk-control label { display:block; margin-bottom:6px; color:var(--muted); }
+#tab-usrisk select { width:100%; min-height:44px; padding:6px; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px; }
+#tab-usrisk .info-icon { display:inline-flex; align-items:center; justify-content:center; min-width:28px; min-height:28px; cursor:help; }
+#tab-usrisk .usrisk-chart { width:100%; height:430px; margin:16px 0; }
+#tab-usrisk .usrisk-small-chart { width:100%; height:260px; }
+#tab-usrisk table { border-collapse:collapse; width:100%; font-size:var(--text-sm,13px); }
+#tab-usrisk th, #tab-usrisk td { padding:10px; text-align:left; vertical-align:top; border-bottom:1px solid var(--border); max-width:380px; overflow-wrap:anywhere; white-space:pre-line; }
+#tab-usrisk .table-scroll { max-width:100%; margin:12px 0; }
+#tab-usrisk .table-scroll table { min-width:820px; }
+#tab-usrisk .ui-details { margin:16px 0; }
+#tab-usrisk .ui-details summary { min-height:44px; display:flex; align-items:center; cursor:pointer; }
+#tab-usrisk .callout-warn, #tab-usrisk .note-muted { line-height:1.7; }
+@media(max-width:650px) { #tab-usrisk .usrisk-grid { grid-template-columns:1fr; } #tab-usrisk .usrisk-control { flex-basis:100%; } #tab-usrisk .usrisk-chart { height:390px; } #tab-usrisk .info-icon { min-width:44px; min-height:44px; } }
+@media(max-height:500px) { #tab-usrisk .usrisk-chart { height:330px; } }
+
+#tab-usrisk > header { display:block; padding:12px 0; }
+#tab-usrisk > header .section-title { font-size:18px; padding:0; border-top:0; }

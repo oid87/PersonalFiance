@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 88,
+  "source_count": 89,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -2967,6 +2967,37 @@
             "vix",
             "vxn"
           ]
+        }
+      }
+    },
+    {
+      "script": "scripts/compute_us_risk_observations.py",
+      "outputs": [
+        "data/us_risk_observations.json"
+      ],
+      "frequency": "us_session",
+      "required": true,
+      "depends_on": [
+        "scripts/fetch_stocks.py",
+        "scripts/fetch_vix_term.py",
+        "scripts/fetch_breadth_ndx.py",
+        "scripts/fetch_cftc_positions.py",
+        "scripts/fetch_nfci.py",
+        "scripts/fetch_margin_us.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/us_risk_observations.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
         }
       }
     }
