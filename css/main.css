@@ -1045,3 +1045,9 @@
 .info-pop-btn[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 .info-pop-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .info-pop { position: fixed; z-index: 1000; max-width: min(340px, calc(100vw - 16px)); padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); font-size: 12px; line-height: 1.6; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+
+    .ma-info { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 50%; width: 18px; height: 18px; padding: 0; margin-left: 4px; font-size: 11px; line-height: 16px; cursor: pointer; vertical-align: middle; }
+    .ma-info[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .ma-info:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .ma-pop { position: fixed; z-index: 1000; max-width: min(320px, calc(100vw - 16px)); padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); font-size: 12px; line-height: 1.6; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+    @media (pointer: coarse) { .ma-info { width: 44px; height: 44px; font-size: 16px; line-height: 40px; } }
