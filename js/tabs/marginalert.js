@@ -32,6 +32,10 @@ const tbl = (head, rows, cls = '') =>
   `<div class="table-scroll" tabindex="0" role="region" aria-label="回測表格"><table class="info-table ${cls}"><thead><tr>${head.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${
     rows.map(r => `<tr>${r.map(c => `<td>${c ?? ''}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 const fwd = (fw, h) => { const s = fw?.[h]; return s && s.n ? `${sg(s.retMedian)} / ${sg(s.retMean)}` : '—'; };
+// 觸發時的醒目字：紅色加粗（亮／暗主題各用夠對比的紅）；不單靠顏色，旁邊另有 🔔／標記
+const hot = text => `<b style="color:${isLight() ? '#c62828' : '#ff6b6b'}">${text}</b>`;
+// 維持率「現在(距四週高點的變化)」：例如高點 200 → 現在 180 顯示 180.0(-20.0)
+const ratioDelta = (ratio, r4) => (isNum(ratio) ? `${f(ratio, 1)}${r4 ? `(${sg(r4.diff, 1)})` : ''}` : '—');
 const neg = (x, d = 1) => (isNum(x) ? `-${x.toFixed(d)}%` : '—');
 
 // ── 載入 ─────────────────────────────────────────────────────────────
@@ -115,6 +119,7 @@ function buildOption() {
   const showFg = ui.fg && !!raw.fearGreed?.length;
   const fearAreas = showFg ? fearSegments(days, ui.fearThr).map(([a, b]) => [{ xAxis: a, itemStyle: { color: 'rgba(163,113,247,0.22)' } }, { xAxis: b }]) : [];
   const dates = days.map(d => d.date);
+  const flagged = new Set(sel.flags);
   const firstSet = new Set(sel.events.map(e => e.startIdx));
   const first = sel.events.map(e => [e.date, days[e.startIdx].close]);
   const rest = sel.flags.filter(i => !firstSet.has(i)).map(i => [days[i].date, days[i].close]);
@@ -142,10 +147,12 @@ function buildOption() {
         const i = params?.[0]?.dataIndex;
         const d = days[i];
         if (!d) return '';
-        const fired = isNum(d.m[1]) && d.m[1] <= -ui.th;
+        const fired = flagged.has(i);                                   // 與圖上警報標記同一判斷（含回撤閘門）
+        const belowGate = !fired && isNum(d.m[1]) && d.m[1] <= -ui.th;     // 融資達標但回撤閘門未過
+        const oneDay = `單日 ${sg(d.m[1], 2)}%（${sg(d.dm1, 0)} 億）`;
         return `<b>${d.date}</b>${fired ? ' 🔔' : ''}<br>加權 ${f(d.close, 0)}（${sg(d.x[1], 2)}%）｜距${res.cfg.lookback}日高 -${f(d.dd)}%<br>` +
-          `融資 ${f(d.margin, 0)} 億｜單日 ${sg(d.m[1], 2)}%（${sg(d.dm1, 0)} 億）<br>3日 ${sg(d.m[3])}%｜5日 ${sg(d.m[5])}%｜維持率(重建) ${f(d.ratio, 1)}` +
-          (d.r4 ? `<br>四週高點 ${f(d.r4.high, 1)}（${d.r4.date}）→ 現在 ${f(d.ratio, 1)}：${sg(d.r4.diff, 1)} 點` : '') +
+          `融資 ${f(d.margin, 0)} 億｜${fired ? hot(oneDay + ' 觸發') : oneDay}${belowGate ? '（未達回撤閘門，不算警報）' : ''}<br>3日 ${sg(d.m[3])}%｜5日 ${sg(d.m[5])}%｜維持率(重建) ${ratioDelta(d.ratio, d.r4)}` +
+          (d.r4 ? `<br>四週高點 ${f(d.r4.high, 1)}（${d.r4.date}）` : '') +
           (isNum(d.fg) ? `<br>恐懼貪婪 ${f(d.fg, 1)}${d.fg < ui.fearThr ? `（< ${ui.fearThr} 恐懼區）` : ''}` : '');
       },
     },
@@ -210,9 +217,9 @@ function fearCard(ds) {
 
 function ratioCard(ds) {
   const d = ds.days.at(-1);
-  const card = (v, sub) => `<div class="lev-card" style="min-width:220px"><div class="lc-sub">融資維持率（重建）｜四週內高點 → 現在</div><div class="lc-val">${v}</div><div class="lc-sub">${sub}</div></div>`;
+  const card = (v, sub) => `<div class="lev-card" style="min-width:220px"><div class="lc-sub">融資維持率（重建）：現在(距四週高點變化)</div><div class="lc-val">${v}</div><div class="lc-sub">${sub}</div></div>`;
   if (!d?.r4) return card('—', '無維持率資料');
-  return card(`${sg(d.r4.diff, 1)} 點`, `高點 ${f(d.r4.high, 1)}（${esc(d.r4.date)}）→ 現在 ${f(d.ratio, 1)}（${esc(d.date)}）`);
+  return card(ratioDelta(d.ratio, d.r4), `四週內高點 ${f(d.r4.high, 1)}（${esc(d.r4.date)}）→ 現在 ${f(d.ratio, 1)}（${esc(d.date)}）；括號＝較高點變化的點數`);
 }
 
 // ── 卡片 ─────────────────────────────────────────────────────────────
@@ -240,12 +247,12 @@ function tableEvents() {
   const rows = sel.events.map(e => {
     const h = e.fwd?.h;
     const cell = k => (h?.[k] ? sg(h[k].ret) : '—');
-    return [e.date, `${f(e.day.m[1], 2)}%`, `${sg(e.day.x[1], 2)}%`, neg(e.day.dd), e.triggerDays, cell(5), cell(10), cell(20), cell(60),
+    return [hot(e.date), hot(`${f(e.day.m[1], 2)}%`), `${sg(e.day.x[1], 2)}%`, neg(e.day.dd), ratioDelta(e.day.ratio, e.day.r4), e.triggerDays, cell(5), cell(10), cell(20), cell(60),
       h?.[20] ? f(h[20].mdd) + '%' : '—', h?.[20] ? (h[20].breakLow ? '是' : '否') : '—'];
   });
   const sum = res.cfg.horizons.map(k => { const s = sel.forward[k]; return [`${k} 日`, s.n, sg(s.retMean) + '%', sg(s.retMedian) + '%', f(s.winRate, 0) + '%', f(s.mddMedian) + '%', f(s.mddWorst) + '%', f(s.rallyMedian) + '%', f(s.breakLowPct, 0) + '%', f(s.daysToLowMedian, 0)]; });
   return tbl(['持有', 'n', '報酬均值', '報酬中位', '勝率', '最大回撤中位', '最差回撤', '最大反彈中位', '再破警報日低點', '最低點距警報日(日)'], sum) +
-    tbl(['事件首日', '融資%', '當日指數%', '回撤', '連續日', '5日%', '10日%', '20日%', '60日%', '20日最大回撤', '20日內再破低'], rows);
+    tbl(['事件首日', '融資%', '當日指數%', '回撤', '維持率(距4週高點)', '連續日', '5日%', '10日%', '20日%', '60日%', '20日最大回撤', '20日內再破低'], rows);
 }
 function tableAnnual() {
   const ths = res.cfg.thresholds;
@@ -299,8 +306,8 @@ function tableCase() {
     tbl(h, first(cs.first)) +
     (Object.keys(cs.firstSincePeak).length ? `<p class="text-muted-sm">窗口起點晚於波段高點 ${cs.peak.date}：自高點起算的首次警報——</p>${tbl(h, first(cs.firstSincePeak))}` : '') +
     (cv ? `<p class="text-muted-sm">-3% 首次警報前後 5 日指數日跌幅：前 均值 ${sg(cv.beforeMean, 2)}%／≤-2% 共 ${cv.beforeDown2} 日；後 均值 ${sg(cv.afterMean, 2)}%／≤-2% 共 ${cv.afterDown2} 日（n=${cv.afterN}）。</p>` : '') +
-    `<details class="ui-details"><summary>逐日明細</summary>${tbl(['日期', '收盤', '指數%', '回撤', '融資億', '融資%', '融資Δ億', '3日%', '5日%', '維持率(重建)', '四週高點(日期)', '距高點(點)'],
-      cs.rows.map(r => [r.date, f(r.close, 0), sg(r.x1, 2), f(r.dd), f(r.margin, 0), sg(r.m1, 2), sg(r.dm1, 0), sg(r.m3), sg(r.m5), f(r.ratio, 1), r.r4 ? `${f(r.r4.high, 1)}（${r.r4.date.slice(5)}）` : '—', r.r4 ? sg(r.r4.diff, 1) : '—']))}</details>`;
+    `<details class="ui-details"><summary>逐日明細</summary>${tbl(['日期', '收盤', '指數%', '回撤', '融資億', '融資%', '融資Δ億', '3日%', '5日%', '維持率(重建)現在(距高點)', '四週高點(日期)'],
+      cs.rows.map(r => { const hit = isNum(r.m1) && r.m1 <= -ui.th && r.dd >= ui.gate; const mark = t => (hit ? hot(t) : t); return [mark(hit ? '🔔 ' + r.date : r.date), f(r.close, 0), sg(r.x1, 2), f(r.dd), f(r.margin, 0), mark(sg(r.m1, 2)), mark(sg(r.dm1, 0)), sg(r.m3), sg(r.m5), ratioDelta(r.ratio, r.r4), r.r4 ? `${f(r.r4.high, 1)}（${r.r4.date.slice(5)}）` : '—']; }))}</details>`;
 }
 function tableFear() {
   if (!fear) return '<p>無恐懼貪婪資料。</p>';
