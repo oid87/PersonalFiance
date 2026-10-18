@@ -403,6 +403,16 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_taiwan_margin_ratio.py
 
+      - name: Fetch Taiwan foreign investor net buy/sell (FinMind, 外資現貨買賣超)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_tw_foreign_net.py
+
+      - name: Fetch Taiwan bull/bear stock counts (TWSE MI_INDEX 自算多空家數，近似版)
+        continue-on-error: true
+        run: python scripts/fetch_tw_breadth_ls.py
+
       - name: Build Taiwan margin cost-basis / forced-liquidation map (TWSE MI_MARGN flow, 融資斷頭地圖)
         continue-on-error: true
         run: python scripts/fetch_margin_costmap.py

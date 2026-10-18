@@ -57,6 +57,8 @@ run_script optional fetch_tdcc_holders.py
 run_script optional fetch_tw_daytrading.py
 run_script optional fetch_margin_concentration.py
 run_script optional fetch_taiwan_margin_ratio.py
+run_script optional fetch_tw_foreign_net.py
+run_script optional fetch_tw_breadth_ls.py
 run_script optional fetch_margin_costmap.py
 run_script optional fetch_tpex_margin.py
 run_script optional fetch_twse_mktcap.py

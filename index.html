@@ -1394,6 +1394,72 @@
     </div>
   </section>
 
+  <!-- ── 外資買賣超 tab ────────────────────────────────────────────── -->
+  <section id="tab-twforeign" class="tab-section" hidden>
+    <div class="controls">
+      <div class="picker-row picker-row--end" id="twforeign-range">
+        <span class="chip active" data-twforeign-range="6M">6個月</span>
+        <span class="chip" data-twforeign-range="1Y">1年</span>
+        <span class="chip" data-twforeign-range="3Y">3年</span>
+        <span class="chip" data-twforeign-range="MAX">全部</span>
+      </div>
+      <div class="picker-row picker-row--end" id="twforeign-thr" aria-label="警戒門檻（5日累計百分位）">
+        <span class="chip active" data-twforeign-thr="5">警戒 ≤ 5%</span>
+        <span class="chip" data-twforeign-thr="10">警戒 ≤ 10%</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
+      <div class="breadth-card"><div class="bc-label">近 5 日外資淨額</div><div class="bc-main"><span class="bc-pct" id="twforeign-s5">—</span></div></div>
+      <div class="breadth-card"><div class="bc-label">近 10 日外資淨額</div><div class="bc-main"><span class="bc-pct" id="twforeign-s10">—</span></div></div>
+      <div class="breadth-card"><div class="bc-label">近 20 日外資淨額</div><div class="bc-main"><span class="bc-pct" id="twforeign-s20">—</span></div></div>
+      <div class="breadth-card"><div class="bc-label">20 日強度歷史百分位</div><div class="bc-main"><span class="bc-pct" id="twforeign-p20">—</span></div><div class="bc-count" id="twforeign-p20-sub">—</div></div>
+      <div class="breadth-card"><div class="bc-label">距 252 日高點</div><div class="bc-main"><span class="bc-pct" id="twforeign-dd">—</span></div></div>
+    </div>
+    <div id="twforeign-alert" class="text-muted-sm" style="margin:8px 0">—</div>
+    <div id="twforeign-chart" style="height:520px"></div>
+    <div class="status" id="twforeign-status">切換至此 tab 自動載入…</div>
+    <div id="twforeign-events"></div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 這頁怎麼看？</div>
+      <div class="info-panel-body">
+        <p>外資＝外資及陸資＋外資自營商，上市＋上櫃合計的現貨買賣超金額（億元，買進減賣出）。上圖加權指數，下圖柱狀為當日買賣超（綠＝買超、紅＝賣超），線為近 5／10／20 日累計（右軸）。</p>
+        <p>「強度百分位」是目前累計值在近 5 年（約 1,250 個交易日）內的相對位置，只使用當日以前的資料；越低代表賣超相對越重。這只描述相對位置，不代表未來走勢。</p>
+        <p>警戒是本站自訂的研究規則（5 日累計百分位低於門檻），不是外部訊號；事件表的樣本數少，且相鄰事件常屬同一段行情，請勿當作買賣依據。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 台股多空家數（近似版）tab ────────────────────────────────── -->
+  <section id="tab-twbreadthls" class="tab-section" hidden>
+    <div class="controls">
+      <div class="picker-row picker-row--end" id="twbreadthls-range">
+        <span class="chip" data-twbreadthls-range="1M">1個月</span>
+        <span class="chip active" data-twbreadthls-range="3M">3個月</span>
+        <span class="chip" data-twbreadthls-range="6M">6個月</span>
+        <span class="chip" data-twbreadthls-range="1Y">1年</span>
+        <span class="chip" data-twbreadthls-range="MAX">全部</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
+      <div class="breadth-card"><div class="bc-label">偏多家數</div><div class="bc-main"><span class="bc-pct" id="twbreadthls-bull">—</span></div><div class="bc-count" id="twbreadthls-bull-sub">—</div></div>
+      <div class="breadth-card"><div class="bc-label">偏空家數</div><div class="bc-main"><span class="bc-pct" id="twbreadthls-bear">—</span></div></div>
+      <div class="breadth-card"><div class="bc-label">多空差</div><div class="bc-main"><span class="bc-pct" id="twbreadthls-diff">—</span></div></div>
+      <div class="breadth-card"><div class="bc-label">偏多家數歷史分位數</div><div class="bc-main"><span class="bc-pct" id="twbreadthls-pb">—</span></div></div>
+      <div class="breadth-card"><div class="bc-label">偏空家數歷史分位數</div><div class="bc-main"><span class="bc-pct" id="twbreadthls-pr">—</span></div></div>
+      <div class="breadth-card"><div class="bc-label">目前狀態</div><div class="bc-main"><span class="bc-pct" id="twbreadthls-state" style="font-size:18px">—</span></div></div>
+    </div>
+    <div class="text-muted-sm" id="twbreadthls-hist-note" style="margin:4px 0 8px">僅描述當日數據在已收錄資料中的相對位置，不代表未來走勢。</div>
+    <div id="twbreadthls-chart" style="height:520px"></div>
+    <div class="status" id="twbreadthls-status">切換至此 tab 自動載入…</div>
+    <div class="info-panel">
+      <div class="info-panel-header"><i class="chevron">▶</i> 這頁怎麼看？</div>
+      <div class="info-panel-body">
+        <p>這是「多空家數」的近似版，不是旺財紫線的原始定義（原始定義未公開）。逐檔判斷上市普通股：收盤&gt;MA20&gt;MA60 算偏多、收盤&lt;MA20&lt;MA60 算偏空，其餘為中性。使用原始（未還原）收盤價，除權息缺口會造成少量雜訊；停牌或不足 60 日資料的個股不納入。</p>
+        <p>偏多／偏空家數與多空差反映「多少檔股票處於中期多頭／空頭排列」，用來看市場是普漲、輪動或普跌；歷史分位數只描述目前在已收錄歷史中的相對位置，不是買賣訊號。</p>
+      </div>
+    </div>
+  </section>
+
   <!-- ── 台股籌碼 tab ────────────────────────────────────────────── -->
   <section id="tab-twchips" class="tab-section" hidden>
     <div class="controls">

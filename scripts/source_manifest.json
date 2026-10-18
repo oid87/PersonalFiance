@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 89,
+  "source_count": 91,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -2033,6 +2033,76 @@
             "margin_yi",
             "n",
             "ratio"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tw_foreign_net.py",
+      "outputs": [
+        "data/tw_foreign_net.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tw_foreign_net.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "dealer_net_yi",
+            "foreign_buy_yi",
+            "foreign_net_yi",
+            "foreign_sell_yi",
+            "total_net_yi",
+            "trust_net_yi"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tw_breadth_ls.py",
+      "outputs": [
+        "data/tw_breadth_ls.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tw_breadth_ls.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "bear",
+            "bull",
+            "n",
+            "neutral"
           ]
         }
       }
