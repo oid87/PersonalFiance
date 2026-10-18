@@ -126,6 +126,7 @@ run_script optional fetch_tw_jp_kr_gdp.py
 run_script optional fetch_tw_semi_valuation.py
 # Macro is an optional atomic source; never clean or restore its archive here.
 run_script optional fetch_us_macro_diagnostic.py
+run_script required compute_us_risk_observations.py || exit 1
 if (( DRY_RUN )); then
   echo "DRY-RUN optional: validate_us_macro.py"
   echo "DRY-RUN optional: capture_us_macro_diagnostic.mjs"

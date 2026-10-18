@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PF US risk observation archive v1",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "series"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "series": {
+      "type": "object", "required": ["SPY", "QQQ"],
+      "additionalProperties": {
+        "type": "object", "required": ["meta", "records"],
+        "properties": {
+          "meta": {
+            "type": "object",
+            "required": ["label", "frequency", "source_file", "source_url", "unit", "delay", "quality", "license", "history_eligible", "available", "status"],
+            "properties": {
+              "frequency": {"enum": ["daily", "weekly", "monthly"]},
+              "history_eligible": {"type": "boolean"}, "available": {"type": "boolean"},
+              "status": {"enum": ["ok", "stale", "unavailable"]}
+            }
+          },
+          "records": {
+            "type": "array",
+            "items": {
+              "type": "object", "required": ["date", "observed_at", "published_at", "source_hash", "values"],
+              "properties": {
+                "date": {"type": "string", "format": "date"},
+                "observed_at": {"type": "string", "format": "date-time"},
+                "published_at": {"type": ["string", "null"], "format": "date-time"},
+                "source_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+                "values": {"type": "object", "minProperties": 1, "additionalProperties": {"type": ["number", "null"]}}
+              },
+              "additionalProperties": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

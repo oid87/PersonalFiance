@@ -281,6 +281,9 @@ jobs:
           set -e
           bash scripts/run_us_macro_pipeline.sh
 
+      - name: Archive US risk observations (append-only, no inferred release times)
+        run: python scripts/compute_us_risk_observations.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 
