@@ -444,6 +444,81 @@ export function errorByRegime(wf, { heavyAt = -25, name = 'median' } = {}) {
   return { heavyAt, name, heavy: sum(grp.heavy), light: sum(grp.light) };
 }
 
+// ── 圖表序列：指數／維持率／融資餘額各自的 120 日高點，與「爆掉點」 ────────────────
+/**
+ * 每個「指數∩維持率」交易日一列，附：
+ *   idx / rt / mg：各自 lookback 日（各自的交易日曆、含當日、不看未來）高點、高點日期，及目前較高點的變化
+ *                  （dropPct %，負數；dropAbs＝指數點、維持率百分點、融資億元）。
+ *                  指數高點、維持率高點、融資餘額高點是三個不同的量，日期與數值通常不同。
+ *   m1 / m1Amt：單日融資變化 %、億元（對前一個融資日）；融資缺值就是 null，不補。
+ *   hit2 / hit3：m1 ≤ -2% / ≤ -3%（爆掉點）；first2 / first3：該門檻下的「事件首次」
+ *                （與上一個觸發相隔 > cooldown 個交易日才算新事件），其餘為同一波的「續發」。
+ */
+export function buildChartSeries({ twii, ratio, margin }, { lookback = 120, cooldown = 10 } = {}) {
+  const tw = clean(twii, 'close'), rt = clean(ratio, 'ratio'), mg = clean(margin, 'margin_money');
+  const rolling = rows => {
+    const out = new Map();
+    for (let i = 0; i < rows.length; i++) {
+      let hi = -Infinity, hj = i;
+      for (let j = Math.max(0, i - lookback + 1); j <= i; j++) if (rows[j].v >= hi) { hi = rows[j].v; hj = j; }
+      out.set(rows[i].date, { high: hi, highDate: rows[hj].date });
+    }
+    return out;
+  };
+  const twHi = rolling(tw), rtHi = rolling(rt), mgHi = rolling(mg);
+  const rtMap = toMap(rt), mgMap = toMap(mg), mgPrev = new Map(mg.map((r, i) => [r.date, i > 0 ? mg[i - 1].v : null]));
+  const detail = (v, h) => ({ high: h.high, highDate: h.highDate, dropPct: (v / h.high - 1) * 100, dropAbs: v - h.high });
+  const rows = [];
+  for (const t of tw) {
+    if (!rtMap.has(t.date)) continue;
+    const m = mgMap.has(t.date) ? mgMap.get(t.date) : null;
+    const prev = mgPrev.get(t.date);
+    const m1 = m !== null && isNum(prev) ? (m / prev - 1) * 100 : null;
+    rows.push({
+      date: t.date, close: t.v, ratio: rtMap.get(t.date), margin: m,
+      idx: detail(t.v, twHi.get(t.date)), rt: detail(rtMap.get(t.date), rtHi.get(t.date)),
+      mg: m !== null ? detail(m, mgHi.get(t.date)) : null,
+      m1, m1Amt: m !== null && isNum(prev) ? m - prev : null,
+      hit2: isNum(m1) && m1 <= -2, hit3: isNum(m1) && m1 <= -3, first2: false, first3: false,
+    });
+  }
+  for (const [flag, first] of [['hit2', 'first2'], ['hit3', 'first3']]) {
+    let last = -Infinity;
+    rows.forEach((r, i) => { if (!r[flag]) return; if (i - last > cooldown) r[first] = true; last = i; });
+  }
+  return rows;
+}
+
+const pad2 = n => String(n).padStart(2, '0');
+function shiftYears(dateStr, years) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const t = new Date(Date.UTC(y + years, m - 1, d));
+  if (t.getUTCMonth() !== m - 1) t.setUTCDate(0);   // 2/29 → 2/28
+  return `${t.getUTCFullYear()}-${pad2(t.getUTCMonth() + 1)}-${pad2(t.getUTCDate())}`;
+}
+/**
+ * 視窗：終點取「不晚於 endDate 的最近交易日」（預設就是最新日），起點＝終點往前 years 年；
+ * 起點早於資料起點就從資料起點開始（clipped）。可把 endDate 往前拉去看舊的資料。
+ */
+export function windowSlice(dates, endDate, years) {
+  if (!dates.length || !(years > 0)) return null;
+  let i1 = -1;
+  for (let i = dates.length - 1; i >= 0; i--) if (dates[i] <= (endDate ?? dates.at(-1))) { i1 = i; break; }
+  if (i1 < 0) return null;
+  const start = shiftYears(dates[i1], -years);
+  let i0 = dates.findIndex(d => d >= start);
+  if (i0 < 0) i0 = 0;
+  return { i0, i1, startDate: dates[i0], endDate: dates[i1], clipped: dates[0] > start };
+}
+/** 跳到某個波段：終點＝低點日往後 years/4 年（至少看到低點後的反彈），不超過最新日。 */
+export function endForWave(dates, wave, years) {
+  const e = shiftYears(wave.lowDate, 0);
+  const t = new Date(`${e}T00:00:00Z`);
+  t.setUTCDate(t.getUTCDate() + Math.round(years * 365 / 4));
+  const end = t.toISOString().slice(0, 10);
+  return end > dates.at(-1) ? dates.at(-1) : end;
+}
+
 // ── 全部一次跑 ──────────────────────────────────────────────────────
 /**
  * 依「期間融資最大跌幅」把波段分成大幅去槓桿（≤ heavyAt）與輕度（> heavyAt），各自的 Beta 統計。

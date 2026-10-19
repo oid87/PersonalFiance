@@ -11,7 +11,8 @@ import { preserveChartState } from '../utils/chartLifecycle.js';
 import {
   DEFAULTS, CASES, runFullBacktest, mergeRatio, singleDayFlags, evaluateFlags, GATES, median, fearAnalysis, clampFear, buildDataset,
 } from './marginalert_calc.mjs';
-import { analyzeHistory, scenarioView, signalOverlap, MANUAL_BETAS, KEY_DROP_PTS } from './marginstress_calc.mjs';
+import { analyzeHistory, scenarioView, signalOverlap, MANUAL_BETAS, KEY_DROP_PTS, buildChartSeries, windowSlice, endForWave } from './marginstress_calc.mjs';
+import { chipPicker } from '../utils/dom.js';
 
 const TAB_ID = 'marginalert';
 const $ = id => document.getElementById(`${TAB_ID}-${id}`);
@@ -25,6 +26,10 @@ let ui = { fg: true, fearThr: 15, th: 3, gate: 0, caseId: 'A', lookback: 120, en
 let wired = false;
 let stressH = null;    // analyzeHistory 快取（與參考日、Beta 情境無關）
 let stressOv = null;   // signalOverlap 快取
+let stChart = null;    // 維持率 × 指數（可滑回歷史）
+let stSeries = null;   // buildChartSeries 快取（含各自 120 日高點與爆掉點）
+let stSeriesByDate = null;
+let stWin = { years: 1, endDate: null };
 let stressUi = { ref: 'idxHigh', refDate: '', beta: 'hist', custom: { low: MANUAL_BETAS.low, base: MANUAL_BETAS.base, high: MANUAL_BETAS.high } };
 
 // ── 格式化 ───────────────────────────────────────────────────────────
@@ -58,8 +63,21 @@ async function loadAll(context = {}) {
     requestJSON('data/taiwan_margin_total.json', { signal: context.signal }),
   ]);
   const twii = usableRows(tw, ['open', 'high', 'low', 'close'], '加權指數');
-  const margin = usableRows(mg, ['margin_money'], '上市融資餘額');
+  let margin = usableRows(mg, ['margin_money'], '上市融資餘額');
   let mm = [], rc = [], partial = null;
+  // 2001-2007 融資餘額補遺（靜態檔，與主檔以日期合併、主檔優先；缺檔只是少了更早的資料）
+  let earlyCount = 0;
+  try {
+    const e = await requestJSON('data/taiwan_margin_total_early.json', { signal: context.signal });
+    const rows = Array.isArray(e?.data) ? e.data.filter(r => typeof r?.date === 'string' && Number.isFinite(r.margin_money) && r.margin_money > 0) : [];
+    const have = new Set(margin.map(r => r.date));
+    const extra = rows.filter(r => !have.has(r.date));
+    earlyCount = extra.length;
+    margin = [...extra, ...margin].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  } catch (err) {
+    if (context.signal?.aborted) throw err;
+    partial = '2001–2007 融資餘額補遺載入失敗：只用 2008 起的融資餘額';
+  }
   try {
     const [a, b] = await Promise.all([
       requestJSON('data/taiwan_margin_ratio_mm.json', { signal: context.signal }),
@@ -84,7 +102,7 @@ async function loadAll(context = {}) {
   const merged = mergeRatio(mm, rc);
   if (!merged.rows.length && !partial) partial = '無維持率資料：規則 B 停用（不估算）';
   const lastDate = margin.reduce((m, r) => (r.date > m ? r.date : m), '');
-  raw = { twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, marginUpdated: mg.updated, source: mg.source };
+  raw = { twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, earlyCount, marginUpdated: mg.updated, source: mg.source };
   ui.end = lastDate;
 }
 
@@ -156,7 +174,7 @@ function buildOption() {
         const oneDay = `單日 ${sg(d.m[1], 2)}%（${sg(d.dm1, 0)} 億）`;
         return `<b>${d.date}</b>${fired ? ' 🔔' : ''}<br>加權 ${f(d.close, 0)}（${sg(d.x[1], 2)}%）｜距${res.cfg.lookback}日高 -${f(d.dd)}%<br>` +
           `融資 ${f(d.margin, 0)} 億｜${fired ? hot(oneDay + ' 觸發') : oneDay}${belowGate ? '（未達回撤閘門，不算警報）' : ''}<br>3日 ${sg(d.m[3])}%｜5日 ${sg(d.m[5])}%｜維持率(重建) ${ratioDelta(d.ratio, d.r4)}` +
-          (d.r4 ? `<br>四週高點 ${f(d.r4.high, 1)}（${d.r4.date}）` : '') +
+          (d.r4 ? `<br>四週高點 ${f(d.r4.high, 1)}（${d.r4.date}）` : '') + highsLine(d.date) +
           (isNum(d.fg) ? `<br>恐懼貪婪 ${f(d.fg, 1)}${d.fg < ui.fearThr ? `（< ${ui.fearThr} 恐懼區）` : ''}` : '');
       },
     },
@@ -332,7 +350,7 @@ function historyHtml(h) {
       isNum(w.marginChange) ? pct(w.marginChange) : '無融資資料', burn ? pct(burn.pct) : '—', isNum(w.collateralChange) ? pct(w.collateralChange, 0) : '—', `最低 ${f(w.ratioMin, 1)}（${esc(w.ratioMinDate)}）`];
   });
   const c = h.coverage;
-  return `<p class="text-muted-sm">覆蓋：指數波段 ${c.waves} 段（回撤≥10% 進入、<5% 結束；同一高點的多段只算最深一段），其中有維持率者 ${c.withRatio} 段，可用於統計 ${c.usable} 段（${esc(c.firstUsable ?? '—')}～${esc(c.lastUsable ?? '—')}）。維持率重建資料自 2004-02-11，更早波段不補造。融資餘額自 2008-01-02。</p>` +
+  return `<p class="text-muted-sm">覆蓋：指數波段 ${c.waves} 段（回撤≥10% 進入、<5% 結束；同一高點的多段只算最深一段），其中有維持率者 ${c.withRatio} 段，可用於統計 ${c.usable} 段（${esc(c.firstUsable ?? '—')}～${esc(c.lastUsable ?? '—')}）。維持率重建資料自 2004-02-11，更早波段不補造。融資餘額自 2001-01-03（2001–2007 為補遺檔，與主檔日期合併）。</p>` +
     tbl(['波段（高點→低點）', '指數回撤', '維持率 起→低點', '維持率相對跌幅', '下降點數', 'Beta', '融資餘額變化（高→低）', '期間融資最大跌幅', '抵押品市值變化（推算，含賣股還款）', '期間最低維持率'], rows) +
     `<p class="text-muted-sm">「期間融資最大跌幅」＝融資餘額自身的峰谷，不等於兩端日期差。抵押品市值由 維持率＝抵押品÷融資餘額 推算，包含融資戶賣股還款造成的減少，不是單純股價跌幅。</p>`;
 }
@@ -356,7 +374,7 @@ function overlapHtml() {
   if (!o) return '<p>資料不足。</p>';
   const c = o.counts;
   const ev = o.events.map(e => [esc(e.date), neg(e.dd), `-${f(e.ratioDrop, 1)} 點`, pct(-e.marginDropPct), e.noClearMarginDrop ? '<b>沒有明顯下降</b>' : '有下降', isNum(e.lagDays) ? `${e.lagDays} 日` : '—']);
-  return `<p class="text-muted-sm">只做研究與顯示，不改既有規則。A＝120 日高點回撤≥15%，B＝重建維持率自 120 日高點降≥30 點（固定 120 日、2008 起，不隨上方回測參數變動）；融資「沒有明顯下降」＝A∧B 事件首日，融資餘額較 120 日高點降幅 &lt;10%。</p>` +
+  return `<p class="text-muted-sm">只做研究與顯示，不改既有規則。A＝120 日高點回撤≥15%，B＝重建維持率自 120 日高點降≥30 點（固定 120 日、2004-02 起，不隨上方回測參數變動）；融資「沒有明顯下降」＝A∧B 事件首日，融資餘額較 120 日高點降幅 &lt;10%。</p>` +
     tbl(['有維持率的交易日', 'A 成立', 'B 成立', 'A∧B 同時', 'A 不含 B', 'B 不含 A', 'P(B∣A)', 'P(A∣B)', 'Jaccard'],
       [[c.days, c.A, c.B, `<b>${c.both}</b>`, c.Aonly, c.Bonly, `${f(o.pBgivenA, 0)}%`, `${f(o.pAgivenB, 0)}%`, `${f(o.jaccard, 0)}%`]]) +
     `<h4>A∧B 事件（冷卻 20 日）：共 ${o.events.length} 件，其中融資沒有明顯下降 ${o.eventsNoClearMarginDrop} 件</h4>` +
@@ -374,19 +392,165 @@ function notesHtml(h, v) {
     <li>歷史 Beta 與回測不使用該波完成後才知道的資料（見 F）；測試：<code>npm test</code>（含 js/tabs/marginstress_calc.test.mjs）；報告重現：<code>node scripts/backtest_margin_stress.mjs --out docs/research/margin-stress-projection-backtest.md</code>。</li></ul>`;
 }
 
+// ── 維持率 × 指數（可滑回歷史）與爆掉點 ─────────────────────────────
+const UNIT = { idx: '點', rt: '百分點', mg: '億' };
+// 較自己的 120 日高點：「-12.3%（-5,812 點，高點 06-22 47,742）」。三個高點是三個不同的量
+const hl = (o, key) => {
+  if (!o) return '—';
+  const d = key === 'idx' ? 0 : 1;
+  return `${pct(o.dropPct)}（${sg(o.dropAbs, d)} ${UNIT[key]}，高點 ${esc(o.highDate.slice(5))} ${f(o.high, d)}）`;
+};
+function ensureSeries() {
+  if (stSeries || !raw?.ratio?.length) return;
+  stSeries = buildChartSeries({ twii: raw.twii, margin: raw.margin, ratio: raw.ratio });
+  stSeriesByDate = new Map(stSeries.map(r => [r.date, r]));
+}
+function highsLine(date) {
+  const r = stSeriesByDate?.get(date);
+  if (!r) return '';
+  return `<br>較各自 120 日高點：指數 ${hl(r.idx, 'idx')}｜維持率 ${hl(r.rt, 'rt')}｜融資 ${hl(r.mg, 'mg')}`;
+}
+function stDates() { return stSeries.map(r => r.date); }
+function stCurrentWindow() {
+  return windowSlice(stDates(), stWin.endDate, stWin.years);
+}
+const nearestIn = (dates, d, fallback) => dates.find(x => x >= d) ?? fallback;
+
+function stOption(win) {
+  const rows = stSeries.slice(win.i0, win.i1 + 1);
+  const dates = rows.map(r => r.date);
+  const L = mob() ? 40 : 56, Rr = mob() ? 54 : 56;
+  const waves = (stressH?.history ?? []).filter(w => w.independent && w.ok && w.lowDate >= dates[0] && w.peakDate <= dates.at(-1));
+  const areas = waves.map(w => [
+    { name: `-${f(w.maxDd, 0)}%`, xAxis: nearestIn(dates, w.peakDate, dates[0]), itemStyle: { color: 'rgba(239,68,68,0.10)' }, label: { color: PALETTE.muted, fontSize: 10 } },
+    { xAxis: dates.includes(w.lowDate) ? w.lowDate : dates.at(-1) },
+  ]);
+  const mk = (r, color) => {
+    const first = (r.hit3 ? r.first3 : r.first2);
+    return {
+      value: [r.date, r.close], itemStyle: { color },
+      label: first && !mob() ? { show: true, position: 'top', fontSize: 10, color, formatter: `${f(r.m1, 1)}%\n指數${f(r.idx.dropPct, 0)}%｜融資${r.mg ? f(r.mg.dropPct, 0) : '—'}%` } : { show: false },
+    };
+  };
+  const hit3 = rows.filter(r => r.hit3).map(r => mk(r, '#ef4444'));
+  const hit2 = rows.filter(r => r.hit2 && !r.hit3).map(r => mk(r, '#f59e0b'));
+  const ratioC = '#f59e0b';
+  const axis = (gridIndex, show) => ({ type: 'category', gridIndex, data: dates, boundaryGap: false, axisLine: { lineStyle: { color: PALETTE.muted } }, axisLabel: { color: PALETTE.muted, fontSize: 11, show }, axisTick: { show: false }, splitLine: { show: false } });
+  const yA = (gridIndex, name, extra = {}) => ({ type: 'value', gridIndex, name, scale: true, nameTextStyle: { color: PALETTE.muted, fontSize: 10 }, axisLabel: { color: PALETTE.muted, fontSize: 11 }, splitLine: { lineStyle: { color: PALETTE.grid } }, ...extra });
+  return echartsBase({
+    animation: false,
+    legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['加權指數', '融資維持率（重建）', '爆掉點 ≥3%', '爆掉點 2～3%', '融資餘額(億)'] },
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 12 },
+      formatter(params) {
+        const r = rows[params?.[0]?.dataIndex];
+        if (!r) return '';
+        const hit = r.hit3 ? '≥3%' : r.hit2 ? '≥2%' : null;
+        const one = `單日融資 ${sg(r.m1, 2)}%（${sg(r.m1Amt, 0)} 億）`;
+        return `<b>${r.date}</b>${hit ? ' 🔔' : ''}<br>加權 ${f(r.close, 0)}｜維持率 ${f(r.ratio, 2)}%｜融資 ${f(r.margin, 0)} 億<br>${hit ? hot(`${one} ← 爆掉點 ${hit}`) : one}` +
+          `<br>指數較 120 日高點 ${hl(r.idx, 'idx')}<br>維持率較 120 日高點 ${hl(r.rt, 'rt')}<br>融資較 120 日高點 ${hl(r.mg, 'mg')}`;
+      },
+    },
+    axisPointer: { link: [{ xAxisIndex: 'all' }] },
+    grid: [{ left: L, right: Rr, top: mob() ? 92 : 34, height: mob() ? '48%' : '56%' }, { left: L, right: Rr, top: mob() ? '74%' : '74%', height: '14%' }],
+    xAxis: [axis(0, false), axis(1, true)],
+    yAxis: [yA(0, mob() ? '' : '維持率 %', { axisLabel: { color: ratioC, fontSize: 11 } }), yA(0, mob() ? '' : '加權指數', { position: 'right', splitLine: { show: false } }), yA(1, mob() ? '' : '融資(億)')],
+    series: [
+      { name: '融資維持率（重建）', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => r.ratio), showSymbol: false, lineStyle: { width: 1.6, color: ratioC }, itemStyle: { color: ratioC }, areaStyle: { color: ratioC, opacity: 0.10 },
+        markLine: { silent: true, symbol: 'none', label: { formatter: '130% 個別帳戶追繳線', color: PALETTE.muted, fontSize: 10, position: 'insideStartTop' }, lineStyle: { color: PALETTE.muted, type: 'dashed' }, data: [{ yAxis: 130 }] } },
+      { name: '加權指數', type: 'line', xAxisIndex: 0, yAxisIndex: 1, data: rows.map(r => r.close), showSymbol: false, lineStyle: { width: 1.4, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
+        markArea: { silent: true, label: { color: PALETTE.muted, fontSize: 10 }, data: areas } },
+      { name: '爆掉點 ≥3%', type: 'scatter', xAxisIndex: 0, yAxisIndex: 1, data: hit3, symbol: 'triangle', symbolSize: 13, itemStyle: { color: '#ef4444' }, z: 6 },
+      { name: '爆掉點 2～3%', type: 'scatter', xAxisIndex: 0, yAxisIndex: 1, data: hit2, symbol: 'circle', symbolSize: 8, itemStyle: { color: '#f59e0b' }, z: 5 },
+      { name: '融資餘額(億)', type: 'line', xAxisIndex: 1, yAxisIndex: 2, data: rows.map(r => r.margin), showSymbol: false, connectNulls: false, lineStyle: { width: 1.2, color: '#58a6ff' }, itemStyle: { color: '#58a6ff' }, areaStyle: { color: '#58a6ff', opacity: 0.08 } },
+    ],
+  });
+}
+
+function stHitsTable(win) {
+  const rows = stSeries.slice(win.i0, win.i1 + 1).filter(r => r.hit2);
+  if (!rows.length) return '<p class="text-muted-sm">這段視窗內沒有單日融資減少 ≥2% 的爆掉點。</p>';
+  const cell = (r, o, key) => { if (!o) return '—'; const d = key === 'idx' ? 0 : 1; return `${key === 'idx' ? f(r.close, 0) : key === 'rt' ? `${f(r.ratio, 2)}%` : `${f(r.margin, 0)} 億`}<br>${pct(o.dropPct)}（${sg(o.dropAbs, d)} ${UNIT[key]}）<br><span class="text-muted-sm">高點 ${esc(o.highDate)}：${f(o.high, d)}</span>`; };
+  const body = rows.map(r => {
+    const lvl = r.hit3 ? '≥3%' : '≥2%';
+    const first = (r.hit3 ? r.first3 : r.first2) ? '首次' : '續發';
+    const mark = t => (r.hit3 ? hot(t) : `<b>${t}</b>`);
+    return [mark(r.date), `${mark(lvl)}｜${first}`, `${mark(`${sg(r.m1, 2)}%`)}<br>${sg(r.m1Amt, 0)} 億`, cell(r, r.idx, 'idx'), cell(r, r.rt, 'rt'), cell(r, r.mg, 'mg')];
+  });
+  const n3 = rows.filter(r => r.hit3).length;
+  return `<p class="text-muted-sm">視窗內共 ${rows.length} 個爆掉點（≥3% ${n3}、2～3% ${rows.length - n3}）。每格的「高點」是該序列<b>自己的</b> 120 日高點（日期與數值各自獨立）；括號內是較該高點減少的量。</p>` +
+    tbl(['日期', '門檻｜首次／續發', '單日融資', '指數（較 120 日高點）', '維持率（較 120 日高點）', '融資餘額（較 120 日高點）'], body, 'st-hits-table');
+}
+
+function renderStressChart() {
+  const host = $('st-chart');
+  if (!host) return;
+  ensureSeries();
+  if (!stSeries?.length) { host.style.display = 'none'; return; }
+  host.style.display = '';
+  const win = stCurrentWindow();
+  if (!win) return;
+  if (!stChart) stChart = echarts.init(host, isLight() ? null : 'dark');
+  stChart.setOption(stOption(win), { notMerge: true });
+  stChart.resize();
+  $('st-range').textContent = `${win.startDate} ～ ${win.endDate}${win.clipped ? '（資料起點）' : ''}`;
+  const sl = $('st-end'), dates = stDates();
+  sl.min = String(Math.min(60, dates.length - 1)); sl.max = String(dates.length - 1); sl.value = String(win.i1);
+  $('st-enddate').value = win.endDate;
+  $('st-enddate').min = dates[0]; $('st-enddate').max = dates.at(-1);
+  for (const c of $('st-width').querySelectorAll('.chip')) c.classList.toggle('active', Number(c.dataset.w) === stWin.years);
+  const first = stSeries[0].date;
+  $('st-chart-note').textContent = `資料：指數＋重建維持率自 ${first}、融資餘額自 ${raw.margin[0]?.date ?? '—'}${raw.earlyCount ? `（2001–2007 為補遺檔 ${raw.earlyCount} 日）` : ''}；紅區＝指數回撤≥10% 的波段（高點→低點）。維持率是重建值，非官方整戶維持率。`;
+  $('st-hits').innerHTML = stHitsTable(win);
+}
+function fillWaveSelect() {
+  const sel = $('st-wave');
+  if (!sel || !stressH || sel.dataset.filled === String(stressH.history.length)) return;
+  const waves = stressH.history.filter(w => w.independent && w.ok).sort((a, b) => (a.peakDate < b.peakDate ? 1 : -1));
+  sel.innerHTML = '<option value="">（選擇波段）</option>' + waves.map(w => `<option value="${esc(w.lowDate)}">${esc(w.peakDate.slice(0, 7))}→${esc(w.lowDate.slice(0, 7))}｜指數 -${f(w.maxDd, 0)}%｜維持率 ${f(w.m0, 0)}→${f(w.m1, 0)}${w.open ? '（未結束）' : ''}</option>`).join('');
+  sel.dataset.filled = String(stressH.history.length);
+}
+let stRaf = 0;
+const stRender = () => { cancelAnimationFrame(stRaf); stRaf = requestAnimationFrame(() => { try { renderStressChart(); } catch (e) { console.error('[marginalert] st chart failed', e); } }); };
+function wireStressChart() {
+  chipPicker($('st-width'), 'w', v => { stWin.years = Number(v); stRender(); });
+  $('st-end')?.addEventListener('input', e => { const d = stDates()[Number(e.target.value)]; if (d) { stWin.endDate = d; stRender(); } });
+  $('st-enddate')?.addEventListener('change', e => { if (/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) { stWin.endDate = e.target.value; stRender(); } });
+  $('st-latest')?.addEventListener('click', () => { stWin.endDate = null; stRender(); });
+  const shift = dir => () => {
+    const dates = stDates(), w = stCurrentWindow();
+    if (!w) return;
+    const i = Math.max(Math.min(60, dates.length - 1), Math.min(dates.length - 1, w.i1 + dir * Math.round(stWin.years * 252 / 2)));
+    stWin.endDate = i >= dates.length - 1 ? null : dates[i];
+    stRender();
+  };
+  $('st-prev')?.addEventListener('click', shift(-1));
+  $('st-next')?.addEventListener('click', shift(1));
+  $('st-wave')?.addEventListener('change', e => {
+    const low = e.target.value;
+    if (!low) return;
+    const w = stressH?.history.find(x => x.lowDate === low);
+    if (w) { stWin.endDate = endForWave(stDates(), w, stWin.years); stRender(); }
+    e.target.value = '';
+  });
+  $('stress')?.addEventListener('toggle', () => stChart?.resize());
+}
+
 function renderStress() {
   const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
   try {
     if (!raw.ratio?.length) { set('st-warn', '無維持率重建資料：融資壓力情境推估停用（不估算）。'); ['st-state', 'st-targets', 'st-ma', 'st-delever', 'st-beta-table', 'st-history', 'st-backtest', 'st-overlap', 'st-notes'].forEach(id => set(id, '')); return; }
     if (!stressH) stressH = analyzeHistory(stressData());
     if (stressOv === null) {
-      try { stressOv = signalOverlap(buildDataset(stressData(), { start: '2008-01-02', end: raw.lastDate, lookback: 120 })); } catch (e) { console.warn('[marginalert] overlap failed', e); stressOv = false; }
+      try { stressOv = signalOverlap(buildDataset(stressData(), { start: '2004-02-11', end: raw.lastDate, lookback: 120 })); } catch (e) { console.warn('[marginalert] overlap failed', e); stressOv = false; }
     }
     const v = scenarioView(stressData(), stressH, { refMode: stressRefMode(), beta: stressBetaInput(), scenario: stressUi.beta === 'light' ? 'light' : 'hist' });
     const warn = [];
     if (!v.ref.ok) warn.push(v.ref.reason === 'date-missing' ? `參考日 ${esc(v.ref.date)} 沒有指數或維持率資料，請改日期` : '指數與維持率沒有共同日期');
     if (!v.alignment.aligned) warn.push('指數／維持率／融資最新日期不一致');
     set('st-warn', warn.length ? `⚠ ${warn.join('；')}` : `資料日 ${esc(v.alignment.twii)}（收盤）｜歷史敏感度情境推估，不是支撐位或底部預測`);
+    fillWaveSelect();
+    renderStressChart();
     set('st-beta-table', betaTableHtml(stressH));
     set('st-history', historyHtml(stressH));
     set('st-backtest', backtestHtml(stressH));
@@ -530,7 +694,7 @@ function renderTables() {
 function sourcesHtml() {
   const g = res.gaps, ri = raw.ratioInfo;
   return `<ul><li>TAIEX：data/TWII.json（${esc(g.twiiRange.join('～'))}，不含股息的收盤指數）。</li>
-    <li>上市融資餘額（億元）：${esc(raw.source ?? 'FinMind 大盤融資餘額')}（${esc(g.marginRange.join('～'))}）；與 TWSE MI_MARGN 彙總數逐日交叉比對差異 0（見報告 A）。</li>
+    <li>上市融資餘額（億元）：${esc(raw.source ?? 'FinMind 大盤融資餘額')}（${esc(g.marginRange.join('～'))}${raw.earlyCount ? `；2001-01-03～2007-12-31 為靜態補遺檔 data/taiwan_margin_total_early.json（${raw.earlyCount} 日，與 TWSE 彙總 964 日逐日核對差 0）` : ''}）；與 TWSE MI_MARGN 彙總數逐日交叉比對差異 0（見報告 A）。</li>
     <li>融資維持率：TWSE MI_MARGN×MI_INDEX <b>逐檔重建</b>（上市 only、含 ETF，與券商整戶口徑不同、偏高），${esc(g.ratioRange.join('～'))}，兩個重建檔重疊 ${ri.overlap} 日最大差 ${ri.maxAbsDiff}。僅作規則 B 參考，非官方公布值。</li>
     <li>缺口：成交量／金額沒有可靠資料（TWII volume 恆為 0），未使用；TWII 缺 ${esc(g.marginOnly.join(', ') || '無')}，不補值、該日不當訊號日。</li>
     <li>上市與上櫃不混用；N 日窗各自回推 N 個交易日；警報用收盤後資料，進場最早為隔日（${res.cfg.entry === 'nextOpen' ? '開盤' : '收盤'}）。</li>
@@ -555,7 +719,7 @@ function draw() {
   renderSummary();
   renderStress();
   renderTables();
-  return preserveChartState(getCharts, () => { chart.setOption(buildOption(), { notMerge: true }); });
+  return preserveChartState(() => (chart ? [chart] : []), () => { chart.setOption(buildOption(), { notMerge: true }); });
 }
 function readInputs() {
   if ($('th-select').value === 'custom') {
@@ -622,6 +786,7 @@ function wire() {
   wired = true;
   wireInfo();
   wireStress();
+  wireStressChart();
   const on = (id, fn) => $(id)?.addEventListener('change', fn);
   on('fg-select', e => { ui.fg = e.target.value === 'on'; syncChips(); draw(); });
   $('fear-range')?.addEventListener('input', e => { ui.fearThr = clampFear(e.target.value); recompute(); syncChips(); draw(); });
@@ -670,6 +835,11 @@ export function onThemeChange(light) {
   chart.dispose();
   chart = echarts.init(host, light ? null : 'dark');
   if (res) chart.setOption(buildOption(), { notMerge: true });
+  if (stChart) {
+    stChart.dispose();
+    stChart = echarts.init($('st-chart'), light ? null : 'dark');
+    if (stSeries?.length) { const w = stCurrentWindow(); if (w) stChart.setOption(stOption(w), { notMerge: true }); }
+  }
 }
-export function resize() { chart?.resize(); }
-export function getCharts() { return chart ? [chart] : []; }
+export function resize() { chart?.resize(); stChart?.resize(); }
+export function getCharts() { return [chart, stChart].filter(Boolean); }
