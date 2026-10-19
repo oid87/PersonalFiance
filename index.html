@@ -2567,15 +2567,11 @@
       </div>
     </details>
     <div id="marginalert-summary" style="padding:12px 16px 0;display:flex;gap:10px;flex-wrap:wrap"></div>
-    <details class="ui-details" id="marginalert-stress" open>
-      <summary>融資壓力情境推估：維持率 ↔ 加權指數（歷史敏感度，非支撐位、非底部預測）</summary>
+    <div style="padding:12px 16px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="text-muted-sm">主圖與回測範圍：</span><span id="marginalert-range-chips" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip" data-s="2020-01-01">2020 起</span><span class="chip" data-s="2015-01-01">2015 起</span><span class="chip" data-s="2008-01-02">2008 起</span><span class="chip" data-s="2004-02-11">2004 起（預設）</span><span class="chip" data-s="2001-01-03">2001 起（全部）</span></span><button type="button" class="ma-info" data-info="切換後，下方的圖、事件表、門檻比較全部以該起點重算（需要時間約 0.1 秒）。維持率重建資料自 2004-02-11 起，融資餘額自 2001-01-03 起；2004 以前的維持率欄位會顯示空白，不補值。回撤高點仍用起點前的真實歷史。預設 2004 起（維持率資料最早的一天）。" aria-expanded="false" aria-label="說明：主圖範圍">ⓘ</button></div>
+    <div id="marginalert-chart" style="width:100%;height:640px;min-height:480px"></div>
+    <details class="ui-details" id="marginalert-winchart" open>
+      <summary>維持率 × 指數：可滑回歷史、看之前爆掉的版本（含爆掉點較 120 日高點的減少量）</summary>
       <div class="table-pad">
-        <div id="marginalert-st-warn" class="text-muted-sm" style="margin-bottom:8px"></div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
-          <div class="lev-field" style="min-width:200px"><label for="marginalert-st-ref">參考高點 <button type="button" class="ma-info" data-info="推估的起點（P0、M0）。預設＝最近 120 個交易日指數收盤最高那天，指數與維持率取同一天。正推（維持率→指數）與反推（指數→維持率）都用同一組起點，不混用不同日期。「最新」＝用最新收盤當起點，等於建立新情境。" aria-expanded="false" aria-label="說明：參考高點">ⓘ</button></label><select id="marginalert-st-ref" aria-label="參考高點"><option value="idxHigh">120 日指數收盤高點</option><option value="latest">最新收盤（新情境）</option><option value="custom">自訂日期…</option></select><input type="date" id="marginalert-st-refdate" aria-label="自訂參考日" style="display:none"></div>
-          <div class="lev-field" style="min-width:200px"><label for="marginalert-st-beta">Beta 情境 <button type="button" class="ma-info" data-info="Beta＝維持率相對跌幅 ÷ 指數跌幅（區間累計值）。歷史（全部波段）：過去所有 ≥10% 下跌波段的 25 分位／中位數／75 分位；融資未大幅去槓桿：只取期間融資最大跌幅不到 25% 的波段（融資戶沒大量賣股還款時，維持率對指數更敏感，Beta 通常較高，較貼近「融資還沒下降」的現況）；手動：1.30／1.47／1.70（使用者案例，非統計區間）；自訂：自己輸入三個值。Beta 是歷史經驗，不是固定規律，也不是維持率下降的百分點。" aria-expanded="false" aria-label="說明：Beta 情境">ⓘ</button></label><select id="marginalert-st-beta" aria-label="Beta 情境"><option value="hist">歷史 P25／中位／P75（全部波段）</option><option value="light">歷史：融資未大幅去槓桿的波段</option><option value="manual">手動 1.30／1.47／1.70</option><option value="custom">自訂…</option></select></div>
-          <div id="marginalert-st-custom" style="display:none;gap:8px;flex-wrap:wrap"><div class="lev-field"><label for="marginalert-st-b-low">低</label><input type="number" id="marginalert-st-b-low" min="0.1" max="5" step="0.01" value="1.30" aria-label="低 Beta" style="width:84px"></div><div class="lev-field"><label for="marginalert-st-b-base">基準</label><input type="number" id="marginalert-st-b-base" min="0.1" max="5" step="0.01" value="1.47" aria-label="基準 Beta" style="width:84px"></div><div class="lev-field"><label for="marginalert-st-b-high">高</label><input type="number" id="marginalert-st-b-high" min="0.1" max="5" step="0.01" value="1.70" aria-label="高 Beta" style="width:84px"></div></div>
-        </div>
         <h4 style="margin:4px 0 4px">維持率 × 指數（可滑回歷史，看之前爆掉的版本）</h4>
         <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px">
           <div class="lev-field"><label>視窗寬度 <button type="button" class="ma-info" data-info="視窗終點預設是最新日；寬度決定往前看 1／3／5 年。把下方滑桿往左拉就能看到更早的資料（維持率 2004-02 起、融資餘額 2001 起）。" aria-expanded="false" aria-label="說明：視窗寬度">ⓘ</button></label><div id="marginalert-st-width" style="display:flex;gap:6px"><span class="chip" data-w="1">1 年</span><span class="chip" data-w="3">3 年</span><span class="chip" data-w="5">5 年</span></div></div>
@@ -2588,6 +2584,17 @@
         <p class="text-muted-sm" id="marginalert-st-chart-note" style="margin:4px 0 8px"></p>
         <h4 style="margin:12px 0 4px">視窗內的爆掉點（單日融資 ≤ -2% / ≤ -3%）：較各自 120 日高點減少多少 <button type="button" class="ma-info" data-info="爆掉點＝單日融資餘額較前一融資日減少 ≥2%（橘）或 ≥3%（紅）。首次＝與上一個觸發相隔超過 10 個交易日；續發＝同一波後續又撞到。指數、維持率、融資餘額各用「自己的」120 日高點，三個高點的日期與數值通常不同；減少量寫 %、以及點數（指數）／百分點（維持率）／億元（融資）。" aria-expanded="false" aria-label="說明：爆掉點">ⓘ</button></h4>
         <div id="marginalert-st-hits"></div>
+      </div>
+    </details>
+    <details class="ui-details" id="marginalert-stress" open>
+      <summary>融資壓力情境推估：維持率 ↔ 加權指數（歷史敏感度，非支撐位、非底部預測）</summary>
+      <div class="table-pad">
+        <div id="marginalert-st-warn" class="text-muted-sm" style="margin-bottom:8px"></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+          <div class="lev-field" style="min-width:200px"><label for="marginalert-st-ref">參考高點 <button type="button" class="ma-info" data-info="推估的起點（P0、M0）。預設＝最近 120 個交易日指數收盤最高那天，指數與維持率取同一天。正推（維持率→指數）與反推（指數→維持率）都用同一組起點，不混用不同日期。「最新」＝用最新收盤當起點，等於建立新情境。" aria-expanded="false" aria-label="說明：參考高點">ⓘ</button></label><select id="marginalert-st-ref" aria-label="參考高點"><option value="idxHigh">120 日指數收盤高點</option><option value="latest">最新收盤（新情境）</option><option value="custom">自訂日期…</option></select><input type="date" id="marginalert-st-refdate" aria-label="自訂參考日" style="display:none"></div>
+          <div class="lev-field" style="min-width:200px"><label for="marginalert-st-beta">Beta 情境 <button type="button" class="ma-info" data-info="Beta＝維持率相對跌幅 ÷ 指數跌幅（區間累計值）。歷史（全部波段）：過去所有 ≥10% 下跌波段的 25 分位／中位數／75 分位；融資未大幅去槓桿：只取期間融資最大跌幅不到 25% 的波段（融資戶沒大量賣股還款時，維持率對指數更敏感，Beta 通常較高，較貼近「融資還沒下降」的現況）；手動：1.30／1.47／1.70（使用者案例，非統計區間）；自訂：自己輸入三個值。Beta 是歷史經驗，不是固定規律，也不是維持率下降的百分點。" aria-expanded="false" aria-label="說明：Beta 情境">ⓘ</button></label><select id="marginalert-st-beta" aria-label="Beta 情境"><option value="hist">歷史 P25／中位／P75（全部波段）</option><option value="light">歷史：融資未大幅去槓桿的波段</option><option value="manual">手動 1.30／1.47／1.70</option><option value="custom">自訂…</option></select></div>
+          <div id="marginalert-st-custom" style="display:none;gap:8px;flex-wrap:wrap"><div class="lev-field"><label for="marginalert-st-b-low">低</label><input type="number" id="marginalert-st-b-low" min="0.1" max="5" step="0.01" value="1.30" aria-label="低 Beta" style="width:84px"></div><div class="lev-field"><label for="marginalert-st-b-base">基準</label><input type="number" id="marginalert-st-b-base" min="0.1" max="5" step="0.01" value="1.47" aria-label="基準 Beta" style="width:84px"></div><div class="lev-field"><label for="marginalert-st-b-high">高</label><input type="number" id="marginalert-st-b-high" min="0.1" max="5" step="0.01" value="1.70" aria-label="高 Beta" style="width:84px"></div></div>
+        </div>
         <div id="marginalert-st-state" style="display:flex;gap:10px;flex-wrap:wrap"></div>
         <h4 style="margin:16px 0 4px">A. 維持率 → 加權指數（目標維持率反推）</h4>
         <div id="marginalert-st-targets"></div>
@@ -2595,18 +2602,16 @@
         <div id="marginalert-st-ma"></div>
         <h4 style="margin:16px 0 4px">C. 融資去槓桿觀察</h4>
         <div id="marginalert-st-delever"></div>
-        <details class="ui-details" open><summary>D. Beta 歷史與情境（為什麼不能把 1.47 當固定值）</summary><div id="marginalert-st-beta-table" class="table-pad"></div></details>
+        <details class="ui-details"><summary>D. Beta 歷史與情境（為什麼不能把 1.47 當固定值）</summary><div id="marginalert-st-beta-table" class="table-pad"></div></details>
         <details class="ui-details"><summary>E. 逐波段 Beta 表（2004 起、維持率重建值）</summary><div id="marginalert-st-history" class="table-pad"></div></details>
         <details class="ui-details"><summary>F. 回測：用「已知」Beta 預測下一波（無 look-ahead）</summary><div id="marginalert-st-backtest" class="table-pad"></div></details>
         <details class="ui-details"><summary>G. 訊號相關性：回撤 ≥15% 與維持率 -30 點有多常一起出現</summary><div id="marginalert-st-overlap" class="table-pad"></div></details>
         <details class="ui-details"><summary>資料口徑與限制</summary><div id="marginalert-st-notes" class="table-pad" style="line-height:1.7"></div></details>
       </div>
     </details>
-    <div style="padding:12px 16px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="text-muted-sm">主圖與回測範圍：</span><span id="marginalert-range-chips" style="display:flex;gap:6px;flex-wrap:wrap"><span class="chip" data-s="2020-01-01">2020 起（預設）</span><span class="chip" data-s="2015-01-01">2015 起</span><span class="chip" data-s="2008-01-02">2008 起</span><span class="chip" data-s="2004-02-11">2004 起（有維持率）</span><span class="chip" data-s="2001-01-03">2001 起（全部）</span></span><button type="button" class="ma-info" data-info="切換後，下方的圖、事件表、門檻比較全部以該起點重算（需要時間約 0.1 秒）。維持率重建資料自 2004-02-11 起，融資餘額自 2001-01-03 起；2004 以前的維持率欄位會顯示空白，不補值。回撤高點仍用起點前的真實歷史。預設 2020 起，與既有報告一致。" aria-expanded="false" aria-label="說明：主圖範圍">ⓘ</button></div>
-    <div id="marginalert-chart" style="width:100%;height:640px;min-height:480px"></div>
     <div style="padding:0 16px 24px">
-      <details class="ui-details" open><summary>警報事件與警報後表現（目前門檻／閘門）</summary><div id="marginalert-t-events" class="table-pad"></div></details>
-      <details class="ui-details" open><summary>個案：2024/7～8、2026/7～8 與壓力測試</summary>
+      <details class="ui-details"><summary>警報事件與警報後表現（目前門檻／閘門）</summary><div id="marginalert-t-events" class="table-pad"></div></details>
+      <details class="ui-details"><summary>個案：2024/7～8、2026/7～8 與壓力測試</summary>
         <div class="table-pad">
           <div class="lev-field" style="max-width:300px;margin-bottom:8px"><label for="marginalert-case-select">個案 <button type="button" class="ma-info" data-info="選擇後上方圖表會自動放大到該段；壓力測試（2020/3、2025/4）不作門檻設計依據，只用來檢查規則在極端行情是否失效。" aria-expanded="false" aria-label="說明：個案">ⓘ</button></label><select id="marginalert-case-select" aria-label="個案"><option value="A">Case A 2024/7～8</option><option value="B">Case B 2026/7～8</option><option value="S1">壓力測試 2020/3 疫情</option><option value="S2">壓力測試 2025/4 關稅戰</option></select></div>
           <div id="marginalert-t-case"></div>
