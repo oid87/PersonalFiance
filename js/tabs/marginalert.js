@@ -713,6 +713,7 @@ function syncChips() {
   val('fear-range', ui.fearThr);
   const fv = $('fear-val'); if (fv) fv.textContent = ui.fearThr;
   val('cooldown', ui.cooldown); val('start', ui.start); val('end', ui.end);
+  for (const c of $('range-chips')?.querySelectorAll('.chip') ?? []) c.classList.toggle('active', c.dataset.s === ui.start);
   const line = $('params-line');
   if (line) line.textContent = `融資≤-${ui.th}%｜閘門${ui.gate ? `≥${ui.gate}%` : '無'}｜F&G ${ui.fg ? `顯示 <${ui.fearThr}` : '隱藏'}｜${ui.lookback}日高點｜隔日${ui.entry === 'nextOpen' ? '開盤' : '收盤'}｜冷卻${ui.cooldown}日｜${ui.start}～${ui.end}`;
 }
@@ -786,6 +787,7 @@ function wire() {
   if (wired) return;
   wired = true;
   wireInfo();
+  chipPicker($('range-chips'), 's', v => { ui.start = v; rerun(false); });
   wireStress();
   wireStressChart();
   const on = (id, fn) => $(id)?.addEventListener('change', fn);
