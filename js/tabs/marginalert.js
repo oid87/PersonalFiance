@@ -510,8 +510,9 @@ function fillWaveSelect() {
   sel.innerHTML = '<option value="">（選擇波段）</option>' + waves.map(w => `<option value="${esc(w.lowDate)}">${esc(w.peakDate.slice(0, 7))}→${esc(w.lowDate.slice(0, 7))}｜指數 -${f(w.maxDd, 0)}%｜維持率 ${f(w.m0, 0)}→${f(w.m1, 0)}${w.open ? '（未結束）' : ''}</option>`).join('');
   sel.dataset.filled = String(stressH.history.length);
 }
-let stRaf = 0;
-const stRender = () => { cancelAnimationFrame(stRaf); stRaf = requestAnimationFrame(() => { try { renderStressChart(); } catch (e) { console.error('[marginalert] st chart failed', e); } }); };
+// 合併連續的滑桿事件；用 setTimeout 而不是 requestAnimationFrame：分頁在背景時 rAF 會暫停，視窗就不更新
+let stTimer = 0;
+const stRender = () => { clearTimeout(stTimer); stTimer = setTimeout(() => { try { renderStressChart(); } catch (e) { console.error('[marginalert] st chart failed', e); } }, 16); };
 function wireStressChart() {
   chipPicker($('st-width'), 'w', v => { stWin.years = Number(v); stRender(); });
   $('st-end')?.addEventListener('input', e => { const d = stDates()[Number(e.target.value)]; if (d) { stWin.endDate = d; stRender(); } });
