@@ -165,6 +165,14 @@ export const CATEGORIES = [
         "label": "美股風險觀察"
       },
       {
+        "id": "uscap",
+        "label": "美股恐慌拋售警報"
+      },
+      {
+        "id": "twchips",
+        "label": "台股籌碼"
+      },
+      {
         "id": "stressdash",
         "label": "壓力總覽"
       },
@@ -221,10 +229,6 @@ export const CATEGORIES = [
       {
         "id": "flows",
         "label": "資金脈衝"
-      },
-      {
-        "id": "twchips",
-        "label": "台股籌碼"
       },
       {
         "id": "taifex_foreign_oi",
@@ -364,6 +368,7 @@ export const CATEGORIES = [
 
 const ALIASES = {
   usrisk: ["美股去槓桿", "US risk", "CFTC", "FINRA", "科技壓力"],
+  uscap: ["US Capitulation", "恐慌", "拋售", "Put/Call", "VIX", "VXN", "止穩", "capitulation"],
   fsi: ['FSI'], nfci: ['NFCI'], cpi: ['CPI'],
   gdp_productivity_decomp: ['GDP'], tw_jp_kr_gdp: ['GDP', '台灣'],
   aaii: ['AAII'], naaim: ['NAAIM'], vixskew: ['VIX'],

@@ -1040,6 +1040,33 @@
 #tab-usrisk > header { display:block; padding:12px 0; }
 #tab-usrisk > header .section-title { font-size:18px; padding:0; border-top:0; }
 
+/* Scoped US Capitulation Alert page. */
+#tab-uscap .uscap-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--space-3,12px); margin:12px 0; }
+#tab-uscap .uscap-grid .ui-card { min-width:0; padding:var(--space-3,12px); }
+#tab-uscap .uscap-grid h4 { margin:0 0 6px; font-size:var(--text-sm,13px); color:var(--muted); font-weight:600; }
+#tab-uscap .uscap-value { font-size:1.5rem; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+#tab-uscap .uscap-hot { border-color:#ef4444; box-shadow:inset 3px 0 0 #ef4444; }
+#tab-uscap .uscap-lines { list-style:none; margin:8px 0; padding:0; line-height:1.8; font-size:var(--text-sm,13px); }
+#tab-uscap .uscap-lines li.uscap-on { font-weight:700; }
+#tab-uscap .uscap-summary { line-height:1.8; padding-left:20px; }
+#tab-uscap .uscap-controls { display:flex; flex-wrap:wrap; gap:var(--space-3,12px); margin:12px 0; align-items:flex-end; }
+#tab-uscap .uscap-control { flex:0 1 220px; min-width:0; max-width:100%; }
+#tab-uscap .uscap-control label { display:block; margin-bottom:6px; color:var(--muted); }
+#tab-uscap select { width:100%; min-height:44px; padding:6px; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px; }
+#tab-uscap .uscap-chart { width:100%; height:620px; min-height:420px; margin:12px 0; }
+#tab-uscap table { border-collapse:collapse; width:100%; font-size:var(--text-sm,13px); }
+#tab-uscap th, #tab-uscap td { padding:8px 10px; text-align:left; vertical-align:top; border-bottom:1px solid var(--border); max-width:340px; overflow-wrap:anywhere; }
+#tab-uscap .table-scroll { max-width:100%; margin:12px 0; }
+#tab-uscap .table-scroll table { min-width:860px; }
+#tab-uscap .ui-details { margin:16px 0; }
+#tab-uscap .ui-details summary { min-height:44px; display:flex; align-items:center; cursor:pointer; }
+#tab-uscap .callout-warn, #tab-uscap .note-muted { line-height:1.7; }
+@media(max-width:900px) { #tab-uscap .uscap-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:650px) { #tab-uscap .uscap-grid { grid-template-columns:1fr; } #tab-uscap .uscap-control { flex-basis:100%; } #tab-uscap .uscap-chart { height:520px; } #tab-uscap .info-pop-btn { min-width:44px; min-height:44px; } }
+@media(max-height:500px) { #tab-uscap .uscap-chart { height:380px; } }
+#tab-uscap > header { display:block; padding:12px 0; }
+#tab-uscap > header .section-title { font-size:18px; padding:0; border-top:0; }
+
 /* Shared click-to-toggle ⓘ help (js/utils/info_popover.js). */
 .info-pop-btn { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 50%; min-width: 28px; min-height: 28px; padding: 0; cursor: pointer; vertical-align: middle; }
 .info-pop-btn[aria-expanded="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
