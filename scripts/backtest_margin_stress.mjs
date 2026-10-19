@@ -22,8 +22,12 @@ export function loadData() {
   const tw = readData('TWII'), mg = readData('taiwan_margin_total');
   const mm = readData('taiwan_margin_ratio_mm'), rc = readData('taiwan_margin_ratio');
   const merged = mergeRatio(mm.data, rc.data);
+  // 2001-2007 融資餘額補遺檔與主檔以日期合併（主檔優先）
+  const early = fs.existsSync(path.join(ROOT, 'data', 'taiwan_margin_total_early.json')) ? readData('taiwan_margin_total_early').data : [];
+  const have = new Set(mg.data.map(r => r.date));
+  const margin = [...early.filter(r => !have.has(r.date)), ...mg.data].sort((a, b) => (a.date < b.date ? -1 : 1));
   return {
-    data: { twii: tw.data, margin: mg.data, ratio: merged.rows },
+    data: { twii: tw.data, margin, ratio: merged.rows },
     meta: { twii: tw.updated, margin: mg.updated, ratio: [mm.updated, rc.updated], overlap: merged.overlap, maxAbsDiff: merged.maxAbsDiff, note: rc.note },
   };
 }
@@ -43,7 +47,7 @@ export function buildReport(data, meta) {
 
   const c = h.coverage;
   L.push('\n## 2. 資料覆蓋');
-  L.push(`\n指數波段 ${c.waves} 段（1997 起）；有維持率者 ${c.withRatio} 段（重建資料自 2004-02-11，更早不補造）；可用於統計的獨立、已結束、回撤≥10% 波段 **${c.usable} 段**（${c.firstUsable}～${c.lastUsable}）。融資餘額自 2008-01-02，故 2004～2007 波段只有 Beta 沒有融資欄。使用者要求的 2018／2020／2022／2025／2026 全部在內。`);
+  L.push(`\n指數波段 ${c.waves} 段（1997 起）；有維持率者 ${c.withRatio} 段（重建資料自 2004-02-11，更早不補造）；可用於統計的獨立、已結束、回撤≥10% 波段 **${c.usable} 段**（${c.firstUsable}～${c.lastUsable}）。融資餘額自 2001-01-03（2001–2007 為 FinMind 補遺檔，與 TWSE 彙總 964 日逐日核對差 0）。使用者要求的 2018／2020／2022／2025／2026 全部在內。`);
 
   L.push('\n## 3. 逐波段 Beta');
   L.push(table(['波段（高點→低點）', '指數回撤', '維持率 高→低點', '相對跌幅', '下降點數', 'Beta', '融資餘額變化', '期間融資最大跌幅', '抵押品市值變化(推算)', '期間最低維持率'],
@@ -104,7 +108,7 @@ export function buildReport(data, meta) {
   }
 
   L.push('\n## 7. 訊號相關性（規則 A 回撤≥15%、B 維持率自 120 日高點降≥30 點；只研究，不改規則）');
-  const ds = buildDataset(data, { start: '2008-01-02', end: lastDate, lookback: 120 });
+  const ds = buildDataset(data, { start: '2004-02-11', end: lastDate, lookback: 120 });
   const o = signalOverlap(ds);
   L.push(table(['有維持率的交易日', 'A', 'B', 'A∧B', 'A 不含 B', 'B 不含 A', 'P(B∣A)', 'P(A∣B)', 'Jaccard'], [[o.counts.days, o.counts.A, o.counts.B, o.counts.both, o.counts.Aonly, o.counts.Bonly, `${f(o.pBgivenA, 0)}%`, `${f(o.pAgivenB, 0)}%`, `${f(o.jaccard, 0)}%`]]));
   L.push(`\nA∧B 事件（冷卻 20 日）${o.events.length} 件，其中融資沒有明顯下降（較 120 日高點降幅 <10%）${o.eventsNoClearMarginDrop} 件：`);

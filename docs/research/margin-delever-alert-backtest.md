@@ -8,7 +8,7 @@
 | 項目 | 內容 |
 | --- | --- |
 | TAIEX | data/TWII.json（yfinance ^TWII 原始收盤，不含股息）；1997-07-02～2026-10-16；原 7178 列、有效 7178 列；updated 2026-10-17 |
-| 上市融資餘額（億元） | FinMind TaiwanStockTotalMarginPurchaseShortSale (大盤融資餘額/融券)；2008-01-02～2026-10-16；原 4614 列、有效 4614 列；updated 2026-10-16 |
+| 上市融資餘額（億元） | FinMind TaiwanStockTotalMarginPurchaseShortSale (大盤融資餘額/融券)；2001-01-03～2026-10-16；原 6346 列、有效 6346 列；updated 2026-10-16 |
 | 融資維持率（重建） | TWSE MI_MARGN×MI_INDEX 逐檔重建（上市 only，含 ETF，非官方公布、非券商整戶口徑）；2004-02-11～2026-10-16；兩個重建檔重疊 881 日，最大差 0 |
 | 融資餘額交叉驗證 | 與兩個維持率檔內的 margin_yi（TWSE MI_MARGN 彙總）逐日比對 5475 筆，差異 >1 億者 0 筆 |
 | 成交量／金額 | data/TWII.json 的 volume 欄為 0（yfinance 不提供），**無可靠成交量資料，本研究未使用**；資料缺口，不補造 |

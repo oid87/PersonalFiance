@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 91,
+  "source_count": 92,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -1364,6 +1364,36 @@
             "n_etf",
             "ratio_all",
             "ratio_exetf"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_taiwan_margin_early.py",
+      "outputs": [
+        "data/taiwan_margin_total_early.json"
+      ],
+      "frequency": "manual",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [],
+      "status": "manual_research",
+      "output_contracts": {
+        "data/taiwan_margin_total_early.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "margin_money",
+            "margin_lots",
+            "short_lots"
           ]
         }
       }

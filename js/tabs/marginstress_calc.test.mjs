@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
-  sensitivity, projectIndex, projectMargin, findIndexWaves, buildBetaHistory, betaStats, betaAtDepth, walkForward, betaByRegime, betaDepthPaired, analyzeHistory, scenarioView,
+  sensitivity, projectIndex, projectMargin, findIndexWaves, buildBetaHistory, betaStats, betaAtDepth, walkForward, betaByRegime, betaDepthPaired, buildChartSeries, windowSlice, endForWave, analyzeHistory, scenarioView,
   scenarioBetas, pickReference, targetTable, maTable, sma, deleverObservation, signalOverlap, runStress, MANUAL_BETAS, KEY_DROP_PTS,
 } from './marginstress_calc.mjs';
 import { buildDataset, findWaves, mergeRatio } from './marginalert_calc.mjs';
@@ -352,4 +352,84 @@ test('同批波段的深度 Beta：只比較達最大深度的波段，缺任一
   near(dp.medians[0], 1.0, 1e-9);                    // 合成資料 Beta 與深度無關
   assert.equal(dp.declined, 0);
   assert.equal(betaDepthPaired(d, h, [5, 18]).n, 1); // 只有 20% 那波達到 18%
+});
+
+// ── 圖表序列與視窗 ───────────────────────────────────────────────────
+test('圖表序列：指數／維持率／融資各用自己的 120 日高點，日期與數值可以不同', () => {
+  const dates = Array.from({ length: 8 }, (_, i) => `2024-01-0${i + 1}`);
+  const px = [100, 110, 105, 100, 104, 99, 98, 97];            // 指數高點在 01-02（110）
+  const rr = [180, 185, 190, 186, 170, 168, 160, 150];          // 維持率高點在 01-03（190）
+  const mm = [1000, 1010, 1040, 1050, 1000, 970, 940, 900];     // 融資高點在 01-04（1050）
+  const rows = buildChartSeries({
+    twii: dates.map((date, i) => ({ date, close: px[i] })), ratio: dates.map((date, i) => ({ date, ratio: rr[i] })),
+    margin: dates.map((date, i) => ({ date, margin_money: mm[i] })),
+  }, { lookback: 120, cooldown: 3 });
+  const last = rows.at(-1);
+  assert.equal(last.idx.highDate, '2024-01-02');
+  assert.equal(last.rt.highDate, '2024-01-03');
+  assert.equal(last.mg.highDate, '2024-01-04');
+  near(last.idx.dropPct, (97 / 110 - 1) * 100, 1e-9);
+  near(last.idx.dropAbs, 97 - 110, 1e-9);                       // 點數
+  near(last.rt.dropAbs, 150 - 190, 1e-9);                        // 百分點
+  near(last.rt.dropPct, (150 / 190 - 1) * 100, 1e-9);            // 相對 %
+  near(last.mg.dropAbs, 900 - 1050, 1e-9);                       // 億
+  near(last.mg.dropPct, (900 / 1050 - 1) * 100, 1e-9);
+});
+
+test('爆掉點：單日融資 ≤-2%／≤-3%；首次 vs 同波續發（冷卻）；缺融資的日子不當爆掉點', () => {
+  const dates = Array.from({ length: 10 }, (_, i) => `2024-02-${String(i + 1).padStart(2, '0')}`);
+  const mm = [1000, 1000, 970, 940, 935, 900, 899, 899, 899, 899];   // -3.0%(d3) -3.1%(d4) -0.5% -3.7%(d6)
+  const rows = buildChartSeries({
+    twii: dates.map((date, i) => ({ date, close: 100 - i })), ratio: dates.map((date, i) => ({ date, ratio: 180 - i })),
+    margin: dates.map((date, i) => ({ date, margin_money: i === 8 ? null : mm[i] })).filter(r => r.margin_money !== null),
+  }, { cooldown: 2 });
+  const byDate = Object.fromEntries(rows.map(r => [r.date, r]));
+  near(byDate['2024-02-03'].m1, -3, 1e-9);
+  assert.equal(byDate['2024-02-03'].hit3, true);
+  assert.equal(byDate['2024-02-03'].first3, true);
+  assert.equal(byDate['2024-02-04'].hit3, true);
+  assert.equal(byDate['2024-02-04'].first3, false);              // 續發
+  assert.equal(byDate['2024-02-06'].hit3, true);
+  assert.equal(byDate['2024-02-06'].first3, false);              // 距上次觸發 2 日 ≤ 冷卻 2 → 仍屬同一波
+  assert.equal(byDate['2024-02-05'].hit2, false);
+  assert.equal(byDate['2024-02-09'].margin, null);               // 融資缺值：不補、不當爆掉點
+  assert.equal(byDate['2024-02-09'].hit2, false);
+  assert.equal(byDate['2024-02-09'].mg, null);
+});
+
+test('視窗：1/3/5 年、終點可往回拉；起點早於資料就從資料起點；閏日', () => {
+  const dates = [];
+  for (let y = 2004; y <= 2026; y++) for (const md of ['03-01', '09-01']) dates.push(`${y}-${md}`);
+  const w1 = windowSlice(dates, null, 1);
+  assert.equal(w1.endDate, '2026-09-01');
+  assert.equal(w1.startDate, '2025-09-01');
+  const w5 = windowSlice(dates, '2020-06-15', 5);                 // 終點取不晚於的最近日
+  assert.equal(w5.endDate, '2020-03-01');
+  assert.equal(w5.startDate, '2015-03-01');
+  const early = windowSlice(dates, '2005-03-01', 5);
+  assert.equal(early.clipped, true);
+  assert.equal(early.startDate, dates[0]);
+  assert.equal(windowSlice(dates, '1990-01-01', 3), null);
+  assert.equal(windowSlice([], null, 1), null);
+  assert.equal(windowSlice(dates, null, 0), null);
+  const leap = windowSlice(['2023-02-28', '2024-02-29'], null, 1);
+  assert.equal(leap.startDate, '2023-02-28');                     // 2024-02-29 往前一年落在 2023-02-28
+  const e = endForWave(dates, { lowDate: '2008-09-01' }, 1);
+  assert.ok(e > '2008-09-01' && e <= '2009-09-01');
+  assert.equal(endForWave(dates, { lowDate: '2026-03-01' }, 5), dates.at(-1));
+});
+
+test('真實資料：2026/7 的爆掉點寫得出自 120 日高點的減少 %／額度／點數（三個高點日期各自獨立）', () => {
+  const J = f => JSON.parse(fs.readFileSync(new URL(`../../data/${f}.json`, import.meta.url), 'utf8')).data;
+  const margin = [...J('taiwan_margin_total_early'), ...J('taiwan_margin_total')];
+  const rows = buildChartSeries({ twii: J('TWII'), margin, ratio: mergeRatio(J('taiwan_margin_ratio_mm'), J('taiwan_margin_ratio')).rows });
+  const d = rows.find(r => r.date === '2026-07-29');
+  assert.ok(d.hit3 && d.hit2);
+  assert.equal(d.idx.highDate, '2026-06-22');
+  assert.equal(d.mg.highDate, '2026-07-06');                      // 融資餘額高點晚於指數高點
+  near(d.idx.high, 47741.5117, 1e-3);
+  assert.ok(d.idx.dropPct < -10 && d.idx.dropAbs < -4000);
+  assert.ok(d.mg.dropPct < -10 && d.mg.dropAbs < -500);
+  assert.equal(rows[0].date >= '2004-02-11', true);
+  assert.ok(rows.find(r => r.date === '2005-06-01').margin > 0, '2004-2007 的融資餘額來自 2001 起的補遺檔');
 });

@@ -16,8 +16,13 @@ export function loadRaw() {
   const tw = readData('TWII'), mg = readData('taiwan_margin_total');
   const mm = readData('taiwan_margin_ratio_mm'), rc = readData('taiwan_margin_ratio');
   const merged = mergeRatio(mm.data, rc.data);
+  // 2001-2007 融資餘額補遺檔與主檔以日期合併（主檔優先）；預設回測區間 2020 起，不受影響
+  const earlyPath = path.join(ROOT, 'data', 'taiwan_margin_total_early.json');
+  const early = fs.existsSync(earlyPath) ? readData('taiwan_margin_total_early').data : [];
+  const have = new Set(mg.data.map(r => r.date));
+  const margin = [...early.filter(r => !have.has(r.date)), ...mg.data].sort((a, b) => (a.date < b.date ? -1 : 1));
   return {
-    raw: { twii: tw.data, margin: mg.data, ratio: merged.rows, fearGreed: readData('fear_greed').data },
+    raw: { twii: tw.data, margin, ratio: merged.rows, fearGreed: readData('fear_greed').data },
     meta: {
       twii: { updated: tw.updated, source: 'data/TWII.json（yfinance ^TWII 原始收盤，不含股息）' },
       margin: { updated: mg.updated, source: mg.source },
