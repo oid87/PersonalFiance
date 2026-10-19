@@ -2355,6 +2355,54 @@
     <details class="ui-details"><summary>方法與可再現性</summary><p>回撤採120交易日高點。指標與比值不跨日補值；門檻只用過去資料。事件冷卻固定10交易日，另列按研究視窗排除重疊的樣本；兩者均不保證統計獨立。最早下一交易日開盤，結果是原始價格報酬，不含股息與成本。完整視窗中任何 OHLC 異常或缺價皆 unavailable，不跳過交易日。未來結果只作事後評估，不參與警報。完整資料快照與參數可由 repository 的研究 CLI 重現。</p><p><a href="docs/research/us-risk-product-design.md">產品設計／六題分析與來源調查</a> · <a href="docs/research/us-risk-requirements.md">需求、ⓘ逐字文案與資料契約</a></p></details>
   </section>
 
+  <section id="tab-uscap" class="tab-section" hidden>
+    <header><h2 class="section-title">美股恐慌性拋售警報（US Capitulation Alert）</h2>
+      <p class="section-subtitle">恐慌偵測 · 去槓桿背景 · 止穩確認 — 三個階段分開看，不合成單一分數</p>
+      <p class="callout-warn">這是描述性研究與風險警示，不是買入、加碼或 2X/3X 進場訊號；不修改任何正式交易條件。Stage A 成立只代表正在恐慌，不代表底部；2022 這類持續熊市的測試顯示，價格型止穩條件也會被熊市反彈騙過。</p>
+      <p class="callout-warn">NYSE／Nasdaq 90% Down／Up Volume 沒有合格資料來源，一律顯示 unavailable，不用 SPY/QQQ 成交量代替；Model C、D 因此無法評估。</p>
+      <p id="uscap-asof" class="status"></p>
+    </header>
+    <div id="uscap-controls" class="uscap-controls">
+      <div class="uscap-control"><label for="uscap-asset">標的</label><select id="uscap-asset" aria-label="研究標的"><option value="QQQ" selected>QQQ</option><option value="SPY">SPY</option></select></div>
+    </div>
+    <p id="uscap-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <h3>A. 市場恐慌（Market Panic）</h3>
+    <div id="uscap-market" class="uscap-grid"></div>
+    <h3>B. 部位與信用（Positioning &amp; Credit）</h3>
+    <p class="note-muted">CFTC 週資料只在公布日之後使用；FINRA 月資料假設月底＋25 天公布且不插值；HYG 是價格代理。它們是背景，不是即時恐慌訊號，也不進模型。</p>
+    <div id="uscap-position" class="uscap-grid"></div>
+    <h3>C. 恐慌狀態（Capitulation Status）</h3>
+    <div id="uscap-stages" class="uscap-grid uscap-grid--stages"></div>
+    <h3>D. 圖表：即時警報與事後標註</h3>
+    <div id="uscap-range" class="uscap-controls"><span class="chip active" data-uscap-range="all">2000 起</span><span class="chip" data-uscap-range="2008">2008 起</span><span class="chip" data-uscap-range="2020">2020 起</span><span class="chip" data-uscap-range="2022">2022 起</span><span class="chip" data-uscap-range="1y">近 1 年</span></div>
+    <p class="note-muted" data-help="hindsight">紅色三角＝Stage A 即時警報日；橘色空心三角＝敏感層（VXN≥30，非主設定）；黃色菱形＝同日也構成 Model B；綠色圓點＝Stage C 確認日；灰色空心方塊＝<b>事後才知道</b>的波段低點（僅事後對照，當時無法即時偵測）。</p>
+    <div id="uscap-chart" class="uscap-chart" role="img" aria-label="價格、VIX/VXN 與 Put/Call 以及即時警報與事後標註"></div>
+    <h3>E. 歷史比較（Historical Comparison）</h3>
+    <div class="uscap-controls"><div class="uscap-control"><label for="uscap-period">區間</label><select id="uscap-period" aria-label="歷史區間"></select></div></div>
+    <p id="uscap-history-note" class="note-muted"></p>
+    <ul id="uscap-history-summary" class="uscap-summary"></ul>
+    <div id="uscap-history" class="table-scroll" tabindex="0" aria-label="歷史 Stage A 事件表"></div>
+    <h3 data-help="cooldown">模型比較（2000 起全樣本）</h3>
+    <p id="uscap-models-note" class="note-muted"></p>
+    <div id="uscap-models" class="table-scroll" tabindex="0" aria-label="模型比較表"></div>
+    <h3 data-help="mae">各市場環境的穩定性</h3>
+    <p class="note-muted">事件數很少，僅為描述。所有參數事前固定、沒有對任何區間調整；2020 年起的區間在先前的 usrisk 研究已被看過，2000–2019 是這次才第一次使用。</p>
+    <div id="uscap-periods" class="table-scroll" tabindex="0" aria-label="各區間事件結果"></div>
+    <h3>2022 壓力測試：各條件每月符合日數</h3>
+    <div id="uscap-stress" class="table-scroll" tabindex="0" aria-label="2022 每月符合條件日數"></div>
+    <details class="ui-details" id="uscap-sensitivity-details"><summary data-help="sensitivity">門檻敏感度（探索，不是驗證；展開才計算）</summary><div id="uscap-sensitivity" class="table-scroll" tabindex="0" aria-label="門檻敏感度表"></div></details>
+    <details class="ui-details"><summary>資料來源、定義與限制</summary>
+      <ul class="uscap-summary">
+        <li>價格：SPY、QQQ 日線（2000 起，價格報酬，不含股息與成本）。VIX 2000 起、VXN 2001 起；VIX9D／VIX3M 為現貨指數，不是期貨期限結構。</li>
+        <li data-help="pcr">Equity Put/Call 成交量比 2006-11 起；2019-10-05 前後口徑不同，百分位只用同口徑過去資料。Put 成交量不等於新增空單。</li>
+        <li data-help="breadth">SPXA50R／NDXA50R 2019 年底起、現任成分股回填，只顯示不回測；不得當成完整歷史市場廣度。</li>
+        <li>CFTC TFF 槓桿基金（2019 起），週二 as-of、週五公布；槓桿基金空單含避險與套利。FINRA Margin Debt 為月資料、第三方轉載、公布日為估計。HY OAS 只有約 3 年。</li>
+        <li>「Short Volume ≠ Short Interest」「Put Volume ≠ 新增空單」「COT Short ≠ 全部方向性看空」「90% Down Volume ≠ 融資斷頭」「FINRA Margin Debt ≠ 每日融資餘額」。</li>
+        <li>回測定義、固定參數、2022 全部觸發日期與 Python 獨立複核見 docs/research/us-capitulation-alert.md 與 us-capitulation-alert-backtest.md。</li>
+      </ul>
+    </details>
+  </section>
+
   <section id="tab-stressdash" class="tab-section" hidden>
     <div class="controls controls--wrap">
       <div class="picker-row" id="stressdash-ticker-toggle">
