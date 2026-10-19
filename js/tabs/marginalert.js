@@ -9,8 +9,9 @@ import { requestJSON } from '../utils/data.js';
 import { tooltipPosition } from '../utils/tooltip.js';
 import { preserveChartState } from '../utils/chartLifecycle.js';
 import {
-  DEFAULTS, CASES, runFullBacktest, mergeRatio, singleDayFlags, evaluateFlags, GATES, median, fearAnalysis, clampFear,
+  DEFAULTS, CASES, runFullBacktest, mergeRatio, singleDayFlags, evaluateFlags, GATES, median, fearAnalysis, clampFear, buildDataset,
 } from './marginalert_calc.mjs';
+import { analyzeHistory, scenarioView, signalOverlap, MANUAL_BETAS, KEY_DROP_PTS } from './marginstress_calc.mjs';
 
 const TAB_ID = 'marginalert';
 const $ = id => document.getElementById(`${TAB_ID}-${id}`);
@@ -22,6 +23,9 @@ let sel = null;        // 目前選擇門檻×閘門的事件評估
 let fear = null;       // 恐懼貪婪 × 目前警報 的對照（無 F&G 資料時為 null）
 let ui = { fg: true, fearThr: 15, th: 3, gate: 0, caseId: 'A', lookback: 120, entry: 'nextOpen', cooldown: 10, minIdxDrop: 1, start: DEFAULTS.start, end: null };
 let wired = false;
+let stressH = null;    // analyzeHistory 快取（與參考日、Beta 情境無關）
+let stressOv = null;   // signalOverlap 快取
+let stressUi = { ref: 'idxHigh', refDate: '', beta: 'hist', custom: { low: MANUAL_BETAS.low, base: MANUAL_BETAS.base, high: MANUAL_BETAS.high } };
 
 // ── 格式化 ───────────────────────────────────────────────────────────
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
@@ -222,6 +226,197 @@ function ratioCard(ds) {
   return card(ratioDelta(d.ratio, d.r4), `四週內高點 ${f(d.r4.high, 1)}（${esc(d.r4.date)}）→ 現在 ${f(d.ratio, 1)}（${esc(d.date)}）；括號＝較高點變化的點數`);
 }
 
+// ── 融資壓力情境推估（歷史敏感度）────────────────────────────────────
+// 引擎：js/tabs/marginstress_calc.mjs。只讀既有資料、不改任何警報規則；任何一步失敗只讓此區塊顯示錯誤，不影響上方回測與圖表。
+const pct = (x, d = 1) => (isNum(x) ? `${sg(x, d)}%` : '—');
+const stLabel = { 'target-not-below': '目標不低於參考維持率，不需下跌', 'out-of-range': '超出合理範圍（需跌幅≥100%）', 'bad-beta': 'Beta 無效', invalid: '資料缺漏', 'not-below': '均線高於參考點，不推估' };
+const stCard = (k, v, sub = '') => `<div class="lev-card" style="min-width:150px"><div class="lc-sub">${esc(k)}</div><div class="lc-val">${v}</div><div class="lc-sub">${sub}</div></div>`;
+
+function stressData() { return { twii: raw.twii, margin: raw.margin, ratio: raw.ratio }; }
+function stressBetaInput() {
+  if (stressUi.beta === 'manual') return { ...MANUAL_BETAS };
+  if (stressUi.beta === 'custom') return { ...stressUi.custom };
+  return null;
+}
+function stressRefMode() {
+  if (stressUi.ref === 'custom') return /^\d{4}-\d{2}-\d{2}$/.test(stressUi.refDate) ? stressUi.refDate : 'idxHigh';
+  return stressUi.ref;
+}
+function betaSourceText(b) {
+  if (b.source === 'historical') return `歷史 ${b.n} 個 ≥10% 下跌波段（同一高點只留最深一段）的 P25／中位數／P75`;
+  if (b.source === 'historical-light') return `${b.note}，取 P25／中位數／P75；融資還沒明顯下降時 Beta 通常較高`;
+  if (b.source === 'manual') return '手動設定的情境參數，非統計信賴區間（歷史樣本不足或你選了手動）';
+  if (b.source === 'user') return '自訂 Beta，未經回測驗證';
+  return b.note || '';
+}
+
+function stateCards(v, h) {
+  const r = v.ref, d = v.delever, z = v.realized;
+  const nowDelta = isNum(r.latestM) && isNum(r.m0) ? r.latestM - r.m0 : null;
+  const nowPct = isNum(nowDelta) ? (r.latestM / r.m0 - 1) * 100 : null;
+  return [
+    stCard('加權指數（現在）', f(r.latestP, 0), esc(r.latestDate)),
+    stCard('融資維持率（重建，現在）', `${f(r.latestM, 2)}%`, `${esc(r.latestDate)}｜較參考高點 ${sg(nowDelta, 1)} 點（${pct(nowPct)}）`),
+    stCard('參考高點', `${f(r.p0, 0)}`, `${esc(r.date)}｜維持率 ${f(r.m0, 2)}%`),
+    stCard('融資餘額（億）', f(d?.margin, 0), d ? `${esc(d.date)}｜單日 ${pct(d.d1?.pct, 2)}（${sg(d.d1?.amt, 0)} 億）` : '—'),
+    stCard('5 日／10 日融資變化', `${pct(d?.d5?.pct, 2)} ／ ${pct(d?.d10?.pct, 2)}`, `${sg(d?.d5?.amt, 0)} ／ ${sg(d?.d10?.amt, 0)} 億`),
+    stCard('參考日→現在 實際倍數', z?.ok ? f(z.beta, 2) : '—', z?.ok ? `指數 ${pct(-z.indexDecline * 100)}、維持率 ${pct(-z.marginDecline * 100)}（相對）` : '指數尚未低於參考高點'),
+  ].join('');
+}
+
+function targetsTable(v) {
+  const t = v.targets;
+  if (!t) return '<p>無維持率資料，無法推估。</p>';
+  const r = v.ref;
+  const rows = t.map(x => {
+    if (x.status !== 'ok') return [`<b>${esc(x.label)}</b>`, esc(stLabel[x.status] ?? x.status), '', '', '', ''];
+    return [`<b>${esc(x.label)}</b>`, `<b>${f(x.projected, 0)}</b>`, `${f(x.rangeLow, 0)} ～ ${f(x.rangeHigh, 0)}`,
+      pct(x.fromRefPct), `${sg(x.fromNowPts, 0)}（${pct(x.fromNowPct)}）`, x.key === 'drop30' ? `${f(r.m0 - KEY_DROP_PTS, 1)}%` : ''];
+  });
+  const b = v.betas;
+  return `<p class="text-muted-sm">Beta：低 ${f(b.low, 2)}／基準 ${f(b.base, 2)}／高 ${f(b.high, 2)}（${esc(betaSourceText(b))}）。起點 ${esc(r.date)} 收盤 ${f(r.p0, 0)}、維持率 ${f(r.m0, 2)}%。<b>「自參考高點回撤」與「自目前再跌」是兩個不同的量。</b></p>` +
+    tbl(['目標維持率', '推估加權指數（基準 Beta）', `指數區間（Beta 高→低）`, '自參考高點回撤', '自目前（' + r.latestDate + '）再下跌 點數（%）', '備註（對應維持率）'], rows) +
+    `<p class="text-muted-sm">這是「歷史敏感度情境推估」，不是支撐位、底部或預測低點。150% 不是固定的市場底部；130% 是個別信用帳戶的追繳門檻，全市場維持率接近 130% 不代表全面斷頭。</p>`;
+}
+
+function maTableHtml(v) {
+  const m = v.ma;
+  if (!m) return '<p>無維持率資料，無法推估。</p>';
+  const rows = m.rows.map(x => [`<b>${x.period}MA</b>`, f(x.ma, 0), x.belowMa ? '目前已在均線下' : pct(x.fromNowPct),
+    x.status === 'ok' ? `<b>${f(x.base, 1)}%</b>` : esc(stLabel[x.status] ?? x.status), x.status === 'ok' ? `${f(x.rangeLow, 1)}% ～ ${f(x.rangeHigh, 1)}%` : '']);
+  return `<p class="text-muted-sm">均線＝加權指數收盤的 N 個交易日簡單平均，以最新日 ${esc(m.rows[0]?.asOf ?? v.ref.latestDate)} 的固定值試算（未來均線會隨時間移動）；維持率由參考高點（${esc(v.ref.date)}）按 Beta 推估，不是從現在的維持率另算。${m.skipped.length ? `資料不足、略過：${m.skipped.join('、')}MA。` : ''}供週期觀察，不產生買賣指令。</p>` +
+    tbl(['均線', '均線點位', '距目前', '推估維持率（基準）', 'Beta 情境範圍（高 Beta → 低 Beta）'], rows);
+}
+
+function deleverHtml(v) {
+  const d = v.delever, r = v.ref;
+  if (!d?.ok) return '<p>無融資餘額資料。</p>';
+  const cell = c => (c ? `${pct(c.pct, 2)}（${sg(c.amt, 0)} 億）` : '—');
+  const t = tbl(['融資餘額（億）', '單日', '5 日', '10 日', `自參考日 ${r.date}`, '自參考日後的高點→現在'],
+    [[`<b>${f(d.margin, 0)}</b>（${esc(d.date)}）`, cell(d.d1), cell(d.d5), cell(d.d10), cell(d.sinceRef), d.peakDrop ? `${pct(d.peakDrop.pct, 2)}（高點 ${f(d.peakDrop.peak, 0)}，${esc(d.peakDrop.peakDate)}）` : '—']]);
+  const msg = d.flag === 'ratio-down-margin-not-down'
+    ? `<p><b>維持率自參考高點下降 ${f(-d.ratioPts, 1)} 點，但同期融資餘額 ${pct(d.sinceRef?.pct, 2)}（沒有減少）。</b>這代表目前維持率下降主要來自股價下跌，融資戶整體尚未明顯降槓桿；但不能據此認定「還沒殺完」——融資部位組成、新增融資與主動還款都會影響餘額；反過來，餘額下降也不等於斷頭。</p>`
+    : `<p class="text-muted-sm">${isNum(d.ratioPts) ? `維持率自參考高點 ${sg(d.ratioPts, 1)} 點；` : ''}融資餘額自參考日 ${pct(d.sinceRef?.pct, 2)}。融資下降＝去槓桿強度的描述，不等於斷頭；股價下跌造成的維持率下降與融資戶實際減碼要分開看。</p>`;
+  return t + msg + `<p class="text-muted-sm">原有警報（單日融資 ≤ -3%＋回撤閘門、舊 2/3 規則）不受此區塊影響；上方圖表與下方事件表仍是警報判斷。</p>`;
+}
+
+function betaTableHtml(h) {
+  const s = h.stats, b = h.scenario, rg = h.betaRegime;
+  const last = h.usable.at(-1);
+  const rows = [
+    ['歷史中位數', f(s.median, 2)], ['P25 ～ P75', `${f(s.p25, 2)} ～ ${f(s.p75, 2)}`], ['最小 ～ 最大', `${f(s.min, 2)} ～ ${f(s.max, 2)}`],
+    ['平均／變異係數', `${f(s.mean, 2)} ／ ${f(s.cv, 2)}`], ['最近一波', last ? `${f(last.beta, 2)}（${esc(last.peakDate)}→${esc(last.lowDate)}）` : '—'],
+    ...(rg.light.n ? [[`融資未大幅去槓桿的波段（期間融資最大跌幅 > ${rg.heavyAt}%）`, `中位 ${f(rg.light.median, 2)}｜${f(rg.light.min, 2)} ～ ${f(rg.light.max, 2)}｜n=${rg.light.n}`]] : []),
+    ...(rg.heavy.n ? [[`融資大幅去槓桿的波段（≤ ${rg.heavyAt}%）`, `中位 ${f(rg.heavy.median, 2)}｜${f(rg.heavy.min, 2)} ～ ${f(rg.heavy.max, 2)}｜n=${rg.heavy.n}`]] : []),
+    ['情境用的低／基準／高', `${f(b.low, 2)} ／ ${f(b.base, 2)} ／ ${f(b.high, 2)}（${esc(betaSourceText(b))}）`],
+  ];
+  const dep = tbl(['指數回撤到', '波段數', 'Beta 中位數', '最小', '最大'], h.depth.map(d => [`≥${d.depth}%`, d.n, f(d.median, 2), f(d.min, 2), f(d.max, 2)]));
+  const dm = h.depth.filter(d => isNum(d.median));
+  const trend = dm.length >= 2 ? (dm.at(-1).median < dm[0].median - 0.05
+    ? `回撤越深，Beta 中位數反而越低（${f(dm[0].median, 2)}→${f(dm.at(-1).median, 2)}）：深度修正時維持率相對跌幅並不隨指數加速，多半因為融資戶減碼、維持率被拉回。用固定 Beta 去推深的目標（例如 150%、130%）會高估維持率的跌法，推出的指數位置偏高。`
+    : '不同回撤深度的 Beta 沒有明確單調關係。') : '';
+  const dp = h.depthPaired;
+  const paired = dp && dp.n >= 3 ? `同一批 ${dp.n} 個回撤達 ${dp.depths.at(-1)}% 的波段，Beta 中位數在 ${dp.depths.map((d, i) => `${d}%→${f(dp.medians[i], 2)}`).join('、')}，${dp.declined}/${dp.n} 波從 ${dp.depths[0]}% 到 ${dp.depths.at(-1)}% 變低（排除組成效應後方向相同）。` : '';
+  const high = isNum(last?.beta) && isNum(s.max) && last.beta >= s.max - 0.05;
+  return `<p class="text-muted-sm">Beta＝（M0-M1）/M0 ÷ （P0-P1）/P0，高點日→低點日的區間累計值，不是迴歸斜率，也不是維持率下降的點數。</p>` +
+    tbl(['統計', '值'], rows) +
+    (high ? `<p><b>2026 年這一波（${f(last.beta, 2)}）已是歷史最高的一端，不應當成固定值。</b>歷史基準是 ${f(s.median, 2)}；若要保守看待，把它當「高敏感度」情境而不是基準。</p>` : '') +
+    `<h4>不同回撤深度的 Beta</h4>${dep}<p class="text-muted-sm">${esc(trend)}${esc(paired)}</p>`;
+}
+
+function historyHtml(h) {
+  const rows = h.history.filter(w => w.independent).map(w => {
+    if (!w.ok) return [`${esc(w.peakDate)}→${esc(w.lowDate)}`, neg(w.maxDd), '—', '—', '—', '—', '—', '—', '—', `維持率缺值：${esc(w.reason)}（2004-02 以前無重建資料，不補值）`];
+    const burn = w.marginMaxBurn;
+    return [`${esc(w.peakDate)}→${esc(w.lowDate)}${w.open ? '（未結束）' : ''}`, neg(w.maxDd), `${f(w.m0, 1)} → ${f(w.m1, 1)}`, pct(-w.marginDecline * 100), `-${f(w.ptsDrop, 1)}`, `<b>${f(w.beta, 2)}</b>`,
+      isNum(w.marginChange) ? pct(w.marginChange) : '無融資資料', burn ? pct(burn.pct) : '—', isNum(w.collateralChange) ? pct(w.collateralChange, 0) : '—', `最低 ${f(w.ratioMin, 1)}（${esc(w.ratioMinDate)}）`];
+  });
+  const c = h.coverage;
+  return `<p class="text-muted-sm">覆蓋：指數波段 ${c.waves} 段（回撤≥10% 進入、<5% 結束；同一高點的多段只算最深一段），其中有維持率者 ${c.withRatio} 段，可用於統計 ${c.usable} 段（${esc(c.firstUsable ?? '—')}～${esc(c.lastUsable ?? '—')}）。維持率重建資料自 2004-02-11，更早波段不補造。融資餘額自 2008-01-02。</p>` +
+    tbl(['波段（高點→低點）', '指數回撤', '維持率 起→低點', '維持率相對跌幅', '下降點數', 'Beta', '融資餘額變化（高→低）', '期間融資最大跌幅', '抵押品市值變化（推算，含賣股還款）', '期間最低維持率'], rows) +
+    `<p class="text-muted-sm">「期間融資最大跌幅」＝融資餘額自身的峰谷，不等於兩端日期差。抵押品市值由 維持率＝抵押品÷融資餘額 推算，包含融資戶賣股還款造成的減少，不是單純股價跌幅。</p>`;
+}
+
+function backtestHtml(h) {
+  const wf = h.walkForward.filter(r => !r.skipped);
+  if (!wf.length) return '<p>歷史樣本不足，無法回測。</p>';
+  const fm = (x, d = 1) => (isNum(x) ? sg(x, d) : '—');
+  const tgt = (r, key) => { const t = r.predictions.median.targets.find(x => x.key === key); if (!t) return '—'; if (t.status === 'not-touched') return '未觸及'; if (t.status !== 'ok') return esc(stLabel[t.status] ?? t.status); return `${f(t.projected, 0)} vs ${f(t.actualIndex, 0)}（${pct(t.errPct)}）`; };
+  const rows = wf.map(r => [`${esc(r.wave.peakDate.slice(0, 7))}（${neg(r.wave.maxDd, 0)}）`, `${f(r.betas.median, 2)}（前${r.priorN}波）`, f(r.wave.m1, 1), f(r.predictions.median.predMargin, 1), fm(r.predictions.median.errMarginPts),
+    `${f(r.betas.prev, 2)} → ${fm(r.predictions.prev.errMarginPts)}`, pct(r.predictions.median.errIndexPct), tgt(r, 'm0-30'), tgt(r, '150')]);
+  const e = h.errors, g = h.regime;
+  return `<p class="text-muted-sm">每一波只用「之前已結束」的波段估計 Beta（中位數；另列只用上一波），再套到該波實際的指數跌幅預測低點維持率；誤差＝預測−實際（點）。反推指數＝用實際低點維持率反推指數，對照實際低點指數。目標維持率（高點-30 點、150%）若該波從未觸及，標「未觸及」，不算成功也不算失敗。</p>` +
+    tbl(['波段（高點月／回撤）', '所用 Beta（前 n 波中位數）', '實際低點維持率', '預測', '誤差（點）', '只用上一波 Beta → 誤差（點）', '反推低點指數誤差', '目標高點-30 點：推估 vs 實際首次觸及日指數', '150%：推估 vs 實際'], rows) +
+    `<p><b>誤差摘要（n=${e.median.n}）：</b>中位數 Beta 預測維持率的絕對誤差中位 ${f(e.median.marginErrPtsMedAbs, 1)} 點（${e.median.within5pts}/${e.median.n} 波在 ±5 點內；平均偏差 ${fm(e.median.marginErrPtsMean)} 點）；只用上一波 Beta 則為 ${f(e.prev.marginErrPtsMedAbs, 1)} 點（${e.prev.within5pts}/${e.prev.n} 波在 ±5 點內）。反推指數的絕對誤差中位 ${f(e.median.indexErrPctMedAbs, 1)}%。</p>` +
+    `<p class="text-muted-sm">偏差集中的環境：融資期間大幅去槓桿（期間最大跌幅 ≤ ${g.heavyAt}%，${g.heavy.n} 波）平均誤差 ${fm(g.heavy.meanErr)} 點（預測的維持率比實際低，亦即模型高估跌幅）；融資變動較小者（${g.light.n} 波）平均誤差 ${fm(g.light.meanErr)} 點。上一波 Beta 與下一波差很多時（例如 2021→2022、2015、2007）誤差最大，所以不建議只用單一案例的 Beta。</p>`;
+}
+
+function overlapHtml() {
+  const o = stressOv;
+  if (!o) return '<p>資料不足。</p>';
+  const c = o.counts;
+  const ev = o.events.map(e => [esc(e.date), neg(e.dd), `-${f(e.ratioDrop, 1)} 點`, pct(-e.marginDropPct), e.noClearMarginDrop ? '<b>沒有明顯下降</b>' : '有下降', isNum(e.lagDays) ? `${e.lagDays} 日` : '—']);
+  return `<p class="text-muted-sm">只做研究與顯示，不改既有規則。A＝120 日高點回撤≥15%，B＝重建維持率自 120 日高點降≥30 點（固定 120 日、2008 起，不隨上方回測參數變動）；融資「沒有明顯下降」＝A∧B 事件首日，融資餘額較 120 日高點降幅 &lt;10%。</p>` +
+    tbl(['有維持率的交易日', 'A 成立', 'B 成立', 'A∧B 同時', 'A 不含 B', 'B 不含 A', 'P(B∣A)', 'P(A∣B)', 'Jaccard'],
+      [[c.days, c.A, c.B, `<b>${c.both}</b>`, c.Aonly, c.Bonly, `${f(o.pBgivenA, 0)}%`, `${f(o.pAgivenB, 0)}%`, `${f(o.jaccard, 0)}%`]]) +
+    `<h4>A∧B 事件（冷卻 20 日）：共 ${o.events.length} 件，其中融資沒有明顯下降 ${o.eventsNoClearMarginDrop} 件</h4>` +
+    tbl(['事件首日', '指數回撤', '維持率降幅', '融資 vs 120 日高點', '融資', 'A、B 先後相隔'], ev) +
+    `<p class="text-muted-sm"><b>訊號相關性提醒：</b>回撤與維持率下降同源（維持率＝抵押品市值÷融資餘額，股價跌則兩者同步惡化），A、B 幾乎同時成立時，「三選二」可能只是同一件事被算兩次；此時應回頭看融資餘額是否真的下降（C），不要因為兩項成立就認為恐慌已釋放完畢。這裡不另創交易評分。</p>`;
+}
+
+function notesHtml(h, v) {
+  const ri = raw.ratioInfo, g = res.gaps;
+  return `<ul><li>維持率：TWSE MI_MARGN×MI_INDEX <b>逐檔重建</b>（上市 only、含 ETF，民間估算），${esc(g.ratioRange.join('～'))}；<b>不是</b>證交所公布的整戶維持率，也與券商整戶口徑不同、數值偏高。兩個重建檔重疊 ${ri.overlap} 日最大差 ${ri.maxAbsDiff}（口徑相同才拼接）。</li>
+    <li>融資餘額：${esc(raw.source ?? 'FinMind 大盤融資餘額')}（億元），與 TWSE 彙總逐日交叉核對差 0。指數：data/TWII.json 收盤（不含股息）。</li>
+    <li>日期對齊：所有計算用「同一交易日」的指數、維持率、融資，缺值就略過該波段／區塊，不用鄰近日期補、不補零。最新日期：指數 ${esc(v.alignment.twii ?? '—')}｜維持率 ${esc(v.alignment.ratio ?? '—')}｜融資 ${esc(v.alignment.margin ?? '—')}${v.alignment.aligned ? '（一致）' : '（<b>不一致</b>，推估以三者共同日期為準）'}；皆為收盤資料，不混用盤中。</li>
+    <li>130% 是個別信用帳戶的追繳門檻，全市場維持率接近 130% 不代表全面斷頭；150% 不是固定的市場底部。所有推估只標示為「歷史敏感度情境推估」。</li>
+    <li>Beta 以「區間累計跌幅比值」定義；未提供 rolling regression，避免與此定義混淆。樣本：獨立波段 ${h.coverage.usable} 段，彼此並非獨立同分布，數字是描述，不是預測。</li>
+    <li>歷史 Beta 與回測不使用該波完成後才知道的資料（見 F）；測試：<code>npm test</code>（含 js/tabs/marginstress_calc.test.mjs）；報告重現：<code>node scripts/backtest_margin_stress.mjs --out docs/research/margin-stress-projection-backtest.md</code>。</li></ul>`;
+}
+
+function renderStress() {
+  const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+  try {
+    if (!raw.ratio?.length) { set('st-warn', '無維持率重建資料：融資壓力情境推估停用（不估算）。'); ['st-state', 'st-targets', 'st-ma', 'st-delever', 'st-beta-table', 'st-history', 'st-backtest', 'st-overlap', 'st-notes'].forEach(id => set(id, '')); return; }
+    if (!stressH) stressH = analyzeHistory(stressData());
+    if (stressOv === null) {
+      try { stressOv = signalOverlap(buildDataset(stressData(), { start: '2008-01-02', end: raw.lastDate, lookback: 120 })); } catch (e) { console.warn('[marginalert] overlap failed', e); stressOv = false; }
+    }
+    const v = scenarioView(stressData(), stressH, { refMode: stressRefMode(), beta: stressBetaInput(), scenario: stressUi.beta === 'light' ? 'light' : 'hist' });
+    const warn = [];
+    if (!v.ref.ok) warn.push(v.ref.reason === 'date-missing' ? `參考日 ${esc(v.ref.date)} 沒有指數或維持率資料，請改日期` : '指數與維持率沒有共同日期');
+    if (!v.alignment.aligned) warn.push('指數／維持率／融資最新日期不一致');
+    set('st-warn', warn.length ? `⚠ ${warn.join('；')}` : `資料日 ${esc(v.alignment.twii)}（收盤）｜歷史敏感度情境推估，不是支撐位或底部預測`);
+    set('st-beta-table', betaTableHtml(stressH));
+    set('st-history', historyHtml(stressH));
+    set('st-backtest', backtestHtml(stressH));
+    set('st-overlap', stressOv ? overlapHtml() : '<p>資料不足。</p>');
+    set('st-notes', notesHtml(stressH, v));
+    if (!v.ref.ok) { ['st-state', 'st-targets', 'st-ma', 'st-delever'].forEach(id => set(id, '')); return; }
+    set('st-state', stateCards(v, stressH));
+    set('st-targets', targetsTable(v));
+    set('st-ma', maTableHtml(v));
+    set('st-delever', deleverHtml(v));
+  } catch (e) {
+    console.error('[marginalert] stress render failed', e);
+    set('st-warn', `⚠ 融資壓力情境推估計算失敗：${esc(e.message || e)}（不影響下方警報回測）`);
+  }
+}
+function syncStressControls() {
+  const val = (id, v) => { const el = $(id); if (el) el.value = String(v); };
+  val('st-ref', stressUi.ref); val('st-beta', stressUi.beta);
+  const rd = $('st-refdate'); if (rd) { rd.style.display = stressUi.ref === 'custom' ? '' : 'none'; rd.value = stressUi.refDate || raw?.lastDate || ''; }
+  const cu = $('st-custom'); if (cu) cu.style.display = stressUi.beta === 'custom' ? 'flex' : 'none';
+  for (const k of ['low', 'base', 'high']) val(`st-b-${k}`, stressUi.custom[k]);
+}
+function wireStress() {
+  const on = (id, fn) => $(id)?.addEventListener('change', fn);
+  on('st-ref', e => { stressUi.ref = e.target.value; syncStressControls(); renderStress(); });
+  on('st-refdate', e => { stressUi.refDate = e.target.value; renderStress(); });
+  on('st-beta', e => { stressUi.beta = e.target.value; syncStressControls(); renderStress(); });
+  for (const k of ['low', 'base', 'high']) on(`st-b-${k}`, e => { const x = Number(e.target.value); if (Number.isFinite(x) && x > 0 && x <= 5) stressUi.custom[k] = x; renderStress(); });
+}
+
 // ── 卡片 ─────────────────────────────────────────────────────────────
 function renderSummary() {
   const { ds } = res;
@@ -358,6 +553,7 @@ function syncChips() {
 }
 function draw() {
   renderSummary();
+  renderStress();
   renderTables();
   return preserveChartState(getCharts, () => { chart.setOption(buildOption(), { notMerge: true }); });
 }
@@ -425,6 +621,7 @@ function wire() {
   if (wired) return;
   wired = true;
   wireInfo();
+  wireStress();
   const on = (id, fn) => $(id)?.addEventListener('change', fn);
   on('fg-select', e => { ui.fg = e.target.value === 'on'; syncChips(); draw(); });
   $('fear-range')?.addEventListener('input', e => { ui.fearThr = clampFear(e.target.value); recompute(); syncChips(); draw(); });
@@ -455,6 +652,7 @@ export async function activate(context = {}) {
     if (context.signal?.aborted || context.isCurrent?.() === false) return;
     wire();
     syncChips();
+    syncStressControls();
     if (!res) recompute();
     await draw();
     chart.resize();
