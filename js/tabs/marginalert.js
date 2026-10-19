@@ -9,12 +9,14 @@ import { requestJSON } from '../utils/data.js';
 import { tooltipPosition } from '../utils/tooltip.js';
 import { preserveChartState } from '../utils/chartLifecycle.js';
 import {
-  DEFAULTS, CASES, runFullBacktest, mergeRatio, singleDayFlags, evaluateFlags, GATES, median, fearAnalysis, clampFear, buildDataset,
+  CASES, runFullBacktest, mergeRatio, singleDayFlags, evaluateFlags, GATES, median, fearAnalysis, clampFear, buildDataset,
 } from './marginalert_calc.mjs';
 import { analyzeHistory, scenarioView, signalOverlap, MANUAL_BETAS, KEY_DROP_PTS, buildChartSeries, windowSlice, endForWave } from './marginstress_calc.mjs';
 import { chipPicker } from '../utils/dom.js';
 
 const TAB_ID = 'marginalert';
+// 頁面預設範圍：維持率重建資料最早的一天（引擎／CLI 報告的 DEFAULTS.start 仍是 2020-01-01，不受影響）
+const PAGE_START = '2004-02-11';
 const $ = id => document.getElementById(`${TAB_ID}-${id}`);
 
 let chart = null;
@@ -22,7 +24,7 @@ let raw = null;        // { twii, margin, ratio, ratioInfo, partial }
 let res = null;        // runFullBacktest 結果
 let sel = null;        // 目前選擇門檻×閘門的事件評估
 let fear = null;       // 恐懼貪婪 × 目前警報 的對照（無 F&G 資料時為 null）
-let ui = { fg: true, fearThr: 15, th: 3, gate: 0, caseId: 'A', lookback: 120, entry: 'nextOpen', cooldown: 10, minIdxDrop: 1, start: DEFAULTS.start, end: null };
+let ui = { fg: true, fearThr: 15, th: 3, gate: 0, caseId: 'A', lookback: 120, entry: 'nextOpen', cooldown: 10, minIdxDrop: 1, start: PAGE_START, end: null };
 let wired = false;
 let stressH = null;    // analyzeHistory 快取（與參考日、Beta 情境無關）
 let stressOv = null;   // signalOverlap 快取
@@ -534,6 +536,7 @@ function wireStressChart() {
     if (w) { stWin.endDate = endForWave(stDates(), w, stWin.years); stRender(); }
     e.target.value = '';
   });
+  $('winchart')?.addEventListener('toggle', () => stChart?.resize());
   $('stress')?.addEventListener('toggle', () => stChart?.resize());
 }
 
@@ -804,7 +807,7 @@ function wire() {
   on('case-select', e => { ui.caseId = e.target.value; $('t-case').innerHTML = tableCase(); zoomToCase(); });
   $('run')?.addEventListener('click', () => rerun(true));
   $('reset')?.addEventListener('click', () => {
-    ui = { fg: true, fearThr: 15, th: 3, gate: 0, caseId: 'A', lookback: 120, entry: 'nextOpen', cooldown: 10, minIdxDrop: 1, start: DEFAULTS.start, end: raw.lastDate };
+    ui = { fg: true, fearThr: 15, th: 3, gate: 0, caseId: 'A', lookback: 120, entry: 'nextOpen', cooldown: 10, minIdxDrop: 1, start: PAGE_START, end: raw.lastDate };
     rerun(false);
   });
   for (const id of ['th-input', 'cooldown', 'start', 'end']) on(id, () => rerun(true));
