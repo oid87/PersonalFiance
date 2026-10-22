@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-21",
+  "updated": "2026-10-22",
   "data": [
     {
       "date": "2001-01-23",
@@ -38838,13 +38838,25 @@
       "vix": 18.44,
       "vxn": 25.56,
       "spread": 7.12
+    },
+    {
+      "date": "2026-10-20",
+      "vix": 17.31,
+      "vxn": 25.22,
+      "spread": 7.91
+    },
+    {
+      "date": "2026-10-21",
+      "vix": 16.68,
+      "vxn": 24.42,
+      "spread": 7.74
     }
   ],
   "percentile_90": 11.24,
   "percentile_95": 23.86,
   "current": {
-    "date": "2026-10-19",
-    "spread": 7.12,
-    "percentile_rank": 84.86
+    "date": "2026-10-21",
+    "spread": 7.74,
+    "percentile_rank": 86.24
   }
 }
