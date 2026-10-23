@@ -34,7 +34,8 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     const cards = await text('cards');
     check('card groups present', ['國際股市', '金融市場', '台股內部', '參考（不計分）'].every(k => cards.includes(k)), cards.slice(0, 200));
     check('22 quote cards', (await page.locator('#nonnormal-cards .nonnormal-q').count()) === 22);
-    check('cards include the new series', ['費半', '那斯達克 100', '恆生', '歐股 50', '布蘭特原油', '上櫃融資維持率', 'VXN', '恐懼貪婪', '比特幣'].every(k => cards.includes(k)));
+    check('every card shows an English ticker (SOXX, QQQ, VOO, KOSPI for US/Korea)', await page.evaluate(() => { const t = id => document.querySelector(`.nonnormal-q[data-series="${id}"] .nonnormal-q-tk`)?.textContent; return [...document.querySelectorAll('#nonnormal-cards .nonnormal-q')].every(c => c.querySelector('.nonnormal-q-tk')?.textContent) && [t('SOX'), t('NDX'), t('SPX'), t('KOSPI')].join() === 'SOXX,QQQ,VOO,KOSPI'; }));
+    check('cards include the new series', ['費半', '那斯達克', '恆生', '歐股 50', '布蘭特原油', '上櫃融資維持率', 'VXN', '恐懼貪婪', '比特幣'].every(k => cards.includes(k)));
     check('US stock order: 費半 → 那斯達克 → S&P 500', (await page.evaluate(() => [...document.querySelectorAll('#nonnormal-cards .nonnormal-cards')[0].querySelectorAll('.nonnormal-q')].map(e => e.dataset.series).join())) === 'SOX,NDX,SPX,KOSPI');
     check('上櫃 margin card shows a ratio', /^\d+\.\d%$/.test(await page.locator('.nonnormal-q[data-series="MARGIN_OTC"] .nonnormal-q-val').innerText()));
     check('sparkline with 50/100MA drawn', await page.evaluate(() => {

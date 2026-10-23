@@ -34,8 +34,8 @@ export const P = Object.freeze({
 
 // 資料檔。ref:true 只顯示、不計入共振。
 export const SERIES = [
-  { id: 'SOX', file: 'SOX.json', label: '費城半導體指數' },
-  { id: 'SPX', file: 'SP500.json', label: 'S&P 500' },
+  { id: 'SOX', file: 'SOXX.json', label: '費半（SOXX）' },
+  { id: 'SPX', file: 'VOO.json', label: 'S&P 500（VOO）' },
   { id: 'NDX', file: 'QQQ.json', label: '那斯達克 100（QQQ）' },
   { id: 'KOSPI', file: 'KS11.json', label: '韓國綜合指數' },
   { id: 'N225', file: 'N225.json', label: '日經 225', ref: true },

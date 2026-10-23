@@ -214,7 +214,7 @@ test('forwardDrawdown is null until the whole horizon has data', () => {
 
 // ── real repository data: the historical case dates ────────────────────────
 const D = new URL('../../data/', import.meta.url);
-const haveData = ['TWII.json', 'TWOII.json', 'SOX.json'].every(f => existsSync(new URL(f, D)));
+const haveData = ['TWII.json', 'TWOII.json', 'SOXX.json'].every(f => existsSync(new URL(f, D)));
 function realContext() {
   const read = f => (existsSync(new URL(f, D)) ? JSON.parse(readFileSync(new URL(f, D), 'utf8')).data : []);
   const raw = Object.fromEntries(N.SERIES.map(s => [s.id, read(s.file)]));
