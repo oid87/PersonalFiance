@@ -29,11 +29,15 @@ const HELP = {
 
 // 報價卡：[序列, 名稱, 對應訊號, 格式]。格式 px＝價格、yield＝殖利率（漲跌用 bp）、ratio＝百分比（漲跌用百分點）、score＝0–100 分數（漲跌用點）。
 const CARD_GROUPS = [
-  { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克 100', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['KOSPI', '韓股', 'kospi']] },
+  { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['KOSPI', '韓股', 'kospi']] },
   { group: 'B', title: '金融市場', cards: [['US10Y', '美債 10Y', 'us10y', 'yield'], ['DXY', '美元指數', 'dxy'], ['GOLD', '黃金', 'gold'], ['OIL', '布蘭特原油', 'oil'], ['VIX', 'VIX', 'vix'], ['VXN', 'VXN'], ['FG', '恐懼貪婪', null, 'score'], ['BTC', '比特幣']] },
   { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '偏多家數占比', 'breadth', 'ratio']] },
   { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield']] },
 ];
+// 卡片上的英文代號（實際用的標的；指標類用通用簡稱）
+const TICKERS = { SOX: 'SOXX', NDX: 'QQQ', SPX: 'VOO', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
+  FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'Breadth',
+  N225: 'N225', HSI: 'HSI', SSE: 'SSE', STOXX50E: 'SX5E', US2Y: 'US2Y' };
 const CARD_BY_SERIES = new Map(CARD_GROUPS.flatMap(g => g.cards.map(c => [c[0], c])));
 // 點卡片的大圖左欄：為什麼把這張圖放進儀表板（本專案整理，用自己的話寫）
 const REASONS = {
@@ -194,7 +198,9 @@ function quoteCard([id, name, sigId, kind = 'px'], now) {
   if (sigId) el.dataset.signal = sigId;
   el.title = '點兩下：大圖與說明';
   const head = node('div', null, { class: 'nonnormal-q-head' });
-  head.append(node('span', name, { class: 'nonnormal-q-name' }), node('span', 'ⓘ', { class: 'nonnormal-q-hint', 'aria-hidden': 'true' }));
+  const title = node('span', null, { class: 'nonnormal-q-title' });
+  title.append(node('span', name, { class: 'nonnormal-q-name' }), node('span', TICKERS[id] || '', { class: 'nonnormal-q-tk' }));
+  head.append(title, node('span', 'ⓘ', { class: 'nonnormal-q-hint', 'aria-hidden': 'true' }));
   if (state === 'on') head.append(node('span', '亮', { class: 'nonnormal-q-flag' }));
   else if (sig && state === 'na') head.append(node('span', '無資料', { class: 'nonnormal-q-flag nonnormal-q-flag--na' }));
   el.append(head);
@@ -242,7 +248,7 @@ function drawDetail() {
   if (!detail || !dlg.open || !ctx) return;
   const [id, name, sigId, kind = 'px'] = detail, now = weeks.at(-1);
   const q = N.quote(ctx.s[id], now.date, { mas: MAS }), sig = sigId ? now.signals.find(x => x.id === sigId) : null;
-  byId('dialog-title').textContent = name;
+  byId('dialog-title').replaceChildren(name, TICKERS[id] ? node('small', ` ${TICKERS[id]}`, { class: 'nonnormal-dialog-tk' }) : '');
   const sub = byId('dialog-sub');
   sub.replaceChildren();
   if (q) {
@@ -253,15 +259,15 @@ function drawDetail() {
   if (!q) { charts[1]?.clear(); return; }
   if (!charts[1]) charts[1] = echarts.init(byId('dialog-chart'), isLight() ? null : 'dark');
   const fmt = valueFmt(kind, q.last);
-  const lines = (REF_LINES[sigId] || REF_LINES[id] || []).map(v => ({ yAxis: v, label: { formatter: fmt(v), color: PALETTE.muted, fontSize: 10 } }));
+  const lines = (REF_LINES[sigId] || REF_LINES[id] || []).map(v => ({ yAxis: v, label: { formatter: fmt(v), color: PALETTE.muted, fontSize: 11 } }));
   const line = (name, data, color, width, extra = {}) => ({ name, type: 'line', data, showSymbol: false, connectNulls: false, lineStyle: { width, color }, itemStyle: { color }, ...extra });
   chartOption(1, {
     animation: false,
-    legend: { top: 0, right: 0, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['收盤', '50MA', '100MA'] },
+    legend: { top: 0, right: 0, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: ['收盤', '50MA', '100MA'] },
     grid: { left: mob() ? 50 : 64, right: 16, top: 30, bottom: 28 },
     tooltip: { trigger: 'axis', valueFormatter: fmt },
-    xAxis: { type: 'category', data: q.dates, boundaryGap: false, axisLabel: { color: PALETTE.muted, fontSize: 11, formatter: v => v.slice(5) } },
-    yAxis: { type: 'value', scale: true, axisLabel: { color: PALETTE.muted, fontSize: 11, formatter: fmt }, splitLine: { lineStyle: { color: PALETTE.grid } } },
+    xAxis: { type: 'category', data: q.dates, boundaryGap: false, axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: v => v.slice(5) } },
+    yAxis: { type: 'value', scale: true, axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: fmt }, splitLine: { lineStyle: { color: PALETTE.grid } } },
     dataZoom: [],
     series: [
       line('收盤', q.close, PALETTE.text, 1.6, { areaStyle: { opacity: 0.06 }, markLine: lines.length ? { silent: true, symbol: 'none', lineStyle: { type: 'dashed', color: '#ef4444' }, data: lines } : undefined }),
@@ -357,11 +363,11 @@ function drawCash() {
   series[0].markLine = { silent: true, symbol: 'none', label: { show: false }, lineStyle: { color: PALETTE.muted, type: 'dotted' }, data: [{ yAxis: 0 }] };
   chartOption(2, {
     animation: false,
-    legend: { type: mob() ? 'scroll' : 'plain', top: 0, textStyle: { color: PALETTE.muted, fontSize: 11 } },
+    legend: { type: mob() ? 'scroll' : 'plain', top: 0, textStyle: { color: PALETTE.muted, fontSize: 12 } },
     grid: { left: mob() ? 44 : 52, right: 12, top: 32, bottom: 28 },
     tooltip: { trigger: 'axis', valueFormatter: v => (finite(v) ? `${v > 0 ? '+' : ''}${v.toFixed(1)}%` : '—') },
-    xAxis: { type: 'time', axisLabel: { color: PALETTE.muted, fontSize: 11, formatter: '{MM}-{dd}' }, splitLine: { show: false } },
-    yAxis: { type: 'value', axisLabel: { color: PALETTE.muted, fontSize: 11, formatter: v => `${v}%` }, splitLine: { lineStyle: { color: PALETTE.grid } } },
+    xAxis: { type: 'time', axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: '{MM}-{dd}' }, splitLine: { show: false } },
+    yAxis: { type: 'value', axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: v => `${v}%` }, splitLine: { lineStyle: { color: PALETTE.grid } } },
     dataZoom: [],
     series,
   });
@@ -378,7 +384,7 @@ function quarterAxis(show, step) {
     return !!d && !!p && d.slice(5, 7) !== p.slice(5, 7) && [1, 4, 7, 10].includes(+d.slice(5, 7)) && (q(d) - 1) % Math.min(step, 4) === 0 && (step <= 4 || +d.slice(0, 4) % (step / 4) === 0);
   };
   return {
-    axisLabel: { color: PALETTE.muted, fontSize: 11, show, interval: at, formatter: d => (step >= 4 || q(d) === 1 ? d.slice(0, 4) : `Q${q(d)}`) },
+    axisLabel: { color: PALETTE.muted, fontSize: 12, show, interval: at, formatter: d => (step >= 4 || q(d) === 1 ? d.slice(0, 4) : `Q${q(d)}`) },
     splitLine: { show: !show, interval: at, lineStyle: { color: PALETTE.grid, type: 'dashed' } },
   };
 }
@@ -394,13 +400,13 @@ function drawChart() {
   const L = mob() ? 62 : 76, R = mob() ? 10 : 24;
   const axis = (gridIndex, show) => ({ type: 'category', gridIndex, data: dates, boundaryGap: true, axisLine: { lineStyle: { color: PALETTE.muted } },
     axisTick: { show: false }, ...quarterAxis(show, 1) });
-  const yAxis = (gridIndex, name, extra = {}) => ({ type: 'value', gridIndex, name, nameTextStyle: { color: PALETTE.muted, fontSize: 10 }, axisLabel: { color: PALETTE.muted, fontSize: 11 }, splitLine: { lineStyle: { color: PALETTE.grid } }, ...extra });
-  const caseMarks = N.CASES.map(c => ({ xAxis: dates.find(d => d >= c.event), label: { formatter: c.id, color: PALETTE.muted, fontSize: 10 } })).filter(m => m.xAxis);
+  const yAxis = (gridIndex, name, extra = {}) => ({ type: 'value', gridIndex, name, nameTextStyle: { color: PALETTE.muted, fontSize: 11 }, axisLabel: { color: PALETTE.muted, fontSize: 12 }, splitLine: { lineStyle: { color: PALETTE.grid } }, ...extra });
+  const caseMarks = N.CASES.map(c => ({ xAxis: dates.find(d => d >= c.event), label: { formatter: c.id, color: PALETTE.muted, fontSize: 11 } })).filter(m => m.xAxis);
   const option = echartsBase({
     animation: false,
     legend: { show: false },
     tooltip: {
-      trigger: 'axis', axisPointer: { type: 'line' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 12 },
+      trigger: 'axis', axisPointer: { type: 'line' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 13 },
       formatter(params) {
         const i = params?.[0]?.dataIndex, w = weeks[i]; if (!w) return '';
         const lit = w.signals.filter(s => s.state === 'on').map(s => N.SIGNALS.find(d => d.id === s.id).short);
@@ -414,7 +420,7 @@ function drawChart() {
     // 加權的範圍與刻度由 fitIndexAxis() 依可見區間設定；刻度用 markLine 畫，axis 本身不標
     yAxis: [yAxis(0, '加權', { min: v => v.min * 0.9, max: v => v.max * 1.1, axisLabel: { show: false }, splitLine: { show: false } }),
       yAxis(1, '亮燈數', { min: 0, max: N.SIGNALS.length, interval: 2 }),
-      { type: 'category', gridIndex: 2, data: N.SIGNALS.map(s => s.short), inverse: true, axisLabel: { color: PALETTE.muted, fontSize: mob() ? 10 : 11 }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } }],
+      { type: 'category', gridIndex: 2, data: N.SIGNALS.map(s => s.short), inverse: true, axisLabel: { color: PALETTE.muted, fontSize: mob() ? 11 : 12 }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } }],
     visualMap: { show: false, type: 'piecewise', seriesIndex: 2, dimension: 2, pieces: [{ value: 1, color: '#ef4444' }, { value: 0, color: PALETTE.grid }, { value: -1, color: 'rgba(128,128,128,0.08)' }] },
     dataZoom: [{ type: 'inside', xAxisIndex: [0, 1, 2], filterMode: 'filter' }, { type: 'slider', xAxisIndex: [0, 1, 2], height: 16, bottom: 6, filterMode: 'filter' }],
     series: [
@@ -454,7 +460,7 @@ function fitIndexAxis() {
   ch.setOption({
     ...(prev?.step === step ? {} : { xAxis: [0, 1, 2].map(i => quarterAxis(i === 2, step)) }),
     ...(prev && prev.lo === lo && prev.hi === hi ? {} : { yAxis: [{ min: lo * 0.9, max: hi * 1.1 }], series: [{ id: 'twii-ticks', markLine: { data: ticks.map(v => ({ yAxis: v, lineStyle: { type: 'solid', width: 1, color: PALETTE.grid },
-      label: { position: 'start', formatter: Math.round(v).toLocaleString('en-US'), color: PALETTE.muted, fontSize: mob() ? 10 : 11 } })) } }] }),
+      label: { position: 'start', formatter: Math.round(v).toLocaleString('en-US'), color: PALETTE.muted, fontSize: mob() ? 11 : 12 } })) } }] }),
   });
 }
 
