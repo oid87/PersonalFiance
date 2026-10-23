@@ -7,6 +7,7 @@ import { CATEGORIES, NAV_ITEMS, normalizeSearch, searchNavigation } from '../nav
 const ORIGINAL_LABELS = {
   "usrisk": "美股風險觀察",
   "uscap": "美股恐慌拋售警報",
+  "nonnormal": "極端狀態儀表板",
   "sentiment": "複合情緒",
   "aaii": "散戶情緒",
   "twsent": "台股情緒",
@@ -90,8 +91,8 @@ const ids = query => searchNavigation(query).map(item => item.id);
 
 test('all original screens occur once with unchanged labels', () => {
   assert.equal(CATEGORIES.length, 8);
-  assert.equal(NAV_ITEMS.length, 79);
-  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 79);
+  assert.equal(NAV_ITEMS.length, 80);
+  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 80);
   assert.deepEqual(Object.fromEntries(NAV_ITEMS.map(item => [item.id, item.label])), ORIGINAL_LABELS);
   assert.deepEqual(ids(''), NAV_ITEMS.map(item => item.id));
   for (const item of NAV_ITEMS) {
@@ -109,6 +110,7 @@ test('search handles names, ids, category context, aliases, case and spaces', ()
     ['P/E', 'fwdpe'], ['P/E', 'valuation'], ['台灣', 'twsent'], ['台股', 'twchips'],
     ['台股', 'marginheat'], ['台股', 'marginpeak'], ['台股', 'marginconc'],
     ['台股', 'marginmap'], ['融資', 'marginheat'], ['去槓桿', 'marginalert'], ['回測', 'marginalert'],
+    ['極端', 'nonnormal'], ['非常態', 'nonnormal'], ['共振', 'nonnormal'],
     ['  美 國  GDP ', 'gdp_productivity_decomp'],
   ]) assert.ok(ids(query).includes(expected), query);
   assert.equal(ids('P/E 台灣').includes('sox_vs_tw_semi_pe'), true);

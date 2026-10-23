@@ -2355,6 +2355,37 @@
     <details class="ui-details"><summary>方法與可再現性</summary><p>回撤採120交易日高點。指標與比值不跨日補值；門檻只用過去資料。事件冷卻固定10交易日，另列按研究視窗排除重疊的樣本；兩者均不保證統計獨立。最早下一交易日開盤，結果是原始價格報酬，不含股息與成本。完整視窗中任何 OHLC 異常或缺價皆 unavailable，不跳過交易日。未來結果只作事後評估，不參與警報。完整資料快照與參數可由 repository 的研究 CLI 重現。</p><p><a href="docs/research/us-risk-product-design.md">產品設計／六題分析與來源調查</a> · <a href="docs/research/us-risk-requirements.md">需求、ⓘ逐字文案與資料契約</a></p></details>
   </section>
 
+  <section id="tab-nonnormal" class="tab-section" hidden>
+    <header class="nonnormal-head"><h2 class="section-title">極端狀態儀表板</h2><span id="nonnormal-asof" class="status"></span></header>
+    <p id="nonnormal-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <div id="nonnormal-summary"></div>
+    <div id="nonnormal-cards" aria-label="各市場報價與訊號"></div>
+    <div class="nonnormal-group-head"><h3 data-help="cash">資金流向（現金為王）</h3></div>
+    <div id="nonnormal-cash-state" class="nonnormal-cash-state"></div>
+    <div class="nonnormal-cash">
+      <div id="nonnormal-cash-chart" class="nonnormal-cash-chart" role="img" aria-label="黃金、比特幣、美債、QQQ、SPY 近 6 個月同期報酬"></div>
+      <div class="nonnormal-cash-side">
+        <div id="nonnormal-cash-range" class="nonnormal-controls"><span class="chip" data-nonnormal-cash="1">1 週</span><span class="chip active" data-nonnormal-cash="4">4 週</span><span class="chip" data-nonnormal-cash="8">8 週</span></div>
+        <div id="nonnormal-cash-rank" class="nonnormal-rank" aria-label="同期報酬排名"></div>
+      </div>
+    </div>
+    <div class="nonnormal-group-head"><h3>共振歷史</h3></div>
+    <div id="nonnormal-range" class="nonnormal-controls"><span class="chip" data-nonnormal-range="1y">1 年</span><span class="chip active" data-nonnormal-range="3y">3 年</span><span class="chip" data-nonnormal-range="5y">5 年</span><span class="chip" data-nonnormal-range="2013">2013 起</span><span class="chip" data-nonnormal-range="all">全部</span></div>
+    <div id="nonnormal-chart" class="nonnormal-chart" role="img" aria-label="加權指數、每週亮燈數與各訊號亮燈熱圖"></div>
+    <div class="nonnormal-group-head"><h3 data-help="leadlag">加權 vs 櫃買</h3></div>
+    <div id="nonnormal-leadlag" class="table-scroll" tabindex="0" aria-label="加權與櫃買跌破均線"></div>
+    <div class="nonnormal-group-head"><h3>轉機觀察</h3></div>
+    <div id="nonnormal-turn" class="nonnormal-grid nonnormal-grid--turn"></div>
+    <details id="nonnormal-cases-details" class="ui-details"><summary>課程案例回測</summary><div id="nonnormal-cases" class="table-scroll" tabindex="0" aria-label="課程案例回測"></div><p id="nonnormal-base" class="note-muted"></p></details>
+    <dialog id="nonnormal-dialog" class="nonnormal-dialog" aria-labelledby="nonnormal-dialog-title">
+      <div class="nonnormal-dialog-head"><div><h3 id="nonnormal-dialog-title"></h3><div id="nonnormal-dialog-sub" class="nonnormal-dialog-sub"></div></div><button type="button" class="nonnormal-dialog-close" aria-label="關閉">✕</button></div>
+      <div class="nonnormal-dialog-body">
+        <div id="nonnormal-dialog-why" class="nonnormal-dialog-why"></div>
+        <div id="nonnormal-dialog-chart" class="nonnormal-dialog-chart" role="img" aria-label="近 6 個月走勢與 50／100 日均線"></div>
+      </div>
+    </dialog>
+    <details id="nonnormal-sources-details" class="ui-details"><summary>閾值來源與說明</summary><div id="nonnormal-sources" class="table-scroll" tabindex="0" aria-label="各訊號亮燈條件與閾值來源"></div><ul id="nonnormal-notes" class="nonnormal-list"></ul></details>
+  </section>
   <section id="tab-uscap" class="tab-section" hidden>
     <header><h2 class="section-title">美股恐慌性拋售警報（US Capitulation Alert）</h2>
       <p class="section-subtitle">恐慌偵測 · 去槓桿背景 · 止穩確認 — 三個階段分開看，不合成單一分數</p>
