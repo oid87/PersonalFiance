@@ -370,6 +370,18 @@ function drawCash() {
 // ── chart ───────────────────────────────────────────────────────────────
 const RANGES = { '1y': 52, '3y': 156, '5y': 260, '2013': '2013-06-07', all: null };
 let twClose = [];
+/** 共振歷史的 x 軸每季一格（第一季標年份、其他標 Q2／Q3／Q4，並畫分隔線）。可見範圍太長放不下時，改成每半年或每年一格（step＝幾季一格）。 */
+function quarterAxis(show, step) {
+  const q = d => (+d.slice(5, 7) + 2) / 3;
+  const at = i => {
+    const d = weeks[i]?.date, p = weeks[i - 1]?.date;
+    return !!d && !!p && d.slice(5, 7) !== p.slice(5, 7) && [1, 4, 7, 10].includes(+d.slice(5, 7)) && (q(d) - 1) % Math.min(step, 4) === 0 && (step <= 4 || +d.slice(0, 4) % (step / 4) === 0);
+  };
+  return {
+    axisLabel: { color: PALETTE.muted, fontSize: 11, show, interval: at, formatter: d => (step >= 4 || q(d) === 1 ? d.slice(0, 4) : `Q${q(d)}`) },
+    splitLine: { show: !show, interval: at, lineStyle: { color: PALETTE.grid, type: 'dashed' } },
+  };
+}
 function chart() {
   if (!charts[0]) { charts[0] = echarts.init(byId('chart'), isLight() ? null : 'dark'); charts[0].on('datazoom', fitIndexAxis); }
   return charts[0];
@@ -380,7 +392,8 @@ function drawChart() {
   const heat = [];
   weeks.forEach((w, x) => w.signals.forEach((s, y) => heat.push([x, y, s.state === 'on' ? 1 : s.state === 'off' ? 0 : -1])));
   const L = mob() ? 62 : 76, R = mob() ? 10 : 24;
-  const axis = (gridIndex, show) => ({ type: 'category', gridIndex, data: dates, boundaryGap: true, axisLine: { lineStyle: { color: PALETTE.muted } }, axisLabel: { color: PALETTE.muted, fontSize: 11, show }, axisTick: { show: false }, splitLine: { show: false } });
+  const axis = (gridIndex, show) => ({ type: 'category', gridIndex, data: dates, boundaryGap: true, axisLine: { lineStyle: { color: PALETTE.muted } },
+    axisTick: { show: false }, ...quarterAxis(show, 1) });
   const yAxis = (gridIndex, name, extra = {}) => ({ type: 'value', gridIndex, name, nameTextStyle: { color: PALETTE.muted, fontSize: 10 }, axisLabel: { color: PALETTE.muted, fontSize: 11 }, splitLine: { lineStyle: { color: PALETTE.grid } }, ...extra });
   const caseMarks = N.CASES.map(c => ({ xAxis: dates.find(d => d >= c.event), label: { formatter: c.id, color: PALETTE.muted, fontSize: 10 } })).filter(m => m.xAxis);
   const option = echartsBase({
@@ -431,7 +444,10 @@ function fitIndexAxis() {
   for (let i = a; i <= b; i++) if (finite(twClose[i])) { lo = Math.min(lo, twClose[i]); hi = Math.max(hi, twClose[i]); }
   if (!(hi > lo)) return;
   const ticks = [0, 1, 2, 3, 4, 5].map(k => lo + ((hi - lo) * k) / 5);
+  const width = ch.getWidth() - (mob() ? 72 : 100), label = mob() ? 30 : 44;   // 每格至少要放得下「2024」
+  const step = [1, 2, 4, 8, 16].find(k => width / ((b - a + 1) / 13 / k) >= label) || 16;
   ch.setOption({
+    xAxis: [0, 1, 2].map(i => quarterAxis(i === 2, step)),
     yAxis: [{ min: lo * 0.9, max: hi * 1.1 }],
     series: [{ id: 'twii-ticks', markLine: { data: ticks.map(v => ({ yAxis: v, lineStyle: { type: 'solid', width: 1, color: PALETTE.grid },
       label: { position: 'start', formatter: Math.round(v).toLocaleString('en-US'), color: PALETTE.muted, fontSize: mob() ? 10 : 11 } })) } }],
