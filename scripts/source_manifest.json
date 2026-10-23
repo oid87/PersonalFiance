@@ -2407,10 +2407,13 @@
             "collateral_all_yi",
             "collateral_exetf_yi",
             "margin_lots",
+            "margin_yi",
             "mktcap_exetf_yi",
             "mktcap_yi",
             "n",
             "n_etf",
+            "ratio_all",
+            "ratio_exetf",
             "short_lots"
           ]
         }

@@ -1,8 +1,8 @@
 """櫃買(TPEx/上櫃)大盤融資餘額 / 總市值 / 融資維持率 — 比照 fetch_margin_ratio_mm.py 風格。
 
 背景：TWSE(上市)已有 fetch_margin_ratio_mm.py 重建維持率(擔保品市值 ÷ 融資金額)。
-本腳本補上 TPEx(上櫃)版本，但**分母(市場總計融資金額)找不到公開資料源**，見下方
-「已知限制」— ratio_all/ratio_exetf/margin_yi 一律輸出 null，不自行捏造或用張數推估。
+本腳本補上 TPEx(上櫃)版本。分母(市場總計融資金額)只有 TPEx 臺股儀表板(來源 3)有，
+且只從 2026-08-24 起；更早的 ratio_all/ratio_exetf/margin_yi 一律 null，不自行捏造或用張數推估。
 
 資料源(均實測確認)
   1. 逐檔融資融券餘額(有歷史，回溯至少到 2010；本腳本預設 floor 對齊到 2011-01-01
@@ -38,8 +38,16 @@
      **代表「櫃買市場整體資金/個股市值」時應優先看 mktcap_exetf_yi**，mktcap_yi 只
      用於想額外了解 ETF 規模時參考。
 
-已知限制 —— 市場總計融資金額(分母)找不到，ratio_*/margin_yi 一律 null
-  嘗試過的路徑與結果：
+  3. 上櫃市場融資餘額(億元)＝分母，TPEx 臺股儀表板(2026-09-23 上線)：
+     GET https://www.tpex.org.tw/www/dashboardOtc/margin?lang=zh-tw&date=<ROC yyy/mm/dd>
+     → {stat:'ok', date:'YYYYMMDD', marginBalance:2126.30, keepRate:..., ...}
+     頁面寫「2026 年 8 月 3 日起提供」，但 API 實測 2026-08-24 前回「沒有符合條件的資料」。
+     marginHistory 端點只有年度占比，不能當日頻分母。
+     驗證：2026-10-22 collateral_all_yi 3600.0 ÷ 2126.30 = 169.31%，與財經M平方「上櫃融資維持率」
+     同日 169.31% 相同(M平方 2026-07 停更後改用含 ETF 算法續發；其數據依條款不得下載，只拿來核對)。
+
+已知限制 —— 2026-08-24 前的市場總計融資金額(分母)找不到，該段 ratio_*/margin_yi 為 null
+  嘗試過的路徑與結果(來源 3 上線前)：
     a. https://www.tpex.org.tw/openapi/swagger.json 全掃 — 有 tpex_mainboard_margin_balance
        (逐檔)、tpex_margin_trading_marginspot(上櫃信用交易餘額概況表)，但後者是「本月
        平均、依券商排名」的月報，不是「當日、市場加總」的金額。沒有任何 path 提供
@@ -55,8 +63,8 @@
        TWO/OTC/ALL 都回同一組數字)。FinMind 沒有 OTC 版本的市場融資金額 dataset。
        TaiwanTotalExchangeMarginMaintenance 需付費(free tier 400)，未能驗證但依其
        單一 dataset 命名推測也是市場總計(可能仍是 TWSE)，非免費故未採用。
-  結論：找不到，不推算。collateral_*_yi(擔保品市值，來源1×來源2)、mktcap_yi(來源2
-  獨立算)照常輸出；margin_yi/ratio_all/ratio_exetf 固定為 null。
+  結論：2026-08-24 前找不到，不推算。collateral_*_yi(擔保品市值，來源1×來源2)、mktcap_yi(來源2
+  獨立算)照常輸出；margin_yi/ratio_all/ratio_exetf 只在來源 3 有值的日期才填。
 
 floor 為何對齊 2011-01-01：來源2(收盤價)是算 collateral/mktcap 的必要輸入，其歷史
 回溯上限就是 2011-01-01；早於此日只能拿到來源1的 margin_lots/short_lots(collateral/
@@ -64,7 +72,7 @@ mktcap/ratio/margin_yi 皆 null)。預設 TPEX_FLOOR 對齊到「完整計算」
 預設回補跑出一堆只有兩個數字的空洞列；真要更早的 margin_lots-only 歷史可自行調低
 TPEX_FLOOR。
 
-每交易日 2 個 TPEx request，keep-alive session + 禮貌間隔 + 重試，idempotent 合併 →
+每交易日 2 個 TPEx request(2026-08-24 起 3 個)，keep-alive session + 禮貌間隔 + 重試，idempotent 合併 →
 可重跑/續傳。回補用 stride 分層(32→16→8→4→2→1)，理由與寫法同 fetch_margin_ratio_mm.py。
 
 Output: data/tpex_margin.json
@@ -88,9 +96,12 @@ OUT = ROOT / "data" / "tpex_margin.json"
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)", "Referer": "https://www.tpex.org.tw/"}
 BALANCE_URL = "https://www.tpex.org.tw/www/zh-tw/margin/balance"
 CLOSE_URL = "https://www.tpex.org.tw/web/stock/aftertrading/otc_quotes_no1430/stk_wn1430_result.php"
+DASH_URL = "https://www.tpex.org.tw/www/dashboardOtc/margin"
+DASH_FLOOR = "2026-08-24"  # 來源 3 實際可查的第一天
 FLOOR = os.environ.get("TPEX_FLOOR", "2011-01-01")
 CEIL = os.environ.get("TPEX_CEIL", "")  # 空 = today
 MAX_DAYS = int(os.environ.get("TPEX_MAX_DAYS", "30"))
+FILL_MAX = int(os.environ.get("TPEX_FILL_MAX", "60"))  # 每次最多補幾天既有列的分母
 SLEEP = float(os.environ.get("TPEX_SLEEP", "0.5"))
 ONLY = [d for d in os.environ.get("TPEX_ONLY", "").split(",") if d]  # 指定日期驗證用
 
@@ -189,6 +200,25 @@ def fetch_close(d_iso):
     return (closes, shares) if closes else None
 
 
+def fetch_margin_yi(d_iso):
+    """上櫃市場融資餘額(億元)，來源 3。DASH_FLOOR 前、非交易日或查無資料回 None。"""
+    if d_iso < DASH_FLOOR:
+        return None
+    j = get_json(DASH_URL, {"lang": "zh-tw", "date": roc_date(d_iso)})
+    if not j or j.get("stat") != "ok" or j.get("date") != d_iso.replace("-", ""):
+        return None
+    v = num(j.get("marginBalance"))
+    return v if v and v > 0 else None
+
+
+def apply_ratio(row, margin_yi):
+    """分母填入後算維持率(%)；exetf 口徑同 fetch_margin_ratio_mm.py：分子排除 ETF、分母仍為全市場融資餘額。"""
+    row["margin_yi"] = margin_yi
+    for src, dst in (("collateral_all_yi", "ratio_all"), ("collateral_exetf_yi", "ratio_exetf")):
+        c = row.get(src)
+        row[dst] = round(c / margin_yi * 100, 2) if c else None
+
+
 def fetch_day(d_iso):
     bal = fetch_balance(d_iso)
     if not bal:
@@ -200,8 +230,8 @@ def fetch_day(d_iso):
         "short_lots": int(round(sum(shorts.values()))),
         "collateral_all_yi": None,
         "collateral_exetf_yi": None,
-        "margin_yi": None,   # 分母(市場總計融資金額)找不到公開資料源，見 docstring
-        "ratio_all": None,   # 同上，無分母無法算
+        "margin_yi": None,   # 分母(市場總計融資金額)：只有 2026-08-24 起的來源 3，見 docstring
+        "ratio_all": None,   # 有分母才算
         "ratio_exetf": None,  # 同上
         "mktcap_yi": None,
         "mktcap_exetf_yi": None,  # 排除 ETF(00開頭)的口徑，對應官方「上櫃個股市值」，預設應看這個
@@ -231,6 +261,11 @@ def fetch_day(d_iso):
         row["collateral_exetf_yi"] = round((coll_all - coll_etf) / 1e8, 1)
         row["n"] = len(matched)
         row["n_etf"] = len(etfs)
+        if d_iso >= DASH_FLOOR:
+            time.sleep(SLEEP)
+            m = fetch_margin_yi(d_iso)
+            if m:
+                apply_ratio(row, m)
     return row
 
 
@@ -245,9 +280,10 @@ def save(by_date):
     OUT.write_text(json.dumps({
         "source": ("TPEx www/zh-tw/margin/balance(逐檔融資融券餘額) × "
                    "web/stock/aftertrading/otc_quotes_no1430(逐檔收盤+發行股數,回溯至2011-01-01)"),
-        "note": ("市場總計融資金額(分母)找不到 TPEx 公開資料源(openapi swagger 全掃、"
-                 "www/margin 下多路徑嘗試、FinMind 皆已排除，詳見腳本 docstring) → "
-                 "margin_yi/ratio_all/ratio_exetf 固定為 null，不自行捏造或用張數推估。"
+        "note": ("margin_yi=上櫃市場融資餘額(億元)，來自 TPEx 臺股儀表板 dashboardOtc/margin，"
+                 "2026-08-24 起才有；ratio_all=collateral_all_yi÷margin_yi(%，含ETF，與財經M平方"
+                 "上櫃融資維持率同口徑)、ratio_exetf=collateral_exetf_yi÷margin_yi。更早的日期找不到"
+                 "公開分母(詳見腳本 docstring) → margin_yi/ratio_* 為 null，不自行捏造或用張數推估。"
                  "collateral_*_yi=擔保品市值(資餘額張×收盤×1000)，皆為完整計算，"
                  "2011-01-01 前因無逐日收盤史料只有 margin_lots/short_lots。"
                  "mktcap_yi=全市場市值(收盤×發行股數，含ETF)；上櫃掛牌ETF(00開頭)多為"
@@ -286,6 +322,19 @@ def main():
         else:
             skipped += 1
         time.sleep(SLEEP)
+
+    # 既有列補分母：來源 3 上線前抓過的列，或當天儀表板還沒更新的列
+    fill = [d for d, r in sorted(by_date.items())
+            if d >= DASH_FLOOR and r.get("margin_yi") is None and r.get("collateral_all_yi") is not None][:FILL_MAX]
+    filled = 0
+    for d in fill:
+        m = fetch_margin_yi(d)
+        if m:
+            apply_ratio(by_date[d], m)
+            filled += 1
+        time.sleep(SLEEP)
+    if fill:
+        print(f"  denominator filled {filled}/{len(fill)} existing rows (>= {DASH_FLOOR})", flush=True)
 
     save(by_date)
     data = sorted(by_date.values(), key=lambda r: r["date"])
