@@ -1,6 +1,5 @@
 // 極端狀態儀表板 — 純函式引擎（無 DOM、無 fetch）。js/tabs/nonnormal.js 與 scripts/research/backtest_nonnormal.mjs 共用。
-// 規則來源：投資癮《非常態投資學》2-1「市場儀表板」與「全球市場連動速查表」；1-3「確認轉機三訊號」；
-// 2-3「融資維持率分層」與「三燈同亮」。每個閾值都標 src：'course'（課程原文）或 'project'（本專案定義），
+// 每個閾值都標 src：'ref'（常見的市場經驗門檻）或 'project'（本專案定義），
 // 自訂部分的理由見 docs/research/nonnormal-dashboard.md。描述性風險儀表板，不產生買賣指令。
 //
 // 防未來函數：每週的評估日只用「評估日當天或之前」的資料（lookup ≤ date）；均線、20 日高低點都以
@@ -13,23 +12,21 @@ const finite = v => typeof v === 'number' && Number.isFinite(v);
 const days = (a, b) => (Date.parse(b) - Date.parse(a)) / DAY;
 const iso = t => new Date(t).toISOString().slice(0, 10);
 
-export const COURSE = '投資癮《非常態投資學》2-1';
-
 export const P = Object.freeze({
-  maShort: 100,       // 短均線（100 個交易日）。使用者偏好 100/200/400；課程講季線／年線／兩年線（60/240/480 可重現課程日期）
+  maShort: 100,       // 短均線（100 個交易日）。使用者偏好 100/200/400（也可用季線／年線／兩年線 60/240/480）
   maLong: 200,        // 長均線（200 個交易日）
   ma2y: 400,          // 超長均線（400 個交易日）
   window: 20,         // 「急跌／急漲／一個月內」的計算期間：20 個交易日內的高低點（本專案定義）
   slopeLag: 20,       // 均線方向：與 20 個交易日前的均線比較（本專案定義）
-  soxShock: 0.15,     // 課程：費半急跌 > 15–20%（取下緣）
-  soxDayDrop: 0.05,   // 課程：費半盤中跌 5% → 隔天台股大機率受牽動（只當註記）
-  spxShock: 0.05,     // 課程：S&P 500 崩跌 > 5%
-  yieldJump: 0.25,    // 本專案：10Y 在 20 個交易日內自低點上升 ≥ 25bp（課程只說「快速上升」）
-  dxyPoints: 5,       // 課程：美元指數一個月內移動 > 5 點
-  goldJump: 0.05,     // 課程：黃金急漲 > 5%
-  oilMove: 0.20,      // 課程：油價急漲／急跌 > 20%
-  vix: [15, 20, 30, 40], // 課程：VIX 五個區間的分界
-  margin: [166, 150, 140, 130], // 課程：融資維持率分層
+  soxShock: 0.15,     // 費半急跌 > 15–20%（取下緣）
+  soxDayDrop: 0.05,   // 費半盤中跌 5% → 隔天台股大機率受牽動（只當註記）
+  spxShock: 0.05,     // S&P 500 崩跌 > 5%
+  yieldJump: 0.25,    // 本專案：10Y 在 20 個交易日內自低點上升 ≥ 25bp（經驗上只說「快速上升」）
+  dxyPoints: 5,       // 美元指數一個月內移動 > 5 點
+  goldJump: 0.05,     // 黃金急漲 > 5%
+  oilMove: 0.20,      // 油價急漲／急跌 > 20%
+  vix: [15, 20, 30, 40], // VIX 五個區間的分界
+  margin: [166, 150, 140, 130], // 融資維持率分層
   staleDays: 10,      // 本專案：資料比評估日舊超過 10 個日曆日即 unavailable
   horizonWeeks: 13,   // 回測：亮燈後看 13 週（約一季）的加權最大跌幅
   ddHit: 0.10,        // 回測：13 週內最大跌幅 ≥ 10% 算「之後真的出現明顯下跌」
@@ -59,10 +56,10 @@ export const SERIES = [
 ];
 export const EXTRA_FILES = { marginMm: 'taiwan_margin_ratio_mm.json', marginDaily: 'taiwan_margin_ratio.json', tpex: 'tpex_margin.json', breadth: 'tw_breadth_ls.json' };
 
-// 兩個本專案的定義選擇，預設值在看課程案例前依原則決定；回測 CLI 會列出四種組合的敏感度。
-//   trendSlope：國際股市「轉弱」＝跌破短均線「且均線下彎」（課程講費半趨勢：跌破均線且長期向下）。
-//               false＝只看跌破。櫃買不受影響：課程說櫃買「跌破均線」就提高警覺。
-//   breadthDivergence：廣度收窄只在「加權仍在短均線上」時成立（課程：指數強、個股弱）。false＝偏空多於偏多即成立。
+// 兩個本專案的定義選擇，預設值在看歷史案例前依原則決定；回測 CLI 會列出四種組合的敏感度。
+//   trendSlope：國際股市「轉弱」＝跌破短均線「且均線下彎」（費半趨勢：跌破均線且長期向下）。
+//               false＝只看跌破。櫃買不受影響：櫃買「跌破均線」就提高警覺。
+//   breadthDivergence：廣度收窄只在「加權仍在短均線上」時成立（指數強、個股弱）。false＝偏空多於偏多即成立。
 export const DEFAULT_OPTS = Object.freeze({ trendSlope: true, breadthDivergence: true });
 
 // ── series features ───────────────────────────────────────────────────────
@@ -171,7 +168,7 @@ function breadthAt(ctx, d) {
   return b.rows[i];
 }
 
-// ── zones / tiers (course) ───────────────────────────────────────────────
+// ── zones / tiers ───────────────────────────────────────────────────────
 export const VIX_ZONES = [
   { max: 15, label: '< 15 極度平靜', action: '正常策略' },
   { max: 20, label: '15–20 正常', action: '正常策略' },
@@ -183,7 +180,7 @@ export const vixZone = v => (finite(v) ? VIX_ZONES.findIndex(z => v < z.max) : -
 
 export const MARGIN_TIERS = [
   { min: 166, label: '≥ 166% 無壓力' },
-  { min: 150, label: '150–166%（課程未描述）' },
+  { min: 150, label: '150–166%' },
   { min: 140, label: '< 150% 承壓' },
   { min: 130, label: '< 140% 接近追繳' },
   { min: -Infinity, label: '< 130% 斷頭（強烈反向）' },
@@ -210,7 +207,7 @@ export const SIGNALS = [
   {
     id: 'sox', short: '費半', group: 'A', label: '費半轉弱／急跌', series: 'SOX',
     rule: '跌破 100 日線且均線下彎，或 20 日內自高點跌 ≥ 15%',
-    thresholds: [['急跌 > 15–20%（取 15%）', 'course'], ['跌破均線且長期向下＝趨勢轉空', 'course'], ['期間＝20 個交易日；均線＝100 日線', 'project'], ['單日盤中跌 ≥ 5% 只註記', 'course']],
+    thresholds: [['急跌 > 15–20%（取 15%）', 'ref'], ['跌破均線且長期向下＝趨勢轉空', 'ref'], ['期間＝20 個交易日；均線＝100 日線', 'project'], ['單日盤中跌 ≥ 5% 只註記', 'ref']],
     eval(ctx, d) {
       const s = ctx.s.SOX, f = at(s, d);
       if (!usable(f) || !finite(f.maS)) return na(f);
@@ -231,13 +228,13 @@ export const SIGNALS = [
   {
     id: 'spx', short: 'S&P 500', group: 'A', label: 'S&P 500 轉弱／崩跌', series: 'SPX',
     rule: '跌破 100 日線且均線下彎，或 20 日內自高點跌 ≥ 5%',
-    thresholds: [['崩跌 > 5%', 'course'], ['期間＝20 個交易日', 'project'], ['轉弱＝跌破 100 日線且均線下彎', 'project']],
+    thresholds: [['崩跌 > 5%', 'ref'], ['期間＝20 個交易日', 'project'], ['轉弱＝跌破 100 日線且均線下彎', 'project']],
     eval: (ctx, d) => usStock(ctx, ctx.s.SPX, d),
   },
   {
     id: 'kospi', short: '韓股', group: 'A', label: '韓股轉弱', series: 'KOSPI',
     rule: '跌破 100 日線且均線下彎',
-    thresholds: [['韓股先轉弱、台股未跌要提高警覺', 'course'], ['轉弱＝跌破 100 日線且均線下彎', 'project']],
+    thresholds: [['韓股先轉弱、台股未跌要提高警覺', 'ref'], ['轉弱＝跌破 100 日線且均線下彎', 'project']],
     eval(ctx, d) {
       const f = at(ctx.s.KOSPI, d), tw = at(ctx.s.TWII, d);
       if (!usable(f) || !finite(f.maS)) return na(f);
@@ -250,7 +247,7 @@ export const SIGNALS = [
   {
     id: 'us10y', short: '美債 10Y', group: 'B', label: '美債 10Y 快速上升', series: 'US10Y',
     rule: '20 日內自低點上升 ≥ 25bp',
-    thresholds: [['快速上升＝科技股估值壓力', 'course'], ['20 日 ≥ 25bp', 'project'], ['2Y > 10Y 倒掛只註記', 'course']],
+    thresholds: [['快速上升＝科技股估值壓力', 'ref'], ['20 日 ≥ 25bp', 'project'], ['2Y > 10Y 倒掛只註記', 'ref']],
     eval(ctx, d) {
       const f = at(ctx.s.US10Y, d), y2 = at(ctx.s.US2Y, d);
       if (!usable(f)) return na(f);
@@ -263,7 +260,7 @@ export const SIGNALS = [
   {
     id: 'dxy', short: '美元', group: 'B', label: '美元走強', series: 'DXY',
     rule: '站上 100 日線且均線上揚，或 20 日內自低點漲 > 5 點',
-    thresholds: [['一個月內移動 > 5 點', 'course'], ['期間＝20 個交易日', 'project'], ['站上上揚的 100 日線＝走強', 'project']],
+    thresholds: [['一個月內移動 > 5 點', 'ref'], ['期間＝20 個交易日', 'project'], ['站上上揚的 100 日線＝走強', 'project']],
     eval(ctx, d) {
       const f = at(ctx.s.DXY, d);
       if (!usable(f) || !finite(f.maS) || !finite(f.maSPrev)) return na(f);
@@ -277,7 +274,7 @@ export const SIGNALS = [
   {
     id: 'gold', short: '黃金', group: 'B', label: '黃金恐慌型急漲', series: 'GOLD',
     rule: '20 日內自低點急漲 ≥ 5%，且 VIX ≥ 20',
-    thresholds: [['急漲 > 5% → 觀察 VIX', 'course'], ['期間＝20 個交易日', 'project'], ['VIX ≥ 20 才算恐慌型', 'project']],
+    thresholds: [['急漲 > 5% → 觀察 VIX', 'ref'], ['期間＝20 個交易日', 'project'], ['VIX ≥ 20 才算恐慌型', 'project']],
     eval(ctx, d) {
       const f = at(ctx.s.GOLD, d), v = at(ctx.s.VIX, d);
       if (!usable(f) || !usable(v)) return na(usable(f) ? v : f);
@@ -289,7 +286,7 @@ export const SIGNALS = [
   {
     id: 'oil', short: '原油', group: 'B', label: '原油急漲／急跌', series: 'OIL',
     rule: '布蘭特 20 日內自低點急漲 ≥ 20% 或自高點急跌 ≥ 20%',
-    thresholds: [['急漲／急跌 > 20%（雙面訊號）', 'course'], ['期間＝20 個交易日', 'project'], ['用布蘭特', 'project']],
+    thresholds: [['急漲／急跌 > 20%（雙面訊號）', 'ref'], ['期間＝20 個交易日', 'project'], ['用布蘭特', 'project']],
     eval(ctx, d) {
       const f = at(ctx.s.OIL, d);
       if (!usable(f)) return na(f, '布蘭特 2007-07 起');
@@ -302,7 +299,7 @@ export const SIGNALS = [
   {
     id: 'vix', short: 'VIX', group: 'B', label: 'VIX 升高', series: 'VIX',
     rule: '收盤 ≥ 20',
-    thresholds: [['20–30 開始不安；30 以上恐慌', 'course']],
+    thresholds: [['20–30 開始不安；30 以上恐慌', 'ref']],
     eval(ctx, d) {
       const f = at(ctx.s.VIX, d);
       if (!usable(f)) return na(f);
@@ -312,7 +309,7 @@ export const SIGNALS = [
   {
     id: 'otc', short: '櫃買', group: 'C', label: '櫃買轉弱', series: 'TWOII',
     rule: '收盤跌破 100 日線',
-    thresholds: [['櫃買先跌破均線要提高警覺', 'course'], ['均線＝100 日線', 'project']],
+    thresholds: [['櫃買先跌破均線要提高警覺', 'ref'], ['均線＝100 日線', 'project']],
     eval(ctx, d) {
       const f = at(ctx.s.TWOII, d), tw = at(ctx.s.TWII, d);
       if (!usable(f) || !finite(f.maS)) return na(f, '櫃買 2013-03 起');
@@ -326,7 +323,7 @@ export const SIGNALS = [
   {
     id: 'margin', short: '融資維持率', group: 'C', label: '融資維持率承壓', series: 'MARGIN',
     rule: '上市或上櫃融資維持率（本站計算、含 ETF）< 150%',
-    thresholds: [['150% 以下承壓', 'course'], ['用本站計算值（含 ETF 口徑）', 'project'], ['上櫃也計入（2026-08-24 起有資料）', 'project']],
+    thresholds: [['150% 以下承壓', 'ref'], ['用本站計算值（含 ETF 口徑）', 'project'], ['上櫃也計入（2026-08-24 起有資料）', 'project']],
     eval(ctx, d) {
       const m = marginNow(ctx, d);
       if (!m) return na(at(ctx.s.MARGIN, d), '重建維持率 2004-02 起');
@@ -338,7 +335,7 @@ export const SIGNALS = [
   {
     id: 'breadth', short: '廣度', group: 'C', label: '廣度收窄', series: 'BREADTH',
     rule: '加權仍在 100 日線上，但偏空家數 > 偏多家數',
-    thresholds: [['指數強、個股弱＝廣度收窄', 'course'], ['用本站多空家數近似；指數強＝加權在 100 日線上', 'project']],
+    thresholds: [['指數強、個股弱＝廣度收窄', 'ref'], ['用本站多空家數近似；指數強＝加權在 100 日線上', 'project']],
     eval(ctx, d) {
       const b = breadthAt(ctx, d), tw = at(ctx.s.TWII, d);
       if (!b || b.stale) return na(b, '多空家數 2024-04 起');
@@ -445,25 +442,25 @@ export function quote(s, d, { span = 183, mas = [50, 100] } = {}) {
   };
 }
 
-// ── turnaround panel (1-3, 2-3) ──────────────────────────────────────────
+// ── turnaround panel ──────────────────────────────────────────
 export function turnaround(ctx, d) {
   const v = at(ctx.s.VIX, d), m = marginNow(ctx, d);
   return {
     vix: usable(v) ? { value: v.close, zone: vixZone(v.close), asOf: v.date } : null,
     margin: m ? { value: m.value, market: m.market, listed: m.listed?.close ?? null, otc: m.otc?.close ?? null, tier: marginTier(m.value), asOf: m.asOf } : null,
-    asymmetricHint: usable(v) ? v.close >= P.vix[2] : null,     // 1-3：VIX 30–40 以上是不對稱機會的工具之一
-    marginBelow140: m ? m.value < P.margin[2] : null,           // 2-3 三燈同亮條件之一（上市、上櫃取低者）
+    asymmetricHint: usable(v) ? v.close >= P.vix[2] : null,     // VIX 30–40 以上是不對稱機會的工具之一
+    marginBelow140: m ? m.value < P.margin[2] : null,           // 多燈同亮條件之一（上市、上櫃取低者）
   };
 }
 
 // ── backtest helpers ─────────────────────────────────────────────────────
 export const CASES = [
   { id: '2022', label: '2022 年空頭', from: '2021-10-01', event: '2022-03-07', eventText: '加權跌破年線',
-    course: '加權 3 月才跌破年線，但 2022 年 1 月已多市場轉弱（那斯達克、費半、S&P 500 1 月下旬轉中性偏空；10Y 上升；韓股、櫃買 1 月轉弱）' },
+    note: '加權 3 月才跌破年線，但 2022 年 1 月已多市場轉弱（那斯達克、費半、S&P 500 1 月下旬轉中性偏空；10Y 上升；韓股、櫃買 1 月轉弱）' },
   { id: '2025', label: '2025 年 4 月關稅崩跌', from: '2024-10-01', event: '2025-04-02', eventText: '對等關稅宣布（台股 4/7 崩跌）',
-    course: '崩跌前已累積：廣度收窄、融資維持率約 143%、櫃買長期在年線下、美股 2 月開始下跌' },
+    note: '崩跌前已累積：廣度收窄、融資維持率約 143%、櫃買長期在年線下、美股 2 月開始下跌' },
   { id: '2026', label: '2026 年 7 月櫃買斷頭', from: '2026-04-01', event: '2026-07-17', eventText: '加權跌破季線（7/30 到年線）',
-    course: '櫃買 7/14 先跌破季線，加權 7/17 跟破，7/30 來到年線' },
+    note: '櫃買 7/14 先跌破季線，加權 7/17 跟破，7/30 來到年線' },
 ];
 
 /** Worst TWII close over the next `weeks` weeks relative to the close on d (decline from the start, not peak-to-trough).
@@ -476,7 +473,7 @@ export function forwardDrawdown(ctx, d, weeks = P.horizonWeeks) {
   return worst;
 }
 
-/** Per course case: week-by-week levels up to the event, the alert run in force at the event, and lead time. */
+/** Per historical case: week-by-week levels up to the event, the alert run in force at the event, and lead time. */
 export function caseResult(ctx, c, minLevel = 2) {
   const weeks = history(ctx, c.from, iso(Date.parse(c.event) + 21 * DAY));
   const before = weeks.filter(w => w.date < c.event);

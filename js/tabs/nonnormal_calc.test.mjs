@@ -51,7 +51,7 @@ test('levelOf: single signal is noise; alert needs ≥4 lit across ≥2 groups; 
   assert.equal(N.levelOf(6, 3), 3);
 });
 
-test('course tiers: VIX zones and margin-ratio tiers use the course boundaries', () => {
+test('tiers: VIX zones and margin-ratio tiers use the reference boundaries', () => {
   assert.deepEqual([14.99, 15, 19.99, 20, 30, 39.9, 40, 82].map(N.vixZone), [0, 1, 1, 2, 3, 3, 4, 4]);
   assert.equal(N.vixZone(null), -1);
   assert.deepEqual([200, 166, 165.9, 150, 149.9, 140, 139.9, 130, 129.9].map(N.marginTier), [0, 0, 1, 1, 2, 2, 3, 3, 4]);
@@ -212,7 +212,7 @@ test('forwardDrawdown is null until the whole horizon has data', () => {
   assert.equal(N.forwardDrawdown(ctx, DATES[100]), 0);
 });
 
-// ── real repository data: the course's own dates ────────────────────────
+// ── real repository data: the historical case dates ────────────────────────
 const D = new URL('../../data/', import.meta.url);
 const haveData = ['TWII.json', 'TWOII.json', 'SOX.json'].every(f => existsSync(new URL(f, D)));
 function realContext() {
@@ -222,7 +222,7 @@ function realContext() {
   return N.buildContext(raw);
 }
 
-test('data check: 400-day line reproduces the course\'s 2025 dates (OTC 2025-03-28, TWII 2025-04-07)', { skip: !haveData }, () => {
+test('data check: 400-day line reproduces the 2025 case dates (OTC 2025-03-28, TWII 2025-04-07)', { skip: !haveData }, () => {
   const q = N.leadLag(realContext(), '2025-04-07').find(r => r.ma === 400);
   assert.equal(q.otcBelowSince, '2025-03-28');
   assert.equal(q.twiiBelowSince, '2025-04-07');
@@ -234,7 +234,7 @@ test('data check: 2026-07 OTC broke its 100-day line while TWII held', { skip: !
   assert.equal(q.twiiBelowSince, null);
 });
 
-test('course case 2022: multi-market alert well before TWII broke its 200-day average', { skip: !haveData }, () => {
+test('case 2022: multi-market alert well before TWII broke its 200-day average', { skip: !haveData }, () => {
   const r = N.caseResult(realContext(), N.CASES.find(c => c.id === '2022'));
   assert.ok(r.lastBefore.level >= 2);
   assert.ok(r.leadWeeks >= 4, `lead ${r.leadWeeks} weeks`);

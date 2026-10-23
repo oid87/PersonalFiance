@@ -1126,7 +1126,7 @@
 #tab-nonnormal #nonnormal-cases table, #tab-nonnormal #nonnormal-sources table { min-width:760px; }
 #tab-nonnormal .nonnormal-src { display:flex; flex-direction:column; gap:2px; line-height:1.6; }
 #tab-nonnormal .nonnormal-tag { display:inline-block; padding:0 6px; border-radius:4px; font-size:11px; border:1px solid var(--border); white-space:nowrap; }
-#tab-nonnormal .nonnormal-tag--course { color:#3fb950; border-color:#3fb950; }
+#tab-nonnormal .nonnormal-tag--ref { color:#3fb950; border-color:#3fb950; }
 #tab-nonnormal .nonnormal-tag--project { color:#58a6ff; border-color:#58a6ff; }
 #tab-nonnormal .nonnormal-ladder { margin:4px 0; padding-left:20px; line-height:1.7; font-size:var(--text-sm,13px); }
 #tab-nonnormal .nonnormal-ladder li.nonnormal-current { font-weight:700; color:var(--text); background:rgba(227,179,65,0.18); border-radius:4px; }
