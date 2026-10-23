@@ -33,8 +33,8 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     check('banner shows a level', /常態|留意|警戒|高度警戒/.test(await text('summary')), await text('summary'));
     const cards = await text('cards');
     check('card groups present', ['國際股市', '金融市場', '台股內部', '參考（不計分）'].every(k => cards.includes(k)), cards.slice(0, 200));
-    check('21 quote cards', (await page.locator('#nonnormal-cards .nonnormal-q').count()) === 21);
-    check('cards include the new series', ['費半', '那斯達克 100', '恆生', '歐股 50', '布蘭特原油', '上櫃融資維持率', 'VXN', '比特幣'].every(k => cards.includes(k)));
+    check('22 quote cards', (await page.locator('#nonnormal-cards .nonnormal-q').count()) === 22);
+    check('cards include the new series', ['費半', '那斯達克 100', '恆生', '歐股 50', '布蘭特原油', '上櫃融資維持率', 'VXN', '恐懼貪婪', '比特幣'].every(k => cards.includes(k)));
     check('US stock order: 費半 → 那斯達克 → S&P 500', (await page.evaluate(() => [...document.querySelectorAll('#nonnormal-cards .nonnormal-cards')[0].querySelectorAll('.nonnormal-q')].map(e => e.dataset.series).join())) === 'SOX,NDX,SPX,KOSPI');
     check('上櫃 margin card shows a ratio', /^\d+\.\d%$/.test(await page.locator('.nonnormal-q[data-series="MARGIN_OTC"] .nonnormal-q-val').innerText()));
     check('sparkline with 50/100MA drawn', await page.evaluate(() => {
@@ -49,6 +49,7 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     check('lead-lag table lists the three averages', (await page.locator('#nonnormal-leadlag tbody tr').count()) === 3);
     check('cash panel: 4w and 8w states, five ranked assets, chart drawn', (await page.locator('#nonnormal-cash-state .nonnormal-cash-pill').count()) === 2
       && (await page.locator('#nonnormal-cash-rank .nonnormal-rank-row').count()) === 5 && (await page.locator('#nonnormal-cash-chart canvas').count()) > 0);
+    check('TLT row notes the 10Y yield change over the same dates', /^同期 10Y 殖利率 [+-]?\d+bp/.test(await page.locator('#nonnormal-cash-rank .nonnormal-rank-note').innerText()));
     await page.locator('#nonnormal-cash-range .chip[data-nonnormal-cash="8"]').click();
     check('cash window chip switches the ranking', await page.locator('#nonnormal-cash-range .chip[data-nonnormal-cash="8"].active').count() === 1);
     await page.locator('.nonnormal-q[data-series="SOX"]').click();
@@ -69,16 +70,24 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     check('large chart shows about half a year', await page.evaluate(() => { const o = echarts.getInstanceByDom(document.getElementById('nonnormal-dialog-chart')).getOption(); const d = o.xAxis[0].data; return (Date.parse(d.at(-1)) - Date.parse(d[0])) / 864e5 >= 175 && (Date.parse(d.at(-1)) - Date.parse(d[0])) / 864e5 <= 185; }));
     await page.keyboard.press('Escape');
     check('Escape closes the large chart', !(await page.evaluate(() => document.getElementById('nonnormal-dialog').open)));
-    check('zoom floor: history chart cannot zoom below ~half a year', await page.evaluate(async () => {
+    check('zoom floor: history chart cannot zoom below ~9 months (weekly → 38 bars)', await page.evaluate(async () => {
       const ch = echarts.getInstanceByDom(document.getElementById('nonnormal-chart')), d = ch.getOption().xAxis[0].data;
       ch.dispatchAction({ type: 'dataZoom', startValue: d[d.length - 3], endValue: d.at(-1) });
       await new Promise(r => setTimeout(r, 200));
       const z = ch.getOption().dataZoom.find(x => x.type === 'slider');
-      const ok = z.endValue - z.startValue >= 25;
+      const ok = z.endValue - z.startValue >= 38;
       ch.dispatchAction({ type: 'dataZoom', start: 0, end: 100 });
       return ok;
     }));
     check('chart canvas drawn', (await page.locator('#nonnormal-chart canvas').count()) > 0);
+    check('TWII axis follows the visible window: low −10% to high +10%, six ticks from low to high', await page.evaluate(() => {
+      const ch = echarts.getInstanceByDom(document.getElementById('nonnormal-chart'));
+      ch.dispatchAction({ type: 'dataZoom', startValue: '2015-05-29', endValue: '2016-09-30' });
+      const o = ch.getOption(), z = o.dataZoom[0], vis = o.series[0].data.slice(z.startValue, z.endValue + 1).filter(Number.isFinite);
+      const lo = Math.min(...vis), hi = Math.max(...vis), [a, b] = ch.getModel().getComponent('yAxis', 0).axis.scale.getExtent();
+      const t = o.series.find(x => x.id === 'twii-ticks').markLine.data.map(m => m.yAxis), near = (x, y) => Math.abs(x - y) < 1;
+      return near(a, lo * 0.9) && near(b, hi * 1.1) && t.length === 6 && near(t[0], lo) && near(t[5], hi) && hi < 11000;
+    }));
     check('collapsed sections not rendered before opening', (await page.locator('#nonnormal-cases tbody tr').count()) === 0 && (await page.locator('#nonnormal-sources tbody tr').count()) === 0);
     await page.locator('#nonnormal-cases-details > summary').click();
     await page.waitForFunction(() => document.querySelectorAll('#nonnormal-cases tbody tr').length > 0, null, { timeout: 5000 }).catch(() => {});
