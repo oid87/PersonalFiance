@@ -33,8 +33,8 @@ class PipelineTest(unittest.TestCase):
         self.assertEqual(routes['forward_pe'], ['fetch_forward_pe.py'] * 2)
         self.assertNotIn('fetch_margin_ratio_mm.py', sum(routes.values(), []))
         contracts, required = expand_contracts(ROOT, json.loads((ROOT / 'scripts/source_manifest.json').read_text()))
-        self.assertEqual(len(stock_stems(ROOT)), 41)
-        self.assertEqual(len(required), 41)
+        self.assertEqual(len(stock_stems(ROOT)), 45)
+        self.assertEqual(len(required), 45)
         self.assertEqual(contracts['QQQ.json']['profile'], 'ohlcv')
 
     def test_new_unwired_source_is_detected(self):

@@ -161,6 +161,10 @@ export const CATEGORIES = [
     "label": "波動與風險",
     "tabs": [
       {
+        "id": "nonnormal",
+        "label": "極端狀態儀表板"
+      },
+      {
         "id": "usrisk",
         "label": "美股風險觀察"
       },
@@ -368,6 +372,7 @@ export const CATEGORIES = [
 
 const ALIASES = {
   usrisk: ["美股去槓桿", "US risk", "CFTC", "FINRA", "科技壓力"],
+  nonnormal: ["極端", "極端狀態", "非常態", "市場儀表板", "共振", "多重確認", "台股", "費半", "櫃買", "VIX", "速查表"],
   uscap: ["US Capitulation", "恐慌", "拋售", "Put/Call", "VIX", "VXN", "止穩", "capitulation"],
   fsi: ['FSI'], nfci: ['NFCI'], cpi: ['CPI'],
   gdp_productivity_decomp: ['GDP'], tw_jp_kr_gdp: ['GDP', '台灣'],

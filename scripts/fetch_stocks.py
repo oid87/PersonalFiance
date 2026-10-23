@@ -73,6 +73,11 @@ TICKERS: dict[str, tuple[str, str]] = {
     "^KS11":     ("KS11",     "1996-12-11"),  # KOSPI — 韓國融資餘額儀表板用
     "000001.SS": ("SSE",      "1997-07-02"),  # 上證指數 — 中國融資餘額儀表板用
     "399001.SZ": ("SZSE",     "1997-08-22"),  # 深證成指 — 中國融資餘額儀表板用
+    # 極端狀態儀表板（nonnormal tab）：費半指數本體、原油、恆生、歐股
+    "^SOX":      ("SOX",      "1994-05-04"),  # PHLX Semiconductor Index（SOXX 2021 起改追 ICE 半導體指數，不等於費半）
+    "BZ=F":      ("BRENT",    "2007-07-30"),  # Brent 原油期貨連續月；不用 WTI(CL=F)：2020-04-20 負價會讓漲跌幅失真
+    "^HSI":      ("HSI",      "1987-01-02"),  # 恆生指數
+    "^STOXX50E": ("STOXX50E", "2007-03-30"),  # Euro Stoxx 50
 }
 
 # Known yfinance vendor data artifacts: the price feed splices two
