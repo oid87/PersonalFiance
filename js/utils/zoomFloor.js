@@ -1,10 +1,10 @@
-// 全站 dataZoom 最小範圍：拖拉 slider 或滾輪縮放時，時間軸最短只能看到約半年。
+// 全站 dataZoom 最小範圍：拖拉 slider 或滾輪縮放時，時間軸最短只能看到約 9 個月。
 // 在 echarts.init 這個入口統一處理（boot.js 安裝一次），各 tab 不用各自設定；
 // tab 自己寫了 minValueSpan／minSpan 的 dataZoom 不會被改。
 // 只處理控制 x 軸的 dataZoom，且 x 軸是 time 軸，或資料是日期字串（YYYY-MM／YYYY-MM-DD）的 category 軸；
-// 其他軸（數值、代號、年份數字）不動。category 軸依整條資料的平均密度換算成「約半年有幾根」，
-// 日、週、月頻都適用。資料本身比半年短時，等於鎖在全部範圍。
-export const MIN_ZOOM_DAYS = 180;   // 「半年」取 180 天，讓剛好 6 個月的範圍按鈕不會被撐大
+// 其他軸（數值、代號、年份數字）不動。category 軸依整條資料的平均密度換算成「約 9 個月有幾根」，
+// 日、週、月頻都適用。資料本身比 9 個月短時，等於鎖在全部範圍。
+export const MIN_ZOOM_DAYS = 270;   // 9 個月取 270 天（使用者指定，原本半年）。1M／3M／6M 這類按鈕是篩資料、不是縮放，不受影響
 const DAY = 86400000;
 
 const list = v => (v == null ? [] : Array.isArray(v) ? v : [v]);
@@ -28,7 +28,7 @@ export function minSpanForAxis(axis, days = MIN_ZOOM_DAYS) {
   return span >= 2 ? span : null;
 }
 
-/** Copy of `option` with a half-year minValueSpan on each x-axis dataZoom that does not set its own minimum.
+/** Copy of `option` with a ~9-month minValueSpan on each x-axis dataZoom that does not set its own minimum.
  *  getCurrent() is only called when the update carries dataZoom but no xAxis (a merge-style partial update). */
 export function withZoomFloor(option, getCurrent = () => null, days = MIN_ZOOM_DAYS) {
   if (!option || typeof option !== 'object' || option.dataZoom == null) return option;

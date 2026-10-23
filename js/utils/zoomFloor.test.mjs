@@ -1,4 +1,4 @@
-// zoomFloor — 全站 dataZoom 最小半年。
+// zoomFloor — 全站 dataZoom 最短約 9 個月。
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -6,18 +6,18 @@ const { MIN_ZOOM_DAYS, minSpanForAxis, withZoomFloor, installZoomFloor } = await
 
 const daily = (start, n) => { const out = []; let t = Date.parse(start); while (out.length < n) { const d = new Date(t); if (![0, 6].includes(d.getUTCDay())) out.push(d.toISOString().slice(0, 10)); t += 86400000; } return out; };
 
-test('time axis → 180 days in ms', () => {
+test('time axis → 270 days in ms', () => {
   assert.equal(minSpanForAxis({ type: 'time' }), MIN_ZOOM_DAYS * 86400000);
 });
 
-test('date-string category axis → bars per ~half year from the data density (daily, weekly, monthly)', () => {
+test('date-string category axis → bars per ~9 months from the data density (daily, weekly, monthly)', () => {
   const d = daily('2020-01-01', 1500);
   const span = minSpanForAxis({ type: 'category', data: d });
-  assert.ok(span >= 120 && span <= 130, String(span));
+  assert.ok(span >= 185 && span <= 195, String(span));
   const weekly = Array.from({ length: 300 }, (_, i) => new Date(Date.parse('2015-01-02') + i * 7 * 86400000).toISOString().slice(0, 10));
-  assert.equal(minSpanForAxis({ data: weekly }), 25);
+  assert.equal(minSpanForAxis({ data: weekly }), 38);
   const monthly = Array.from({ length: 120 }, (_, i) => `${2010 + Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}`);
-  assert.equal(minSpanForAxis({ type: 'category', data: monthly }), 5);
+  assert.equal(minSpanForAxis({ type: 'category', data: monthly }), 8);
   assert.equal(minSpanForAxis({ type: 'category', data: d.map(value => ({ value })) }), span, '{value} items read like plain strings');
 });
 
