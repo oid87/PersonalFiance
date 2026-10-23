@@ -262,9 +262,8 @@
       font-size: 12px;
       min-width: 700px;
     }
+    /* 表頭不用 sticky：長表格（台股情緒 1200 列）捲動時 iPhone CPU 從 ~7% 拉到 ~50% */
     .fp-table th {
-      position: sticky;
-      top: 0;
       background: var(--bg);
       text-align: right;
       color: var(--muted);
@@ -490,7 +489,7 @@
       width: 100%; border-collapse: collapse; font-size: 12px; min-width: 520px;
     }
     .sent-bt-table th {
-      position: sticky; top: 0; background: var(--bg);
+      background: var(--bg);
       text-align: right; color: var(--muted); padding: 4px 10px;
       border-bottom: 1px solid var(--border); font-weight: 500; white-space: nowrap;
     }
