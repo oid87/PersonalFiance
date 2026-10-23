@@ -4,10 +4,12 @@ import { isDataFresh, ensureLoaded } from './utils/data.js';
 import { chipPicker } from './utils/dom.js';
 import { initSharedUI } from './utils/ui.js';
 import { initChartFocus } from './utils/chartFocus.js';
+import { installZoomFloor } from './utils/zoomFloor.js';
 import { registerAll, switchTo, applyThemeAll, setupResizeHandler } from './switcher.js';
 import { registryEntries } from './navigation-catalog.mjs';
 import { initNavigation } from './navigation.js';
 
+installZoomFloor();   // 全站 dataZoom 最短約半年；要在任何 tab 呼叫 echarts.init 之前
 const entries = registryEntries();
 const entriesById = new Map(entries.map(entry => [entry.id, entry]));
 
