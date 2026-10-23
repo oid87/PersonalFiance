@@ -60,7 +60,7 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     check('card click opens the large chart', await page.evaluate(() => document.getElementById('nonnormal-dialog').open && /費半/.test(document.getElementById('nonnormal-dialog-title').textContent) && !!document.querySelector('#nonnormal-dialog-chart canvas')));
     check('dialog explains why: reason, rule with source tags, current reading; state pill in the title row', await page.evaluate(() => {
       const t = document.getElementById('nonnormal-dialog-why').innerText;
-      return ['為什麼看這個', '怎麼算亮燈', '現在'].every(k => t.includes(k)) && /半導體/.test(t) && /課程|本專案/.test(t)
+      return ['為什麼看這個', '怎麼算亮燈', '現在'].every(k => t.includes(k)) && /半導體/.test(t) && !/本專案/.test(t)
         && !!document.querySelector('#nonnormal-dialog-sub .nonnormal-why-state');
     }));
     check('desktop dialog: reason left, chart right, chart about twice as wide', await page.evaluate(() => {
@@ -91,15 +91,14 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     check('collapsed sections not rendered before opening', (await page.locator('#nonnormal-cases tbody tr').count()) === 0 && (await page.locator('#nonnormal-sources tbody tr').count()) === 0);
     await page.locator('#nonnormal-cases-details > summary').click();
     await page.waitForFunction(() => document.querySelectorAll('#nonnormal-cases tbody tr').length > 0, null, { timeout: 5000 }).catch(() => {});
-    check('three course cases rendered on open', (await page.locator('#nonnormal-cases tbody tr').count()) === 3);
+    check('three historical cases rendered on open', (await page.locator('#nonnormal-cases tbody tr').count()) === 3);
     check('case table reports a verdict per case', ((await text('cases')).match(/提前|沒有提前|沒有達到/g) || []).length >= 3);
     check('base rate line rendered', /2013 起/.test(await text('base')));
     await page.locator('#nonnormal-sources-details > summary').click();
     await page.waitForFunction(() => document.querySelectorAll('#nonnormal-sources tbody tr').length > 0, null, { timeout: 5000 }).catch(() => {});
     check('sources table has 12 rows', (await page.locator('#nonnormal-sources tbody tr').count()) === 12);
     const sources = await text('sources');
-    check('every threshold is labelled course or project', sources.includes('課程') && sources.includes('本專案'));
-    check('no course citation line in notes', !/來源：投資癮/.test(await text('notes')));
+    check('thresholds listed without source labels', sources.includes('20 個交易日') && !sources.includes('本專案'));
     // interactions
     await page.locator('#nonnormal-range .chip[data-nonnormal-range="all"]').click();
     check('range chip toggles active', await page.locator('#nonnormal-range .chip[data-nonnormal-range="all"].active').count() === 1);

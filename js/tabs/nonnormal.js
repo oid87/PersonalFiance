@@ -1,6 +1,5 @@
 // 極端狀態儀表板 — 每週一次的多重確認儀表板（描述性，不是買賣訊號）。
 // 引擎：js/tabs/nonnormal_calc.mjs（與 scripts/research/backtest_nonnormal.mjs 共用）。
-// 規則來源：投資癮《非常態投資學》2-1「市場儀表板」「全球市場連動速查表」；1-3 轉機三訊號；2-3 融資維持率分層、三燈同亮。
 // 版面：等級橫幅 → 報價卡（最新值、日漲跌、近 6 個月走勢＋50／100 日均線，亮燈卡加紅框；點卡片開大圖）→ 資金流向（現金為王，
 // 與 cashking 頁共用 cashking_calc.mjs）→ 共振歷史圖 → 時間差 → 轉機；
 // 案例回測與閾值來源收在頁尾 <details>，打開才算。
@@ -88,7 +87,6 @@ function table(id, headers, rows) {
   t.append(thead, body);
   byId(id).replaceChildren(t);
 }
-const srcTag = src => node('span', src === 'course' ? '課程' : '本專案', { class: 'nonnormal-tag nonnormal-tag--' + src });
 
 // ── data ────────────────────────────────────────────────────────────────
 async function load(context = {}) {
@@ -272,7 +270,7 @@ function drawDetail() {
     ],
   });
 }
-/** 大圖左欄：為什麼看這個、怎麼算亮燈（閾值標課程／本專案）、現在的數值。回傳狀態 [文字, class] 給標題列顯示。 */
+/** 大圖左欄：為什麼看這個、怎麼算亮燈、現在的數值。回傳狀態 [文字, class] 給標題列顯示。 */
 function renderWhy(id, sigId, sig) {
   const def = sigId ? N.SIGNALS.find(x => x.id === sigId) : null, why = byId('dialog-why');
   const state = !def ? ['只顯示，不計分', 'ref'] : sig?.state === 'on' ? ['亮燈', 'on'] : sig?.state === 'na' ? ['無資料', 'na'] : ['未亮', 'off'];
@@ -281,7 +279,7 @@ function renderWhy(id, sigId, sig) {
   if (sig?.text || sig?.reason) parts.push(sec('現在', node('p', sig.text || sig.reason)));
   if (def) {
     const ul = node('ul', null, { class: 'nonnormal-why-list' });
-    for (const [text, src] of def.thresholds) { const li = node('li'); li.append(srcTag(src), ' ' + text); ul.append(li); }
+    for (const [text] of def.thresholds) ul.append(node('li', text));
     parts.splice(1, 0, sec('怎麼算亮燈', node('p', def.rule), ul));
   }
   why.replaceChildren(...parts);
@@ -468,9 +466,9 @@ function renderTurn(d) {
     label.append(input, ' ' + text + (auto != null ? '（自動）' : ''));
     return label;
   };
-  box.append(node('h4', '1-3 轉機三訊號'),
+  box.append(node('h4', '轉機三訊號'),
     item('exhaust', '賣壓衰竭'), item('asym', `不對稱機會${t.asymmetricHint ? '（VIX ≥ 30）' : ''}`), item('policy', '政策止血'),
-    node('h4', '2-3 三燈同亮'),
+    node('h4', '多燈同亮'),
     item('mispriced', '族群被錯殺'), item('buyback', '公司派低點買回'), item('margin140', '融資維持率 < 140%', t.marginBelow140), item('noLeaders', '連續多日無觀察類股'));
   byId('turn').replaceChildren(vix, mg, box);
 }
@@ -495,9 +493,9 @@ function renderCases() {
   byId('base').textContent = `2013 起：警戒以上占 ${rate((b.share[2] + b.share[3]) / b.weeks)} 的週；之後 13 週跌 ≥ 10% 的比例 ${rate(b.hitAlert)}（所有週 ${rate(b.hitAll)}）。`;
 }
 function renderSources() {
-  table('sources', ['訊號', '亮燈條件', '閾值來源'], N.SIGNALS.map(def => {
+  table('sources', ['訊號', '亮燈條件', '細節'], N.SIGNALS.map(def => {
     const ul = node('span', null, { class: 'nonnormal-src' });
-    for (const [text, src] of def.thresholds) { const li = node('span', null, { class: 'nonnormal-src-item' }); li.append(srcTag(src), ' ' + text); ul.append(li); }
+    for (const [text] of def.thresholds) ul.append(node('span', text, { class: 'nonnormal-src-item' }));
     return [def.label, def.rule, ul];
   }));
   const items = [

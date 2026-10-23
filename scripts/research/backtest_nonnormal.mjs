@@ -1,8 +1,8 @@
 // 極端狀態儀表板 — 可重現回測。Usage:
 //   node scripts/research/backtest_nonnormal.mjs                 （印到 stdout）
 //   node scripts/research/backtest_nonnormal.mjs --out docs/research/nonnormal-dashboard-backtest.md
-// 引擎 js/tabs/nonnormal_calc.mjs；只讀 repo 的 data/*.json，不抓資料。參數全部事前固定（課程原文或本專案定義），
-// 沒有針對案例調整；課程案例是驗收，不是訓練集。描述性研究，不產生買賣指令。
+// 引擎 js/tabs/nonnormal_calc.mjs；只讀 repo 的 data/*.json，不抓資料。參數全部事前固定（參考門檻或本專案定義），
+// 沒有針對案例調整；歷史案例是驗收，不是訓練集。描述性研究，不產生買賣指令。
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import * as N from '../../js/tabs/nonnormal_calc.mjs';
 
@@ -22,7 +22,7 @@ const lvl = k => N.LEVELS[k].label;
 
 out('# 極端狀態儀表板 — 回測報告');
 out('');
-out(`資料截止：${ctx.lastDate}。由 \`scripts/research/backtest_nonnormal.mjs\` 產生，引擎 \`js/tabs/nonnormal_calc.mjs\`。規則來源：${N.COURSE}（另用 1-3、2-3）。描述性研究，不是買賣訊號。`);
+out(`資料截止：${ctx.lastDate}。由 \`scripts/research/backtest_nonnormal.mjs\` 產生，引擎 \`js/tabs/nonnormal_calc.mjs\`。描述性研究，不是買賣訊號。`);
 out('');
 
 out('## 1. 資料覆蓋');
@@ -35,7 +35,7 @@ table(['序列', '檔案', '覆蓋'], [
   ['台股多空家數', 'data/tw_breadth_ls.json', span(ctx.s.BREADTH)],
 ]);
 
-out('## 2. 課程案例');
+out('## 2. 歷史案例');
 out('');
 out('「事件前一週」＝事件日之前最後一個週評估日。「連續警戒起點」＝事件前一週若已達警戒，往回找這段連續 ≥ 警戒的起點；「提前」＝起點到事件日的週數。');
 out('');
@@ -48,7 +48,7 @@ table(['案例', '參考事件', '事件前一週', '連續警戒起點（提前
 for (const r of results) {
   out(`### ${r.label}`);
   out('');
-  out(`課程描述：${r.course}`);
+  out(`當時情況：${r.note}`);
   out('');
   table(['週評估日', '等級', '亮燈數／可評估', '亮燈訊號'], r.weeks.map(w => [w.date + (w.date >= r.event ? '（事件後）' : ''), lvl(w.level), `${w.count}/${w.available}`, w.lit.map(label).join('、') || '—']));
 }

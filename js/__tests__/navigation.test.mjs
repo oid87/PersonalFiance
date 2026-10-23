@@ -110,7 +110,7 @@ test('search handles names, ids, category context, aliases, case and spaces', ()
     ['P/E', 'fwdpe'], ['P/E', 'valuation'], ['台灣', 'twsent'], ['台股', 'twchips'],
     ['台股', 'marginheat'], ['台股', 'marginpeak'], ['台股', 'marginconc'],
     ['台股', 'marginmap'], ['融資', 'marginheat'], ['去槓桿', 'marginalert'], ['回測', 'marginalert'],
-    ['極端', 'nonnormal'], ['非常態', 'nonnormal'], ['共振', 'nonnormal'],
+    ['極端', 'nonnormal'], ['共振', 'nonnormal'],
     ['  美 國  GDP ', 'gdp_productivity_decomp'],
   ]) assert.ok(ids(query).includes(expected), query);
   assert.equal(ids('P/E 台灣').includes('sox_vs_tw_semi_pe'), true);
