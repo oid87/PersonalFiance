@@ -11,7 +11,7 @@ import { preserveChartState } from '../utils/chartLifecycle.js';
 import { infoButton, initInfoPopovers } from '../utils/info_popover.js';
 import { CK_ASSETS } from '../state.js';
 import * as N from './nonnormal_calc.mjs';
-import { computeCKWeekly, ckWeeklyCloses } from './cashking_calc.mjs';
+import { computeCKWeekly, ckWeeklyCloses, ckWeekStart } from './cashking_calc.mjs';
 
 const byId = id => document.getElementById('nonnormal-' + id);
 const finite = v => typeof v === 'number' && Number.isFinite(v);
@@ -28,10 +28,10 @@ const HELP = {
   cash: '現金為王（izaax，同「現金為王」頁）：4 或 8 週內黃金、比特幣、美債 TLT、QQQ 全部下跌，且恐懼貪婪低點 < 25。逃往黃金：其他都跌、只有黃金漲，且恐懼貪婪 < 25。同一期間誰漲最多＝資金往哪裡去。',
 };
 
-// 報價卡：[序列, 名稱, 對應訊號, 格式]。格式 px＝價格、yield＝殖利率（漲跌用 bp）、ratio＝百分比（漲跌用百分點）。
+// 報價卡：[序列, 名稱, 對應訊號, 格式]。格式 px＝價格、yield＝殖利率（漲跌用 bp）、ratio＝百分比（漲跌用百分點）、score＝0–100 分數（漲跌用點）。
 const CARD_GROUPS = [
   { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克 100', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['KOSPI', '韓股', 'kospi']] },
-  { group: 'B', title: '金融市場', cards: [['US10Y', '美債 10Y', 'us10y', 'yield'], ['DXY', '美元指數', 'dxy'], ['GOLD', '黃金', 'gold'], ['OIL', '布蘭特原油', 'oil'], ['VIX', 'VIX', 'vix'], ['VXN', 'VXN'], ['BTC', '比特幣']] },
+  { group: 'B', title: '金融市場', cards: [['US10Y', '美債 10Y', 'us10y', 'yield'], ['DXY', '美元指數', 'dxy'], ['GOLD', '黃金', 'gold'], ['OIL', '布蘭特原油', 'oil'], ['VIX', 'VIX', 'vix'], ['VXN', 'VXN'], ['FG', '恐懼貪婪', null, 'score'], ['BTC', '比特幣']] },
   { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '偏多家數占比', 'breadth', 'ratio']] },
   { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield']] },
 ];
@@ -48,6 +48,7 @@ const REASONS = {
   OIL: '雙面訊號：急漲推升通膨與成本，急跌可能代表需求轉弱。',
   VIX: '美股的恐慌溫度計。20 以上開始不安、30–40 恐慌，也是轉機觀察的工具。',
   VXN: '那斯達克版的 VIX，看科技股的恐慌程度，比 VIX 更貼近台股電子股。',
+  FG: 'CNN 恐懼貪婪指數，0 極度恐懼～100 極度貪婪，用 7 個美股指標合成。低於 25 是「現金為王」判斷用的恐慌門檻。',
   BTC: '投機資金與流動性的溫度計，也是「現金為王」判斷的四檔之一。',
   TWII: '大盤本身，用來對照櫃買和廣度：加權撐住、其他先破，才看得出誰先轉弱。',
   TWOII: '中小型股、散戶與融資比重高，常比加權先轉弱。櫃買先破線、加權還沒破時要提高警覺。',
@@ -61,7 +62,7 @@ const REASONS = {
   US2Y: '和 10Y 比較看殖利率曲線：2Y 高於 10Y（倒掛）是長循環訊號，只註記不計分。',
 };
 // 大圖的參考線（訊號門檻）
-const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50] };
+const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75] };   // 訊號 id，或不計分卡片的序列 id
 // 資金流向：現金為王的 4 檔（state.js CK_ASSETS）＋ SPY 只顯示
 const CASH_LABELS = { GLD: '黃金（GLD）', BTC: '比特幣', TLT: '美債（TLT）', QQQ: 'QQQ', SPY: 'SPY' };
 const CASH_ASSETS = [...CK_ASSETS, { key: 'SPY', color: '#a371f7', file: 'data/SPY.json', displayOnly: true }];
@@ -146,13 +147,14 @@ const pxDigits = v => (Math.abs(v) >= 10000 ? 0 : 2);
 function fmtValue(v, kind) {
   if (kind === 'yield') return v.toFixed(2) + '%';
   if (kind === 'ratio') return v.toFixed(1) + '%';
+  if (kind === 'score') return v.toFixed(0);
   return v.toLocaleString('en-US', { minimumFractionDigits: pxDigits(v), maximumFractionDigits: pxDigits(v) });
 }
-/** Day/week change text: price → "+12.3 +0.45%"; yield → "+3bp"; ratio → "+1.2"（百分點）. pctOnly drops the absolute part. */
+/** Day/week change text: price → "+12.3 +0.45%"; yield → "+3bp"; ratio → "+1.2"（百分點）; score → "-7.4"（點）. pctOnly drops the absolute part. */
 function fmtChange(abs, rel, kind, ref, pctOnly = false) {
   if (!finite(abs)) return '—';
   if (kind === 'yield') return `${signed(Math.round(abs * 100), 0)}bp`;
-  if (kind === 'ratio') return signed(abs, 1);
+  if (kind === 'ratio' || kind === 'score') return signed(abs, 1);
   const p = finite(rel) ? signed(rel * 100, 2) + '%' : '';
   return pctOnly ? p || '—' : `${signed(abs, pxDigits(ref))} ${p}`.trim();
 }
@@ -229,7 +231,7 @@ function renderCards(now) {
 }
 
 // ── detail dialog（點卡片：同樣半年，但用完整座標與 tooltip 看精確值）────────
-const valueFmt = (kind, ref) => v => (!finite(v) ? '—' : kind === 'yield' ? v.toFixed(2) + '%' : kind === 'ratio' ? v.toFixed(1) + '%'
+const valueFmt = (kind, ref) => v => (!finite(v) ? '—' : kind === 'yield' ? v.toFixed(2) + '%' : kind === 'ratio' ? v.toFixed(1) + '%' : kind === 'score' ? v.toFixed(1)
   : v.toLocaleString('en-US', { minimumFractionDigits: pxDigits(ref), maximumFractionDigits: pxDigits(ref) }));
 function openDetail(def) {
   detail = def;
@@ -253,7 +255,7 @@ function drawDetail() {
   if (!q) { charts[1]?.clear(); return; }
   if (!charts[1]) charts[1] = echarts.init(byId('dialog-chart'), isLight() ? null : 'dark');
   const fmt = valueFmt(kind, q.last);
-  const lines = (REF_LINES[sigId] || []).map(v => ({ yAxis: v, label: { formatter: fmt(v), color: PALETTE.muted, fontSize: 10 } }));
+  const lines = (REF_LINES[sigId] || REF_LINES[id] || []).map(v => ({ yAxis: v, label: { formatter: fmt(v), color: PALETTE.muted, fontSize: 10 } }));
   const line = (name, data, color, width, extra = {}) => ({ name, type: 'line', data, showSymbol: false, connectNulls: false, lineStyle: { width, color }, itemStyle: { color }, ...extra });
   chartOption(1, {
     animation: false,
@@ -300,6 +302,18 @@ function cashReturns(k) {
   out.push({ key: 'SPY', color: CASH_ASSETS.at(-1).color, ret: a && b ? a / b - 1 : null });
   return out.sort((x, y) => (y.ret ?? -Infinity) - (x.ret ?? -Infinity));
 }
+/** 10Y 殖利率在 TLT 同一段期間（基準週最後交易日 → 最新週最後交易日）的變化（bp）。10Y 比 TLT 晚一天公布時，到 10Y 最新一天為止。 */
+function tenYearBp(k) {
+  const rows = ck.rows, y10 = ctx.s.US10Y, base = rows.at(-1 - k);
+  if (!base || !y10?.dates?.length) return null;
+  const dayOf = {};
+  for (const [d] of ck.raw.TLT || []) dayOf[ckWeekStart(d)] = d;
+  const from = dayOf[base.w], to = dayOf[rows.at(-1).w];
+  if (!from || !to) return null;
+  const i = N.indexLE(y10, to), j = N.indexLE(y10, from);
+  if (i < 0 || j < 0 || i <= j) return null;
+  return { bp: Math.round((y10.close[i] - y10.close[j]) * 100), asOf: y10.dates[i], lag: y10.dates[i] < to };
+}
 function cashState(win) {
   const last = ck.rows.at(-1), n = CK_ASSETS.length, rets = last[win === 8 ? 'cum8Rets' : 'cum4Rets'];
   const down = last[win === 8 ? 'cum8Down' : 'cum4Down'], fg = last[win === 8 ? 'fgMin8w' : 'fgMin4w'], fear = fg != null && fg < 25;
@@ -316,18 +330,18 @@ function renderCash() {
     return el;
   }));
   const rets = cashReturns(cashWin), max = Math.max(...rets.map(r => Math.abs(r.ret ?? 0)), 1e-9);
-  const y10 = ctx.s.US10Y, i = N.indexLE(y10, weeks.at(-1).date), j = N.indexLE(y10, new Date(Date.parse(y10.dates[i]) - cashWin * 7 * 86400000).toISOString().slice(0, 10));
-  const bp = i >= 0 && j >= 0 ? Math.round((y10.close[i] - y10.close[j]) * 100) : null;
+  const y10 = tenYearBp(cashWin);
   byId('cash-rank').replaceChildren(...rets.map(r => {
     const row = node('div', null, { class: 'nonnormal-rank-row' }), bar = node('span', null, { class: 'nonnormal-rank-bar' });
     bar.style.width = `${(Math.abs(r.ret ?? 0) / max) * 50}%`;   // 中線＝0：漲往右、跌往左
     bar.style[r.ret < 0 ? 'right' : 'left'] = '50%';
     bar.style.background = r.color;
     const label = node('span', CASH_LABELS[r.key], { class: 'nonnormal-rank-label' });
-    if (r.key === 'TLT' && bp != null) label.append(node('small', ` 10Y ${bp > 0 ? '+' : ''}${bp}bp`));
     const track = node('span', null, { class: 'nonnormal-rank-track' });
     track.append(bar);
     row.append(label, track, node('span', finite(r.ret) ? signed(r.ret * 100, 1) + '%' : '—', { class: 'nonnormal-rank-val ' + dirClass(r.ret) }));
+    if (r.key === 'TLT' && y10) row.append(node('small', `同期 10Y 殖利率 ${signed(y10.bp, 0)}bp${y10.lag ? `（10Y 資料到 ${y10.asOf.slice(5).replace('-', '/')}）` : ''}`, {
+      class: 'nonnormal-rank-note', title: '1bp＝0.01 個百分點；殖利率跌＝債券漲。TLT 是 20 年以上長債，和 10Y 不會完全同步。' }));
     return row;
   }));
   drawCash();
@@ -357,10 +371,14 @@ function drawCash() {
 
 // ── chart ───────────────────────────────────────────────────────────────
 const RANGES = { '1y': 52, '3y': 156, '5y': 260, '2013': '2013-06-07', all: null };
-function chart() { if (!charts[0]) charts[0] = echarts.init(byId('chart'), isLight() ? null : 'dark'); return charts[0]; }
+let twClose = [];
+function chart() {
+  if (!charts[0]) { charts[0] = echarts.init(byId('chart'), isLight() ? null : 'dark'); charts[0].on('datazoom', fitIndexAxis); }
+  return charts[0];
+}
 function drawChart() {
   const dates = weeks.map(w => w.date), tw = ctx.s.TWII;
-  const twClose = dates.map(d => { const f = N.at(tw, d); return f && !f.stale ? f.close : null; });
+  twClose = dates.map(d => { const f = N.at(tw, d); return f && !f.stale ? f.close : null; });
   const heat = [];
   weeks.forEach((w, x) => w.signals.forEach((s, y) => heat.push([x, y, s.state === 'on' ? 1 : s.state === 'off' ? 0 : -1])));
   const L = mob() ? 62 : 76, R = mob() ? 10 : 24;
@@ -382,7 +400,8 @@ function drawChart() {
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
     grid: [{ left: L, right: R, top: 16, height: '30%' }, { left: L, right: R, top: '38%', height: '14%' }, { left: L, right: R, top: '56%', height: '34%' }],
     xAxis: [axis(0, false), axis(1, false), axis(2, true)],
-    yAxis: [yAxis(0, '加權', { type: 'log', scale: true, min: 'dataMin', axisLabel: { color: PALETTE.muted, fontSize: 11, showMinLabel: false, formatter: v => Math.round(v).toLocaleString('en-US') } }),
+    // 加權的範圍與刻度由 fitIndexAxis() 依可見區間設定；刻度用 markLine 畫，axis 本身不標
+    yAxis: [yAxis(0, '加權', { min: v => v.min * 0.9, max: v => v.max * 1.1, axisLabel: { show: false }, splitLine: { show: false } }),
       yAxis(1, '亮燈數', { min: 0, max: N.SIGNALS.length, interval: 2 }),
       { type: 'category', gridIndex: 2, data: N.SIGNALS.map(s => s.short), inverse: true, axisLabel: { color: PALETTE.muted, fontSize: mob() ? 10 : 11 }, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false } }],
     visualMap: { show: false, type: 'piecewise', seriesIndex: 2, dimension: 2, pieces: [{ value: 1, color: '#ef4444' }, { value: 0, color: PALETTE.grid }, { value: -1, color: 'rgba(128,128,128,0.08)' }] },
@@ -392,6 +411,7 @@ function drawChart() {
         markLine: { silent: true, symbol: 'none', lineStyle: { type: 'dashed', color: PALETTE.muted }, data: caseMarks } },
       { name: '亮燈數', type: 'bar', xAxisIndex: 1, yAxisIndex: 1, barCategoryGap: '10%', data: weeks.map(w => ({ value: w.count, itemStyle: { color: LEVEL_COLORS[w.level] } })) },
       { name: '各訊號', type: 'heatmap', xAxisIndex: 2, yAxisIndex: 2, data: heat, itemStyle: { borderColor: PALETTE.cellBorder, borderWidth: 0.3 }, emphasis: { disabled: true } },
+      { id: 'twii-ticks', name: '加權刻度', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: [], silent: true, markLine: { silent: true, symbol: 'none', animation: false, z: 1, data: [] } },   // markLine 預設 z 5 會蓋在線上
     ],
   });
   chart().setOption(option, { notMerge: true });
@@ -402,6 +422,22 @@ function applyRange() {
   const dates = weeks.map(w => w.date), key = RANGES[rangeKey];
   const start = typeof key === 'number' ? dates[Math.max(0, dates.length - key)] : key ? dates.find(x => x >= key) : dates[0];
   ch.dispatchAction({ type: 'dataZoom', startValue: start, endValue: dates.at(-1) });
+  fitIndexAxis();
+}
+/** 加權的 y 軸跟著可見區間：最低 −10%～最高 +10%；刻度只標在可見的最低～最高之間（0／20／40／60／80／100%）。 */
+function fitIndexAxis() {
+  const ch = charts[0]; if (!ch || !twClose.length) return;
+  const z = ch.getOption().dataZoom?.[0] || {}, idx = v => (typeof v === 'number' ? v : weeks.findIndex(w => w.date === v));
+  const a = Math.max(0, idx(z.startValue ?? 0)), b = Math.min(twClose.length - 1, idx(z.endValue ?? twClose.length - 1));
+  let lo = Infinity, hi = -Infinity;
+  for (let i = a; i <= b; i++) if (finite(twClose[i])) { lo = Math.min(lo, twClose[i]); hi = Math.max(hi, twClose[i]); }
+  if (!(hi > lo)) return;
+  const ticks = [0, 1, 2, 3, 4, 5].map(k => lo + ((hi - lo) * k) / 5);
+  ch.setOption({
+    yAxis: [{ min: lo * 0.9, max: hi * 1.1 }],
+    series: [{ id: 'twii-ticks', markLine: { data: ticks.map(v => ({ yAxis: v, lineStyle: { type: 'solid', width: 1, color: PALETTE.grid },
+      label: { position: 'start', formatter: Math.round(v).toLocaleString('en-US'), color: PALETTE.muted, fontSize: mob() ? 10 : 11 } })) } }],
+  });
 }
 
 // ── lead-lag ────────────────────────────────────────────────────────────

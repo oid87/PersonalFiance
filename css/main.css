@@ -1091,6 +1091,7 @@
 #tab-nonnormal .nonnormal-rank { display:flex; flex-direction:column; gap:8px; }
 #tab-nonnormal .nonnormal-rank-row { display:grid; grid-template-columns:9.5em minmax(0,1fr) 4.5em; align-items:center; gap:8px; font-size:var(--text-sm,13px); }
 #tab-nonnormal .nonnormal-rank-label small { color:var(--muted); font-size:11px; }
+#tab-nonnormal .nonnormal-rank-note { grid-column:1 / -1; margin-top:-6px; color:var(--muted); font-size:11px; cursor:help; }
 #tab-nonnormal .nonnormal-rank-track { position:relative; height:10px; border-radius:5px; background:rgba(128,128,128,.12); }
 #tab-nonnormal .nonnormal-rank-track::after { content:''; position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:var(--muted); }
 #tab-nonnormal .nonnormal-rank-bar { position:absolute; top:0; bottom:0; border-radius:5px; opacity:.85; }
