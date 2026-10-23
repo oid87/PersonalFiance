@@ -369,7 +369,7 @@ function drawCash() {
 
 // ── chart ───────────────────────────────────────────────────────────────
 const RANGES = { '1y': 52, '3y': 156, '5y': 260, '2013': '2013-06-07', all: null };
-let twClose = [];
+let twClose = [], lastFit = null;   // lastFit：上次套用的 y 範圍與 x 刻度間距，沒變就不重畫
 /** 共振歷史的 x 軸每季一格（第一季標年份、其他標 Q2／Q3／Q4，並畫分隔線）。可見範圍太長放不下時，改成每半年或每年一格（step＝幾季一格）。 */
 function quarterAxis(show, step) {
   const q = d => (+d.slice(5, 7) + 2) / 3;
@@ -426,6 +426,7 @@ function drawChart() {
     ],
   });
   chart().setOption(option, { notMerge: true });
+  lastFit = null;
   applyRange();
 }
 function applyRange() {
@@ -446,11 +447,14 @@ function fitIndexAxis() {
   const ticks = [0, 1, 2, 3, 4, 5].map(k => lo + ((hi - lo) * k) / 5);
   const width = ch.getWidth() - (mob() ? 72 : 100), label = mob() ? 30 : 44;   // 每格至少要放得下「2024」
   const step = [1, 2, 4, 8, 16].find(k => width / ((b - a + 1) / 13 / k) >= label) || 16;
+  // 拖拉 slider 時每一格都會觸發 datazoom；可見的最高／最低與刻度間距常常沒變，這時不重畫（省一次整張圖的重繪）
+  const prev = lastFit;
+  if (prev && prev.lo === lo && prev.hi === hi && prev.step === step) return;
+  lastFit = { lo, hi, step };
   ch.setOption({
-    xAxis: [0, 1, 2].map(i => quarterAxis(i === 2, step)),
-    yAxis: [{ min: lo * 0.9, max: hi * 1.1 }],
-    series: [{ id: 'twii-ticks', markLine: { data: ticks.map(v => ({ yAxis: v, lineStyle: { type: 'solid', width: 1, color: PALETTE.grid },
-      label: { position: 'start', formatter: Math.round(v).toLocaleString('en-US'), color: PALETTE.muted, fontSize: mob() ? 10 : 11 } })) } }],
+    ...(prev?.step === step ? {} : { xAxis: [0, 1, 2].map(i => quarterAxis(i === 2, step)) }),
+    ...(prev && prev.lo === lo && prev.hi === hi ? {} : { yAxis: [{ min: lo * 0.9, max: hi * 1.1 }], series: [{ id: 'twii-ticks', markLine: { data: ticks.map(v => ({ yAxis: v, lineStyle: { type: 'solid', width: 1, color: PALETTE.grid },
+      label: { position: 'start', formatter: Math.round(v).toLocaleString('en-US'), color: PALETTE.muted, fontSize: mob() ? 10 : 11 } })) } }] }),
   });
 }
 
