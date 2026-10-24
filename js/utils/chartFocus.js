@@ -3,6 +3,18 @@ import { resizeVisibleCharts } from './chartLifecycle.js';
 const PILOTS = [
   { chartId: 'chart', label: '趨勢圖表' },
   { chartId: 'stressdash-chart', label: '金融壓力圖表' },
+  // 多面板圖：手機上壓到一屏太擠，改用放大檢視（grid 皆為百分比，resize 即重排）
+  { chartId: 'penta-chart', label: '五線譜圖表' },
+  { chartId: 'aaii-chart', label: '散戶情緒圖表' },
+  { chartId: 'twsent-chart', label: '台股情緒圖表' },
+  { chartId: 'marginalert-chart', label: '融資警報圖表' },
+  { chartId: 'vs-chart', label: 'VIX-SKEW 圖表' },
+  { chartId: 'pos-chart', label: '位階圖表' },
+  { chartId: 'nonnormal-chart', label: '極端狀態圖表' },
+  { chartId: 'uscap-chart', label: '恐慌拋售圖表' },
+  { chartId: 'kelly-chart', label: '凱利圖表' },
+  { chartId: 'roc4-chart', label: 'ROC4 圖表' },
+  { chartId: 'val-chart', label: '估值圖表' },
 ];
 const instances = new WeakMap();
 
