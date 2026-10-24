@@ -1,6 +1,6 @@
 // 極端狀態儀表板 — 每週一次的多重確認儀表板（描述性，不是買賣訊號）。
 // 引擎：js/tabs/nonnormal_calc.mjs（與 scripts/research/backtest_nonnormal.mjs 共用）。
-// 版面：等級橫幅 → 報價卡（最新值、日漲跌、近 6 個月走勢＋50／100 日均線，亮燈卡加紅框；點卡片開大圖）→ 資金流向（現金為王，
+// 版面：等級橫幅 → 報價卡（最新值、日漲跌、近 6 個月走勢＋50／100 日均線，亮燈卡加紅框；點卡片開大圖）→ 均線下彎（六市場，不計分）→ 資金流向（現金為王，
 // 與 cashking 頁共用 cashking_calc.mjs）→ 共振歷史圖 → 時間差 → 轉機；
 // 案例回測與閾值來源收在頁尾 <details>，打開才算。
 import { isLight, echartsBase, PALETTE, mob } from '../utils/theme.js';
@@ -23,6 +23,7 @@ const DOUBLE_TAP_MS = 500;
 
 const HELP = {
   level: '0–1 個亮：常態（單一訊號視為雜訊）｜2–3：留意｜≥4 且橫跨 ≥2 組：警戒｜≥6 且三組都亮：高度警戒。每週五評估，本週未結束時用最新資料日。',
+  downturn: '均線下彎＝今天的均線值低於前一個交易日。顯示 50、100 日線各自連續下彎幾個交易日；兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
   cash: '現金為王（izaax，同「現金為王」頁）：4 或 8 週內黃金、比特幣、美債 TLT、QQQ 全部下跌，且恐懼貪婪低點 < 25。逃往黃金：其他都跌、只有黃金漲，且恐懼貪婪 < 25。同一期間誰漲最多＝資金往哪裡去。',
 };
@@ -465,6 +466,21 @@ function fitIndexAxis() {
   });
 }
 
+// ── 均線下彎 ────────────────────────────────────────────────────────────
+function renderDownturn(d) {
+  const rep = N.downturnReport(ctx, d), run = r => (r > 0 ? node('span', `下彎 ${r} 日`, { class: 'nonnormal-dt-on' }) : '未下彎');
+  const status = r => (r.missing ? ['—', '—', '無資料'] : r.stale ? ['—', '—', `資料停在 ${r.date}`] : null);
+  byId('downturn-count').textContent = `${rep.bothNow}/${rep.available} 兩線同時下彎${rep.sustained ? `・${rep.sustained} 個持續` : ''}`;
+  table('downturn', ['市場', '50 日線', '100 日線', '兩線同時下彎', '資料日'], rep.rows.map(r => {
+    const na = status(r);
+    if (na) return [r.label, na[0], na[1], na[2], r.date || '—'];
+    const both = node('span', null);
+    both.append(r.bothRun > 0 ? node('span', `連續 ${r.bothRun} 日`, { class: 'nonnormal-dt-on' }) : '否');
+    if (r.sustained) both.append(node('span', '持續', { class: 'nonnormal-dt-sus' }));
+    return [r.label, run(r.ma[50].run), run(r.ma[100].run), both, r.date.slice(5)];
+  }));
+}
+
 // ── lead-lag ────────────────────────────────────────────────────────────
 function renderLeadLag(d) {
   const st = since => (since ? `破（${since.slice(5)}）` : '線上');
@@ -542,7 +558,7 @@ function renderAll() {
       const now = weeks.at(-1), prev = weeks.at(-2) || null;
       const running = new Date(Date.parse(now.date)).getUTCDay() !== 5;
       byId('asof').textContent = `${now.date}${running ? '（本週至今）' : ''}`;
-      renderSummary(now, prev); renderCards(now); renderCash(); drawChart(); renderLeadLag(now.date); renderTurn(now.date);
+      renderSummary(now, prev); renderCards(now); renderDownturn(now.date); renderCash(); drawChart(); renderLeadLag(now.date); renderTurn(now.date);
       drawDetail();
       if (byId('cases-details').open) renderCases();
       if (byId('sources-details').open) renderSources();

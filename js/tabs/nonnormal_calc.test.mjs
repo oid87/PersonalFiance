@@ -239,3 +239,37 @@ test('case 2022: multi-market alert well before TWII broke its 200-day average',
   assert.ok(r.lastBefore.level >= 2);
   assert.ok(r.leadWeeks >= 4, `lead ${r.leadWeeks} weeks`);
 });
+
+test('maDownturn counts consecutive days both 50/100MA fall, and ignores a flat/rising line', () => {
+  const n = 300, dates = businessDays('2023-01-02', n);
+  const rise = Array.from({ length: n }, (_, i) => 100 + i * 0.5);
+  const fall = rise.slice(0, 250).concat(Array.from({ length: 50 }, (_, i) => rise[249] - (i + 1) * 3));   // 250 日上升後 50 日急跌
+  const s = N.buildSeries(rows(dates, fall));
+  const r = N.maDownturn(s, dates.at(-1));
+  assert.ok(r.ma[50].run > 0 && r.ma[50].run <= 50, '50MA 在下跌段下彎');
+  assert.ok(r.ma[100].run > 0 && r.bothRun === Math.min(r.ma[50].run, r.ma[100].run), '同時下彎天數＝兩條線連續天數的較小者');
+  assert.equal(r.sustained, r.bothRun >= N.DOWNTURN.alertDays);
+  const up = N.maDownturn(N.buildSeries(rows(dates, rise)), dates.at(-1));
+  assert.equal(up.ma[50].run, 0);
+  assert.equal(up.bothRun, 0);
+  assert.equal(up.sustained, false);
+});
+
+test('maDownturn: too little history → null, stale → {stale}, report never counts them', () => {
+  const dates = businessDays('2023-01-02', 60);
+  assert.equal(N.maDownturn(N.buildSeries(rows(dates, flat(60, 100))), dates.at(-1)), null, '100MA 還算不出來');
+  const raw = rawWith({ KOSPI: rows(DATES.slice(0, 250), flat(250, 100)), TWOII: [] });
+  const rep = N.downturnReport(N.buildContext(raw), last);
+  const by = id => rep.rows.find(x => x.id === id);
+  assert.equal(by('KOSPI').stale, true);
+  assert.equal(by('TWOII').missing, true);
+  assert.equal(rep.available, 4);
+  assert.equal(rep.bothNow, 0);
+});
+
+test('downturnReport covers the six requested markets with 50 and 100MA', () => {
+  assert.deepEqual(N.DOWNTURN.markets.map(m => m[0]), ['SOX', 'NDX', 'SPX', 'KOSPI', 'TWII', 'TWOII']);
+  assert.deepEqual(N.DOWNTURN.mas, [50, 100]);
+  const w = N.evaluateWeek(N.buildContext(rawWith()), last);
+  assert.equal(w.count, 0, '下彎面板不改變亮燈數');
+});
