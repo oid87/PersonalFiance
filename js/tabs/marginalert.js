@@ -13,6 +13,7 @@ import {
 } from './marginalert_calc.mjs';
 import { analyzeHistory, scenarioView, signalOverlap, MANUAL_BETAS, KEY_DROP_PTS, buildChartSeries, windowSlice, endForWave } from './marginstress_calc.mjs';
 import { chipPicker } from '../utils/dom.js';
+import { minSpanForAxis } from '../utils/zoomFloor.js';
 
 const TAB_ID = 'marginalert';
 // 頁面預設範圍：維持率重建資料最早的一天（引擎／CLI 報告的 DEFAULTS.start 仍是 2020-01-01，不受影響）
@@ -137,6 +138,79 @@ function fearSegments(days, thr) {
   return segs;
 }
 
+// ── 維持率分區與「指數再跌 N%」推估 ──────────────────────────────────
+// 分區用「重建維持率距四週（20 交易日）高點的點數」，不用絕對水位：重建值各年代口徑漂移（2008 爆在 120 多、2026 爆在 160～180），
+// 但「短期掉多少點」歷年可比。界線是頁面顯示用的觀察線，不是官方門檻。
+const ZONES = [
+  { key: 'ok', label: '正常', max: Infinity, min: -15 },
+  { key: 'watch', label: '注意', max: -15, min: -20 },
+  { key: 'warn', label: '警戒', max: -20, min: -30 },
+  { key: 'boom', label: '爆炸區', max: -30, min: -Infinity },
+];
+const WARN_PTS = 20, BOOM_PTS = 30;   // 主圖兩條線：四週高點 -20、-30 點
+const zoneOf = diff => (isNum(diff) ? ZONES.find(z => diff > z.min) ?? ZONES.at(-1) : null);
+const zoneText = z => (!z ? '—' : z.key === 'boom' ? hot(z.label) : z.key === 'warn' ? `<b style="color:#f59e0b">${z.label}</b>` : z.label);
+const DROPS = [10, 15, 20];
+// 各回撤深度的歷史 Beta（同一波第一次跌到該深度那天量的；P25／中位／P75）
+function depthBeta(depth) {
+  const row = stressH?.depth?.find(r => r.depth === depth);
+  return row && isNum(row.median) ? row : null;
+}
+// 指數自 close 再跌 d% → 維持率（M1 = M0 ×（1 − β·d））；β 用該深度的歷史中位，另給 P75（跌較多）～P25
+function projectDrops(m0) {
+  if (!isNum(m0)) return [];
+  return DROPS.map(d => {
+    const b = depthBeta(d);
+    if (!b) return { d, ok: false };
+    const at = beta => m0 * (1 - beta * d / 100);
+    return { d, ok: true, beta: b.median, base: at(b.median), lo: at(b.p75), hi: at(b.p25) };
+  });
+}
+// 維持率要掉到 target 大約需要指數再跌幾 %（β 依推出來的深度挑最近的那一組）
+function dropToHit(m0, target) {
+  if (!isNum(m0) || !isNum(target) || target >= m0) return 0;
+  let beta = depthBeta(10)?.median;
+  if (!isNum(beta)) return null;
+  for (let k = 0; k < 3; k++) {
+    const d = (1 - target / m0) / beta * 100;
+    const near = [5, 10, 15, 20].reduce((a, x) => (Math.abs(x - d) < Math.abs(a - d) ? x : a), 10);
+    beta = depthBeta(near)?.median ?? beta;
+  }
+  return (1 - target / m0) / beta * 100;
+}
+function projLines(d) {
+  if (!isNum(d.ratio)) return '';
+  const pj = projectDrops(d.ratio).filter(p => p.ok);
+  const out = pj.length ? [`<b>指數再跌 → 維持率</b>（β 中位；範圍 P75～P25）`,
+    ...pj.map(p => `-${p.d}%（${f(d.close * (1 - p.d / 100), 0)}）→ ${f(p.base, 1)}（${sg(p.base - d.ratio, 1)}；${f(p.lo, 0)}～${f(p.hi, 0)}）`)] : [];
+  if (d.r4) {
+    for (const [pts, name] of [[WARN_PTS, '警戒線'], [BOOM_PTS, '爆炸線']]) {
+      const t = d.r4.high - pts, need = dropToHit(d.ratio, t);
+      out.push(`${name} ${f(t, 1)}：${need === 0 ? hot('已跌破') : isNum(need) ? `指數再跌 ${f(need, 1)}%（≈${f(d.close * (1 - need / 100), 0)}）` : '—'}`);
+    }
+  }
+  return out.join('<br>');
+}
+// 各分區當天／之後 1～3 個交易日出現「單日融資 ≤ -門檻」的比例（用目前回測範圍的資料即時算）
+function zoneStats(days, th) {
+  const rows = ZONES.map(z => ({ z, n: 0, same: 0, next3: 0 }));
+  for (let i = 0; i < days.length - 3; i++) {
+    const z = zoneOf(days[i].r4?.diff);
+    if (!z) continue;
+    const r = rows.find(x => x.z === z);
+    r.n++;
+    if (isNum(days[i].m[1]) && days[i].m[1] <= -th) r.same++;
+    if ([1, 2, 3].some(k => isNum(days[i + k].m[1]) && days[i + k].m[1] <= -th)) r.next3++;
+  }
+  return rows;
+}
+// T 日融資大減時，回看 T-1、T-2 的維持率與指數：大減是當天急殺，還是兩天前就破了、今天才被砍
+function lagLine(days, i) {
+  const p = k => days[i - k];
+  if (!p(2) || !isNum(p(2).ratio)) return '';
+  return `T-2→T：維持率 ${[2, 1, 0].map(k => f(p(k).ratio, 0)).join('→')}｜指數 ${[2, 1, 0].map(k => sg(p(k).x[1], 1) + '%').join('、')}`;
+}
+
 function buildOption() {
   const { ds } = res;
   const days = ds.days;
@@ -162,11 +236,16 @@ function buildOption() {
     axisLabel: { color: PALETTE.muted, fontSize: 11 }, splitLine: { lineStyle: { color: PALETTE.grid } }, ...extra,
   });
   const L = mob() ? 44 : 60, Rr = mob() ? 12 : 24;
+  const nAx = showFg ? [0, 1, 2, 3, 4] : [0, 1, 2, 3];
+  const yearSpan = minSpanForAxis({ type: 'category', data: dates }, 365) ?? undefined;
+  const ratioC = '#f59e0b';
+  const line = (fn) => days.map(d => (d.r4 && isNum(d.ratio) ? +fn(d).toFixed(2) : null));
   return echartsBase({
     animation: false,
-    legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['加權指數', `警報首日(≤-${ui.th}%)`, '同波續發日', '融資餘額(億)', '融資單日%', ...(showFg ? ['恐懼貪婪'] : [])] },
+    legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['加權指數', `警報首日(≤-${ui.th}%)`, '同波續發日', '融資維持率(重建)', `警戒線(四週高-${WARN_PTS})`, `爆炸線(四週高-${BOOM_PTS})`, '融資餘額(億)', '融資單日%', ...(showFg ? ['恐懼貪婪'] : [])] },
     tooltip: {
       trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 12 },
+      confine: true, extraCssText: `white-space:normal;width:${mob() ? 260 : 330}px;line-height:1.5`,
       formatter(params) {
         const i = params?.[0]?.dataIndex;
         const d = days[i];
@@ -174,29 +253,37 @@ function buildOption() {
         const fired = flagged.has(i);                                   // 與圖上警報標記同一判斷（含回撤閘門）
         const belowGate = !fired && isNum(d.m[1]) && d.m[1] <= -ui.th;     // 融資達標但回撤閘門未過
         const oneDay = `單日 ${sg(d.m[1], 2)}%（${sg(d.dm1, 0)} 億）`;
-        return `<b>${d.date}</b>${fired ? ' 🔔' : ''}<br>加權 ${f(d.close, 0)}（${sg(d.x[1], 2)}%）｜距${res.cfg.lookback}日高 -${f(d.dd)}%<br>` +
-          `融資 ${f(d.margin, 0)} 億｜${fired ? hot(oneDay + ' 觸發') : oneDay}${belowGate ? '（未達回撤閘門，不算警報）' : ''}<br>3日 ${sg(d.m[3])}%｜5日 ${sg(d.m[5])}%｜維持率(重建) ${ratioDelta(d.ratio, d.r4)}` +
-          (d.r4 ? `<br>四週高點 ${f(d.r4.high, 1)}（${d.r4.date}）` : '') + highsLine(d.date) +
-          (isNum(d.fg) ? `<br>恐懼貪婪 ${f(d.fg, 1)}${d.fg < ui.fearThr ? `（< ${ui.fearThr} 恐懼區）` : ''}` : '');
+        const z = zoneOf(d.r4?.diff);
+        const sec = t => `<div style="margin-top:4px;padding-top:4px;border-top:1px solid ${PALETTE.border}">${t}</div>`;
+        return `<b>${d.date}</b>${fired ? ' 🔔' : ''}<br>加權 ${f(d.close, 0)}（${sg(d.x[1], 2)}%）<br>距${res.cfg.lookback}日高 -${f(d.dd)}%` +
+          sec(`融資 ${f(d.margin, 0)} 億<br>${fired ? hot(oneDay + ' 觸發') : oneDay}${belowGate ? '<br>（未達回撤閘門，不算警報）' : ''}<br>3日 ${sg(d.m[3])}%｜5日 ${sg(d.m[5])}%`) +
+          sec(`維持率(重建) ${ratioDelta(d.ratio, d.r4)}｜${zoneText(z)}` + (d.r4 ? `<br>四週高點 ${f(d.r4.high, 1)}（${d.r4.date}）` : '') + (lagLine(days, i) ? `<br>${lagLine(days, i)}` : '')) +
+          (isNum(d.ratio) ? sec(projLines(d)) : '') +
+          highsBlock(d.date, sec) +
+          (isNum(d.fg) ? sec(`恐懼貪婪 ${f(d.fg, 1)}${d.fg < ui.fearThr ? `（< ${ui.fearThr} 恐懼區）` : ''}`) : '');
       },
     },
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
+    // grid 0 指數、1 維持率、2 融資餘額、3 單日%、4 恐懼貪婪（選用）
     grid: showFg ? [
-      { left: L, right: Rr, top: 34, height: '34%' },
-      { left: L, right: Rr, top: '50%', height: '12%' },
-      { left: L, right: Rr, top: '65%', height: '10%' },
-      { left: L, right: Rr, top: '78%', height: '10%' },
+      { left: L, right: Rr, top: mob() ? 108 : 40, height: mob() ? '22%' : '26%' },
+      { left: L, right: Rr, top: '37%', height: '17%' },
+      { left: L, right: Rr, top: '57%', height: '10%' },
+      { left: L, right: Rr, top: '70%', height: '9%' },
+      { left: L, right: Rr, top: '82%', height: '9%' },
     ] : [
-      { left: L, right: Rr, top: 34, height: '46%' },
-      { left: L, right: Rr, top: '58%', height: '16%' },
-      { left: L, right: Rr, top: '78%', height: '12%' },
+      { left: L, right: Rr, top: mob() ? 108 : 40, height: mob() ? '25%' : '30%' },
+      { left: L, right: Rr, top: '42%', height: '20%' },
+      { left: L, right: Rr, top: '65%', height: '11%' },
+      { left: L, right: Rr, top: '79%', height: '11%' },
     ],
-    xAxis: showFg ? [axis(0, false), axis(1, false), axis(2, false), axis(3, true)] : [axis(0, false), axis(1, false), axis(2, true)],
-    yAxis: [yAxis(0, '加權指數', { min: 'dataMin' }), yAxis(1, '融資(億)', { min: 'dataMin' }), yAxis(2, '單日%', { scale: false }),
-      ...(showFg ? [yAxis(3, '恐懼貪婪', { scale: false, min: 0, max: 100 })] : [])],
+    xAxis: [...nAx.slice(0, -1).map(k => axis(k, false)), axis(nAx.at(-1), true)],
+    yAxis: [yAxis(0, mob() ? '' : '加權指數', { min: 'dataMin' }), yAxis(1, '維持率%', { axisLabel: { color: ratioC, fontSize: 11 } }), yAxis(2, '融資(億)', { min: 'dataMin' }), yAxis(3, '單日%', { scale: false }),
+      ...(showFg ? [yAxis(4, '恐懼貪婪', { scale: false, min: 0, max: 100 })] : [])],
+    // 這頁 slider／滾輪最短一年（使用者指定；比全站 9 個月的 zoomFloor 長）
     dataZoom: [
-      { type: 'inside', xAxisIndex: showFg ? [0, 1, 2, 3] : [0, 1, 2], filterMode: 'filter' },
-      { type: 'slider', xAxisIndex: showFg ? [0, 1, 2, 3] : [0, 1, 2], height: 16, bottom: 6, filterMode: 'filter' },
+      { type: 'inside', xAxisIndex: nAx, filterMode: 'filter', minValueSpan: yearSpan },
+      { type: 'slider', xAxisIndex: nAx, height: 16, bottom: 6, filterMode: 'filter', minValueSpan: yearSpan },
     ],
     series: [
       { name: '加權指數', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: days.map(d => d.close), showSymbol: false,
@@ -204,12 +291,18 @@ function buildOption() {
         markArea: { silent: true, label: { color: PALETTE.muted, fontSize: 10 }, data: [...areaData, ...fearAreas] } },
       { name: `警報首日(≤-${ui.th}%)`, type: 'scatter', xAxisIndex: 0, yAxisIndex: 0, data: first, symbol: 'triangle', symbolSize: 12, itemStyle: { color: '#ef4444' }, z: 5 },
       { name: '同波續發日', type: 'scatter', xAxisIndex: 0, yAxisIndex: 0, data: rest, symbol: 'circle', symbolSize: 6, itemStyle: { color: '#e3b341' }, z: 4 },
-      { name: '融資餘額(億)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: days.map(d => d.margin), showSymbol: false, lineStyle: { width: 1.2, color: '#58a6ff' }, itemStyle: { color: '#58a6ff' },
+      { name: '融資維持率(重建)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: days.map(d => (isNum(d.ratio) ? d.ratio : null)), showSymbol: false, connectNulls: false,
+        lineStyle: { width: 1.5, color: ratioC }, itemStyle: { color: ratioC }, markArea: { silent: true, data: fearAreas } },
+      { name: `警戒線(四週高-${WARN_PTS})`, type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: line(d => d.r4.high - WARN_PTS), showSymbol: false, connectNulls: false,
+        lineStyle: { width: 1, color: '#e3b341', type: 'dashed' }, itemStyle: { color: '#e3b341' } },
+      { name: `爆炸線(四週高-${BOOM_PTS})`, type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: line(d => d.r4.high - BOOM_PTS), showSymbol: false, connectNulls: false,
+        lineStyle: { width: 1.2, color: '#ef4444', type: 'dashed' }, itemStyle: { color: '#ef4444' } },
+      { name: '融資餘額(億)', type: 'line', xAxisIndex: 2, yAxisIndex: 2, data: days.map(d => d.margin), showSymbol: false, lineStyle: { width: 1.2, color: '#58a6ff' }, itemStyle: { color: '#58a6ff' },
         markArea: { silent: true, data: fearAreas } },
-      { name: '融資單日%', type: 'bar', xAxisIndex: 2, yAxisIndex: 2, data: days.map(d => ({ value: isNum(d.m[1]) ? +d.m[1].toFixed(3) : null, itemStyle: { color: barColor(d.m[1]) } })),
+      { name: '融資單日%', type: 'bar', xAxisIndex: 3, yAxisIndex: 3, data: days.map(d => ({ value: isNum(d.m[1]) ? +d.m[1].toFixed(3) : null, itemStyle: { color: barColor(d.m[1]) } })),
         markLine: { silent: true, symbol: 'none', label: { formatter: `-${ui.th}%`, color: PALETTE.muted, fontSize: 10 }, lineStyle: { color: '#ef4444', type: 'dashed' }, data: [{ yAxis: -ui.th }] },
         markArea: { silent: true, data: fearAreas } },
-      ...(showFg ? [{ name: '恐懼貪婪', type: 'line', xAxisIndex: 3, yAxisIndex: 3, data: days.map(d => (isNum(d.fg) ? d.fg : null)), showSymbol: false, connectNulls: false,
+      ...(showFg ? [{ name: '恐懼貪婪', type: 'line', xAxisIndex: 4, yAxisIndex: 4, data: days.map(d => (isNum(d.fg) ? d.fg : null)), showSymbol: false, connectNulls: false,
         lineStyle: { width: 1.2, color: '#a371f7' }, itemStyle: { color: '#a371f7' },
         markLine: { silent: true, symbol: 'none', label: { formatter: `<${ui.fearThr}`, color: PALETTE.muted, fontSize: 10 }, lineStyle: { color: '#a371f7', type: 'dashed' }, data: [{ yAxis: ui.fearThr }] },
         markArea: { silent: true, data: fearAreas } }] : []),
@@ -407,10 +500,10 @@ function ensureSeries() {
   stSeries = buildChartSeries({ twii: raw.twii, margin: raw.margin, ratio: raw.ratio });
   stSeriesByDate = new Map(stSeries.map(r => [r.date, r]));
 }
-function highsLine(date) {
+function highsBlock(date, sec) {
   const r = stSeriesByDate?.get(date);
   if (!r) return '';
-  return `<br>較各自 120 日高點：指數 ${hl(r.idx, 'idx')}｜維持率 ${hl(r.rt, 'rt')}｜融資 ${hl(r.mg, 'mg')}`;
+  return sec(`<b>較各自 120 日高點</b><br>指數 ${hl(r.idx, 'idx')}<br>維持率 ${hl(r.rt, 'rt')}<br>融資 ${hl(r.mg, 'mg')}`);
 }
 function stDates() { return stSeries.map(r => r.date); }
 function stCurrentWindow() {
@@ -720,9 +813,27 @@ function syncChips() {
   const line = $('params-line');
   if (line) line.textContent = `融資≤-${ui.th}%｜閘門${ui.gate ? `≥${ui.gate}%` : '無'}｜F&G ${ui.fg ? `顯示 <${ui.fearThr}` : '隱藏'}｜${ui.lookback}日高點｜隔日${ui.entry === 'nextOpen' ? '開盤' : '收盤'}｜冷卻${ui.cooldown}日｜${ui.start}～${ui.end}`;
 }
+function renderZone() {
+  const el = $('zone');
+  if (!el) return;
+  const days = res.ds.days;
+  const last = [...days].reverse().find(d => isNum(d.ratio) && d.r4);
+  if (!last) { el.innerHTML = '<p class="text-muted-sm">無維持率資料，分區與推估停用。</p>'; return; }
+  const z = zoneOf(last.r4.diff);
+  const st = zoneStats(days, ui.th);
+  const rng = z => (z.max === Infinity ? `> ${z.min}` : z.min === -Infinity ? `≤ ${z.max}` : `${z.max} ～ ${z.min}`);
+  const card = `<div class="lev-card" style="min-width:240px;max-width:420px"><div class="lc-sub">最新 ${esc(last.date)}｜維持率(重建)距四週高點</div>` +
+    `<div class="lc-val">${ratioDelta(last.ratio, last.r4)} ${zoneText(z)}</div><div class="lc-sub" style="line-height:1.6">${projLines(last)}</div></div>`;
+  el.innerHTML = card +
+    `<div style="flex:1;min-width:280px"><p class="text-muted-sm" style="margin:0 0 4px">維持率分區 × 融資單日 ≤-${ui.th}% 出現機率（${esc(res.cfg.start)}～${esc(res.cfg.end)}、有維持率的交易日）：</p>` +
+    tbl(['分區（距四週高點，點）', '交易日', '當天爆量', '之後 1～3 日爆量'],
+      st.map(r => [zoneText(r.z) + `　${rng(r.z)}`, r.n, r.n ? `${f(r.same / r.n * 100, 1)}%` : '—', r.n ? `${f(r.next3 / r.n * 100, 1)}%` : '—'])) +
+    `<p class="text-muted-sm">用「距四週高點掉幾點」而不是絕對水位：重建維持率口徑會漂移（2008 年在 120 多爆、2026 年在 160～180 就爆），短期掉幅才跨年代可比。推估假設融資餘額不變、β 為各回撤深度的歷史中位（P75～P25 為範圍），是情境推估不是預測；真的爆量時融資戶賣股還款會讓維持率跌得比推估少。</p></div>`;
+}
 function draw() {
   renderSummary();
   renderStress();
+  renderZone();
   renderTables();
   return preserveChartState(() => (chart ? [chart] : []), () => { chart.setOption(buildOption(), { notMerge: true }); });
 }
