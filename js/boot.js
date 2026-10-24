@@ -46,18 +46,37 @@ initSharedUI();
 initChartFocus();
 
 function applyTheme(light) {
+  if (light === isLight()) return;
   document.body.classList.toggle('light', light);
   document.getElementById('theme-btn').textContent = light ? '☾' : '☀';
-  try { localStorage.setItem('theme', light ? 'light' : 'dark'); } catch {}
   void applyThemeAll(light);
 }
 
-document.getElementById('theme-btn').addEventListener('click', () => applyTheme(!isLight()));
+// 主題跟隨系統深淺色；手動切換優先，但只到系統深淺色下次改變為止
+// （localStorage 記下手動選擇當時的系統深淺色，不同就回到跟隨系統）。
+const systemDark = window.matchMedia?.('(prefers-color-scheme: dark)');
+const systemTheme = () => (systemDark?.matches ? 'dark' : 'light');
+
+function followSystem() {
+  try { localStorage.removeItem('theme'); localStorage.removeItem('themeSystem'); } catch {}
+  applyTheme(systemTheme() === 'light');
+}
+
+document.getElementById('theme-btn').addEventListener('click', () => {
+  const light = !isLight();
+  applyTheme(light);
+  try {
+    localStorage.setItem('theme', light ? 'light' : 'dark');
+    localStorage.setItem('themeSystem', systemTheme());
+  } catch {}
+});
+systemDark?.addEventListener('change', followSystem);
 try {
   const savedTheme = localStorage.getItem('theme');
-  if (savedTheme === 'light') applyTheme(true);
-  else if (savedTheme === 'dark') applyTheme(false);
-} catch {}
+  if (localStorage.getItem('themeSystem') === systemTheme() && (savedTheme === 'light' || savedTheme === 'dark')) {
+    applyTheme(savedTheme === 'light');
+  } else followSystem();
+} catch { applyTheme(systemTheme() === 'light'); }
 
 initNavigation({
   switchTo,
