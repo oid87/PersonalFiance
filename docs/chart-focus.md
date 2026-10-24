@@ -4,11 +4,11 @@
 
 接線：`boot.js` import `initChartFocus` from `./utils/chartFocus.js`，於共用 UI 初始化後呼叫一次；`main.css` 頂部 import `./chart-focus.css`。沒有 build 步驟。
 
-`initChartFocus()` 預設增強 `#chart`（趨勢）、`#stressdash-chart`（金融壓力），以及手機上壓到一屏會太擠的多面板圖：`#penta-chart`、`#aaii-chart`、`#twsent-chart`、`#marginalert-chart`、`#vs-chart`、`#pos-chart`、`#nonnormal-chart`、`#uscap-chart`、`#kelly-chart`、`#roc4-chart`、`#val-chart`（皆為 section 直接子層、grid 用百分比，resize 即重排）。回傳 `enter(chartId)`、`exit()`、`focusedChartId` getter、`destroy()`。同一 document 重複初始化不會新增按鈕或 listener。其他 host 須位於 `.tab-section` 的直接子層才能加入；巢狀版面需要明確 adapter。
+`initChartFocus()` 預設增強 `#chart`（趨勢）、`#stressdash-chart`（金融壓力），以及手機上壓到一屏會太擠的多面板圖：`#penta-chart`、`#aaii-chart`、`#twsent-chart`、`#twsent-chips-chart`、`#marginalert-chart`、`#vs-chart`、`#pos-chart`、`#nonnormal-chart`、`#uscap-chart`、`#kelly-chart`、`#roc4-chart`、`#val-chart`（皆為 section 直接子層、grid 用百分比，resize 即重排）。回傳 `enter(chartId)`、`exit()`、`focusedChartId` getter、`destroy()`。同一 document 重複初始化不會新增按鈕或 listener。其他 host 須位於 `.tab-section` 的直接子層才能加入；巢狀版面需要明確 adapter。
 
 放大使用既有 section 的 CSS viewport 版面，不使用瀏覽器 Fullscreen API，不移動 chart DOM，不 dispose／recreate instance，不寫 option、series、金融 state 或儲存資料。尺寸同步使用既有 `chartLifecycle.resizeVisibleCharts`，於 layout 的下一 animation frame 執行；目前沒有需要複製的 chart interaction store。zoom／legend 在同一 instance 上保留。
 
-放大時 section 暫時取得 dialog 語意，背景及 section 的其他內容暫設 inert，原生還原按鈕保持可見。Tab 在還原按鈕與圖表內既有可聚焦元素間循環。Escape／還原按鈕會還原進入前 scroll 與 focus；切換 tab、host 移除或其他 dialog 開啟則自動退出且不搶回 focus。原有 role、ARIA、inert 與 body inline overflow 會還原。若其他 dialog 已開啟，不允許進入，也不攔截它的 Escape。
+同一 section 有多張可放大的圖時，放大中只顯示該圖的工具列。放大時 section 暫時取得 dialog 語意，背景及 section 的其他內容暫設 inert，原生還原按鈕保持可見。Tab 在還原按鈕與圖表內既有可聚焦元素間循環。Escape／還原按鈕會還原進入前 scroll 與 focus；切換 tab、host 移除或其他 dialog 開啟則自動退出且不搶回 focus。原有 role、ARIA、inert 與 body inline overflow 會還原。若其他 dialog 已開啟，不允許進入，也不攔截它的 Escape。
 
 CSS 使用現有 theme tokens、safe-area 及動態 viewport。窄／矮視窗隱藏次要 Escape 提示，保留至少 44px 還原按鈕。沒有額外 overlay／背景捲動容器。
 
