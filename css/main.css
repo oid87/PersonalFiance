@@ -19,8 +19,9 @@
       --fear-h: 0px;
     }
     body.light {
-      --bg: #ffffff;
-      --panel: #f6f8fa;
+      /* 米白底：比純白柔和、OLED 上也略省電；面板跟著改暖灰 */
+      --bg: #faf7f0;
+      --panel: #f3efe6;
       --border: #d0d7de;
       --text: #1f2328;
       --muted: #57606a;

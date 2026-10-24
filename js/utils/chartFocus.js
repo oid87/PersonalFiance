@@ -7,6 +7,7 @@ const PILOTS = [
   { chartId: 'penta-chart', label: '五線譜圖表' },
   { chartId: 'aaii-chart', label: '散戶情緒圖表' },
   { chartId: 'twsent-chart', label: '台股情緒圖表' },
+  { chartId: 'twsent-chips-chart', label: '散戶籌碼圖表' },
   { chartId: 'marginalert-chart', label: '融資警報圖表' },
   { chartId: 'vs-chart', label: 'VIX-SKEW 圖表' },
   { chartId: 'pos-chart', label: '位階圖表' },
