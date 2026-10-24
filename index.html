@@ -671,11 +671,10 @@
     </div>
 
     <!-- 散戶籌碼:槓桿ETF受益人數 + 當沖占比 + 融券餘額 — 獨立參考,未併入上方恐慌貪婪合成分數 -->
-    <div class="twsent-chips-section" style="margin-top:22px">
-      <div class="aaii-table-title">散戶籌碼:槓桿 ETF 受益人數 · 當沖占比 · 融券餘額</div>
-      <div id="twsent-chips-chart"></div>
-      <p class="text-muted-sm-mt8">槓桿ETF受益人數(00631L元大台灣50正2、00675L富邦臺灣加權正2,週頻,TDCC集保股權分散表)、當沖占比(TWSE當日沖銷交易統計,日頻自2021起回補中)、融券餘額(FinMind大盤融券張數,2008+)。三者皆<b>獨立參考,未併入上方恐慌貪婪合成分數</b>。</p>
-    </div>
+    <!-- 圖直接放在 section 底下（不包 div），才能接「放大圖表」 -->
+    <div class="aaii-table-title" style="margin-top:22px">散戶籌碼:槓桿 ETF 受益人數 · 當沖占比 · 融券餘額</div>
+    <div id="twsent-chips-chart"></div>
+    <p class="text-muted-sm-mt8">槓桿ETF受益人數(00631L元大台灣50正2、00675L富邦臺灣加權正2,週頻,TDCC集保股權分散表)、當沖占比(TWSE當日沖銷交易統計,日頻自2021起回補中)、融券餘額(FinMind大盤融券張數,2008+)。三者皆<b>獨立參考,未併入上方恐慌貪婪合成分數</b>。</p>
 
     <div class="status" id="twsent-status">切換至此 tab 自動載入…</div>
     <div class="aaii-table-wrap">

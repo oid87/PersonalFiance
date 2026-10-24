@@ -38,6 +38,8 @@
 }
 .chart-focus-section > :not(.chart-focus-host):not(.chart-focus-toolbar) { display: none !important; }
 .chart-focus-section > .chart-focus-toolbar { flex: 0 0 auto; }
+/* 同頁有多張可放大的圖時，只留正在放大那張的工具列 */
+.chart-focus-section > .chart-focus-toolbar:not(.chart-focus-toolbar--active) { display: none !important; }
 .chart-focus-toolbar--active .chart-focus-hint { display: inline; }
 .chart-focus-section > .chart-focus-host {
   position: relative;
