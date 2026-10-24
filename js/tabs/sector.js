@@ -416,6 +416,14 @@ function renderTreemap(returns) {
   const tipBg = PALETTE.bg, tipBdr = PALETTE.border;
   const tipText = PALETTE.text;
 
+  // 手機上小格放不下全名：美股只留代號（極小格連代號都放不下就不標，點了看 tooltip）、台股取前兩字
+  const isMob = mob();
+  const smallLabel = k => {
+    const w = weight(k);
+    if (!isMob || w > 5) return {};
+    if (market === "us") return w <= 2.5 ? { show: false } : { formatter: k };
+    return { formatter: label(k).slice(0, 2), fontSize: 10, padding: [4, 2] };
+  };
   const treeData = ks.map(k => {
     const ret = returns[k]?.[sortCol];
     const color = retColor(ret);
@@ -427,6 +435,7 @@ function renderTreemap(returns) {
       itemStyle: { color, borderColor: PALETTE.cellBorder, borderWidth: 2 },
       label: {
         color: cellLabelColor(color), fontSize: weight(k) > 8 ? 13 : 11, fontWeight: 600,
+        ...smallLabel(k),
       },
     };
   });
@@ -646,6 +655,13 @@ export async function renderSectorTab(context = {}) {
 }
 
 // ── Lifecycle ───────────────────────────────────────────────────────────
+// 熱力圖寬過螢幕（手機 min-width 600px）時提示可左右滑動
+function updateScrollHint() {
+  const scroller = document.getElementById("sector-chart")?.parentElement;
+  const hint = document.getElementById("sector-scroll-hint");
+  if (hint) hint.hidden = !scroller || scroller.scrollWidth <= scroller.clientWidth + 2;
+}
+
 function initCharts() {
   const theme = isLight() ? null : "dark";
   const tmEl = document.getElementById("sector-treemap");
@@ -664,6 +680,7 @@ export async function activate(context = {}) {
   await new Promise(resolve => setTimeout(resolve, 50));
   if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
   treemapChart?.resize(); heatmapChart?.resize();
+  updateScrollHint();
   await renderSectorTab(context);
 }
 
@@ -679,6 +696,7 @@ export function resize() {
   treemapChart?.resize();
   heatmapChart?.resize();
   renderSparklines();
+  updateScrollHint();
 }
 
 // ── Event listeners ─────────────────────────────────────────────────────

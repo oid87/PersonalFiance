@@ -90,6 +90,9 @@ export function buildSectorAxis(indexRows = [], flowRows = []) {
   return [...new Set([...indexRows, ...flowRows].map(row => row[0]))].sort();
 }
 
+// 刻度去掉多餘小數但保留必要位數：小區間（如 0.5 萬張）不會四捨五入成重複的 0、-1、-1
+const fmtTick = v => String(Number(v.toFixed(2)) || 0);
+
 function renderChart(key, light) {
   const el = document.getElementById(`sf-chart-${key}`);
   if (!el) return;
@@ -124,16 +127,16 @@ function renderChart(key, light) {
     },
     yAxis: [
       {
-        type: 'value', scale: true,
-        axisLabel: { fontSize: 8, color: IDX_COLOR, formatter: v => v.toFixed(0) },
+        type: 'value', scale: true, splitNumber: 3,
+        axisLabel: { fontSize: 10, color: IDX_COLOR, formatter: fmtTick },
         splitLine: { lineStyle: { color: light ? '#e0e0e0' : '#30363d', type: 'dashed' } },
         axisLine: { show: false }, axisTick: { show: false },
       },
       {
-        type: 'value', scale: true,
+        type: 'value', scale: true, splitNumber: 3,
         axisLabel: {
-          fontSize: 8, color: FLOW_COLOR,
-          formatter: v => (v / 10000).toFixed(0),
+          fontSize: 10, color: FLOW_COLOR,
+          formatter: v => fmtTick(v / 10000),
         },
         splitLine: { show: false },
         axisLine: { show: false }, axisTick: { show: false },
