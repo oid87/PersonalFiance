@@ -50,6 +50,7 @@ export const SERIES = [
   { id: 'VIX', file: 'VIX.json', label: 'VIX' },
   { id: 'VXN', file: 'VXN.json', label: 'VXN', ref: true },
   { id: 'FG', file: 'fear_greed.json', label: 'CNN 恐懼貪婪指數', field: 'value', ref: true },
+  { id: 'US_BREADTH', file: 'breadth.json', label: '美股市場廣度（S&P 500 成分股站上 200 日線比例）', field: 'above200_pct', ref: true },
   { id: 'BTC', file: 'BTC.json', label: '比特幣', ref: true },
   { id: 'TWII', file: 'TWII.json', label: '加權指數' },
   { id: 'TWOII', file: 'TWOII.json', label: '櫃買指數' },

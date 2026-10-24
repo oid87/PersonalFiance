@@ -31,12 +31,12 @@ const HELP = {
 const CARD_GROUPS = [
   { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['KOSPI', '韓股', 'kospi']] },
   { group: 'B', title: '金融市場', cards: [['US10Y', '美債 10Y', 'us10y', 'yield'], ['DXY', '美元指數', 'dxy'], ['GOLD', '黃金', 'gold'], ['OIL', '布蘭特原油', 'oil'], ['VIX', 'VIX', 'vix'], ['VXN', 'VXN'], ['FG', '恐懼貪婪', null, 'score'], ['BTC', '比特幣']] },
-  { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '偏多家數占比', 'breadth', 'ratio']] },
-  { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield']] },
+  { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '台股市場廣度', 'breadth', 'ratio']] },
+  { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield'], ['US_BREADTH', '美股市場廣度', null, 'ratio']] },
 ];
 // 卡片上的英文代號（實際用的標的；指標類用通用簡稱）
 const TICKERS = { SOX: 'SOXX', NDX: 'QQQ', SPX: 'VOO', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
-  FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'Breadth',
+  FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'TW Breadth', US_BREADTH: 'SPY',
   N225: 'N225', HSI: 'HSI', SSE: 'SSE', STOXX50E: 'SX5E', US2Y: 'US2Y' };
 const CARD_BY_SERIES = new Map(CARD_GROUPS.flatMap(g => g.cards.map(c => [c[0], c])));
 // 點卡片的大圖左欄：為什麼把這張圖放進儀表板（本專案整理，用自己的話寫）
@@ -57,7 +57,8 @@ const REASONS = {
   TWOII: '中小型股、散戶與融資比重高，常比加權先轉弱。櫃買先破線、加權還沒破時要提高警覺。',
   MARGIN: '散戶槓桿的壓力表。越低代表越多人接近追繳，跌到斷頭區時反而常是低點附近。',
   MARGIN_OTC: '上櫃散戶融資比重更高、波動更大，常比上市先出事。本站 2026-08-24 起才有資料。',
-  BREADTH_PCT: '指數上漲但多數個股不漲＝廣度收窄，上漲只靠少數權值股撐著。',
+  BREADTH_PCT: '台股偏多家數占比（偏多／偏多＋偏空）。指數上漲但多數個股不漲＝廣度收窄，上漲只靠少數權值股撐著。',
+  US_BREADTH: 'S&P 500（SPY）成分股中，股價站上 200 日線的比例。低於 50% 代表多數美股已轉弱，可對照台股廣度看是不是全球一起收窄。',
   N225: '第三層以後的市場，用來確認是不是全球同步轉弱。',
   HSI: '中港資金與中國景氣的溫度計，用來確認是不是全球同步轉弱。',
   SSE: '中國內需與政策的溫度計，用來確認是不是全球同步轉弱。',
@@ -65,7 +66,7 @@ const REASONS = {
   US2Y: '和 10Y 比較看殖利率曲線：2Y 高於 10Y（倒掛）是長循環訊號，只註記不計分。',
 };
 // 大圖的參考線（訊號門檻）
-const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75] };   // 訊號 id，或不計分卡片的序列 id
+const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75], US_BREADTH: [50] };   // 訊號 id，或不計分卡片的序列 id
 // 資金流向：現金為王的 4 檔（state.js CK_ASSETS）＋ SPY 只顯示
 const CASH_LABELS = { GLD: '黃金（GLD）', BTC: '比特幣', TLT: '美債（TLT）', QQQ: 'QQQ', SPY: 'SPY' };
 const CASH_ASSETS = [...CK_ASSETS, { key: 'SPY', color: '#a371f7', file: 'data/SPY.json', displayOnly: true }];
