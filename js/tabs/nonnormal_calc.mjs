@@ -423,6 +423,37 @@ export function leadLag(ctx, d) {
   });
 }
 
+// ── 50／100 日線下彎（描述性預警，不計入訊號數與等級）────────────────────
+export const DOWNTURN = Object.freeze({
+  markets: [['SOX', '費半'], ['NDX', '那斯達克'], ['SPX', 'S&P 500'], ['KOSPI', '韓股'], ['TWII', '加權'], ['TWOII', '櫃買']],
+  mas: [50, 100],
+  alertDays: 5,   // 兩條線同時下彎連續 ≥ 5 個交易日才標「持續」；更短的多半幾天內就翻回（見 docs/research/nonnormal-dashboard.md）
+});
+
+/** 下彎＝今天的均線值 < 該序列前一個交易日的均線值。回傳每條線目前連續下彎幾個交易日（0＝沒有下彎）。 */
+export function maDownturn(s, d) {
+  const i = s ? indexLE(s, d) : -1;
+  if (i < 1) return null;
+  if (days(s.dates[i], d) > P.staleDays) return { stale: true, date: s.dates[i] };
+  const m = Object.fromEntries(DOWNTURN.mas.map(k => [k, (s.ma[k] ??= rollingMean(s.close, k))]));
+  if (!DOWNTURN.mas.every(k => finite(m[k][i]) && finite(m[k][i - 1]))) return null;
+  const down = (k, j) => finite(m[k][j]) && finite(m[k][j - 1]) && m[k][j] < m[k][j - 1];
+  const run = pred => { let n = 0; for (let j = i; j > 0 && pred(j); j--) n++; return n; };
+  const per = Object.fromEntries(DOWNTURN.mas.map(k => [k, { run: run(j => down(k, j)), chg: m[k][i] / m[k][i - 1] - 1 }]));
+  const bothRun = run(j => DOWNTURN.mas.every(k => down(k, j)));
+  return { date: s.dates[i], ma: per, bothRun, sustained: bothRun >= DOWNTURN.alertDays };
+}
+/** 六個市場的下彎狀況；bothNow＝兩條線今天都在下彎的市場數。 */
+export function downturnReport(ctx, d) {
+  const rows = DOWNTURN.markets.map(([id, label]) => ({ id, label, ...(maDownturn(ctx.s[id], d) || { missing: true }) }));
+  const ok = rows.filter(r => !r.missing && !r.stale);
+  return {
+    rows, available: ok.length,
+    bothNow: ok.filter(r => r.bothRun > 0).length,
+    sustained: ok.filter(r => r.sustained).length,
+  };
+}
+
 // ── quote cards (principle 3: look at every market's reaction) ──────────
 /** Card data for series s as of d: last value, change vs the previous row and vs ~1 week ago, and a window of the last
  *  `span` calendar days with moving averages (computed on the full history, so they exist from the window's first day). */

@@ -1139,6 +1139,8 @@
 #tab-nonnormal .ui-details summary { font-size:14px; }
 #tab-nonnormal .note-muted { font-size:17px; }
 #tab-nonnormal .nonnormal-q-hint { flex:0 0 auto; font-size:13px; color:var(--muted); opacity:.7; }
+#tab-nonnormal .nonnormal-dt-on { color:#ef4444; font-weight:600; }
+#tab-nonnormal .nonnormal-dt-sus { display:inline-block; margin-left:6px; padding:0 7px; border-radius:999px; font-size:12px; line-height:18px; background:#ef4444; color:#fff; white-space:nowrap; }
 #tab-nonnormal .nonnormal-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--space-3,12px); margin:8px 0; }
 #tab-nonnormal .nonnormal-card { min-width:0; padding:var(--space-3,12px); }
 #tab-nonnormal .nonnormal-card h4 { margin:0 0 6px; font-size:calc(var(--text-sm,13px) + 1px); color:var(--muted); font-weight:600; }
