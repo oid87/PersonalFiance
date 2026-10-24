@@ -733,6 +733,17 @@
       /* Keep the trend status line plus the 放大圖表 button on the first screen at 844x340. */
       #tab-trend > #status { padding: 1px 12px; line-height: 14px; }
       #tab-trend .chart-focus-toolbar { padding-block: 2px; }
+      /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
+         保留原高度、改用放大圖表 */
+      .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormal-chart, #uscap-chart,
+        #kelly-chart, #roc4-chart, #val-chart) {
+        max-height: calc(100dvh - 16px);
+      }
+      /* 標題列（57px）收掉：標題與副標隱藏，深淺色按鈕疊到分類列最右邊 */
+      body > header { position: absolute; top: 0; right: 0; z-index: 2; padding: 4px 12px; border: 0; }
+      body > header > :is(h1, .sub) { display: none; }
+      .navigation-row { padding-right: 68px; }
     }
     @media (max-height: 500px) {
       #signal-panel { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }

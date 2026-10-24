@@ -4,7 +4,7 @@
 
 接線：`boot.js` import `initChartFocus` from `./utils/chartFocus.js`，於共用 UI 初始化後呼叫一次；`main.css` 頂部 import `./chart-focus.css`。沒有 build 步驟。
 
-`initChartFocus()` 預設只增強 `#chart`（趨勢）與 `#stressdash-chart`（金融壓力）。回傳 `enter(chartId)`、`exit()`、`focusedChartId` getter、`destroy()`。同一 document 重複初始化不會新增按鈕或 listener。其他 host 須位於 `.tab-section` 的直接子層才能加入；巢狀版面需要明確 adapter。
+`initChartFocus()` 預設增強 `#chart`（趨勢）、`#stressdash-chart`（金融壓力），以及手機上壓到一屏會太擠的多面板圖：`#penta-chart`、`#aaii-chart`、`#twsent-chart`、`#marginalert-chart`、`#vs-chart`、`#pos-chart`、`#nonnormal-chart`、`#uscap-chart`、`#kelly-chart`、`#roc4-chart`、`#val-chart`（皆為 section 直接子層、grid 用百分比，resize 即重排）。回傳 `enter(chartId)`、`exit()`、`focusedChartId` getter、`destroy()`。同一 document 重複初始化不會新增按鈕或 listener。其他 host 須位於 `.tab-section` 的直接子層才能加入；巢狀版面需要明確 adapter。
 
 放大使用既有 section 的 CSS viewport 版面，不使用瀏覽器 Fullscreen API，不移動 chart DOM，不 dispose／recreate instance，不寫 option、series、金融 state 或儲存資料。尺寸同步使用既有 `chartLifecycle.resizeVisibleCharts`，於 layout 的下一 animation frame 執行；目前沒有需要複製的 chart interaction store。zoom／legend 在同一 instance 上保留。
 
