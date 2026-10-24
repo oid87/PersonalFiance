@@ -359,6 +359,8 @@ function panelMC() {
 function renderPanel() {
   $('lev-panel').innerHTML = mode === 'backtest' ? panelBacktest()
     : mode === 'single' ? panelSingle() : mode === 'crash' ? panelCrash() : panelMC();
+  // 各模式面板寬度不同（桌機歷史回測 296px、其他 270px），圖表區跟著變寬窄
+  levChart?.resize();
 }
 
 // ── Events ────────────────────────────────────────────────────────────────

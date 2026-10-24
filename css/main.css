@@ -321,6 +321,7 @@
     }
 
     /* ── 產業輪動 tab ─────────────────────────────────────────────── */
+    .sector-scroll-hint { padding: 6px 16px 0; font-size: 12px; color: var(--muted); text-align: center; }
     #sector-chart {
       width: 100%;
       height: calc(100vh - 194px - var(--cat-bar-h));
@@ -420,6 +421,8 @@
     @media (max-width: 820px) {
       .lev-body { flex-direction: column; padding: 12px; }
       .lev-panel { flex-basis: auto; width: 100%; }
+      /* 直排時撐滿寬；否則寬度隨卡片內容變，切模式後圖表不會跟著重排 */
+      .lev-results { width: 100%; }
       .lev-cards { grid-template-columns: repeat(2, 1fr); }
       .lev-rank-wrap { grid-template-columns: 1fr; }
       .lev-banner { margin: 10px 12px 0; }
@@ -691,6 +694,9 @@
       }
       #mg-table tr[data-mg-id] > td { height: 44px; }
       details > summary { min-height: 44px; padding-block: 12px; line-height: 20px; }
+      /* 段落內的來源連結：行內上下 padding 只擴大點按範圍、不改行高，不推動文字 */
+      .tab-section a[href]:not(.chip):not([role="button"]) { padding-block: 15px; }
+      .tab-section input[type="file"] { min-height: 44px; }
       .lev-checkbox { min-height: 44px; }
       .lev-field input[type=range] { height: 44px; min-height: 44px; margin: 0; }
       .table-scroll, .info-panel-body, .controls, .sub-nav { -webkit-overflow-scrolling: touch; }
