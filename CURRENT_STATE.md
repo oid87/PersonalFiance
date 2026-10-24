@@ -61,7 +61,7 @@ clean export 不含 ignored `.claude/skills/`，sync 會略過 skills；這只�
 ## 已知限制與停止狀態
 
 - browser core 只涵蓋 trend／stressdash；native macOS IME、Safari、screen reader、真機 touch 與全 72 頁 matrix 未由 Chromium emulation 證明。
-- chartFocus 接趨勢、金融壓力與 11 張多面板圖（2026-10-24，手機直／橫式實測進出與還原）；nested host 仍需明確 adapter 才擴展。手機橫式（高 ≤500px）其他主圖以 CSS 限高一屏，多面板圖例外。
+- chartFocus 接趨勢、金融壓力與 12 張多面板圖（2026-10-24，手機直／橫式實測進出與還原）；nested host 仍需明確 adapter 才擴展。手機橫式（高 ≤500px）其他主圖以 CSS 限高一屏，多面板圖例外。
 - 各 tab 成功 cache、共用 request cache 與 state 有不同所有權；refresh／controller 統一不是低風險外觀整理。
 - 0050 的既有規則稱「2014 真實分割」，fetch 原碼描述 vendor adjustment ratio-splice；目前保留實作並明確區分，尚未另做資料 provenance 裁定。
 - 舊 ui_harness 檔頭不能代替 [TESTING](TESTING.md) 的 WIP／固定 clock／雙基準規則；目前不支援 tab filter 或固定 clock CLI。
