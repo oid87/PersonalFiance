@@ -255,6 +255,23 @@ test('maDownturn counts consecutive days both 50/100MA fall, and ignores a flat/
   assert.equal(up.sustained, false);
 });
 
+test('maDownturn: since = start of the current run, fromHigh = day after the MA peak (a short uptick does not reset it)', () => {
+  const n = 300, dates = businessDays('2023-01-02', n);
+  // 220 日上升 → 40 日下跌 → 5 日急彈（50MA 短暫翻上）→ 35 日再跌
+  const px = [];
+  for (let i = 0; i < n; i++) px.push(i < 220 ? 100 + i * 0.5 : i < 260 ? px[i - 1] - 1 : i < 265 ? px[i - 1] + 10 : px[i - 1] - 2);
+  const s = N.buildSeries(rows(dates, px));
+  const r = N.maDownturn(s, dates.at(-1)), m = r.ma[50];
+  assert.ok(m.run > 0 && m.since === dates[n - m.run], 'since 是目前這段的第一天');
+  assert.ok(m.fromHigh && m.fromHigh.date < m.since, '高點後就開始下彎，早於反彈後這段');
+  const hi = s.ma[50].indexOf(Math.max(...s.ma[50].slice(n - 1 - N.DOWNTURN.highLookback).filter(Number.isFinite)));
+  assert.equal(m.fromHigh.date, dates[hi + 1]);
+  assert.equal(m.fromHigh.days, n - 1 - hi);
+  const up = N.maDownturn(N.buildSeries(rows(dates, Array.from({ length: n }, (_, i) => 100 + i))), dates.at(-1));
+  assert.equal(up.ma[50].since, null);
+  assert.equal(up.ma[50].fromHigh, null, '均線今天就是高點');
+});
+
 test('maDownturn: too little history → null, stale → {stale}, report never counts them', () => {
   const dates = businessDays('2023-01-02', 60);
   assert.equal(N.maDownturn(N.buildSeries(rows(dates, flat(60, 100))), dates.at(-1)), null, '100MA 還算不出來');

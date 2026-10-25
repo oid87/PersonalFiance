@@ -428,9 +428,11 @@ export const DOWNTURN = Object.freeze({
   markets: [['SOX', '費半'], ['NDX', '那斯達克'], ['SPX', 'S&P 500'], ['KOSPI', '韓股'], ['TWII', '加權'], ['TWOII', '櫃買']],
   mas: [50, 100],
   alertDays: 5,   // 兩條線同時下彎連續 ≥ 5 個交易日才標「持續」；更短的多半幾天內就翻回（見 docs/research/nonnormal-dashboard.md）
+  highLookback: 126,   // 找均線「近半年高點」的交易日數（與報價卡 6 個月走勢同窗）
 });
 
-/** 下彎＝今天的均線值 < 該序列前一個交易日的均線值。回傳每條線目前連續下彎幾個交易日（0＝沒有下彎）。 */
+/** 下彎＝今天的均線值 < 該序列前一個交易日的均線值。回傳每條線目前連續下彎幾個交易日（0＝沒有下彎）、這段的起日 since，
+ *  以及從近半年均線高點算起的起跌日 fromHigh（中間短暫翻上不重算；均線今天就是高點時為 null）。 */
 export function maDownturn(s, d) {
   const i = s ? indexLE(s, d) : -1;
   if (i < 1) return null;
@@ -439,7 +441,15 @@ export function maDownturn(s, d) {
   if (!DOWNTURN.mas.every(k => finite(m[k][i]) && finite(m[k][i - 1]))) return null;
   const down = (k, j) => finite(m[k][j]) && finite(m[k][j - 1]) && m[k][j] < m[k][j - 1];
   const run = pred => { let n = 0; for (let j = i; j > 0 && pred(j); j--) n++; return n; };
-  const per = Object.fromEntries(DOWNTURN.mas.map(k => [k, { run: run(j => down(k, j)), chg: m[k][i] / m[k][i - 1] - 1 }]));
+  const high = k => {
+    let h = i;
+    for (let j = i - 1; j >= Math.max(1, i - DOWNTURN.highLookback); j--) if (finite(m[k][j]) && m[k][j] > m[k][h]) h = j;
+    return h < i ? { date: s.dates[h + 1], days: i - h } : null;
+  };
+  const per = Object.fromEntries(DOWNTURN.mas.map(k => {
+    const n = run(j => down(k, j));
+    return [k, { run: n, since: n > 0 ? s.dates[i - n + 1] : null, fromHigh: high(k), chg: m[k][i] / m[k][i - 1] - 1 }];
+  }));
   const bothRun = run(j => DOWNTURN.mas.every(k => down(k, j)));
   return { date: s.dates[i], ma: per, bothRun, sustained: bothRun >= DOWNTURN.alertDays };
 }

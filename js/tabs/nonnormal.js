@@ -1,6 +1,6 @@
 // 極端狀態儀表板 — 每週一次的多重確認儀表板（描述性，不是買賣訊號）。
 // 引擎：js/tabs/nonnormal_calc.mjs（與 scripts/research/backtest_nonnormal.mjs 共用）。
-// 版面：等級橫幅 → 報價卡（最新值、日漲跌、近 6 個月走勢＋50／100 日均線，亮燈卡加紅框；點卡片開大圖）→ 均線下彎（六市場，不計分）→ 資金流向（現金為王，
+// 版面：等級橫幅 → 報價卡（最新值、日漲跌、近 6 個月走勢＋50／100 日均線，亮燈卡加紅框；點卡片開大圖；六個股市卡另列 50／100 日線下彎，不計分）→ 資金流向（現金為王，
 // 與 cashking 頁共用 cashking_calc.mjs）→ 共振歷史圖 → 時間差 → 轉機；
 // 案例回測與閾值來源收在頁尾 <details>，打開才算。
 import { isLight, echartsBase, PALETTE, mob } from '../utils/theme.js';
@@ -23,7 +23,7 @@ const DOUBLE_TAP_MS = 500;
 
 const HELP = {
   level: '0–1 個亮：常態（單一訊號視為雜訊）｜2–3：留意｜≥4 且橫跨 ≥2 組：警戒｜≥6 且三組都亮：高度警戒。每週五評估，本週未結束時用最新資料日。',
-  downturn: '均線下彎＝今天的均線值低於前一個交易日。顯示 50、100 日線各自連續下彎幾個交易日；兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
+  downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
   cash: '現金為王（izaax，同「現金為王」頁）：4 或 8 週內黃金、比特幣、美債 TLT、QQQ 全部下跌，且恐懼貪婪低點 < 25。逃往黃金：其他都跌、只有黃金漲，且恐懼貪婪 < 25。同一期間誰漲最多＝資金往哪裡去。',
 };
@@ -214,7 +214,40 @@ function quoteCard([id, name, sigId, kind = 'px'], now) {
   foot.append(q.stale ? `資料停在 ${q.date}` : `週 ${fmtChange(q.w1, q.w1Pct, kind, q.last, true)}`);
   if (state === 'on' && sig.tags.length) foot.append('・', node('b', sig.tags.join('・')));
   el.append(foot);
+  if (DOWNTURN_IDS.has(id) && !q.stale) { const dt = downturnLine(N.maDownturn(ctx.s[id], now.date)); if (dt) el.append(dt); }
   return el;
+}
+
+// ── 均線下彎（六個股市卡，不計分）────────────────────────────────────────
+const DOWNTURN_IDS = new Set(N.DOWNTURN.markets.map(m => m[0]));
+const md = date => { const [, mo, da] = date.split('-'); return `${+mo}/${+da}`; };
+function downturnLine(r) {
+  if (!r || r.stale) return null;
+  const el = node('div', null, { class: 'nonnormal-q-dt' });
+  for (const k of N.DOWNTURN.mas) {
+    const m = r.ma[k], row = node('span', null, { class: 'nonnormal-q-dt-row' });
+    row.append(node('span', `${k}MA`, { class: 'nonnormal-q-dt-k' }), ' ');
+    if (m.run > 0) {
+      const v = node('span', null, { class: 'nonnormal-dt-on' });   // 兩段各自不斷行，窄卡只在中間換行
+      v.append(node('span', `↓${md(m.fromHigh?.date || m.since)}起`), ' ', node('span', `連${m.run}日`));
+      row.append(v);
+    } else row.append('未下彎');
+    el.append(row);
+  }
+  if (r.sustained) el.append(node('span', `兩線同彎 ${r.bothRun} 日・持續`, { class: 'nonnormal-dt-sus' }));
+  return el;
+}
+/** 大圖左欄的下彎說明：起跌日（近半年均線高點後一天）與目前連續天數分開寫。 */
+function downturnText(r) {
+  if (!r || r.stale) return null;
+  const lines = N.DOWNTURN.mas.map(k => {
+    const m = r.ma[k];
+    if (m.run === 0) return `${k}MA 未下彎`;
+    const from = m.fromHigh?.date || m.since;
+    return `${k}MA ${md(from)} 起跌・連 ${m.run} 日${from === m.since ? '' : `（${md(m.since)} 起；中間曾翻上）`}`;
+  });
+  if (r.bothRun > 0) lines.push(`兩線同彎 ${r.bothRun} 日${r.sustained ? '・持續' : ''}`);
+  return lines;
 }
 
 function renderCards(now) {
@@ -228,6 +261,7 @@ function renderCards(now) {
       const sig = now.signals.filter(s => s.group === group);
       h.append(node('span', `${sig.filter(s => s.state === 'on').length}/${sig.length} 亮`, { class: 'nonnormal-group-count' }));
     }
+    if (cards.some(c => DOWNTURN_IDS.has(c[0]))) h.append(' ', infoButton(HELP.downturn, '說明：均線下彎'));
     head.append(h);
     if (gi === 0) head.append(legend);
     const grid = node('div', null, { class: 'nonnormal-cards' });
@@ -262,19 +296,26 @@ function drawDetail() {
   if (!charts[1]) charts[1] = echarts.init(byId('dialog-chart'), isLight() ? null : 'dark');
   const fmt = valueFmt(kind, q.last);
   const lines = (REF_LINES[sigId] || REF_LINES[id] || []).map(v => ({ yAxis: v, label: { formatter: fmt(v), color: PALETTE.muted, fontSize: 11 } }));
+  // 六個股市：在對應均線上標起跌日（近半年高點後一天）
+  const dt = DOWNTURN_IDS.has(id) ? N.maDownturn(ctx.s[id], now.date) : null;
+  const turn = (k, color) => {
+    const date = dt && !dt.stale && dt.ma[k].run > 0 ? (dt.ma[k].fromHigh?.date || dt.ma[k].since) : null;
+    return date && q.dates.includes(date) ? { silent: true, symbol: 'none', lineStyle: { type: 'dotted', color, width: 1.2 },
+      label: { formatter: `${k}MA 起跌 ${md(date)}`, color, fontSize: 11, position: k === 50 ? 'insideEndTop' : 'insideStartTop' }, data: [{ xAxis: date }] } : undefined;
+  };
   const line = (name, data, color, width, extra = {}) => ({ name, type: 'line', data, showSymbol: false, connectNulls: false, lineStyle: { width, color }, itemStyle: { color }, ...extra });
   chartOption(1, {
     animation: false,
     legend: { top: 0, right: 0, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: ['收盤', '50MA', '100MA'] },
-    grid: { left: mob() ? 50 : 64, right: 16, top: 30, bottom: 28 },
+    grid: { left: 8, right: 16, top: 30, bottom: 4, containLabel: true },
     tooltip: { trigger: 'axis', valueFormatter: fmt },
     xAxis: { type: 'category', data: q.dates, boundaryGap: false, axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: v => v.slice(5) } },
     yAxis: { type: 'value', scale: true, axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: fmt }, splitLine: { lineStyle: { color: PALETTE.grid } } },
     dataZoom: [],
     series: [
       line('收盤', q.close, PALETTE.text, 1.6, { areaStyle: { opacity: 0.06 }, markLine: lines.length ? { silent: true, symbol: 'none', lineStyle: { type: 'dashed', color: '#ef4444' }, data: lines } : undefined }),
-      line('50MA', q.ma[50], '#e3b341', 1.2),
-      line('100MA', q.ma[100], '#58a6ff', 1.2),
+      line('50MA', q.ma[50], '#e3b341', 1.2, { markLine: turn(50, '#e3b341') }),
+      line('100MA', q.ma[100], '#58a6ff', 1.2, { markLine: turn(100, '#58a6ff') }),
     ],
   });
 }
@@ -285,6 +326,8 @@ function renderWhy(id, sigId, sig) {
   const sec = (title, ...kids) => { const el = node('section'); el.append(node('h4', title), ...kids); return el; };
   const parts = [sec('為什麼看這個', node('p', REASONS[id] || '—'))];
   if (sig?.text || sig?.reason) parts.push(sec('現在', node('p', sig.text || sig.reason)));
+  const dt = DOWNTURN_IDS.has(id) && downturnText(N.maDownturn(ctx.s[id], weeks.at(-1).date));
+  if (dt) { const el = sec('均線下彎（不計分）', node('p', dt.join('｜'))); el.className = 'nonnormal-why-dt'; parts.push(el); }
   if (def) {
     const ul = node('ul', null, { class: 'nonnormal-why-list' });
     for (const [text] of def.thresholds) ul.append(node('li', text));
@@ -466,21 +509,6 @@ function fitIndexAxis() {
   });
 }
 
-// ── 均線下彎 ────────────────────────────────────────────────────────────
-function renderDownturn(d) {
-  const rep = N.downturnReport(ctx, d), run = r => (r > 0 ? node('span', `下彎 ${r} 日`, { class: 'nonnormal-dt-on' }) : '未下彎');
-  const status = r => (r.missing ? ['—', '—', '無資料'] : r.stale ? ['—', '—', `資料停在 ${r.date}`] : null);
-  byId('downturn-count').textContent = `${rep.bothNow}/${rep.available} 兩線同時下彎${rep.sustained ? `・${rep.sustained} 個持續` : ''}`;
-  table('downturn', ['市場', '50 日線', '100 日線', '兩線同時下彎', '資料日'], rep.rows.map(r => {
-    const na = status(r);
-    if (na) return [r.label, na[0], na[1], na[2], r.date || '—'];
-    const both = node('span', null);
-    both.append(r.bothRun > 0 ? node('span', `連續 ${r.bothRun} 日`, { class: 'nonnormal-dt-on' }) : '否');
-    if (r.sustained) both.append(node('span', '持續', { class: 'nonnormal-dt-sus' }));
-    return [r.label, run(r.ma[50].run), run(r.ma[100].run), both, r.date.slice(5)];
-  }));
-}
-
 // ── lead-lag ────────────────────────────────────────────────────────────
 function renderLeadLag(d) {
   const st = since => (since ? `破（${since.slice(5)}）` : '線上');
@@ -557,8 +585,9 @@ function renderAll() {
     try {
       const now = weeks.at(-1), prev = weeks.at(-2) || null;
       const running = new Date(Date.parse(now.date)).getUTCDay() !== 5;
-      byId('asof').textContent = `${now.date}${running ? '（本週至今）' : ''}`;
-      renderSummary(now, prev); renderCards(now); renderDownturn(now.date); renderCash(); drawChart(); renderLeadLag(now.date); renderTurn(now.date);
+      const last = id => ctx.s[id]?.dates?.at(-1);
+      byId('asof').textContent = `${now.date}${running ? '（本週至今）' : ''}・美股收盤 ${last('SPX')}、台股收盤 ${last('TWII')}・每日 06:00（美股收盤後）、18:00（台股收盤後）自動更新`;
+      renderSummary(now, prev); renderCards(now); renderCash(); drawChart(); renderLeadLag(now.date); renderTurn(now.date);
       drawDetail();
       if (byId('cases-details').open) renderCases();
       if (byId('sources-details').open) renderSources();
