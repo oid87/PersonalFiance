@@ -183,9 +183,9 @@ export const VIX_ZONES = [
   { max: 20, label: '15–20 正常', action: '正常策略' },
   { max: 30, label: '20–30 不安', action: '注意資金' },
   { max: 40, label: '30–40 恐慌', action: '先不亂賣；突破 30 準備資金' },
-  { max: 45, label: '40–45 明顯恐慌', action: '第一批的條件之一' },
-  { max: 50, label: '45–50', action: '第二批的條件之一' },
-  { max: 60, label: '50–60 極度恐慌', action: '分批的核心區' },
+  { max: 45, label: '40–45 明顯恐慌', action: '極端情境 1 的條件之一' },
+  { max: 50, label: '45–50', action: '極端情境 2 的條件之一' },
+  { max: 60, label: '50–60 極度恐慌', action: '極端情境 3 的條件之一' },
   { max: Infinity, label: '≥ 60 歷史級崩跌', action: '極罕見' },
 ];
 export const vixZone = v => (finite(v) ? VIX_ZONES.findIndex(z => v < z.max) : -1);
@@ -206,7 +206,7 @@ export const NO_OBS_TIERS = [
   { min: 0, label: '0 天 正常' },
   { min: 1, label: '1 天 提高注意' },
   { min: 2, label: '2 天 檢視 ETF 的走勢與位階' },
-  { min: 3, label: '3–4 天 可以開始分批' },
+  { min: 3, label: '3–4 天 極端情境 2 的條件之一' },
   { min: 5, label: '≥ 5 天（約四分之一的交易日）極度恐慌' },
 ];
 export const noObsTier = n => (finite(n) ? NO_OBS_TIERS.findLastIndex(t => n >= t.min) : -1);
@@ -527,7 +527,7 @@ export function turnaround(ctx, d) {
   };
 }
 
-// ── 位階與分批（大跌時「跌多深、到第幾批」；描述性，不計入上方訊號數與等級）────────────
+// ── 位階與極端情境（大跌時「跌多深、到第幾個極端情境」；描述性，不計入上方訊號數與等級）────────────
 // 水溫：10 日、10 週、10 月三條均線的方向＋價格相對 10 月線的位置。週／月均線用「已收完的前幾期收盤＋評估日當天收盤」，
 // 不偷看本期之後的資料。長期均線用月線 24／60／120 個月（2／5／10 年線）。門檻 gap 類為本專案定義，見 docs。
 export const STANCE = Object.freeze({
@@ -682,11 +682,12 @@ const batchState = conds => {
   const ok = conds.filter(c => c.ok !== null), met = ok.filter(c => c.ok).length, r = ok.length ? met / ok.length : 0;
   return { conds, met, available: ok.length, state: r >= 0.75 ? 'on' : r >= 0.5 ? 'near' : 'off' };
 };
-export const BATCHES = [{ label: '第一批', weight: 20 }, { label: '第二批', weight: 30 }, { label: '第三批', weight: 50 }];
+// 極端情境 1～3：指數（大盤 ETF）可以考慮進場的時機，越後面越極端（內部名稱仍叫 batches）
+export const BATCHES = [{ label: '極端情境 1' }, { label: '極端情境 2' }, { label: '極端情境 3' }];
 export const BOX_VERDICT = n => (n >= 3 ? '強烈訊號' : n >= 1 ? '提高警覺' : '尚未轉冷');
 
-/** 加權為主的位階報告：各市場水溫、五格（定位／位置／壓力／情緒／外部）與指數三批的條件。
- *  批次狀態：可判斷的條件中到位 ≥ 75%＝到位、≥ 50%＝接近（本專案定義；歷史上條件很少同時全部成立）。 */
+/** 加權為主的位階報告：各市場水溫、五格（定位／位置／壓力／情緒／外部）與指數三個極端情境的條件。
+ *  情境狀態：可判斷的條件中到位 ≥ 75%＝到位、≥ 50%＝接近（本專案定義；歷史上條件很少同時全部成立）。 */
 export function stance(ctx, d) {
   const temps = STANCE.markets.map(([id, label]) => ({ id, label, ...(temperature(ctx.s[id], d) || { missing: true }) }));
   const tw = temps[0].missing || temps[0].stale ? null : temps[0];
@@ -711,9 +712,9 @@ export function stance(ctx, d) {
   const c = (text, ok) => ({ text, ok: ok ?? null });
   const dd = th => (tw ? tw.dd1y <= -th : null);
   const batches = [
-    [c('VIX 盤中破 40', v(40)), c('距一年高點跌 30%', dd(0.30)), c('跌破 2 年線', y2 && finite(y2.gap) ? y2.gap < 0 : null), c('五格亮 1 格以上', lit >= 1)],
+    [c('VIX 盤中破 40', v(40)), c('距一年高點跌 30%', dd(0.30)), c('跌破 2 年線', y2 && finite(y2.gap) ? y2.gap < 0 : null), c('上方五格至少亮 1 格', lit >= 1)],
     [c('VIX 盤中破 45', v(45)), c('融資維持率 < 140%', mg(P.margin[2])), c('距一年高點跌 40%', dd(0.40)), c('到 5 年線（±3%）', y5?.touch ?? null), c(`近 22 個交易日無觀察類股 ≥ ${NO_OBS.start} 天`, no ? no.count >= NO_OBS.start : null)],
-    [c('VIX 盤中 ≥ 50', v(50)), c('融資維持率 < 135%', mg(135)), c('護盤基金進場', !!fund), c('到 10 年線（±3%）', y10?.touch ?? null), c('五格亮 4 格以上', lit >= 4)],
+    [c('VIX 盤中 ≥ 50', v(50)), c('融資維持率 < 135%', mg(135)), c('護盤基金進場', !!fund), c('到 10 年線（±3%）', y10?.touch ?? null), c('上方五格至少亮 4 格', lit >= 4)],
   ].map((conds, k) => ({ ...BATCHES[k], ...batchState(conds) }));
   return { date: d, temps, boxes, lit, verdict: BOX_VERDICT(lit), batches, vix, margin, fund, intl, noObs: no, limitDown: ld };
 }

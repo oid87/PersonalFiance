@@ -1,7 +1,7 @@
 // 極端狀態儀表板 — 每週一次的多重確認儀表板（描述性，不是買賣訊號）。
 // 引擎：js/tabs/nonnormal_calc.mjs（與 scripts/research/backtest_nonnormal.mjs 共用）。
 // 版面：等級橫幅 → 報價卡（最新值、日漲跌、近 6 個月走勢＋50／100 日均線，亮燈卡加紅框；點卡片開大圖；六個股市卡另列 50／100 日線下彎，不計分）→ 資金流向（現金為王，
-// 與 cashking 頁共用 cashking_calc.mjs）→ 共振歷史圖 → 時間差 → 位階與分批（五格、水溫、三批，不計分）→ 轉機；
+// 與 cashking 頁共用 cashking_calc.mjs）→ 共振歷史圖 → 時間差 → 位階與極端情境（五格、水溫、極端情境 1～3，不計分）→ 轉機；
 // 案例回測與閾值來源收在頁尾 <details>，打開才算。
 import { isLight, echartsBase, PALETTE, mob } from '../utils/theme.js';
 import { requestJSON } from '../utils/data.js';
@@ -25,7 +25,7 @@ const HELP = {
   level: '0–1 個亮：常態（單一訊號視為雜訊）｜2–3：留意｜≥4 且橫跨 ≥2 組：警戒｜≥6 且三組都亮：高度警戒。每週五評估，本週未結束時用最新資料日。',
   downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
-  stance: '大跌時用來判斷「跌多深、到第幾批」，平常大多是空的。五格：定位＝加權水溫是不是極冷；位置＝加權離 5 年線 3% 以內或跌破；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30、近 22 個交易日無觀察類股 ≥ 3 天、或近 30 日有一天跌停 ≥ 300 家（任一）；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫：10 日、10 週、10 月三條均線的方向＋價格離 10 月線多遠。兩端用各市場自己的歷史：過熱線＝當時以前離 10 月線最遠的 5%（95% 分位），三線上揚且站上＝過熱；極冷線＝低於 10 月線最深的 15%（15% 分位），三線下彎且跌破＝極冷（兩者校準成各約占 5% 的時間）。中間：±3% 內＝盤整；站上且 10 月線上揚＝偏熱；跌破或 10 月線下彎＝偏冷。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。三批是給指數的分批節奏（20／30／50，越跌越買、最後一批最大）：每批的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
+  stance: '大跌時用來判斷「跌多深、到第幾個極端情境」，平常大多是空的。五格＝五種大跌時的訊號，條件成立就亮（●），「亮 N 格」＝其中幾格成立。定位＝加權水溫是不是極冷；位置＝加權離 5 年線 3% 以內或跌破；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30、近 22 個交易日無觀察類股 ≥ 3 天、或近 30 日有一天跌停 ≥ 300 家（任一）；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫：10 日、10 週、10 月三條均線的方向＋價格離 10 月線多遠。兩端用各市場自己的歷史：過熱線＝當時以前離 10 月線最遠的 5%（95% 分位），三線上揚且站上＝過熱；極冷線＝低於 10 月線最深的 15%（15% 分位），三線下彎且跌破＝極冷（兩者校準成各約占 5% 的時間）。中間：±3% 內＝盤整；站上且 10 月線上揚＝偏熱；跌破或 10 月線下彎＝偏冷。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。極端情境 1～3＝指數（大盤 ETF）可以考慮進場的時機，越後面越極端（跌得更深、恐慌更重），通常一個比一個晚出現：每個情境的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
   tempchart: '每週一筆（各市場該週最後一個交易日）。上：實線＝價格，橘色虛線＝10 月線（最近 10 個月的月底收盤平均，這個月用最新收盤代替，所以月中只會小幅移動、換月時才明顯跳一格；可以當 40 週線看：2003 起加權、S&P 500、韓股兩者平均只差約 0.7%，±3% 分區約 96% 的日子相同），底色＝當週水溫。中：價格離 10 月線多少 %。紅色虛線＝過熱線、藍色虛線＝極冷線，用該市場「當時以前」的歷史分位算，所以會隨時間移動；灰帶＝±3% 盤整。站到線外還要三條均線同方向才算過熱／極冷，所以線外側的顏色和上方底色偶爾不一致。下：六個市場的水溫，看是不是一起變冷。上方按鈕切換市場與期間，也可以拖拉下方滑桿。',
   cash: '現金為王（izaax，同「現金為王」頁）：4 或 8 週內黃金、比特幣、美債 TLT、QQQ 全部下跌，且恐懼貪婪低點 < 25。逃往黃金：其他都跌、只有黃金漲，且恐懼貪婪 < 25。同一期間誰漲最多＝資金往哪裡去。',
 };
@@ -63,7 +63,7 @@ const REASONS = {
   MARGIN_OTC: '上櫃散戶融資比重更高、波動更大，常比上市先出事。本站 2026-08-24 起才有資料。',
   BREADTH_PCT: '台股偏多家數占比（偏多／偏多＋偏空）。指數上漲但多數個股不漲＝廣度收窄，上漲只靠少數權值股撐著。',
   LIMIT_DOWN: '上市＋上櫃股票當天收在跌停的家數。平常個位數到幾十家；幾百家以上代表恐慌性賣壓，2025-04-07 有 1,702 家。只顯示，不計分；會用在下方「情緒」那一格。',
-  NO_OBS: '近 22 個交易日（約一個月）中，盤面完全沒有「觀察類股」的天數。觀察類股看的是個股的「第一根且帶大量」：當天上漲、收盤創近 20 日新高、成交量 ≥ 2 倍 10 日均量（且達全市場日均量的萬分之 2，約 1,000 張）。全市場（上市＋上櫃）這類股票的比例落在過去一年最低 4%＝無觀察類股日。不看族群、也不是只看 0050。算法與 2013 起的回測見「過往觀察」頁。整天找不到代表市場沒有新的強勢股；1 天提高注意、3 天以上可開始分批、5 天以上極度恐慌。',
+  NO_OBS: '近 22 個交易日（約一個月）中，盤面完全沒有「觀察類股」的天數。觀察類股看的是個股的「第一根且帶大量」：當天上漲、收盤創近 20 日新高、成交量 ≥ 2 倍 10 日均量（且達全市場日均量的萬分之 2，約 1,000 張）。全市場（上市＋上櫃）這類股票的比例落在過去一年最低 4%＝無觀察類股日。不看族群、也不是只看 0050。算法與 2013 起的回測見「過往觀察」頁。整天找不到代表市場沒有新的強勢股；1 天提高注意、3 天以上是極端情境 2 的條件之一、5 天以上極度恐慌。',
   US_BREADTH: 'S&P 500（SPY）成分股中，股價站上 200 日線的比例。低於 50% 代表多數美股已轉弱，可對照台股廣度看是不是全球一起收窄。',
   N225: '第三層以後的市場，用來確認是不是全球同步轉弱。',
   HSI: '中港資金與中國景氣的溫度計，用來確認是不是全球同步轉弱。',
@@ -534,7 +534,7 @@ function renderStance(d) {
   const st = N.stance(ctx, d);
   const head = node('div', null, { class: 'nonnormal-boxes-head' });
   head.append(node('b', `亮 ${st.lit}/5 格`), node('span', st.verdict, { class: 'nonnormal-why-state' + (st.lit >= 3 ? ' nonnormal-why-state--on' : st.lit ? ' nonnormal-why-state--near' : '') }),
-    node('span', '亮 1 格提高警覺，亮 3–4 格才算強烈訊號', { class: 'nonnormal-boxes-note' }));
+    node('span', '五格＝五種大跌訊號，條件成立就亮 ●；亮 1 格提高警覺，亮 3–4 格才算強烈訊號', { class: 'nonnormal-boxes-note' }));
   const grid = node('div', null, { class: 'nonnormal-boxes' });
   for (const b of st.boxes) {
     const el = node('div', null, { class: 'nonnormal-box' + (b.lit ? ' nonnormal-box--on' : b.lit === null ? ' nonnormal-box--na' : ''), title: BOX_HINT[b.key] });
@@ -543,7 +543,7 @@ function renderStance(d) {
     el.append(k, node('div', b.text, { class: 'nonnormal-box-v' }));
     grid.append(el);
   }
-  byId('boxes').replaceChildren(head, grid, node('p', '水溫由熱到冷：過熱 → 偏熱 → 盤整 → 偏冷 → 極冷。極冷＝大跌後可以開始分批的位置；過熱＝漲過頭。均線方向：日／週／月＝10 日、10 週、10 月線，↑ 上揚、↓ 下彎。「離…線」＝現在價格比那條線高（+）或低（−）多少，紅字＝已到或跌破。「過熱／極冷線」＝這個市場自己的歷史上離 10 月線最遠的 5%／最深的 15%，三條均線同方向且越過才算過熱／極冷。手機可左右滑動表格。', { class: 'nonnormal-temp-note' }));
+  byId('boxes').replaceChildren(head, grid, node('p', '水溫由熱到冷：過熱 → 偏熱 → 盤整 → 偏冷 → 極冷。極冷＝大跌後進入極端情境的起點；過熱＝漲過頭。均線方向：日／週／月＝10 日、10 週、10 月線，↑ 上揚、↓ 下彎。「離…線」＝現在價格比那條線高（+）或低（−）多少，紅字＝已到或跌破。「過熱／極冷線」＝這個市場自己的歷史上離 10 月線最遠的 5%／最深的 15%，三條均線同方向且越過才算過熱／極冷。手機可左右滑動表格。', { class: 'nonnormal-temp-note' }));
 
   const zone = t => { const z = N.ZONES[t.zone]; return node('span', z.label, { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc }); };
   const dist = l => { const el = node('span', pctTxt(l.gap)); if (l.touch) el.className = 'nonnormal-touch'; return el; };
@@ -554,7 +554,7 @@ function renderStance(d) {
 
   byId('batches').replaceChildren(...st.batches.map(b => {
     const card = node('article', null, { class: 'ui-card nonnormal-card nonnormal-batch' + (b.state === 'on' ? ' nonnormal-batch--on' : '') });
-    const h = node('h4', `${b.label}（${b.weight}%）`), [txt, cls] = BATCH_STATE[b.state];
+    const h = node('h4', b.label), [txt, cls] = BATCH_STATE[b.state];
     h.append(' ', node('span', `${txt} ${b.met}/${b.available}`, { class: 'nonnormal-why-state ' + cls }));
     const ul = node('ul', null, { class: 'nonnormal-batch-list' });
     for (const c of b.conds) ul.append(node('li', `${c.ok === null ? '－' : c.ok ? '✓' : '✗'} ${c.text}`, { class: c.ok ? 'nonnormal-ok' : c.ok === null ? 'nonnormal-na' : '' }));
@@ -562,7 +562,7 @@ function renderStance(d) {
     return card;
   }));
   const parts = [st.vix && `VIX 近 30 日盤中最高 ${st.vix.value.toFixed(1)}（${st.vix.date}）`, st.margin && `融資維持率近 30 日最低 ${st.margin.market} ${st.margin.value.toFixed(1)}%（${st.margin.date}）`];
-  byId('batch-note').textContent = `指數的分批節奏：越跌越買、最後一批最大，每批都要比上一批更極端才放。${parts.filter(Boolean).join('；')}。`;
+  byId('batch-note').textContent = `極端情境＝指數（大盤 ETF）可以考慮進場的時機，1 → 3 越來越極端，每一個都要比前一個跌得更深、恐慌更重。「上方五格至少亮 N 格」＝上面定位／位置／壓力／情緒／外部五格中，至少有 N 格亮 ●。${parts.filter(Boolean).join('；')}。`;
 }
 
 // ── water-temperature history ───────────────────────────────────────────

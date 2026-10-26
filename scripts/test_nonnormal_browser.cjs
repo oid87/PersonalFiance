@@ -68,9 +68,9 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
       const c = echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')), o = c.getOption(), z = o.dataZoom[0];
       return o.yAxis[0].name === '費半' && o.xAxis[0].data[z.startValue] >= '2002-01-01' && z.endValue === o.xAxis[0].data.length - 1;
     }));
-    check('stance: three batch cards 20/30/50 with per-condition marks', await page.evaluate(() => {
+    check('stance: three cards 極端情境 1/2/3 (no percentages) with per-condition marks', await page.evaluate(() => {
       const c = [...document.querySelectorAll('#nonnormal-batches .nonnormal-batch')];
-      return c.length === 3 && ['20%', '30%', '50%'].every((w, i) => c[i].querySelector('h4').textContent.includes(w)) && c.every(x => /未到|接近|到位/.test(x.textContent) && x.querySelectorAll('li').length >= 4);
+      return c.length === 3 && [1, 2, 3].every((n, i) => c[i].querySelector('h4').textContent.startsWith(`極端情境 ${n}`) && !/%/.test(c[i].querySelector('h4').textContent)) && c.every(x => /未到|接近|到位/.test(x.textContent) && x.querySelectorAll('li').length >= 4);
     }));
     check('turnaround: VIX ladder goes up to ≥ 60 with episode counts; margin ladder has the 135% tier', /≥ 60/.test(await text('turn')) && /2000 起盤中 \d+ 次/.test(await text('turn')) && /< 135%/.test(await text('turn')));
     check('cash panel: 4w and 8w states, five ranked assets, chart drawn', (await page.locator('#nonnormal-cash-state .nonnormal-cash-pill').count()) === 2
