@@ -737,7 +737,7 @@
       /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
          保留原高度、改用放大圖表 */
       .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
-        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormal-chart, #nonnormal-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart,
         #kelly-chart, #roc4-chart, #val-chart) {
         max-height: calc(100dvh - 16px);
       }
@@ -1068,6 +1068,7 @@
 #tab-nonnormal .nonnormal-group-head { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 12px; margin:18px 0 8px; }
 #tab-nonnormal .nonnormal-group-head h3 { margin:0; font-size:17px; }
 #tab-nonnormal .nonnormal-sub-link { font-size:14px; color:var(--accent); text-decoration:none; }
+#tab-nonnormal .nonnormal-sub-row { margin:4px 0 12px; }
 #tab-nonnormal .nonnormal-group-count { margin-left:8px; font-size:13px; font-weight:400; color:var(--muted); }
 #tab-nonnormal .nonnormal-legend { display:inline-flex; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--muted); align-items:center; }
 #tab-nonnormal .nonnormal-legend i { display:inline-block; width:14px; height:2px; margin-right:4px; vertical-align:middle; }
@@ -1166,12 +1167,12 @@
 #tab-nonnormal .nonnormal-dirs { display:inline-flex; gap:8px; }
 #tab-nonnormal .nonnormal-temp-note { margin:0 0 6px; color:var(--muted); font-size:13px; line-height:1.6; }
 #tab-nonnormal #nonnormal-temp table { max-width:860px; }
-#tab-nonnormal .nonnormal-zone { display:inline-block; padding:0 8px; border-radius:999px; font-size:13px; line-height:20px; border:1px solid var(--border); }
-#tab-nonnormal .nonnormal-zone--boil { background:#ef4444; border-color:#ef4444; color:#fff; }
-#tab-nonnormal .nonnormal-zone--hot { color:#f0883e; border-color:#f0883e; }
-#tab-nonnormal .nonnormal-zone--warm { color:var(--muted); }
-#tab-nonnormal .nonnormal-zone--cool { color:#58a6ff; border-color:#58a6ff; }
-#tab-nonnormal .nonnormal-zone--ice { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-zone { display:inline-block; padding:0 8px; border-radius:999px; font-size:13px; line-height:20px; border:1px solid var(--border); }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-zone--boil { background:#ef4444; border-color:#ef4444; color:#fff; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-zone--hot { color:#f0883e; border-color:#f0883e; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-zone--warm { color:var(--muted); }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-zone--cool { color:#58a6ff; border-color:#58a6ff; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-zone--ice { background:#1f6feb; border-color:#1f6feb; color:#fff; }
 #tab-nonnormal .nonnormal-touch { color:#ef4444; font-weight:700; }
 #tab-nonnormal .nonnormal-batch h4 { display:flex; flex-wrap:wrap; align-items:center; gap:6px; color:var(--text); }
 #tab-nonnormal .nonnormal-batch--on { border-color:rgba(239,68,68,0.7); }
@@ -1181,14 +1182,16 @@
 #tab-nonnormal .nonnormal-batch-note { margin:2px 0 8px; font-size:14px; }
 #tab-nonnormal .nonnormal-turn-note { margin:6px 0 0; color:var(--muted); font-size:13px; }
 #tab-nonnormal .nonnormal-controls { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 8px; }
-#tab-nonnormal .nonnormal-temp-chips { margin:0; }
-#tab-nonnormal .nonnormal-temp-chips + .nonnormal-temp-chips { margin-left:auto; }
-#tab-nonnormal .nonnormal-temp-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:14px 0 6px; }
-#tab-nonnormal .nonnormal-temp-head h4 { margin:0; font-size:15px; }
-#tab-nonnormal .nonnormal-temp-now { margin:0 0 8px; font-size:14px; line-height:1.6; }
-#tab-nonnormal .nonnormal-temp-now b { font-weight:700; }
-#tab-nonnormal .nonnormal-temp-legend { display:inline-flex; flex-wrap:wrap; gap:6px; align-items:center; }
-#tab-nonnormal .nonnormal-chart { width:100%; height:620px; min-height:460px; margin:8px 0; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-temp-chips { margin:0; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-temp-chips + .nonnormal-temp-chips { margin-left:auto; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-temp-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:14px 0 6px; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-temp-head :is(h3, h4) { margin:0; }
+#tab-nonnormal .nonnormal-temp-head h4 { font-size:15px; }
+#tab-nonnormalhist .nonnormal-temp-head { margin:18px 0 6px; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-temp-now { margin:0 0 8px; font-size:14px; line-height:1.6; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-temp-now b { font-weight:700; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-temp-legend { display:inline-flex; flex-wrap:wrap; gap:6px; align-items:center; }
+:is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-chart { width:100%; height:620px; min-height:460px; margin:8px 0; }
 #tab-nonnormal table { border-collapse:collapse; width:100%; font-size:calc(var(--text-sm,13px) + 1px); }
 #tab-nonnormal th, #tab-nonnormal td { padding:6px 8px; text-align:left; vertical-align:top; border-bottom:1px solid var(--border); max-width:340px; overflow-wrap:anywhere; }
 #tab-nonnormal .table-scroll { max-width:100%; margin:4px 0 12px; }
@@ -1230,7 +1233,7 @@
   #tab-nonnormal .nonnormal-box { padding:6px 8px; }
   #tab-nonnormal #nonnormal-temp th, #tab-nonnormal #nonnormal-temp td { padding:6px 6px; font-size:13px; }
   #tab-nonnormal .nonnormal-dirs { gap:4px; }
-  #tab-nonnormal .nonnormal-chart { height:560px; }
+  :is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-chart { height:560px; }
   #tab-nonnormal .info-pop-btn { min-width:44px; min-height:44px; }
   #tab-nonnormal .chip { min-height:44px; display:inline-flex; align-items:center; }
   #tab-nonnormal .nonnormal-check { min-height:44px; }
@@ -1240,7 +1243,7 @@
   #tab-nonnormal .nonnormal-dialog-chart { height:min(320px, 48vh); }
   #tab-nonnormal .nonnormal-q-hint { font-size:11px; }
 }
-@media(max-height:500px) { #tab-nonnormal .nonnormal-chart { height:460px; } }
+@media(max-height:500px) { :is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-chart { height:460px; } }
 /* 手機橫放（iPhone 16e 橫放約 750×340）：大圖一次顯示完——標題一行、理由左 2／圖右 3，圖高吃滿剩下的高度 */
 @media (orientation:landscape) and (max-height:500px) {
   #tab-nonnormal .nonnormal-dialog { width:calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)); max-height:calc(100dvh - 12px); padding:8px 12px; overflow:hidden; }

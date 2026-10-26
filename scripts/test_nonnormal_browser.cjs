@@ -53,24 +53,9 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
       const rows = [...document.querySelectorAll('#nonnormal-temp tbody tr')];
       return rows.length === 6 && rows.every(r => /過熱|偏熱|盤整|偏冷|極冷/.test(r.cells[1].textContent) && /日.週.月./.test(r.cells[2].textContent.replace(/\s/g, '')) && /[+-]\d+%/.test(r.cells[5].textContent));
     }));
-    check('temperature history is drawn only once scrolled near (not at load)', !(await page.evaluate(() => !!echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')))) || (await page.evaluate(() => document.getElementById('nonnormal-temp-chart').getBoundingClientRect().top < innerHeight + 400)));
-    await page.locator('#nonnormal-temp-chart').scrollIntoViewIfNeeded();
-    await page.waitForFunction(() => !!echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')));
-    check('temperature history: price + 10-month line + zone background, gap pane with moving 過熱／極冷 percentile lines, six-market heat strip; last week matches the table', await page.evaluate(() => {
-      const c = echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')), o = c?.getOption();
-      if (!o) return false;
-      const xs = o.xAxis[0].data, heat = o.series.find(s => s.type === 'heatmap'), bg = o.series.find(s => s.type === 'bar');
-      const zones = ['過熱', '偏熱', '盤整', '偏冷', '極冷'], tw = [...document.querySelectorAll('#nonnormal-temp tbody tr')][0].cells[1].textContent.trim();
-      const lastTw = heat.data.find(([x, y]) => x === xs.length - 1 && y === 0)?.[2];
-      return o.yAxis[3].data.length === 6 && bg.data.filter(Boolean).length > 500 && ['過熱線', '極冷線'].every(n => o.series.find(s => s.name === n)?.data.filter(v => v != null).length > 300) && new Set(o.series.find(s => s.name === '過熱線').data.filter(v => v != null)).size > 50 && zones[lastTw] === tw
-        && document.querySelectorAll('#nonnormal-temp-legend .nonnormal-zone').length === 5;
-    }));
-    await page.click('[data-nonnormal-temp-market="SOX"]');
-    await page.click('[data-nonnormal-temp-range="all"]');
-    check('temperature history: market chip switches the top panes, 全部 starts at that market\'s first week', await page.evaluate(() => {
-      const c = echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')), o = c.getOption(), z = o.dataZoom[0];
-      return o.yAxis[0].name === '費半' && o.xAxis[0].data[z.startValue] >= '2002-01-01' && z.endValue === o.xAxis[0].data.length - 1;
-    }));
+    check('main page: no history charts (moved to 過往觀察); 加權 現況 line under the temperature table', await page.evaluate(() =>
+      !document.getElementById('nonnormal-chart') && !document.getElementById('nonnormal-temp-chart')
+      && /^加權 現在（\d{4}-\d{2}-\d{2}）：(過熱|偏熱|盤整|偏冷|極冷)\s*離 10 月線 [+-]\d+\.\d%｜/.test(document.getElementById('nonnormal-temp-now').textContent)));
     check('stance: three cards 極端情境 1/2/3 (no percentages) with per-condition marks', await page.evaluate(() => {
       const c = [...document.querySelectorAll('#nonnormal-batches .nonnormal-batch')];
       return c.length === 3 && [1, 2, 3].every((n, i) => c[i].querySelector('h4').textContent.startsWith(`極端情境 ${n}`) && !/%/.test(c[i].querySelector('h4').textContent)) && c.every(x => /未到|接近|到位/.test(x.textContent) && x.querySelectorAll('li').length >= 4);
@@ -99,24 +84,6 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     check('large chart shows about half a year', await page.evaluate(() => { const o = echarts.getInstanceByDom(document.getElementById('nonnormal-dialog-chart')).getOption(); const d = o.xAxis[0].data; return (Date.parse(d.at(-1)) - Date.parse(d[0])) / 864e5 >= 175 && (Date.parse(d.at(-1)) - Date.parse(d[0])) / 864e5 <= 185; }));
     await page.keyboard.press('Escape');
     check('Escape closes the large chart', !(await page.evaluate(() => document.getElementById('nonnormal-dialog').open)));
-    check('zoom floor: history chart cannot zoom below ~9 months (weekly → 38 bars)', await page.evaluate(async () => {
-      const ch = echarts.getInstanceByDom(document.getElementById('nonnormal-chart')), d = ch.getOption().xAxis[0].data;
-      ch.dispatchAction({ type: 'dataZoom', startValue: d[d.length - 3], endValue: d.at(-1) });
-      await new Promise(r => setTimeout(r, 200));
-      const z = ch.getOption().dataZoom.find(x => x.type === 'slider');
-      const ok = z.endValue - z.startValue >= 38;
-      ch.dispatchAction({ type: 'dataZoom', start: 0, end: 100 });
-      return ok;
-    }));
-    check('chart canvas drawn', (await page.locator('#nonnormal-chart canvas').count()) > 0);
-    check('TWII axis follows the visible window: low −10% to high +10%, six ticks from low to high', await page.evaluate(() => {
-      const ch = echarts.getInstanceByDom(document.getElementById('nonnormal-chart'));
-      ch.dispatchAction({ type: 'dataZoom', startValue: '2015-05-29', endValue: '2016-09-30' });
-      const o = ch.getOption(), z = o.dataZoom[0], vis = o.series[0].data.slice(z.startValue, z.endValue + 1).filter(Number.isFinite);
-      const lo = Math.min(...vis), hi = Math.max(...vis), [a, b] = ch.getModel().getComponent('yAxis', 0).axis.scale.getExtent();
-      const t = o.series.find(x => x.id === 'twii-ticks').markLine.data.map(m => m.yAxis), near = (x, y) => Math.abs(x - y) < 1;
-      return near(a, lo * 0.9) && near(b, hi * 1.1) && t.length === 6 && near(t[0], lo) && near(t[5], hi) && hi < 11000;
-    }));
     check('collapsed sections not rendered before opening', (await page.locator('#nonnormal-cases tbody tr').count()) === 0 && (await page.locator('#nonnormal-sources tbody tr').count()) === 0);
     await page.locator('#nonnormal-cases-details > summary').click();
     await page.waitForFunction(() => document.querySelectorAll('#nonnormal-cases tbody tr').length > 0, null, { timeout: 5000 }).catch(() => {});
@@ -129,8 +96,6 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     const sources = await text('sources');
     check('thresholds listed without source labels', sources.includes('20 個交易日') && !sources.includes('本專案'));
     // interactions
-    await page.locator('#nonnormal-range .chip[data-nonnormal-range="all"]').click();
-    check('range chip toggles active', await page.locator('#nonnormal-range .chip[data-nonnormal-range="all"].active').count() === 1);
     const box = page.locator('#nonnormal-turn input[data-check="policy"]');
     await box.check();
     check('manual checklist persists in localStorage', JSON.parse(await page.evaluate(() => localStorage.getItem('nonnormal-checklist-v1'))).policy === true);
@@ -211,10 +176,51 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     }
     // 子頁面「過往觀察」
     await page.setViewportSize({ width: 1280, height: 900 });
-    check('dashboard links to the history sub-page', (await page.locator('#tab-nonnormal a[href="#tab=nonnormalhist"]').count()) === 1);
+    check('dashboard links to the history sub-page (共振歷史, 水溫走勢, 回測)', (await page.locator('#tab-nonnormal a[href="#tab=nonnormalhist"]').count()) === 3);
     await page.goto(base + '/#tab=nonnormalhist');
     await page.waitForFunction(() => document.querySelector('#nonnormalhist-chart canvas') || /失敗/.test(document.getElementById('nonnormalhist-status')?.textContent || ''), null, { timeout: 30000 });
     const hist = id => page.locator('#nonnormalhist-' + id).innerText();
+    await page.locator('#nonnormalhist-res-chart').scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => !!echarts.getInstanceByDom(document.getElementById('nonnormalhist-res-chart')));
+    check('history: 共振歷史 cannot zoom below 1 year (weekly → ≥ 52 bars)', await page.evaluate(async () => {
+      const ch = echarts.getInstanceByDom(document.getElementById('nonnormalhist-res-chart')), d = ch.getOption().xAxis[0].data;
+      ch.dispatchAction({ type: 'dataZoom', startValue: d[d.length - 3], endValue: d.at(-1) });
+      await new Promise(r => setTimeout(r, 200));
+      const z = ch.getOption().dataZoom.find(x => x.type === 'slider');
+      const ok = z.endValue - z.startValue >= 52;
+      ch.dispatchAction({ type: 'dataZoom', start: 0, end: 100 });
+      return ok;
+    }));
+    check('history: 共振歷史 canvas drawn', (await page.locator('#nonnormalhist-res-chart canvas').count()) > 0);
+    check('history: 共振歷史 TWII axis follows the visible window: low −10% to high +10%, six ticks from low to high', await page.evaluate(() => {
+      const ch = echarts.getInstanceByDom(document.getElementById('nonnormalhist-res-chart'));
+      ch.dispatchAction({ type: 'dataZoom', startValue: '2015-05-29', endValue: '2016-09-30' });
+      const o = ch.getOption(), z = o.dataZoom[0], vis = o.series[0].data.slice(z.startValue, z.endValue + 1).filter(Number.isFinite);
+      const lo = Math.min(...vis), hi = Math.max(...vis), [a, b] = ch.getModel().getComponent('yAxis', 0).axis.scale.getExtent();
+      const t = o.series.find(x => x.id === 'twii-ticks').markLine.data.map(m => m.yAxis), near = (x, y) => Math.abs(x - y) < 1;
+      return near(a, lo * 0.9) && near(b, hi * 1.1) && t.length === 6 && near(t[0], lo) && near(t[5], hi) && hi < 11000;
+    }));
+    await page.locator('#nonnormalhist-res-range .chip[data-nonnormalhist-res="all"]').click();
+    check('history: 共振歷史 range chip toggles active', await page.locator('#nonnormalhist-res-range .chip[data-nonnormalhist-res="all"].active').count() === 1);
+    check('history: temperature history is drawn only once scrolled near (not at load)', !(await page.evaluate(() => !!echarts.getInstanceByDom(document.getElementById('nonnormalhist-temp-chart')))) || (await page.evaluate(() => document.getElementById('nonnormalhist-temp-chart').getBoundingClientRect().top < innerHeight + 400)));
+    await page.locator('#nonnormalhist-temp-chart').scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => !!echarts.getInstanceByDom(document.getElementById('nonnormalhist-temp-chart')));
+    check('history: temperature history: price + 10-month line + zone background, gap pane with moving 過熱／極冷 percentile lines, six-market heat strip; last week matches the 現況 line', await page.evaluate(() => {
+      const c = echarts.getInstanceByDom(document.getElementById('nonnormalhist-temp-chart')), o = c?.getOption();
+      if (!o) return false;
+      const xs = o.xAxis[0].data, heat = o.series.find(s => s.type === 'heatmap'), bg = o.series.find(s => s.type === 'bar');
+      const zones = ['過熱', '偏熱', '盤整', '偏冷', '極冷'], tw = document.querySelector('#nonnormalhist-temp-now .nonnormal-zone').textContent.trim();
+      const lastTw = heat.data.find(([x, y]) => x === xs.length - 1 && y === 0)?.[2];
+      return o.yAxis[3].data.length === 6 && bg.data.filter(Boolean).length > 500 && ['過熱線', '極冷線'].every(n => o.series.find(s => s.name === n)?.data.filter(v => v != null).length > 300) && new Set(o.series.find(s => s.name === '過熱線').data.filter(v => v != null)).size > 50 && zones[lastTw] === tw
+        && document.querySelectorAll('#nonnormalhist-temp-legend .nonnormal-zone').length === 5;
+    }));
+    await page.click('[data-nonnormalhist-temp-market="SOX"]');
+    await page.click('[data-nonnormalhist-temp-range="all"]');
+    check('history: temperature history: market chip switches the top panes, 全部 starts at that market\'s first week', await page.evaluate(() => {
+      const c = echarts.getInstanceByDom(document.getElementById('nonnormalhist-temp-chart')), o = c.getOption(), z = o.dataZoom[0];
+      return o.yAxis[0].name === '費半' && o.xAxis[0].data[z.startValue] >= '2002-01-01' && z.endValue === o.xAxis[0].data.length - 1;
+    }));
+    await page.evaluate(() => window.scrollTo(0, 0));
     check('history: no load error', !/失敗/.test(await hist('status')), await hist('status'));
     check('history: data starts in 2013', /^資料 2013-/.test(await hist('asof')), await hist('asof'));
     const yearsShown = async () => (await hist('yearly')).split('\n').slice(1).map(r => r.slice(0, 4));

@@ -1,5 +1,5 @@
-// 過往觀察 — 極端狀態儀表板的子頁面：用同一套規則回看 2013 起的跌停家數與無觀察類股（回測用，描述性）。
-// 版面：區間 chip → 四層圖（加權＋訊號日、跌停家數、近 22 日無觀察天數、0050 版）→ 歷次訊號（觸發條件 chip、摘要、明細）→ 每年統計
+// 過往觀察 — 極端狀態儀表板的子頁面：用同一套規則回看歷史（描述性）。
+// 版面：共振歷史、水溫走勢（nonnormal_history.js，與儀表板同一份 context，捲到才畫）→ 跌停與無觀察類股回測：區間 chip → 四層圖（加權＋訊號日、跌停家數、近 22 日無觀察天數、0050 版）→ 歷次訊號（觸發條件 chip、摘要、明細）→ 每年統計
 //       → 美股成分股版本（QQQ／VOO 前五大板塊／SOXX：ETF＋每 100 檔觀察股次數、歷次訊號、每年統計）。
 // 計算：js/tabs/nonnormalhist_calc.mjs；資料：data/tw_daily_stats.json（scripts/fetch_tw_daily_stats.py）＋ data/TWII.json；
 //       美股 data/us_obs_stats.json（scripts/fetch_us_obs_stats.py）＋ QQQ／VOO／SOXX.json（缺檔時只有美股區塊顯示無資料）。
@@ -9,6 +9,8 @@ import { bindOnce, chipPicker } from '../utils/dom.js';
 import { preserveChartState } from '../utils/chartLifecycle.js';
 import { NO_OBS } from './nonnormal_calc.mjs';
 import * as H from './nonnormalhist_calc.mjs';
+import * as NH from './nonnormal_history.js';
+import { initInfoPopovers } from '../utils/info_popover.js';
 
 const byId = id => document.getElementById('nonnormalhist-' + id);
 const finite = v => typeof v === 'number' && Number.isFinite(v);
@@ -229,24 +231,27 @@ function wire() {
 }
 
 export async function activate(context = {}) {
+  initInfoPopovers();
   if (rows.length && Date.now() - loadedAt < 300_000) { resize(); return; }
   try {
-    const fresh = await load(context);
-    if (fresh === false) return;
+    const [fresh, top] = await Promise.all([load(context), NH.load(context)]);
+    if (fresh === false || top === false) return;
   } catch (e) {
     if (!context.signal?.aborted) byId('status').textContent = '載入失敗：' + (e.message || e);
     throw e;
   }
   loadedAt = Date.now();
-  byId('status').textContent = '';
-  wire(); renderAll();
+  const miss = NH.missingFiles();
+  byId('status').textContent = miss.length ? `部分資料載入失敗：${miss.join('、')}` : '';
+  wire(); NH.render(); renderAll();
 }
-export function getCharts() { return [chart, usChart].filter(Boolean); }
+export function getCharts() { return [...NH.getCharts(), chart, usChart].filter(Boolean); }
 export function resize() { getCharts().forEach(c => c.resize()); }
 export function onThemeChange() {
   if (!rows.length) return;
   return preserveChartState(getCharts, () => {
     chart?.dispose(); usChart?.dispose(); chart = usChart = null;
+    NH.redrawForTheme();
     drawChart(); markEpisodes(H.episodes(rows, tw, trigger)); drawUsChart(); renderUs();
   });
 }
