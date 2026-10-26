@@ -2420,6 +2420,14 @@
     <p class="nonnormalhist-note">訊號日＝條件第一次成立的那天；條件消失滿 20 個交易日（約一個月）後再出現才算新的一次。報酬用加權收盤（未含息），最近的訊號未來天數不足時顯示 —。</p>
     <div class="nonnormalhist-group-head"><h3>每年統計</h3></div>
     <div id="nonnormalhist-yearly" class="table-scroll" tabindex="0" aria-label="每年無觀察類股與跌停天數"></div>
+    <div class="nonnormalhist-group-head"><h3>美股成分股版本：QQQ／VOO／SOXX</h3></div>
+    <p class="nonnormalhist-note">同一套觀察股條件（當天上漲、創 20 日新高、量 ≥ 2 倍 10 日均量），換成美股 ETF 的成分股，每天用當時的名單：QQQ＝那斯達克 100；VOO＝S&amp;P 500 裡前五大板塊（資訊科技、通訊服務、金融、醫療保健、非必需消費，依 2026-10 市值）；SOXX 沒有公開的歷史成分股，改用當時 S&amp;P 500＋那斯達克 100 裡的半導體股（約 14–22 檔，涵蓋 SOXX 主要持股）。三組檔數不同，所以看「近 22 個交易日每 100 檔出現幾次」，≤ 4 次算沒有觀察股（和 0050 版 50 檔 ≤ 2 次是同一個比例）。報酬用各自 ETF 的收盤價。</p>
+    <div id="nonnormalhist-us-group" class="nonnormalhist-controls"><span class="chip active" data-nonnormalhist-us="qqq">QQQ</span><span class="chip" data-nonnormalhist-us="voo5">VOO 前五大板塊</span><span class="chip" data-nonnormalhist-us="soxx">SOXX 半導體</span></div>
+    <div id="nonnormalhist-us-chart" class="nonnormalhist-us-chart" role="img" aria-label="美股 ETF 與成分股每 100 檔近 22 日觀察股次數"></div>
+    <div id="nonnormalhist-us-summary"></div>
+    <div id="nonnormalhist-us-table" class="table-scroll" tabindex="0" aria-label="美股歷次訊號明細"></div>
+    <div id="nonnormalhist-us-yearly" class="table-scroll" tabindex="0" aria-label="美股每年訊號天數"></div>
+    <p class="nonnormalhist-note">限制：已下市或被併購的成分股多半抓不到資料，早年有效檔數偏少（2013 年 QQQ 約 62 檔、SOXX 14 檔），有倖存者偏差。SOXX 組只有二十檔上下，「一個月都沒有」比較常發生，訊號比另外兩組多（例如 2022 年整年半導體空頭）。</p>
   </section>
   <section id="tab-uscap" class="tab-section" hidden>
     <header><h2 class="section-title">美股恐慌性拋售警報（US Capitulation Alert）</h2>

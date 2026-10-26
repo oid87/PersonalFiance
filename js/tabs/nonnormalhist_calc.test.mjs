@@ -59,3 +59,20 @@ test('0050 version: rolling 22-day count of constituent breakouts, trigger and y
   assert.equal(H.TRIGGERS.tw50.test(rows[28]), false);
   assert.equal(H.yearly(rows)[0].tw50Days, 1);
 });
+
+test('US groups: per-100 rate over 22 days, episodes on the ETF price, yearly counts', () => {
+  const data = Array.from({ length: 60 }, (_, i) => ({ date: day(i), qqq_n: 100, qqq_obs: i < 30 ? 2 : 0, voo5_n: 200, voo5_obs: 10, soxx_n: 20, soxx_obs: 1 }));
+  const rows = H.usRows(data);
+  assert.equal(rows[20].qqq_rate, null);
+  assert.equal(rows[21].qqq_rate, 44);                 // 22 天 × 2 次 ÷ 100 檔 × 100
+  assert.equal(rows[59].qqq_rate, 0);
+  assert.ok(Math.abs(rows[59].voo5_rate - 110) < 1e-9);
+  const px = twLine(60, i => 100 + i);
+  const ep = H.usEpisodes(rows, px, 'qqq');
+  assert.equal(ep.length, 1);
+  assert.equal(ep[0].minRate, 0);
+  assert.ok(rows.find(r => r.date === ep[0].date).qqq_rate <= H.RATE_LOW);
+  assert.equal(H.usYearly(rows)[0].voo5, 0);
+  assert.ok(H.usYearly(rows)[0].qqq > 0);
+  assert.throws(() => H.usEpisodes(rows, px, 'nope'));
+});

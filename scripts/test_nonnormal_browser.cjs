@@ -206,6 +206,14 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     check('history: 2020 起 shows 2020+ years and the 2025-04 limit-down day', (await yearsShown()).every(y => y >= '2020') && /1702 家/.test(await hist('yearly')), await yearsShown());
     await page.locator('[data-nonnormalhist-trigger="ld300"]').click();
     check('history: limit-down trigger lists 2024-08 and 2025-04', /2024-08-05/.test(await hist('table')) && /2025-04-07/.test(await hist('table')), await hist('table'));
+    await page.locator('[data-nonnormalhist-trigger="tw50"]').click();
+    check('history: 0050 trigger lists 2020-03 and 2025-04', /2020-03-/.test(await hist('table')) && /2025-04-/.test(await hist('table')), await hist('table'));
+    check('history: US chart drawn', (await page.locator('#nonnormalhist-us-chart canvas').count()) > 0);
+    for (const [g, etf] of [['qqq', 'QQQ'], ['voo5', 'VOO'], ['soxx', 'SOXX']]) {
+      await page.locator(`[data-nonnormalhist-us="${g}"]`).click();
+      check(`history: US ${g} has episodes with the ${etf} price column`, (await page.locator('#nonnormalhist-us-table tbody tr').count()) > 0 && (await hist('us-table')).startsWith('訊號日\t' + etf), (await hist('us-table')).slice(0, 80));
+    }
+    check('history: US yearly has three groups', /QQQ.*VOO.*SOXX/.test((await hist('us-yearly')).split('\n')[0]));
     for (const [w, h] of [[390, 844], [844, 390]]) {
       await page.setViewportSize({ width: w, height: h });
       await page.waitForTimeout(400);

@@ -737,7 +737,7 @@
       /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
          保留原高度、改用放大圖表 */
       .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
-        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormal-chart, #nonnormalhist-chart, #uscap-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormal-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart,
         #kelly-chart, #roc4-chart, #val-chart) {
         max-height: calc(100dvh - 16px);
       }
@@ -1312,6 +1312,7 @@
 #tab-nonnormalhist .nonnormalhist-steps li { margin:0 0 4px; }
 #tab-nonnormalhist .nonnormalhist-steps ul { margin:2px 0 0; padding-left:1.2em; list-style:disc; }
 #tab-nonnormalhist .nonnormalhist-chart { width:100%; height:660px; min-height:480px; margin:8px 0; }
+#tab-nonnormalhist .nonnormalhist-us-chart { width:100%; height:420px; min-height:340px; margin:8px 0; }
 #tab-nonnormalhist .nonnormalhist-group-head { margin:18px 0 8px; }
 #tab-nonnormalhist .nonnormalhist-group-head h3 { margin:0; font-size:17px; }
 #tab-nonnormalhist .nonnormalhist-stats { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:0 0 8px; }

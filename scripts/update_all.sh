@@ -73,6 +73,7 @@ run_script optional fetch_breadth.py
 run_script optional fetch_sp500_ad.py
 run_script optional fetch_breadth_ndx.py
 run_script optional fetch_breadth_xlg.py
+run_script optional fetch_us_obs_stats.py
 run_script optional fetch_breadth_tw50.py
 run_script optional fetch_cape.py
 run_script optional fetch_sp500_pe.py

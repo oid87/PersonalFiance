@@ -43,30 +43,91 @@ function indexOnOrAfter(rows, date) {
 export function episodes(rows, tw, key) {
   const test = TRIGGERS[key]?.test;
   if (!test) throw new Error('unknown trigger ' + key);
+  return withReturns(scan(rows, test, () => ({ peakNoObs: null, maxLimitDown: null }), (cur, r) => {
+    if (finite(r.noObs)) cur.peakNoObs = Math.max(cur.peakNoObs ?? 0, r.noObs);
+    if (finite(r.limitDown)) cur.maxLimitDown = Math.max(cur.maxLimitDown ?? 0, r.limitDown);
+  }), tw);
+}
+
+/** 找出訊號段落：條件第一次成立的那天開始，條件消失滿 GAP 列後結束；track 累計段落內的極值。 */
+function scan(rows, test, init, track) {
   const out = [];
   let cur = null, off = 0;
   for (const r of rows) {
     const hit = test(r);
-    if (hit && !cur) { cur = { date: r.date, peakNoObs: null, maxLimitDown: null }; out.push(cur); }
+    if (hit && !cur) { cur = { date: r.date, ...init() }; out.push(cur); }
     if (cur) {
-      if (finite(r.noObs)) cur.peakNoObs = Math.max(cur.peakNoObs ?? 0, r.noObs);
-      if (finite(r.limitDown)) cur.maxLimitDown = Math.max(cur.maxLimitDown ?? 0, r.limitDown);
+      track(cur, r);
       off = hit ? 0 : off + 1;
       if (off >= GAP) { cur.end = r.date; cur = null; off = 0; }
     }
   }
-  return out.map(e => {
-    const i = indexOnOrAfter(tw, e.date);
+  return out;
+}
+
+/** 每一段補上訊號日的價格、距一年高點、之後 60 日最低、+20／60／120 日報酬（px＝[{date, close}] 升序）。 */
+function withReturns(list, px) {
+  return list.map(e => {
+    const i = indexOnOrAfter(px, e.date);
     if (i < 0) return { ...e, close: null, fromHigh: null, low60: null, ret: Object.fromEntries(HORIZONS.map(h => [h, null])) };
-    const c = tw[i].close, prior = tw.slice(Math.max(0, i - LOOKBACK), i + 1).map(x => x.close);
-    const next = tw.slice(i, i + 61).map(x => x.close);
+    const c = px[i].close, prior = px.slice(Math.max(0, i - LOOKBACK), i + 1).map(x => x.close);
+    const next = px.slice(i, i + 61).map(x => x.close);
     return {
-      ...e, twDate: tw[i].date, close: c,
+      ...e, twDate: px[i].date, close: c,
       fromHigh: c / Math.max(...prior) - 1,
       low60: next.length > 1 ? Math.min(...next) / c - 1 : null,
-      ret: Object.fromEntries(HORIZONS.map(h => [h, tw[i + h] ? tw[i + h].close / c - 1 : null])),
+      ret: Object.fromEntries(HORIZONS.map(h => [h, px[i + h] ? px[i + h].close / c - 1 : null])),
     };
   });
+}
+
+// ── 美股成分股版本（data/us_obs_stats.json，scripts/fetch_us_obs_stats.py）────────────────
+// 同一套觀察股條件；成分股數不同，用「近 22 日觀察股次數 ÷ 期間平均有效檔數 × 100」比較，≤ RATE_LOW 算沒有觀察股
+// （和 0050 版「50 檔 ≤ 2 次」同一個比例）。
+export const RATE_LOW = 4;
+export const US_GROUPS = Object.freeze({
+  qqq: { label: 'QQQ（那斯達克 100）', etf: 'QQQ' },
+  voo5: { label: 'VOO（S&P 500 前五大板塊）', etf: 'VOO' },
+  soxx: { label: 'SOXX（半導體）', etf: 'SOXX' },
+});
+
+/** us_obs_stats 列 → [{date, <g>_n, <g>_obs, <g>_r22, <g>_rate}]；視窗不滿 22 列或缺值時 r22／rate 為 null。 */
+export function usRows(data) {
+  const rows = (data || []).filter(r => typeof r?.date === 'string').sort((a, b) => (a.date < b.date ? -1 : 1));
+  return rows.map((r, i) => {
+    const w = rows.slice(Math.max(0, i - NO_OBS.window + 1), i + 1), out = { date: r.date };
+    for (const g of Object.keys(US_GROUPS)) {
+      const r22 = rolling(w, `${g}_obs`), n = rolling(w, `${g}_n`);
+      out[`${g}_n`] = finite(r[`${g}_n`]) ? r[`${g}_n`] : null;
+      out[`${g}_obs`] = finite(r[`${g}_obs`]) ? r[`${g}_obs`] : null;
+      out[`${g}_r22`] = r22;
+      out[`${g}_rate`] = finite(r22) && n > 0 ? (r22 / (n / NO_OBS.window)) * 100 : null;
+    }
+    return out;
+  });
+}
+
+const usLow = g => r => finite(r[`${g}_rate`]) && r[`${g}_rate`] <= RATE_LOW;
+
+/** 美股某一組的歷次訊號（px＝該組 ETF 收盤）；minRate＝段落內最低的每 100 檔次數。 */
+export function usEpisodes(rows, px, g) {
+  if (!US_GROUPS[g]) throw new Error('unknown group ' + g);
+  return withReturns(scan(rows, usLow(g), () => ({ minRate: null }), (cur, r) => {
+    const v = r[`${g}_rate`];
+    if (finite(v)) cur.minRate = Math.min(cur.minRate ?? Infinity, v);
+  }), px);
+}
+
+/** 每年每組 rate ≤ RATE_LOW 的天數。 */
+export function usYearly(rows) {
+  const by = new Map();
+  for (const r of rows) {
+    const y = r.date.slice(0, 4), o = by.get(y) || { year: y, days: 0, ...Object.fromEntries(Object.keys(US_GROUPS).map(g => [g, 0])) };
+    o.days += 1;
+    for (const g of Object.keys(US_GROUPS)) if (usLow(g)(r)) o[g] += 1;
+    by.set(y, o);
+  }
+  return [...by.values()];
 }
 
 const median = xs => {

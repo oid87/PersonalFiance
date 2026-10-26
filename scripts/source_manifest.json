@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 93,
+  "source_count": 94,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -451,6 +451,42 @@
           "required_fields": [],
           "numeric_policy": "finite_when_present",
           "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_us_obs_stats.py",
+      "outputs": [
+        "data/us_obs_stats.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/us_obs_stats.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "qqq_n",
+            "qqq_obs",
+            "soxx_n",
+            "soxx_obs",
+            "voo5_n",
+            "voo5_obs"
+          ]
         }
       }
     },
