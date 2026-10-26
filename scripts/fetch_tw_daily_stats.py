@@ -6,21 +6,25 @@ Sources（免 token）:
   TPEx afterTrading/otc（type=EW）— 上櫃逐檔收盤、漲跌、成交股數、次日漲跌停價；
                                     上櫃漲跌停＝收盤觸及「前一交易日公布的次日漲停／跌停價」（缺前一日時用 ±9.5% 近似）
 
-觀察類股（本專案近似定義）：普通股 4 碼代號，當天
-  收盤 > 前 HIGH_N 個交易日最高收盤（創短期新高）、上漲，
-  且成交量 ≥ VOL_MULT × 前 VOL_N 日均量、成交量 ≥ MIN_LOTS 張（帶量）。
-  族群＝tw_sector_map_cache.json 的類股；同一族群當天有 ≥ GROUP_MIN 檔觀察股才算「觀察族群」。
-  沒有任何觀察族群的交易日＝無觀察類股日（no_obs=1）。參數以 2024（全年約 11 天、集中在 7–8 月）與 2025 年 3–4 月（連續約 12 天）兩個情況校準，見 docs/research/nonnormal-dashboard.md。
+觀察股（個股層級的「第一根且帶大量」；流動性與無觀察門檻相對於過去一年，讓 2013 起的歷史用同一把尺回測）：
+  普通股 4 碼代號，當天上漲、收盤 > 前 HIGH_N 個交易日最高收盤（創波段新高，約一個月），
+  且成交量 ≥ VOL_MULT × 前 VOL_N 日均量（帶大量）、成交量 ≥ LIQ_FRAC × 前 LIQ_N 日「全市場每日成交張數」平均
+  （排除冷門股；2024 年約 1,000 張、2015 年約 500 張）。
+  無觀察類股日（no_obs=1）＝觀察股占比（obs_share）落在前 PCT_WIN 日的最低 PCT_Q；不看族群。
+  obs_groups（同類股 ≥ GROUP_MIN 檔觀察股的類股數，類股＝tw_sector_map_cache.json）只供參考。
+  前 PCT_MIN 日歷史不足時 no_obs 留空。參數以 2024（全年約 11 天、集中在 7–8 月）、2025 年 3–4 月（連續約 12 天）
+  兩個情況，加上 2013 起各年分布校準，見 docs/research/nonnormal-dashboard.md。
 
 滾動快取 data/tw_daily_stats_cache.json 保留最近 CACHE_DAYS 個交易日的逐檔收盤與成交張數（計算新高與均量用）。
 每日增量：抓缺的平日 → 更新快取 → 寫當日統計。首次回補：TW_STATS_MAX_DAYS 設大、TW_STATS_FLOOR 設起點。
+相對門檻需要的前一年 lots／obs_share 直接讀既有輸出列，每日增量不必加大快取。
 TW_STATS_RAW_DIR：另存每日原始逐檔資料（回補與參數校準用，不進 repo）；
 --from-raw DIR：不連網，從原始檔重算全部輸出（改參數後重建歷史用）。
 
 Output data/tw_daily_stats.json:
   {source, note, params, updated,
    data: [{date, up, down, limit_up, limit_down, twse_down, twse_limit_down, tpex_down, tpex_limit_down,
-           n, obs, obs_groups, no_obs}]}
+           lots, n, obs, obs_share, obs_groups, no_obs}]}
 """
 from __future__ import annotations
 
@@ -49,11 +53,16 @@ SLEEP = float(os.environ.get("TW_STATS_SLEEP", "1.5"))
 RAW_DIR = os.environ.get("TW_STATS_RAW_DIR")
 UNTIL = os.environ.get("TW_STATS_UNTIL")   # 回補分段用：抓到這天為止（含）
 
-HIGH_N = 10       # 創短期新高：收盤高於前 10 個交易日最高收盤
-VOL_N = 20        # 均量天數
-VOL_MULT = 4.0    # 帶量：成交量 ≥ 4 倍 20 日均量
-MIN_LOTS = 1000   # 成交量至少 1,000 張（排除冷門股）
-GROUP_MIN = 3     # 同族群 ≥ 3 檔觀察股才算觀察族群
+HIGH_N = 20       # 創波段新高：收盤高於前 20 個交易日（約一個月）最高收盤
+VOL_N = 10        # 均量天數
+VOL_MULT = 2.0    # 帶大量：成交量 ≥ 2 倍 10 日均量
+LIQ_N = 250       # 流動性門檻看前一年
+LIQ_FRAC = 2e-4   # 成交量 ≥ 全市場日均成交張數的萬分之 2（排除冷門股，隨市場量能調整）
+LIQ_MIN = 20      # 前面不到 20 日時不算
+GROUP_MIN = 3     # 參考用：同類股 ≥ 3 檔觀察股的類股數（不影響 no_obs）
+PCT_WIN = 250     # 觀察股占比和前一年比
+PCT_Q = 0.04      # 落在最低 4% 才算「沒有」
+PCT_MIN = 120     # 歷史不足 120 日時 no_obs 留空
 CACHE_DAYS = max(HIGH_N, VOL_N) + 1
 MIN_TWSE, MIN_TPEX = 600, 400   # 逐檔表檔數下限；低於視為殘缺
 CODE_RE = re.compile(r"^[1-9]\d{3}$")
@@ -152,10 +161,19 @@ def fetch_tpex(d_iso, prev_limits):
     return {"summary": s, "px": px, "limits": limits}
 
 
-def observe(dates, series, sectors):
+def relative_limits(prev):
+    """prev：當天以前的輸出列（升序）。回傳 (流動性張數門檻, obs_share 低標)；歷史不足時為 None。"""
+    lots = [r["lots"] for r in prev[-LIQ_N:] if r.get("lots")]
+    share = sorted(r["obs_share"] for r in prev[-PCT_WIN:] if r.get("obs_share") is not None)
+    min_lots = LIQ_FRAC * sum(lots) / len(lots) if len(lots) >= LIQ_MIN else None
+    low = share[int(PCT_Q * len(share))] if len(share) >= PCT_MIN else None
+    return min_lots, low
+
+
+def observe(dates, series, sectors, min_lots, low=None):
     """series: {code: [[close, lots] | None, ...]}（與 dates 對齊，最後一筆＝當天）。"""
     need = max(HIGH_N, VOL_N) + 1
-    if len(dates) < need:
+    if len(dates) < need or min_lots is None:
         return None
     n = obs = 0
     groups = {}
@@ -171,13 +189,15 @@ def observe(dates, series, sectors):
         prev_c = hist[-1][0]
         hi = max(x[0] for x in hist[-HIGH_N:])
         avg = sum(x[1] for x in hist[-VOL_N:]) / VOL_N
-        if c > hi and c > prev_c and lots >= MIN_LOTS and lots >= VOL_MULT * avg:
+        if c > hi and c > prev_c and lots >= min_lots and lots >= VOL_MULT * avg:
             obs += 1
             g = sectors.get(code)
             if g:
                 groups[g] = groups.get(g, 0) + 1
     og = sum(1 for v in groups.values() if v >= GROUP_MIN)
-    return {"n": n, "obs": obs, "obs_groups": og, "no_obs": int(og == 0)}
+    share = round(obs / n, 5) if n else None
+    no_obs = None if low is None or share is None else int(share <= low)
+    return {"n": n, "obs": obs, "obs_share": share, "obs_groups": og, "no_obs": no_obs}
 
 
 def load_cache():
@@ -204,25 +224,28 @@ def save_out(rows):
     OUT.write_text(json.dumps({
         "source": "TWSE MI_INDEX（漲跌證券數合計・股票）＋ TPEx 上櫃每日收盤行情，自算",
         "note": ("上市＋上櫃股票的上漲／下跌與其中漲停／跌停家數（上市用交易所統計；上櫃以前一交易日公布的次日漲跌停價判斷）。"
-                 "觀察類股＝當天上漲、收盤創前 10 日新高、成交量 ≥ 4 倍 20 日均量且 ≥ 1,000 張的普通股；"
-                 "obs_groups＝有 ≥ 3 檔觀察股的類股數；no_obs=1 表示當天沒有任何觀察族群。原始收盤（未還原）。"),
-        "params": {"high_n": HIGH_N, "vol_n": VOL_N, "vol_mult": VOL_MULT, "min_lots": MIN_LOTS, "group_min": GROUP_MIN},
+                 "lots＝上市＋上櫃普通股當天成交張數合計。"
+                 "觀察股＝當天上漲、收盤創前 20 日新高、成交量 ≥ 2 倍 10 日均量，且 ≥ 前 250 日全市場日均成交張數萬分之 2 的普通股；"
+                 "obs_share＝觀察股占有效檔數比例；obs_groups＝有 ≥ 3 檔觀察股的類股數（參考用）；"
+                 "no_obs=1 表示 obs_share 落在前 250 日最低 4%（前 120 日歷史不足時為 null）。原始收盤（未還原）。"),
+        "params": {"high_n": HIGH_N, "vol_n": VOL_N, "vol_mult": VOL_MULT, "liq_n": LIQ_N, "liq_frac": LIQ_FRAC,
+                   "group_min": GROUP_MIN, "pct_win": PCT_WIN, "pct_q": PCT_Q, "pct_min": PCT_MIN},
         "updated": date.today().isoformat(),
         "data": data,
     }, ensure_ascii=False, separators=(",", ":")) + "\n")
     return data
 
 
-def add_day(d_iso, rec, dates, series, sectors):
+def add_day(d_iso, rec, dates, series, sectors, prev):
     px = {**rec["tpex"]["px"], **rec["twse"]["px"]}
     for code in set(series) | set(px):
         series.setdefault(code, [None] * len(dates)).append(px.get(code))
     dates.append(d_iso)
     a, b = rec["twse"]["summary"], rec["tpex"]["summary"]
-    row = {"date": d_iso, "up": a["up"] + b["up"], "down": a["down"] + b["down"],
+    row = {"date": d_iso, "lots": sum(v[1] for v in px.values() if v), "up": a["up"] + b["up"], "down": a["down"] + b["down"],
            "limit_up": a["limit_up"] + b["limit_up"], "limit_down": a["limit_down"] + b["limit_down"],
            "twse_down": a["down"], "twse_limit_down": a["limit_down"], "tpex_down": b["down"], "tpex_limit_down": b["limit_down"]}
-    ob = observe(dates, series, sectors)
+    ob = observe(dates, series, sectors, *relative_limits(prev))
     if ob:
         row.update(ob)
     # 只保留計算需要的長度，回補時記憶體不會一直長
@@ -247,9 +270,11 @@ def rebuild_from_raw(raw_dir):
     """從原始檔重算；比原始檔更新的既有列（每日排程已抓的）保留，快取若比原始檔新也保留。"""
     sectors, rows, dates, series = load_sectors(), {}, [], {}
     files = sorted(Path(raw_dir).glob("*.json"))
+    prev = []
     for p in files:
         rec = json.loads(p.read_text())
-        rows[rec["date"]] = add_day(rec["date"], rec, dates, series, sectors)
+        rows[rec["date"]] = row = add_day(rec["date"], rec, dates, series, sectors, prev)
+        prev.append(row)
     last = dates[-1] if dates else ""
     newer = {d: r for d, r in _common.load_rows_by_date(OUT).items() if d > last}
     rows.update(newer)
@@ -294,7 +319,8 @@ def main():
         rec = {"date": d_iso, "twse": tw, "tpex": tp}
         if RAW_DIR:
             (Path(RAW_DIR) / f"{d_iso}.json").write_text(json.dumps(rec, separators=(",", ":")))
-        rows[d_iso] = add_day(d_iso, rec, dates, series, sectors)
+        prev = [rows[k] for k in sorted(rows) if k < d_iso][-max(LIQ_N, PCT_WIN):]
+        rows[d_iso] = add_day(d_iso, rec, dates, series, sectors, prev)
         fetched += 1
         if fetched % 25 == 0:
             save_cache(dates, series, limits)

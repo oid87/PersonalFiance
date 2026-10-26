@@ -8,6 +8,7 @@ const ORIGINAL_LABELS = {
   "usrisk": "美股風險觀察",
   "uscap": "美股恐慌拋售警報",
   "nonnormal": "極端狀態儀表板",
+  "nonnormalhist": "過往觀察",
   "sentiment": "複合情緒",
   "aaii": "散戶情緒",
   "twsent": "台股情緒",
@@ -91,8 +92,8 @@ const ids = query => searchNavigation(query).map(item => item.id);
 
 test('all original screens occur once with unchanged labels', () => {
   assert.equal(CATEGORIES.length, 8);
-  assert.equal(NAV_ITEMS.length, 80);
-  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 80);
+  assert.equal(NAV_ITEMS.length, 81);
+  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 81);
   assert.deepEqual(Object.fromEntries(NAV_ITEMS.map(item => [item.id, item.label])), ORIGINAL_LABELS);
   assert.deepEqual(ids(''), NAV_ITEMS.map(item => item.id));
   for (const item of NAV_ITEMS) {

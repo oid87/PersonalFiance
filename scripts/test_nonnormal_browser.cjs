@@ -191,6 +191,27 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
       const m = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
       check(`no horizontal page scroll at ${w}x${h}`, m.sw <= m.iw + 1, m);
     }
+    // 子頁面「過往觀察」
+    await page.setViewportSize({ width: 1280, height: 900 });
+    check('dashboard links to the history sub-page', (await page.locator('#tab-nonnormal a[href="#tab=nonnormalhist"]').count()) === 1);
+    await page.goto(base + '/#tab=nonnormalhist');
+    await page.waitForFunction(() => document.querySelector('#nonnormalhist-chart canvas') || /失敗/.test(document.getElementById('nonnormalhist-status')?.textContent || ''), null, { timeout: 30000 });
+    const hist = id => page.locator('#nonnormalhist-' + id).innerText();
+    check('history: no load error', !/失敗/.test(await hist('status')), await hist('status'));
+    check('history: data starts in 2013', /^資料 2013-/.test(await hist('asof')), await hist('asof'));
+    const yearsShown = async () => (await hist('yearly')).split('\n').slice(1).map(r => r.slice(0, 4));
+    check('history: default range is 2013–2019', (await yearsShown()).every(y => y >= '2013' && y <= '2019'), await yearsShown());
+    check('history: episodes table has rows and summary', (await page.locator('#nonnormalhist-table tbody tr').count()) > 0 && /次/.test(await hist('summary')));
+    await page.locator('[data-nonnormalhist-range="new"]').click();
+    check('history: 2020 起 shows 2020+ years and the 2025-04 limit-down day', (await yearsShown()).every(y => y >= '2020') && /1702 家/.test(await hist('yearly')), await yearsShown());
+    await page.locator('[data-nonnormalhist-trigger="ld300"]').click();
+    check('history: limit-down trigger lists 2024-08 and 2025-04', /2024-08-05/.test(await hist('table')) && /2025-04-07/.test(await hist('table')), await hist('table'));
+    for (const [w, h] of [[390, 844], [844, 390]]) {
+      await page.setViewportSize({ width: w, height: h });
+      await page.waitForTimeout(400);
+      const m = await page.evaluate(() => ({ sw: document.documentElement.scrollWidth, iw: innerWidth }));
+      check(`history: no horizontal page scroll at ${w}x${h}`, m.sw <= m.iw + 1, m);
+    }
     check('no console warning/error/pageerror/requestfailed', problems.length === 0, problems);
     console.log(JSON.stringify({ ok: true, cases: cases.length }));
   } finally { await browser.close(); server.close(); }

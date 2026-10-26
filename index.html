@@ -2379,7 +2379,7 @@
     <div id="nonnormal-temp" class="table-scroll" tabindex="0" aria-label="各市場水溫與長期均線位階"></div>
     <div id="nonnormal-batches" class="nonnormal-grid nonnormal-grid--batch"></div>
     <p id="nonnormal-batch-note" class="note-muted nonnormal-batch-note"></p>
-    <div class="nonnormal-group-head"><h3>轉機觀察</h3></div>
+    <div class="nonnormal-group-head"><h3>轉機觀察</h3><a class="nonnormal-sub-link" href="#tab=nonnormalhist">過往觀察：2013 起跌停與無觀察類股回測 →</a></div>
     <div id="nonnormal-turn" class="nonnormal-grid nonnormal-grid--turn"></div>
     <details id="nonnormal-cases-details" class="ui-details"><summary>歷史案例回測</summary><div id="nonnormal-cases" class="table-scroll" tabindex="0" aria-label="歷史案例回測"></div><p id="nonnormal-base" class="note-muted"></p></details>
     <dialog id="nonnormal-dialog" class="nonnormal-dialog" aria-labelledby="nonnormal-dialog-title">
@@ -2390,6 +2390,34 @@
       </div>
     </dialog>
     <details id="nonnormal-sources-details" class="ui-details"><summary>閾值來源與說明</summary><div id="nonnormal-sources" class="table-scroll" tabindex="0" aria-label="各訊號亮燈條件與閾值來源"></div><ul id="nonnormal-notes" class="nonnormal-list"></ul></details>
+  </section>
+  <section id="tab-nonnormalhist" class="tab-section" hidden>
+    <header class="nonnormalhist-head"><h2 class="section-title">過往觀察</h2><span id="nonnormalhist-asof" class="status"></span><a class="nonnormalhist-link" href="#tab=nonnormal">← 極端狀態儀表板</a></header>
+    <p id="nonnormalhist-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <p class="nonnormalhist-note">用和儀表板相同的規則，回看 2013 年以來的跌停家數與無觀察類股：訊號出現那天加權離一年高點多遠、之後 20／60／120 個交易日漲跌多少。只是回顧歷史，不是買賣訊號；儀表板本身只用 2020 起的資料。</p>
+    <div id="nonnormalhist-range" class="nonnormalhist-controls"><span class="chip active" data-nonnormalhist-range="old">2013–2019</span><span class="chip" data-nonnormalhist-range="new">2020 起</span><span class="chip" data-nonnormalhist-range="all">全部</span></div>
+    <div id="nonnormalhist-chart" class="nonnormalhist-chart" role="img" aria-label="加權指數與無觀察類股日、每日跌停家數、近 22 個交易日無觀察類股天數"></div>
+    <p class="nonnormalhist-note">上：加權，紅點＝當天無觀察類股，紅色虛線＝下方選的訊號第一天。中：上市＋上櫃跌停家數（≥ 300 家標紅）。下：近 22 個交易日無觀察類股天數（3 天、5 天兩條線）。</p>
+    <div class="nonnormalhist-group-head"><h3>觀察類股怎麼算：看個股的「第一根且帶大量」</h3></div>
+    <ol class="nonnormalhist-steps">
+      <li><b>觀察股（個股）</b>：上市＋上櫃普通股，當天上漲，而且同時符合
+        <ul>
+          <li><b>第一根</b>：收盤創近 20 個交易日（約一個月）新高，也就是突破波段高點。</li>
+          <li><b>帶大量</b>：成交量 ≥ 10 日均量的 2 倍。</li>
+          <li><b>量夠大</b>：成交量至少是全市場前一年日均成交張數的萬分之 2（2024 年約 1,000 張、2015 年約 500 張），排除冷門股。</li>
+        </ul>
+      </li>
+      <li><b>無觀察類股日</b>：全市場一千多檔股票裡，幾乎每天都還有幾檔符合，真正一檔都沒有的日子一年不到 2 天。所以改看比例：當天觀察股占全部股票的比例，落在過去一年最低的 4%，就算一天。門檻跟著當年量能調整，2013 年和現在可以直接比較。</li>
+      <li><b>不看族群</b>：族群（主流類股、強勢類股）要靠盤中經驗判斷，沒有固定規則，所以不列入判斷。</li>
+    </ol>
+    <p class="nonnormalhist-note">為什麼看全市場、不只看 0050 成分股：0050 是 50 檔大型權值股，平常就很少爆量創新高。只看它們的話，2013 年起每年有 4–6 成的交易日都「沒有」任何一檔符合，分不出哪天是極端。觀察類股要量的是市場上還有沒有人願意追價，這主要發生在中小型股，所以用全市場。</p>
+    <div class="nonnormalhist-group-head"><h3>歷次訊號與之後的加權報酬</h3></div>
+    <div id="nonnormalhist-trigger" class="nonnormalhist-controls"><span class="chip active" data-nonnormalhist-trigger="obs3">無觀察 ≥ 3 天</span><span class="chip" data-nonnormalhist-trigger="obs5">無觀察 ≥ 5 天</span><span class="chip" data-nonnormalhist-trigger="ld300">跌停 ≥ 300 家</span></div>
+    <div id="nonnormalhist-summary"></div>
+    <div id="nonnormalhist-table" class="table-scroll" tabindex="0" aria-label="歷次訊號明細"></div>
+    <p class="nonnormalhist-note">訊號日＝條件第一次成立的那天；條件消失滿 20 個交易日（約一個月）後再出現才算新的一次。報酬用加權收盤（未含息），最近的訊號未來天數不足時顯示 —。</p>
+    <div class="nonnormalhist-group-head"><h3>每年統計</h3></div>
+    <div id="nonnormalhist-yearly" class="table-scroll" tabindex="0" aria-label="每年無觀察類股與跌停天數"></div>
   </section>
   <section id="tab-uscap" class="tab-section" hidden>
     <header><h2 class="section-title">美股恐慌性拋售警報（US Capitulation Alert）</h2>

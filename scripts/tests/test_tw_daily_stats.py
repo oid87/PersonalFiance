@@ -56,25 +56,53 @@ class ObserveTests(unittest.TestCase):
         need = max(F.HIGH_N, F.VOL_N) + 1
         return [[10.0, 2000]] * (need - 1) + [last]
 
-    def test_breakout_with_volume_counts_and_groups_need_three(self):
-        dates = [f"d{i}" for i in range(max(F.HIGH_N, F.VOL_N) + 1)]
-        hit = [11.0, 9000]   # 新高、4.5 倍均量
+    def dates(self):
+        return [f"d{i}" for i in range(max(F.HIGH_N, F.VOL_N) + 1)]
+
+    def test_breakout_with_volume_counts_groups_are_reference_only(self):
+        hit = [11.0, 5000]   # 創 20 日新高、2.5 倍 10 日均量
         series = {"1101": self.window(hit), "1102": self.window(hit), "1105": self.window(hit), "2330": self.window(hit), "2303": self.window(hit),
-                  "1103": self.window([11.0, 7000]),    # 3.5 倍，量不夠
-                  "1104": self.window([10.0, 9000])}    # 沒有創新高
+                  "1103": self.window([11.0, 3000]),    # 1.5 倍，量不夠
+                  "1104": self.window([10.0, 5000]),    # 沒有創新高
+                  "1106": self.window(hit)}
         sectors = {"1101": "steel", "1102": "steel", "1105": "steel", "2330": "semiconductor", "2303": "semiconductor", "1103": "steel", "1104": "steel"}
-        r = F.observe(dates, series, sectors)
-        self.assertEqual(r["obs"], 5)
-        self.assertEqual(r["obs_groups"], 1, "semiconductor has only two breakouts")
+        r = F.observe(self.dates(), series, sectors, min_lots=1000, low=0.0)
+        self.assertEqual(r["obs"], 6)
+        self.assertEqual(r["obs_share"], 0.75)
+        self.assertEqual(r["obs_groups"], 1, "semiconductor has only two breakouts; 1106 has no sector")
         self.assertEqual(r["no_obs"], 0)
 
-    def test_no_breakouts_is_a_no_observation_day(self):
-        dates = [f"d{i}" for i in range(max(F.HIGH_N, F.VOL_N) + 1)]
-        r = F.observe(dates, {"1101": self.window([9.0, 5000])}, {"1101": "steel"})
-        self.assertEqual((r["obs"], r["obs_groups"], r["no_obs"]), (0, 0, 1))
+    def test_new_high_uses_twenty_days(self):
+        w = [[10.0, 2000]] * F.HIGH_N + [[11.0, 5000]]
+        w[0] = [12.0, 2000]   # 20 日前的高點還在視窗內 → 不算新高
+        need = max(F.HIGH_N, F.VOL_N) + 1
+        self.assertEqual(F.observe(self.dates(), {"1101": w[-need:]}, {}, 1000)["obs"], 0)
+
+    def test_liquidity_floor_is_relative(self):
+        series = {c: self.window([11.0, 5000]) for c in ("1101", "1102", "1103")}
+        sectors = dict.fromkeys(series, "steel")
+        self.assertEqual(F.observe(self.dates(), series, sectors, min_lots=5000)["obs"], 3)
+        self.assertEqual(F.observe(self.dates(), series, sectors, min_lots=6000)["obs"], 0)
+
+    def test_no_observation_is_a_one_year_low_share_regardless_of_groups(self):
+        series = {"1101": self.window([11.0, 5000]), "1102": self.window([11.0, 5000]), "1103": self.window([11.0, 5000]), "1104": self.window([9.0, 5000])}
+        sectors = dict.fromkeys(series, "steel")
+        r = F.observe(self.dates(), series, sectors, 1000, low=0.75)
+        self.assertEqual((r["obs_groups"], r["no_obs"]), (1, 1), "a group of three does not cancel a one-year low share")
+        self.assertEqual(F.observe(self.dates(), series, sectors, 1000, low=0.7)["no_obs"], 0)
+        self.assertIsNone(F.observe(self.dates(), series, sectors, 1000, low=None)["no_obs"], "too little history")
+
+    def test_relative_limits_use_prior_year_only(self):
+        prev = [{"lots": 5_000_000, "obs_share": i / 1000} for i in range(F.PCT_MIN)]
+        min_lots, low = F.relative_limits(prev)
+        self.assertAlmostEqual(min_lots, F.LIQ_FRAC * 5_000_000)
+        self.assertEqual(low, prev[int(F.PCT_Q * F.PCT_MIN)]["obs_share"])
+        self.assertEqual(F.relative_limits(prev[:F.PCT_MIN - 1])[1], None)
+        self.assertEqual(F.relative_limits(prev[:F.LIQ_MIN - 1]), (None, None))
 
     def test_too_little_history_returns_none(self):
-        self.assertIsNone(F.observe(["d0", "d1"], {}, {}))
+        self.assertIsNone(F.observe(["d0", "d1"], {}, {}, 1000))
+        self.assertIsNone(F.observe(self.dates(), {}, {}, None))
 
 
 if __name__ == "__main__":

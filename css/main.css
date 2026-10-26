@@ -737,7 +737,7 @@
       /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
          保留原高度、改用放大圖表 */
       .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
-        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormal-chart, #uscap-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormal-chart, #nonnormalhist-chart, #uscap-chart,
         #kelly-chart, #roc4-chart, #val-chart) {
         max-height: calc(100dvh - 16px);
       }
@@ -1067,6 +1067,7 @@
 #tab-nonnormal .nonnormal-banner-sub { color:var(--muted); font-size:calc(var(--text-sm,13px) + 1px); flex:1 1 220px; }
 #tab-nonnormal .nonnormal-group-head { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:4px 12px; margin:18px 0 8px; }
 #tab-nonnormal .nonnormal-group-head h3 { margin:0; font-size:17px; }
+#tab-nonnormal .nonnormal-sub-link { font-size:14px; color:var(--accent); text-decoration:none; }
 #tab-nonnormal .nonnormal-group-count { margin-left:8px; font-size:13px; font-weight:400; color:var(--muted); }
 #tab-nonnormal .nonnormal-legend { display:inline-flex; flex-wrap:wrap; gap:10px; font-size:12px; color:var(--muted); align-items:center; }
 #tab-nonnormal .nonnormal-legend i { display:inline-block; width:14px; height:2px; margin-right:4px; vertical-align:middle; }
@@ -1299,3 +1300,35 @@
     .st-hits-table th, .st-hits-table td { white-space: nowrap; vertical-align: top; }
     .ma-pop { position: fixed; z-index: 1000; max-width: min(320px, calc(100vw - 16px)); padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); font-size: 12px; line-height: 1.6; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
     @media (pointer: coarse) { .ma-info { width: 44px; height: 44px; font-size: 16px; line-height: 40px; } }
+
+/* ── 過往觀察（nonnormalhist）── */
+#tab-nonnormalhist .nonnormalhist-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; padding:12px 0 4px; }
+#tab-nonnormalhist .nonnormalhist-head .section-title { font-size:19px; padding:0; border-top:0; margin:0; }
+#tab-nonnormalhist .nonnormalhist-head .status { border-top:0; padding:0; }
+#tab-nonnormalhist .nonnormalhist-link { margin-left:auto; font-size:14px; color:var(--accent); text-decoration:none; }
+#tab-nonnormalhist .nonnormalhist-note { color:var(--muted); font-size:13px; line-height:1.6; margin:4px 0 10px; }
+#tab-nonnormalhist .nonnormalhist-controls { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 8px; }
+#tab-nonnormalhist .nonnormalhist-steps { margin:0 0 8px; padding-left:1.4em; line-height:1.7; font-size:14px; }
+#tab-nonnormalhist .nonnormalhist-steps li { margin:0 0 4px; }
+#tab-nonnormalhist .nonnormalhist-steps ul { margin:2px 0 0; padding-left:1.2em; list-style:disc; }
+#tab-nonnormalhist .nonnormalhist-chart { width:100%; height:560px; min-height:420px; margin:8px 0; }
+#tab-nonnormalhist .nonnormalhist-group-head { margin:18px 0 8px; }
+#tab-nonnormalhist .nonnormalhist-group-head h3 { margin:0; font-size:17px; }
+#tab-nonnormalhist .nonnormalhist-stats { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:0 0 8px; }
+#tab-nonnormalhist .nonnormalhist-stat { display:flex; flex-direction:column; gap:2px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--panel); }
+#tab-nonnormalhist .nonnormalhist-stat b { font-size:20px; font-variant-numeric:tabular-nums; }
+#tab-nonnormalhist .nonnormalhist-stat span { font-size:12px; color:var(--muted); }
+#tab-nonnormalhist table { border-collapse:collapse; width:100%; font-size:calc(var(--text-sm,13px) + 1px); }
+#tab-nonnormalhist th, #tab-nonnormalhist td { padding:6px 8px; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap; font-variant-numeric:tabular-nums; }
+#tab-nonnormalhist .table-scroll { max-width:100%; margin:4px 0 8px; }
+#tab-nonnormalhist #nonnormalhist-yearly table { max-width:640px; }
+#tab-nonnormalhist .nonnormalhist-up { color:#ef4444; }
+#tab-nonnormalhist .nonnormalhist-down { color:#3fb950; }
+#tab-nonnormalhist .nonnormalhist-flat { color:var(--muted); }
+@media (max-width: 640px) {
+  #tab-nonnormalhist .nonnormalhist-chart { height:500px; }
+  #tab-nonnormalhist .nonnormalhist-stats { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  #tab-nonnormalhist .chip { min-height:44px; display:inline-flex; align-items:center; }
+  #tab-nonnormalhist .nonnormalhist-link { margin-left:0; min-height:44px; display:inline-flex; align-items:center; }
+  #tab-nonnormalhist th, #tab-nonnormalhist td { padding:6px 6px; font-size:13px; }
+}

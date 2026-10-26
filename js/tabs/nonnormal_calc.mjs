@@ -159,12 +159,14 @@ export function buildContext(raw = {}, opts = {}) {
   const breadth = (raw.breadth || []).filter(r => finite(r?.bull) && finite(r?.bear)).sort((a, b) => (a.date < b.date ? -1 : 1));
   s.BREADTH = { dates: breadth.map(r => r.date), rows: breadth };
   s.BREADTH_PCT = buildSeries(breadth.filter(r => r.bull + r.bear > 0).map(r => ({ date: r.date, close: (r.bull / (r.bull + r.bear)) * 100 })));
-  // 台股每日統計（上市＋上櫃）：跌停家數、近 22 個交易日的無觀察類股天數
+  // 台股每日統計（上市＋上櫃）：跌停家數、近 22 個交易日的無觀察類股天數。儀表板只用 NO_OBS.from 起（更早的在「過往觀察」頁）
   const daily = (raw.daily || []).filter(r => typeof r?.date === 'string' && finite(r.limit_down)).sort((a, b) => (a.date < b.date ? -1 : 1));
-  s.LIMIT_DOWN = buildSeries(daily.map(r => ({ date: r.date, close: r.limit_down })));
+  s.LIMIT_DOWN = buildSeries(daily.filter(r => r.date >= NO_OBS.from).map(r => ({ date: r.date, close: r.limit_down })));
   const obs = daily.filter(r => finite(r.no_obs));
-  s.NO_OBS = buildSeries(obs.map((r, i) => ({ date: r.date, close: obs.slice(Math.max(0, i - NO_OBS.window + 1), i + 1).reduce((a, x) => a + x.no_obs, 0) })));
-  s.NO_OBS.flags = obs.map(r => r.no_obs);
+  const noObs = obs.map((r, i) => ({ date: r.date, close: obs.slice(Math.max(0, i - NO_OBS.window + 1), i + 1).reduce((a, x) => a + x.no_obs, 0), flag: r.no_obs }))
+    .filter(r => r.date >= NO_OBS.from);
+  s.NO_OBS = buildSeries(noObs);
+  s.NO_OBS.flags = noObs.map(r => r.flag);
   const last = s.TWII.dates.at(-1) || null, lastUs = s.SPX.dates.at(-1) || null;
   return { s, opts: { ...DEFAULT_OPTS, ...opts }, lastDate: [last, lastUs].filter(Boolean).sort().at(-1) || null };
 }
@@ -198,8 +200,8 @@ export const MARGIN_TIERS = [
 ];
 export const marginTier = r => (finite(r) ? MARGIN_TIERS.findIndex(t => r >= t.min) : -1);
 
-// 無觀察類股：近 22 個交易日（約一個月）裡，沒有任何「帶量創短期新高」族群的天數（定義見 scripts/fetch_tw_daily_stats.py）。
-export const NO_OBS = Object.freeze({ window: 22, start: 3, limitDownExtreme: 300 });
+// 無觀察類股：近 22 個交易日（約一個月）裡，沒有任何「帶量創短期新高」族群、且這類股票占比落在過去一年最低 4% 的天數（定義見 scripts/fetch_tw_daily_stats.py）。
+export const NO_OBS = Object.freeze({ window: 22, start: 3, limitDownExtreme: 300, from: '2020-01-01' });
 export const NO_OBS_TIERS = [
   { min: 0, label: '0 天 正常' },
   { min: 1, label: '1 天 提高注意' },
