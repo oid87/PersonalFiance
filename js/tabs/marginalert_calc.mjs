@@ -147,6 +147,8 @@ export function buildDataset({ twii, margin, ratio = [], fearGreed = [] }, cfg =
   rt.forEach((r, i) => { r.r4 = { high: rtHi4[i].max, date: rt[rtHi4[i].idx].date, diff: r.ratio - rtHi4[i].max }; });
 
   const twSw = swingOf(tw, 'close', c), mgSw = swingOf(mg, 'margin_money', c), rtSw = swingOf(rt, 'ratio', c);
+  // 指數高／低點那天的融資餘額（看「指數跌、融資反增」這類背離用；該日沒有融資資料時為 null）
+  const mgAt = date => (mgIdx.has(date) ? mg[mgIdx.get(date)].margin_money : null);
 
   const days = [];
   const twiiOnly = [], marginOnly = [];
@@ -160,7 +162,7 @@ export function buildDataset({ twii, margin, ratio = [], fearGreed = [] }, cfg =
     const mi = mgIdx.get(m.date);
     const d = { date: m.date, ti, mi, close: tw[ti].close, low: tw[ti].low, high: tw[ti].high, open: tw[ti].open,
       margin: m.margin_money, dd: tw[ti].dd, dd252: tw[ti].dd252, m: {}, x: {}, dm1: null, ratio: null, ratioDrop: null, r4: null, fg: null,
-      sw: { x: twSw[ti], m: mgSw[mi], r: null } };
+      sw: { x: twSw[ti], m: mgSw[mi], r: null, mx: { hi: mgAt(twSw[ti].hiDate), lo: mgAt(twSw[ti].loDate) } } };
     for (const N of [1, 2, 3, 5, ...c.windows]) {
       // 融資在自身日曆上回推 N 個交易日；指數同理（兩邊日曆只差 2021-04-06，見 gaps）
       d.m[N] = mi - N >= 0 ? (m.margin_money / mg[mi - N].margin_money - 1) * 100 : null;

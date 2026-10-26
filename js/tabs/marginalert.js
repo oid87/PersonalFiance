@@ -190,27 +190,42 @@ function lagLine(days, i) {
   if (!p(2) || !isNum(p(2).ratio)) return '';
   return `T-2→T 維持率 ${[2, 1, 0].map(k => f(p(k).ratio, 0)).join('→')}`;
 }
-// 60 日高點→現在（跌了多少）與 20 日低點→現在（漲了多少）：指數 %、融資 億＋%、維持率 點；
-// 「融資÷指數」＝融資變動% ÷ 指數變動%（>1 融資動得比指數兇；指數變動 <1% 時不算）
+// 60 日高點→現在（跌了多少）與 20 日低點→現在（漲了多少）：指數 %、融資 億＋%；
+// 「融資÷指數」＝融資變動% ÷ 指數變動%（>1 融資動得比指數兇；指數變動 <3% 時分母太小、不算）。
+// 維持率約＝指數×β，另列在維持率那行（60日），不在表內重複。
+const pctChg = (now, base) => (isNum(now) && isNum(base) && base ? (now / base - 1) * 100 : null);
 function swingTable(d) {
-  const { x, m, r } = d.sw ?? {};
+  const { x, m } = d.sw ?? {};
   if (!x || !m) return '';
-  const pc = (now, base) => (isNum(now) && isNum(base) && base ? (now / base - 1) * 100 : null);
   const col = ref => {
-    const xp = pc(d.close, x[ref]), mp = pc(d.margin, m[ref]);
-    return { xp, mp, amt: d.margin - m[ref], rp: r && isNum(d.ratio) ? d.ratio - r[ref] : null,
-      lev: isNum(xp) && isNum(mp) && Math.abs(xp) >= 1 ? mp / xp : null };
+    const xp = pctChg(d.close, x[ref]), mp = pctChg(d.margin, m[ref]);
+    return { xp, mp, amt: d.margin - m[ref], lev: isNum(xp) && isNum(mp) && Math.abs(xp) >= 3 ? mp / xp : null };
   };
   const H = col('hi'), L = col('lo');
   const td = 'style="padding:0 0 0 6px;text-align:right;white-space:nowrap"';
   const row = (name, a, b) => `<tr><td style="white-space:nowrap">${name}</td><td ${td}>${a}</td><td ${td}>${b}</td></tr>`;
   const mg = c => `${sg(c.amt, 0)}億 ${sg(c.mp, 1)}%`;
+  const dv = divergence(d);
   return `<table style="border-collapse:collapse;font-size:11px;width:100%">` +
     `<tr style="color:${PALETTE.muted}"><td></td><td ${td}>60日高→今</td><td ${td}>20日低→今</td></tr>` +
     row('加權', `${sg(H.xp, 1)}%`, `${sg(L.xp, 1)}%`) +
     row('融資', mg(H), mg(L)) +
-    (r ? row('維持率', sg(H.rp, 1), sg(L.rp, 1)) : '') +
-    row('融資÷指數', isNum(H.lev) ? `${f(H.lev, 2)}×` : '—', isNum(L.lev) ? `${f(L.lev, 2)}×` : '—') + '</table>';
+    row('融資÷指數', isNum(H.lev) ? `${f(H.lev, 2)}×` : '—', isNum(L.lev) ? `${f(L.lev, 2)}×` : '—') + '</table>' +
+    (dv ? `<div style="font-size:11px;margin-top:2px">${dv}</div>` : '');
+}
+// 指數與融資背離（只在發生時顯示一行；描述現況，回測沒有穩定的預測方向，不當訊號）：
+// ①指數距 60 日高 ≤ -8%，融資卻比指數高點那天多 → 接刀
+// ②指數在 20 日低附近（≤ +2%）且距 60 日高 ≤ -5%，融資比自身 20 日低多 ≥ 3% → 未洗
+// ③指數距 20 日低 ≥ +8%，融資比指數低點那天少 → 沒用槓桿的反彈
+function divergence(d) {
+  const { x, m, mx } = d.sw ?? {};
+  if (!x || !m) return '';
+  const xh = pctChg(d.close, x.hi), xl = pctChg(d.close, x.lo), ml = pctChg(d.margin, m.lo);
+  const tag = t => `<b style="color:#f59e0b">背離</b>｜${t}`;
+  if (isNum(mx?.hi) && xh <= -8 && d.margin >= mx.hi) return tag(`指數跌 ${f(-xh, 1)}%，融資比指數高點日（${x.hiDate.slice(5)}）還多 ${f(d.margin - mx.hi, 0)} 億（接刀）`);
+  if (xl <= 2 && xh <= -5 && ml >= 3) return tag(`指數在 20 日低點${xl >= 0.05 ? `附近（${sg(xl, 1)}%）` : ''}，融資比 20 日低還多 ${f(d.margin - m.lo, 0)} 億（未洗）`);
+  if (isNum(mx?.lo) && xl >= 8 && d.margin < mx.lo) return tag(`指數反彈 ${f(xl, 1)}%，融資比指數低點日（${x.loDate.slice(5)}）少 ${f(mx.lo - d.margin, 0)} 億（沒用槓桿）`);
+  return '';
 }
 
 function buildOption() {
@@ -257,10 +272,11 @@ function buildOption() {
         const z = zoneOf(d.ratio);
         const sw = swingTable(d);
         const sec = t => `<div style="margin-top:3px;padding-top:3px;border-top:1px solid ${PALETTE.border}">${t}</div>`;
-        return `<b>${d.date}</b>${fired ? ' 🔔' : ''}<br>加權 ${f(d.close, 0)}（${sg(d.x[1], 2)}%）｜距高 -${f(d.dd)}%` +
-          `<br>融資 ${f(d.margin, 0)} 億｜${fired ? hot(oneDay + ' 觸發') : oneDay}${belowGate ? '<br>（未達回撤閘門，不算警報）' : ''}` +
+        return `<b>${d.date}</b>${fired ? ' 🔔' : ''}<br>加權 ${f(d.close, 0)}（${sg(d.x[1], 2)}%）` +
+          `<br>融資 ${f(d.margin, 0)} 億｜${fired ? hot(oneDay + ' 觸發') : oneDay}${belowGate ? `<br>（距 ${ui.lookback} 日高 -${f(d.dd)}%，未達回撤閘門 ${ui.gate}%，不算警報）` : ''}` +
           (sw ? sec(sw) : '') +
-          (isNum(d.ratio) ? sec(`維持率 ${f(d.ratio, 1)}${d.r4 ? `（四週 ${sg(d.r4.diff, 1)}）` : ''}｜${zoneText(z)}<br>${projLine(d)}` + (lagLine(days, i) ? `<br>${lagLine(days, i)}` : '')) : '') +
+          (isNum(d.ratio) ? sec(`維持率 ${f(d.ratio, 1)}｜${zoneText(z)}` +
+            (d.r4 ? `<br>較高點：四週 ${sg(d.r4.diff, 1)}${d.sw?.r ? `｜60日 ${sg(d.ratio - d.sw.r.hi, 1)}` : ''}` : '') + `<br>${projLine(d)}` + (lagLine(days, i) ? `<br>${lagLine(days, i)}` : '')) : '') +
           (isNum(d.fg) ? `<div>恐懼貪婪 ${f(d.fg, 1)}</div>` : '');
       },
     },
