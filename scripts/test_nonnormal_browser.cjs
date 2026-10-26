@@ -53,6 +53,9 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
       const rows = [...document.querySelectorAll('#nonnormal-temp tbody tr')];
       return rows.length === 6 && rows.every(r => /過熱|偏熱|盤整|偏冷|極冷/.test(r.cells[1].textContent) && /日.週.月./.test(r.cells[2].textContent.replace(/\s/g, '')) && /[+-]\d+%/.test(r.cells[5].textContent));
     }));
+    check('temperature history is drawn only once scrolled near (not at load)', !(await page.evaluate(() => !!echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')))) || (await page.evaluate(() => document.getElementById('nonnormal-temp-chart').getBoundingClientRect().top < innerHeight + 400)));
+    await page.locator('#nonnormal-temp-chart').scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => !!echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')));
     check('temperature history: price + 10-month line + zone background, gap pane with moving 過熱／極冷 percentile lines, six-market heat strip; last week matches the table', await page.evaluate(() => {
       const c = echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')), o = c?.getOption();
       if (!o) return false;

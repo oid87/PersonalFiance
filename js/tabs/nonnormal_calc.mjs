@@ -641,11 +641,12 @@ export function temperatureHistory(ctx, q = {}) {
   for (const [id] of STANCE.markets) {
     const s = ctx.s[id];
     if (!s) continue;
+    const wk = periods(s, 'w').idx;   // 每天屬於第幾週（已快取），省掉逐日算週別
     for (let i = 1; i < s.dates.length; i++) {
-      const d = s.dates[i], k = weekKey(d);
-      if (i + 1 < s.dates.length && weekKey(s.dates[i + 1]) === k) continue;
+      if (i + 1 < s.dates.length && wk[i + 1] === wk[i]) continue;
       const t = tempCore(s, i, q);
       if (!t) continue;
+      const d = s.dates[i], k = weekKey(d);
       let w = byWeek.get(k);
       if (!w) byWeek.set(k, (w = { date: d, by: {} }));
       if (d > w.date) w.date = d;
@@ -709,12 +710,13 @@ export function stance(ctx, d) {
     { key: 'ext', label: '外部', what: '國際與護盤', lit: intl >= 2 || !!fund, text: `4 個國際股市有 ${intl} 個轉弱${fund ? `；護盤基金 ${fund} 進場` : ''}` },
   ];
   const lit = boxes.filter(b => b.lit).length;
-  const c = (text, ok) => ({ text, ok: ok ?? null });
+  const c = (text, ok, extra) => ({ text, ok: ok ?? null, ...extra });
+  const litNames = boxes.filter(b => b.lit).map(b => b.label);
   const dd = th => (tw ? tw.dd1y <= -th : null);
   const batches = [
-    [c('VIX 盤中破 40', v(40)), c('距一年高點跌 30%', dd(0.30)), c('跌破 2 年線', y2 && finite(y2.gap) ? y2.gap < 0 : null), c('上方五格至少亮 1 格', lit >= 1)],
+    [c('VIX 盤中破 40', v(40)), c('距一年高點跌 30%', dd(0.30)), c('跌破 2 年線', y2 && finite(y2.gap) ? y2.gap < 0 : null), c('五格總覽至少亮 1 格', lit >= 1, { boxes: litNames })],
     [c('VIX 盤中破 45', v(45)), c('融資維持率 < 140%', mg(P.margin[2])), c('距一年高點跌 40%', dd(0.40)), c('到 5 年線（±3%）', y5?.touch ?? null), c(`近 22 個交易日無觀察類股 ≥ ${NO_OBS.start} 天`, no ? no.count >= NO_OBS.start : null)],
-    [c('VIX 盤中 ≥ 50', v(50)), c('融資維持率 < 135%', mg(135)), c('護盤基金進場', !!fund), c('到 10 年線（±3%）', y10?.touch ?? null), c('上方五格至少亮 4 格', lit >= 4)],
+    [c('VIX 盤中 ≥ 50', v(50)), c('融資維持率 < 135%', mg(135)), c('護盤基金進場', !!fund), c('到 10 年線（±3%）', y10?.touch ?? null), c('五格總覽至少亮 4 格', lit >= 4, { boxes: litNames })],
   ].map((conds, k) => ({ ...BATCHES[k], ...batchState(conds) }));
   return { date: d, temps, boxes, lit, verdict: BOX_VERDICT(lit), batches, vix, margin, fund, intl, noObs: no, limitDown: ld };
 }

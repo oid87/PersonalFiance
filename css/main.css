@@ -1185,6 +1185,8 @@
 #tab-nonnormal .nonnormal-temp-chips + .nonnormal-temp-chips { margin-left:auto; }
 #tab-nonnormal .nonnormal-temp-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; margin:14px 0 6px; }
 #tab-nonnormal .nonnormal-temp-head h4 { margin:0; font-size:15px; }
+#tab-nonnormal .nonnormal-temp-now { margin:0 0 8px; font-size:14px; line-height:1.6; }
+#tab-nonnormal .nonnormal-temp-now b { font-weight:700; }
 #tab-nonnormal .nonnormal-temp-legend { display:inline-flex; flex-wrap:wrap; gap:6px; align-items:center; }
 #tab-nonnormal .nonnormal-chart { width:100%; height:620px; min-height:460px; margin:8px 0; }
 #tab-nonnormal table { border-collapse:collapse; width:100%; font-size:calc(var(--text-sm,13px) + 1px); }

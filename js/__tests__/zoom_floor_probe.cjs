@@ -108,6 +108,9 @@ async function main() {
       await page.evaluate(id => window.__switchTo(id), tab);
       await page.waitForLoadState('networkidle').catch(() => {});
       await page.waitForTimeout(800);
+      // 有些圖捲到附近才畫（例如水溫走勢）：先把每張圖捲進畫面一次
+      await page.evaluate(async id => { for (const el of document.querySelectorAll(`#tab-${id} div[id$="chart"]`)) { el.scrollIntoView({ block: 'center' }); await new Promise(r => setTimeout(r, 60)); } window.scrollTo(0, 0); }, tab);
+      await page.waitForTimeout(300);
       record(tab, 0, null, await page.evaluate(measure, tab));
       const chips = await page.$$(`#tab-${tab} .chip`);
       let step = 1;
