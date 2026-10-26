@@ -75,14 +75,16 @@ function drawChart() {
       formatter(params) {
         const i = params?.[0]?.dataIndex, r = rows[i]; if (!r) return '';
         return [`<b>${r.date}</b>｜加權 ${finite(close[i]) ? close[i].toFixed(0) : '—'}`,
-          `跌停 ${r.limitDown ?? '—'} 家`, `近 22 日無觀察 ${r.noObs ?? '—'} 天${r.flag === 1 ? '（今天無觀察）' : ''}`].join('<br>');
+          `跌停 ${r.limitDown ?? '—'} 家`, `近 22 日無觀察 ${r.noObs ?? '—'} 天${r.flag === 1 ? '（今天無觀察）' : ''}`,
+          `0050 成分股：今天 ${r.obs50 ?? '—'} 檔、近 22 日 ${r.tw50 ?? '—'} 次`].join('<br>');
       },
     },
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
-    grid: [{ left: L, right: R, top: 18, height: '40%' }, { left: L, right: R, top: '50%', height: '17%' }, { left: L, right: R, top: '75%', height: '15%' }],
-    xAxis: [axis(0, false), axis(1, false), axis(2, true)],
-    yAxis: [yAxis(0, '加權', { scale: true }), yAxis(1, '跌停家數', { min: 0 }), yAxis(2, '無觀察天數', { min: 0, minInterval: 1 })],
-    dataZoom: [{ type: 'inside', xAxisIndex: [0, 1, 2], filterMode: 'filter' }, { type: 'slider', xAxisIndex: [0, 1, 2], height: 16, bottom: 6, filterMode: 'filter' }],
+    grid: [{ left: L, right: R, top: 18, height: '33%' }, { left: L, right: R, top: '42%', height: '13%' }, { left: L, right: R, top: '61%', height: '11%' }, { left: L, right: R, top: '78%', height: '11%' }],
+    xAxis: [axis(0, false), axis(1, false), axis(2, false), axis(3, true)],
+    yAxis: [yAxis(0, '加權', { scale: true }), yAxis(1, '跌停家數', { min: 0 }), yAxis(2, '全市場：無觀察天數', { min: 0, minInterval: 1 }),
+      yAxis(3, '0050：觀察股次數', { min: 0, minInterval: 1 })],
+    dataZoom: [{ type: 'inside', xAxisIndex: [0, 1, 2, 3], filterMode: 'filter' }, { type: 'slider', xAxisIndex: [0, 1, 2, 3], height: 16, bottom: 6, filterMode: 'filter' }],
     series: [
       { id: 'twii', name: '加權指數', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: close, showSymbol: false, connectNulls: true, lineStyle: { width: 1.2, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
         markLine: { silent: true, symbol: 'none', lineStyle: { type: 'dashed', color: RED, opacity: 0.6 }, label: { show: false }, data: [] } },
@@ -92,6 +94,8 @@ function drawChart() {
         markLine: ref([NO_OBS.limitDownExtreme], RED) },
       { name: '近 22 日無觀察天數', type: 'line', step: 'end', xAxisIndex: 2, yAxisIndex: 2, data: rows.map(r => r.noObs), showSymbol: false,
         lineStyle: { width: 1.2, color: '#f0883e' }, itemStyle: { color: '#f0883e' }, areaStyle: { opacity: 0.15 }, markLine: ref([NO_OBS.start, 5], RED) },
+      { name: '0050 近 22 日觀察股次數', type: 'line', step: 'end', xAxisIndex: 3, yAxisIndex: 3, data: rows.map(r => r.tw50), showSymbol: false,
+        lineStyle: { width: 1.2, color: '#58a6ff' }, itemStyle: { color: '#58a6ff' }, areaStyle: { opacity: 0.12 }, markLine: ref([H.TW50_LOW], RED) },
     ],
   }), { notMerge: true });
   applyRange();
@@ -129,9 +133,9 @@ function renderEpisodes() {
       ...H.HORIZONS.map(h => signedCell(e.ret[h])), finite(e.peakNoObs) ? `${e.peakNoObs} 天` : '—', finite(e.maxLimitDown) ? `${e.maxLimitDown} 家` : '—']));
 }
 function renderYearly() {
-  table('yearly', ['年', '交易日', '無觀察類股天數', `跌停 ≥ ${NO_OBS.limitDownExtreme} 家天數`, '單日跌停最多'],
+  table('yearly', ['年', '交易日', '全市場無觀察天數', `0050 近 22 日 ≤ ${H.TW50_LOW} 次的天數`, `跌停 ≥ ${NO_OBS.limitDownExtreme} 家天數`, '單日跌停最多'],
     H.yearly(rows).filter(y => inRange(`${y.year}-06-30`) || rangeKey === 'all').reverse()
-      .map(y => [y.year, y.days, y.noObs, y.ldDays, finite(y.maxLimitDown) ? `${y.maxLimitDown} 家` : '—']));
+      .map(y => [y.year, y.days, y.noObs, y.tw50Days, y.ldDays, finite(y.maxLimitDown) ? `${y.maxLimitDown} 家` : '—']));
 }
 function renderAll() { drawChart(); renderEpisodes(); renderYearly(); }
 

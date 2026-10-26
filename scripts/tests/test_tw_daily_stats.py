@@ -92,6 +92,11 @@ class ObserveTests(unittest.TestCase):
         self.assertEqual(F.observe(self.dates(), series, sectors, 1000, low=0.7)["no_obs"], 0)
         self.assertIsNone(F.observe(self.dates(), series, sectors, 1000, low=None)["no_obs"], "too little history")
 
+    def test_tw50_members_are_counted_separately(self):
+        series = {"2330": self.window([11.0, 5000]), "2317": self.window([9.0, 5000]), "1101": self.window([11.0, 5000])}
+        r = F.observe(self.dates(), series, {}, 1000, members=frozenset({"2330", "2317"}))
+        self.assertEqual((r["obs"], r["n50"], r["obs50"]), (2, 2, 1))
+
     def test_relative_limits_use_prior_year_only(self):
         prev = [{"lots": 5_000_000, "obs_share": i / 1000} for i in range(F.PCT_MIN)]
         min_lots, low = F.relative_limits(prev)
@@ -103,6 +108,18 @@ class ObserveTests(unittest.TestCase):
     def test_too_little_history_returns_none(self):
         self.assertIsNone(F.observe(["d0", "d1"], {}, {}, 1000))
         self.assertIsNone(F.observe(self.dates(), {}, {}, None))
+
+
+class Tw50HistoryTests(unittest.TestCase):
+    def test_point_in_time_membership(self):
+        import _tw50_history as T
+        self.assertTrue(all(len(s) == 50 for _, s in T.TIMELINE))
+        self.assertIn("3661", T.members_on("2026-09-18"))        # 世芯-KY 2026-09-21 起剔除
+        self.assertNotIn("3661", T.members_on("2026-09-21"))
+        self.assertIn("6446", T.members_on("2026-09-21"))
+        self.assertIn("2498", T.members_on("2015-09-18"))        # 宏達電 2015-09 剔除
+        self.assertNotIn("2498", T.members_on("2015-09-21"))
+        self.assertEqual(T.members_on("2026-10-22"), T.CURRENT)
 
 
 if __name__ == "__main__":

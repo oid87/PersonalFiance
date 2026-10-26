@@ -12,6 +12,7 @@ Sources（免 token）:
   （排除冷門股；2024 年約 1,000 張、2015 年約 500 張）。
   無觀察類股日（no_obs=1）＝觀察股占比（obs_share）落在前 PCT_WIN 日的最低 PCT_Q；不看族群。
   obs_groups（同類股 ≥ GROUP_MIN 檔觀察股的類股數，類股＝tw_sector_map_cache.json）只供參考。
+  0050 版（對照用）：obs50／n50＝當天臺灣50成分股（_tw50_history.py 還原的當時名單）中的觀察股數／有效檔數。
   前 PCT_MIN 日歷史不足時 no_obs 留空。參數以 2024（全年約 11 天、集中在 7–8 月）、2025 年 3–4 月（連續約 12 天）
   兩個情況，加上 2013 起各年分布校準，見 docs/research/nonnormal-dashboard.md。
 
@@ -24,7 +25,7 @@ TW_STATS_RAW_DIR：另存每日原始逐檔資料（回補與參數校準用，�
 Output data/tw_daily_stats.json:
   {source, note, params, updated,
    data: [{date, up, down, limit_up, limit_down, twse_down, twse_limit_down, tpex_down, tpex_limit_down,
-           lots, n, obs, obs_share, obs_groups, no_obs}]}
+           lots, n, obs, obs_share, obs_groups, no_obs, n50, obs50}]}
 """
 from __future__ import annotations
 
@@ -39,6 +40,7 @@ from pathlib import Path
 import requests
 
 import _common
+import _tw50_history
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "tw_daily_stats.json"
@@ -170,12 +172,12 @@ def relative_limits(prev):
     return min_lots, low
 
 
-def observe(dates, series, sectors, min_lots, low=None):
-    """series: {code: [[close, lots] | None, ...]}（與 dates 對齊，最後一筆＝當天）。"""
+def observe(dates, series, sectors, min_lots, low=None, members=frozenset()):
+    """series: {code: [[close, lots] | None, ...]}（與 dates 對齊，最後一筆＝當天）。members：當天的臺灣50成分股（另計 obs50／n50）。"""
     need = max(HIGH_N, VOL_N) + 1
     if len(dates) < need or min_lots is None:
         return None
-    n = obs = 0
+    n = obs = n50 = obs50 = 0
     groups = {}
     for code, s in series.items():
         w = s[-need:]
@@ -185,19 +187,22 @@ def observe(dates, series, sectors, min_lots, low=None):
         if len(hist) < need - 1:
             continue
         n += 1
+        in50 = code in members
+        n50 += in50
         c, lots = w[-1]
         prev_c = hist[-1][0]
         hi = max(x[0] for x in hist[-HIGH_N:])
         avg = sum(x[1] for x in hist[-VOL_N:]) / VOL_N
         if c > hi and c > prev_c and lots >= min_lots and lots >= VOL_MULT * avg:
             obs += 1
+            obs50 += in50
             g = sectors.get(code)
             if g:
                 groups[g] = groups.get(g, 0) + 1
     og = sum(1 for v in groups.values() if v >= GROUP_MIN)
     share = round(obs / n, 5) if n else None
     no_obs = None if low is None or share is None else int(share <= low)
-    return {"n": n, "obs": obs, "obs_share": share, "obs_groups": og, "no_obs": no_obs}
+    return {"n": n, "obs": obs, "obs_share": share, "obs_groups": og, "no_obs": no_obs, "n50": n50, "obs50": obs50}
 
 
 def load_cache():
@@ -227,7 +232,8 @@ def save_out(rows):
                  "lots＝上市＋上櫃普通股當天成交張數合計。"
                  "觀察股＝當天上漲、收盤創前 20 日新高、成交量 ≥ 2 倍 10 日均量，且 ≥ 前 250 日全市場日均成交張數萬分之 2 的普通股；"
                  "obs_share＝觀察股占有效檔數比例；obs_groups＝有 ≥ 3 檔觀察股的類股數（參考用）；"
-                 "no_obs=1 表示 obs_share 落在前 250 日最低 4%（前 120 日歷史不足時為 null）。原始收盤（未還原）。"),
+                 "no_obs=1 表示 obs_share 落在前 250 日最低 4%（前 120 日歷史不足時為 null）。"
+                 "obs50／n50＝當天臺灣50成分股（當時名單）中的觀察股數／有效檔數（對照用）。原始收盤（未還原）。"),
         "params": {"high_n": HIGH_N, "vol_n": VOL_N, "vol_mult": VOL_MULT, "liq_n": LIQ_N, "liq_frac": LIQ_FRAC,
                    "group_min": GROUP_MIN, "pct_win": PCT_WIN, "pct_q": PCT_Q, "pct_min": PCT_MIN},
         "updated": date.today().isoformat(),
@@ -245,7 +251,7 @@ def add_day(d_iso, rec, dates, series, sectors, prev):
     row = {"date": d_iso, "lots": sum(v[1] for v in px.values() if v), "up": a["up"] + b["up"], "down": a["down"] + b["down"],
            "limit_up": a["limit_up"] + b["limit_up"], "limit_down": a["limit_down"] + b["limit_down"],
            "twse_down": a["down"], "twse_limit_down": a["limit_down"], "tpex_down": b["down"], "tpex_limit_down": b["limit_down"]}
-    ob = observe(dates, series, sectors, *relative_limits(prev))
+    ob = observe(dates, series, sectors, *relative_limits(prev), members=_tw50_history.members_on(d_iso))
     if ob:
         row.update(ob)
     # 只保留計算需要的長度，回補時記憶體不會一直長

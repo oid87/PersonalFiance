@@ -2396,8 +2396,8 @@
     <p id="nonnormalhist-status" class="status" role="status" aria-live="polite">載入中…</p>
     <p class="nonnormalhist-note">用和儀表板相同的規則，回看 2013 年以來的跌停家數與無觀察類股：訊號出現那天加權離一年高點多遠、之後 20／60／120 個交易日漲跌多少。只是回顧歷史，不是買賣訊號；儀表板本身只用 2020 起的資料。</p>
     <div id="nonnormalhist-range" class="nonnormalhist-controls"><span class="chip active" data-nonnormalhist-range="old">2013–2019</span><span class="chip" data-nonnormalhist-range="new">2020 起</span><span class="chip" data-nonnormalhist-range="all">全部</span></div>
-    <div id="nonnormalhist-chart" class="nonnormalhist-chart" role="img" aria-label="加權指數與無觀察類股日、每日跌停家數、近 22 個交易日無觀察類股天數"></div>
-    <p class="nonnormalhist-note">上：加權，紅點＝當天無觀察類股，紅色虛線＝下方選的訊號第一天。中：上市＋上櫃跌停家數（≥ 300 家標紅）。下：近 22 個交易日無觀察類股天數（3 天、5 天兩條線）。</p>
+    <div id="nonnormalhist-chart" class="nonnormalhist-chart" role="img" aria-label="加權指數與無觀察類股日、每日跌停家數、近 22 個交易日無觀察類股天數、0050 成分股近 22 日觀察股次數"></div>
+    <p class="nonnormalhist-note">上：加權，紅點＝當天無觀察類股，紅色虛線＝下方選的訊號第一天。中：上市＋上櫃跌停家數（≥ 300 家標紅）。第三層：全市場近 22 個交易日無觀察類股天數（3 天、5 天兩條線）。最下：0050 版，當時的 0050 成分股近 22 個交易日出現觀察股的次數（2 次那條線以下＝幾乎沒有）。</p>
     <div class="nonnormalhist-group-head"><h3>觀察類股怎麼算：看個股的「第一根且帶大量」</h3></div>
     <ol class="nonnormalhist-steps">
       <li><b>觀察股（個股）</b>：上市＋上櫃普通股，當天上漲，而且同時符合
@@ -2410,9 +2410,11 @@
       <li><b>無觀察類股日</b>：全市場一千多檔股票裡，幾乎每天都還有幾檔符合，真正一檔都沒有的日子一年不到 2 天。所以改看比例：當天觀察股占全部股票的比例，落在過去一年最低的 4%，就算一天。門檻跟著當年量能調整，2013 年和現在可以直接比較。</li>
       <li><b>不看族群</b>：族群（主流類股、強勢類股）要靠盤中經驗判斷，沒有固定規則，所以不列入判斷。</li>
     </ol>
-    <p class="nonnormalhist-note">為什麼看全市場、不只看 0050 成分股：0050 是 50 檔大型權值股，平常就很少爆量創新高。只看它們的話，2013 年起每年有 4–6 成的交易日都「沒有」任何一檔符合，分不出哪天是極端。觀察類股要量的是市場上還有沒有人願意追價，這主要發生在中小型股，所以用全市場。</p>
+    <div class="nonnormalhist-group-head"><h3>對照：只看 0050 成分股</h3></div>
+    <p class="nonnormalhist-note">用同一套觀察股條件，但只看<b>當時</b>的 0050 成分股（臺灣50指數每季審核、成分股會換，2013 年起有 40 次審核換了股票，每一天都用那天的名單，不是用現在的 50 檔回頭算）。大型權值股很少爆量創新高，每年有 4–7 成的交易日一檔都沒有，所以不看單日，改看「近 22 個交易日一共出現幾次」，≤ 2 次算 0050 版的「沒有觀察股」。</p>
+    <p class="nonnormalhist-note">兩個版本的差別：全市場版反映中小型股還有沒有人追價，出現得比較早、也比較常；0050 版只在權值股也全面停住時才出現，次數少、集中在急跌的尾段（2014-10、2018-10、2020-03～04、2022-07／10、2024-08、2025-04）。可以在上面選「0050 近 22 日 ≤ 2 次」看它之後的報酬，或在下面的每年統計直接比較兩欄。儀表板的燈號只用全市場版。</p>
     <div class="nonnormalhist-group-head"><h3>歷次訊號與之後的加權報酬</h3></div>
-    <div id="nonnormalhist-trigger" class="nonnormalhist-controls"><span class="chip active" data-nonnormalhist-trigger="obs3">無觀察 ≥ 3 天</span><span class="chip" data-nonnormalhist-trigger="obs5">無觀察 ≥ 5 天</span><span class="chip" data-nonnormalhist-trigger="ld300">跌停 ≥ 300 家</span></div>
+    <div id="nonnormalhist-trigger" class="nonnormalhist-controls"><span class="chip active" data-nonnormalhist-trigger="obs3">無觀察 ≥ 3 天</span><span class="chip" data-nonnormalhist-trigger="obs5">無觀察 ≥ 5 天</span><span class="chip" data-nonnormalhist-trigger="ld300">跌停 ≥ 300 家</span><span class="chip" data-nonnormalhist-trigger="tw50">0050 近 22 日 ≤ 2 次</span></div>
     <div id="nonnormalhist-summary"></div>
     <div id="nonnormalhist-table" class="table-scroll" tabindex="0" aria-label="歷次訊號明細"></div>
     <p class="nonnormalhist-note">訊號日＝條件第一次成立的那天；條件消失滿 20 個交易日（約一個月）後再出現才算新的一次。報酬用加權收盤（未含息），最近的訊號未來天數不足時顯示 —。</p>

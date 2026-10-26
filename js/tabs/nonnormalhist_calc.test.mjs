@@ -50,3 +50,12 @@ test('main dashboard only uses daily stats from NO_OBS.from; the rolling count s
   assert.deepEqual(ctx.s.NO_OBS.close, [3, 4]);
   assert.deepEqual(ctx.s.NO_OBS.flags, [1, 1]);
 });
+
+test('0050 version: rolling 22-day count of constituent breakouts, trigger and yearly column', () => {
+  const rows = H.dailyRows(Array.from({ length: 30 }, (_, i) => ({ date: day(i), limit_down: 1, no_obs: 0, obs50: i < 10 ? 1 : 0 })));
+  assert.equal(rows[20].tw50, null);
+  assert.deepEqual([rows[21].tw50, rows[29].tw50], [10, 2]);
+  assert.equal(H.TRIGGERS.tw50.test(rows[29]), true);
+  assert.equal(H.TRIGGERS.tw50.test(rows[28]), false);
+  assert.equal(H.yearly(rows)[0].tw50Days, 1);
+});
