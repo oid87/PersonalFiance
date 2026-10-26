@@ -1,23 +1,22 @@
 """Compute 臺灣50 (0050) market breadth: % of stocks above 50-day and 200-day MA.
 
-Output: data/breadth_tw50.json
+Output: data/breadth_tw50.json, data/tw50_members.json（現行成分股，參考用）
 Strategy:
-  - No existing file → full backfill (download 3 years of history)
-  - Stale existing   → incremental (download last 350 cal. days, recompute tail)
+  - No existing file → full backfill (download ~7 years of history)
+  - Stale existing   → incremental (download last 450 cal. days, recompute tail)
   - Fresh existing   → skip
+Constituents: point-in-time from scripts/_tw50_history.py（現行名單＋每季異動倒推，逐日只計當時的成分股）。
+  2026-10 以前曾抓中文維基百科的成分股權重表，但那張表停在 2025-09-30 的快照、卻被蓋上抓取日，
+  造成名單過期一年；異動表才是最新的，所以改用 _tw50_history（每季審核後在那裡補一筆）。
 """
 from __future__ import annotations
 
 import json
-import re
-from datetime import date
-from io import StringIO
+from datetime import date, timedelta
 from pathlib import Path
 
-import pandas as pd
-import requests
-
 import _breadth
+import _tw50_history
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
@@ -26,69 +25,30 @@ OUT_PATH = DATA_DIR / "breadth_tw50.json"
 MIN_COVERAGE = 45    # ~90% of 50 TW50 constituents; drop RECENT days below this.
                       # yfinance hasn't filled all ~50 names yet → shrunk denominator spikes %).
 
-TW50_MEMBERS_PATH  = DATA_DIR / "tw50_members.json"   # cached constituent list (committed)
-MEMBERS_STALE_DAYS = 90    # 臺灣50 半年審核一次;季度重抓,日常跑 reuse cache(1 request 而已但避免依賴外站每日可用)
-TW50_SIZE = 50
-
-# Static fallback = 臺灣50 constituents (2026-07-09 Wikipedia snapshot). Refresh after the
-# semi-annual (3月/9月) index review. Used only if the Wikipedia scrape fails/returns too few.
-TW50_FALLBACK = [
-    "2345.TW", "3661.TW", "3017.TW", "6919.TW", "5871.TW", "2412.TW", "2308.TW", "2383.TW",
-    "4904.TW", "6505.TW", "2881.TW", "2207.TW", "2883.TW", "3008.TW", "2454.TW", "1303.TW",
-    "4938.TW", "2382.TW", "5876.TW", "5880.TW", "2330.TW", "1216.TW", "2615.TW", "6669.TW",
-    "2609.TW", "2395.TW", "3711.TW", "2357.TW", "2882.TW", "2002.TW", "2891.TW", "2884.TW",
-    "2603.TW", "2892.TW", "1301.TW", "2317.TW", "2880.TW", "2059.TW", "2301.TW", "2886.TW",
-    "3034.TW", "2912.TW", "2379.TW", "2890.TW", "3045.TW", "2887.TW", "2303.TW", "3231.TW",
-    "2327.TW", "2885.TW",
-]
+TW50_MEMBERS_PATH = DATA_DIR / "tw50_members.json"   # 現行成分股（參考用，由 _tw50_history 產生）
 
 
-def _load_cached_members() -> list[str] | None:
-    if not TW50_MEMBERS_PATH.exists():
-        return None
-    try:
-        obj = json.loads(TW50_MEMBERS_PATH.read_text())
-        if (date.today() - date.fromisoformat(obj["updated"])).days > MEMBERS_STALE_DAYS:
-            return None
-        members = obj.get("tickers", [])
-        return members if len(members) >= TW50_SIZE - 5 else None
-    except Exception:
-        return None
+def tw(codes) -> set[str]:
+    return {f"{c}.TW" for c in codes}
+
+
+def members_on(d_iso: str) -> set[str]:
+    return tw(_tw50_history.members_on(d_iso))
 
 
 def get_tw50_tickers() -> list[str]:
-    """0050 = 臺灣50指數 constituents (50 largest TWSE names). Scrape the zh.wikipedia
-    constituent table (股票代號 columns, 值形如「臺證所:2330」), append .TW; cache 90 days;
-    static fallback on failure."""
-    cached = _load_cached_members()
-    if cached:
-        print(f"  Using cached TW50 members ({len(cached)}) from {TW50_MEMBERS_PATH.name}")
-        return cached
-    try:
-        url  = "https://zh.wikipedia.org/wiki/臺灣50指數"
-        html = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=30).text
-        tables = pd.read_html(StringIO(html))
-        table  = next(t for t in tables if any("股票代號" in str(c) for c in t.columns))
-        codes: list[str] = []
-        for col in [c for c in table.columns if "股票代號" in str(c)]:
-            for v in table[col].tolist():
-                m = re.search(r"(\d{4})", str(v))
-                if m:
-                    code = m.group(1) + ".TW"
-                    if code not in codes:
-                        codes.append(code)
-        if len(codes) < TW50_SIZE - 3:
-            raise RuntimeError(f"only {len(codes)} codes parsed from Wikipedia")
-        codes = codes[:TW50_SIZE]
-        TW50_MEMBERS_PATH.write_text(
-            json.dumps({"updated": date.today().isoformat(), "tickers": codes},
-                       ensure_ascii=False) + "\n")
-        print(f"  Parsed {len(codes)} 臺灣50 constituents from Wikipedia "
-              f"(cached to {TW50_MEMBERS_PATH.name})")
-        return codes
-    except Exception as exc:
-        print(f"  Wikipedia TW50 parse failed ({exc}); using static fallback list")
-        return TW50_FALLBACK
+    """下載期間（最長 FULL_BACKFILL_CAL 天）內曾是臺灣50成分股的所有代號；順便寫出現行名單。"""
+    today = date.today().isoformat()
+    start = (date.today() - timedelta(days=_breadth.FULL_BACKFILL_CAL)).isoformat()
+    codes = set(_tw50_history.members_on(start))
+    for eff, members in _tw50_history.TIMELINE:
+        if eff >= start:
+            codes |= members
+    current = sorted(tw(_tw50_history.members_on(today)))
+    TW50_MEMBERS_PATH.write_text(json.dumps({"updated": today, "source": "scripts/_tw50_history.py", "tickers": current},
+                                            ensure_ascii=False) + "\n")
+    print(f"  臺灣50 current members {len(current)}; {len(codes)} names were members since {start}")
+    return sorted(tw(codes))
 
 
 if __name__ == "__main__":
@@ -97,4 +57,5 @@ if __name__ == "__main__":
         out_path=OUT_PATH,
         min_coverage=MIN_COVERAGE,
         label="TW50",
+        members_on=members_on,
     )

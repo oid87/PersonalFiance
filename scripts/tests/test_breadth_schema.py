@@ -139,5 +139,33 @@ class BreadthRunTests(unittest.TestCase):
                 self.assertEqual(self.path.read_bytes(), before)
 
 
+
+class PointInTimeTests(unittest.TestCase):
+    def test_members_on_limits_counts_to_that_days_constituents(self):
+        idx = pd.bdate_range("2024-01-01", periods=80)
+        prices = pd.DataFrame({"A": range(1, 81), "B": range(80, 0, -1)}, index=idx, dtype=float)
+        switch = idx[65].strftime("%Y-%m-%d")
+        rows = _breadth.compute_breadth(prices, min_coverage=1, members_on=lambda d: {"A"} if d < switch else {"B"})
+        by = {r["date"]: r for r in rows}
+        self.assertEqual((by[idx[60].strftime("%Y-%m-%d")]["above50_count"], by[idx[60].strftime("%Y-%m-%d")]["total"]), (1, 1))
+        self.assertEqual((by[switch]["above50_count"], by[switch]["total"]), (0, 1))
+        everyone = _breadth.compute_breadth(prices, min_coverage=1, members_on=lambda d: {"A", "B"})
+        self.assertEqual(everyone, _breadth.compute_breadth(prices, min_coverage=1), "all members == no membership filter")
+        self.assertNotEqual(rows, everyone)
+
+    def test_tw50_uses_history_module(self):
+        import _tw50_history
+        import fetch_breadth_tw50 as T
+        self.assertEqual(T.members_on("2026-10-22"), {f"{c}.TW" for c in _tw50_history.CURRENT})
+        self.assertIn("3661.TW", T.members_on("2026-09-18"))
+        self.assertNotIn("3661.TW", T.members_on("2026-09-21"))
+        with tempfile.TemporaryDirectory() as tmp, patch.object(T, "TW50_MEMBERS_PATH", Path(tmp) / "m.json"):
+            tickers = T.get_tw50_tickers()
+            saved = json.loads((Path(tmp) / "m.json").read_text())
+        self.assertEqual(set(saved["tickers"]), T.members_on(date.today().isoformat()))
+        self.assertTrue(set(saved["tickers"]) <= set(tickers))
+        self.assertGreater(len(tickers), 50, "includes names that left the index during the download window")
+
+
 if __name__ == "__main__":
     unittest.main()

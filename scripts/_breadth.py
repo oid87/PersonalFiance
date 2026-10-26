@@ -73,15 +73,25 @@ def fetch_prices(tickers: list[str], start: str) -> pd.DataFrame:
     return combined
 
 
-def compute_breadth(price_df: pd.DataFrame, *, min_coverage: int) -> list[dict]:
-    """Vectorized rolling MA breadth + 52w new-highs/lows (Hindenburg-style) computation."""
+def member_mask(price_df: pd.DataFrame, members_on: Callable[[str], set]) -> pd.DataFrame:
+    """dates × tickers 布林表：該 ticker 當天是不是成分股（point-in-time）。"""
+    cols = list(price_df.columns)
+    return pd.DataFrame([[c in s for c in cols] for s in (members_on(dt.strftime("%Y-%m-%d")) for dt in price_df.index)],
+                        index=price_df.index, columns=cols)
+
+
+def compute_breadth(price_df: pd.DataFrame, *, min_coverage: int,
+                    members_on: Callable[[str], set] | None = None) -> list[dict]:
+    """Vectorized rolling MA breadth + 52w new-highs/lows (Hindenburg-style) computation.
+    members_on(date) → 當天成分股：給了就只計當天的成分股（均線仍用完整價格史），沒給就整段都計。"""
     ma20  = price_df.rolling(20,  min_periods=20).mean()
     ma50  = price_df.rolling(50,  min_periods=50).mean()
     ma200 = price_df.rolling(200, min_periods=200).mean()
 
-    valid20  = price_df.notna() & ma20.notna()
-    valid50  = price_df.notna() & ma50.notna()
-    valid200 = price_df.notna() & ma200.notna()
+    member = member_mask(price_df, members_on) if members_on else True
+    valid20  = price_df.notna() & ma20.notna() & member
+    valid50  = price_df.notna() & ma50.notna() & member
+    valid200 = price_df.notna() & ma200.notna() & member
 
     above20  = (price_df > ma20).where(valid20,  False).sum(axis=1)
     above50  = (price_df > ma50).where(valid50,  False).sum(axis=1)
@@ -96,13 +106,13 @@ def compute_breadth(price_df: pd.DataFrame, *, min_coverage: int) -> list[dict]:
     win52   = 252
     prev_hi = price_df.rolling(win52, min_periods=win52).max().shift(1)
     prev_lo = price_df.rolling(win52, min_periods=win52).min().shift(1)
-    valid_hl = price_df.notna() & prev_hi.notna() & prev_lo.notna()
+    valid_hl = price_df.notna() & prev_hi.notna() & prev_lo.notna() & member
     new_hi  = (price_df > prev_hi).where(valid_hl, False).sum(axis=1)
     new_lo  = (price_df < prev_lo).where(valid_hl, False).sum(axis=1)
     n_hl    = valid_hl.sum(axis=1)
 
     rolling_high = price_df.rolling(win52, min_periods=win52).max()
-    valid_bear   = price_df.notna() & rolling_high.notna()
+    valid_bear   = price_df.notna() & rolling_high.notna() & member
     is_bear      = (price_df <= rolling_high * 0.80).where(valid_bear, False)
     bear_count   = is_bear.sum(axis=1)
     n_bear       = valid_bear.sum(axis=1)
@@ -160,7 +170,9 @@ def merge(existing: list[dict], new_records: list[dict]) -> list[dict]:
     return sorted(by_date.values(), key=lambda r: r["date"])
 
 
-def run(*, get_tickers: Callable[[], list[str]], out_path: Path, min_coverage: int, label: str) -> None:
+def run(*, get_tickers: Callable[[], list[str]], out_path: Path, min_coverage: int, label: str,
+        members_on: Callable[[str], set] | None = None) -> None:
+    """members_on：給了就逐日只計當時的成分股（get_tickers 要回傳下載期間內所有曾是成分股的代號）。"""
     existing = load_existing(out_path)
     today    = date.today()
 
@@ -193,7 +205,7 @@ def run(*, get_tickers: Callable[[], list[str]], out_path: Path, min_coverage: i
     prices      = fetch_prices(tickers, start)
     if prices.empty:
         raise RuntimeError("No price data returned; preserving existing breadth file")
-    all_records = compute_breadth(prices, min_coverage=min_coverage)
+    all_records = compute_breadth(prices, min_coverage=min_coverage, members_on=members_on)
 
     new_records = (
         [r for r in all_records if r["date"] >= recompute_from]
@@ -208,7 +220,7 @@ def run(*, get_tickers: Callable[[], list[str]], out_path: Path, min_coverage: i
         "meta": {
             "label": label,
             "priceBasis": "yfinance-auto-adjusted",
-            "constituentsBasis": "current-snapshot-backfill-mixed-vintages",
+            "constituentsBasis": "point-in-time" if members_on else "current-snapshot-backfill-mixed-vintages",
             "lastDate": merged[-1]["date"] if merged else None,
             "denominatorPolicy": "per-window-valid-count",
             "legacyDenominators": "unknown-for-20-and-200",
