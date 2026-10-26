@@ -53,13 +53,13 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
       const rows = [...document.querySelectorAll('#nonnormal-temp tbody tr')];
       return rows.length === 6 && rows.every(r => /過熱|偏熱|盤整|偏冷|極冷/.test(r.cells[1].textContent) && /日.週.月./.test(r.cells[2].textContent.replace(/\s/g, '')) && /[+-]\d+%/.test(r.cells[5].textContent));
     }));
-    check('temperature history: price + 10-month line + zone background, gap pane, six-market heat strip; last week matches the table', await page.evaluate(() => {
+    check('temperature history: price + 10-month line + zone background, gap pane with moving 過熱／極冷 percentile lines, six-market heat strip; last week matches the table', await page.evaluate(() => {
       const c = echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')), o = c?.getOption();
       if (!o) return false;
       const xs = o.xAxis[0].data, heat = o.series.find(s => s.type === 'heatmap'), bg = o.series.find(s => s.type === 'bar');
       const zones = ['過熱', '偏熱', '盤整', '偏冷', '極冷'], tw = [...document.querySelectorAll('#nonnormal-temp tbody tr')][0].cells[1].textContent.trim();
       const lastTw = heat.data.find(([x, y]) => x === xs.length - 1 && y === 0)?.[2];
-      return o.yAxis[3].data.length === 6 && bg.data.filter(Boolean).length > 500 && o.series.some(s => s.markArea?.data?.length === 5) && zones[lastTw] === tw
+      return o.yAxis[3].data.length === 6 && bg.data.filter(Boolean).length > 500 && ['過熱線', '極冷線'].every(n => o.series.find(s => s.name === n)?.data.filter(v => v != null).length > 300) && new Set(o.series.find(s => s.name === '過熱線').data.filter(v => v != null)).size > 50 && zones[lastTw] === tw
         && document.querySelectorAll('#nonnormal-temp-legend .nonnormal-zone').length === 5;
     }));
     await page.click('[data-nonnormal-temp-market="SOX"]');

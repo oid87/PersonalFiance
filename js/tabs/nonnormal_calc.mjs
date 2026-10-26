@@ -533,8 +533,10 @@ export function turnaround(ctx, d) {
 export const STANCE = Object.freeze({
   markets: [['TWII', '加權'], ['TWOII', '櫃買'], ['SOX', '費半'], ['NDX', '那斯達克'], ['SPX', 'S&P 500'], ['KOSPI', '韓股']],
   len: 10,            // 三條均線都取 10 期
-  boilGap: 0.10,      // 過熱：三條上揚且高於 10 月線 > 10%
-  iceGap: 0.05,       // 極冷：三條下彎且低於 10 月線 > 5%
+  hotQ: 0.95,         // 過熱線＝該市場「當天以前」所有交易日離 10 月線的 95% 分位（三條上揚且站上這條線＝過熱）
+  coldQ: 0.15,        // 極冷線＝同上的 15% 分位（三條下彎且跌破這條線＝極冷）。兩個分位校準成六個市場平均過熱、極冷各約占 5% 的週
+                      // （極冷多一個「三條都下彎」的條件，所以分位要放寬到 15%；2026-10 校準：過熱 6.0%、極冷 5.2%）
+  pctMin: 750,        // 分位至少要 750 個交易日（約 3 年）的歷史，不夠＝資料不足
   nearGap: 0.03,      // 貼近 10 月線 ±3% ＝盤整
   longMas: [[24, '2 年線'], [60, '5 年線'], [120, '10 年線']],
   touch: 0.03,        // 「到位」：收盤不高於該均線 3%（含跌破）
@@ -543,11 +545,11 @@ export const STANCE = Object.freeze({
   fundDays: 90,       // 護盤基金進場後 90 個日曆日內算「已進場」
 });
 export const ZONES = [
-  { id: 'boil', label: '過熱', desc: '三條均線都上揚，價格遠高於 10 月線' },
-  { id: 'hot', label: '偏熱', desc: '價格在 10 月線之上' },
+  { id: 'boil', label: '過熱', desc: '三條均線都上揚，且價格站上過熱線（該市場歷史上離 10 月線最遠的 5%）' },
+  { id: 'hot', label: '偏熱', desc: '價格在 10 月線之上，且 10 月線上揚' },
   { id: 'warm', label: '盤整', desc: '價格貼近 10 月線（±3%）' },
-  { id: 'cool', label: '偏冷', desc: '價格跌破 10 月線' },
-  { id: 'ice', label: '極冷', desc: '三條均線都下彎，價格深跌破 10 月線' },
+  { id: 'cool', label: '偏冷', desc: '價格跌破 10 月線，或 10 月線下彎' },
+  { id: 'ice', label: '極冷', desc: '三條均線都下彎，且價格跌破極冷線（該市場歷史上低於 10 月線最深的 15%）' },
 ];
 // 國家金融安定基金進場期間的第一天（宣布多在前一晚）。資料：歷次公告整理；2022、2025 兩次另以新聞核對。
 export const STABILIZATION_FUND = ['2000-03-16', '2000-10-03', '2004-05-20', '2008-09-19', '2011-12-20', '2015-08-25', '2020-03-19', '2022-07-13', '2025-04-09'];
@@ -577,15 +579,43 @@ function periodMa(s, kind, i, n) {
   return { now, prev: (sum + close[p - n]) / n };
 }
 const sign = x => (x > 0 ? 1 : x < 0 ? -1 : 0);
-/** 第 i 天的水溫核心：三條 10 期均線的方向、離 10 月線多遠、落在哪一區。null＝資料不足。 */
-function tempCore(s, i) {
+/** 每天的離 10 月線（gap），快取在序列上。 */
+function gapSeries(s) {
+  if (s._gap) return s._gap;
+  const g = new Float64Array(s.dates.length).fill(NaN);
+  for (let i = 0; i < g.length; i++) { const m = periodMa(s, 'm', i, STANCE.len); if (m) g[i] = s.close[i] / m.now - 1; }
+  return (s._gap = g);
+}
+const quantile = (sorted, q) => { const x = (sorted.length - 1) * q, lo = Math.floor(x); return sorted[lo] + (sorted[Math.min(lo + 1, sorted.length - 1)] - sorted[lo]) * (x - lo); };
+/** 過熱線／極冷線：第 i 天用「第 i 天以前」所有交易日的 gap 分位（不含當天，不偷看）。快取在序列上。 */
+export function gapThresholds(s, hotQ = STANCE.hotQ, coldQ = STANCE.coldQ) {
+  const key = `${hotQ}|${coldQ}`;
+  if (s._thr?.key === key) return s._thr;
+  const g = gapSeries(s), n = g.length, hot = new Float64Array(n).fill(NaN), cold = new Float64Array(n).fill(NaN), sorted = [];
+  for (let i = 0; i < n; i++) {
+    // 過熱線至少 +3%、極冷線至多 −3%（不會落在「貼近 10 月線」的盤整區裡）
+    if (sorted.length >= STANCE.pctMin) { hot[i] = Math.max(quantile(sorted, hotQ), STANCE.nearGap); cold[i] = Math.min(quantile(sorted, coldQ), -STANCE.nearGap); }
+    if (Number.isFinite(g[i])) {
+      let lo = 0, hi = sorted.length;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (sorted[mid] < g[i]) lo = mid + 1; else hi = mid; }
+      sorted.splice(lo, 0, g[i]);
+    }
+  }
+  return (s._thr = { key, hot, cold });
+}
+/** 第 i 天的水溫核心：三條 10 期均線的方向、離 10 月線多遠、落在哪一區。null＝資料不足。
+ *  兩端：三條上揚且站上過熱線＝過熱；三條下彎且跌破極冷線＝極冷（過熱線／極冷線＝該市場自己的歷史分位）。
+ *  中間三區看 10 月線方向與價格位置：貼近 10 月線（±3%）＝盤整；站上且 10 月線上揚＝偏熱；跌破，或 10 月線下彎＝偏冷。 */
+function tempCore(s, i, q = {}) {
   const n = STANCE.len, ma = (s.ma[n] ??= rollingMean(s.close, n));
   const w = periodMa(s, 'w', i, n), m = periodMa(s, 'm', i, n);
   if (!finite(ma[i]) || !finite(ma[i - 1]) || !w || !m) return null;
+  const thr = gapThresholds(s, q.hotQ, q.coldQ), hot = thr.hot[i], cold = thr.cold[i];
+  if (!finite(hot) || !finite(cold)) return null;
   const c = s.close[i], dir = { d: sign(ma[i] - ma[i - 1]), w: sign(w.now - w.prev), m: sign(m.now - m.prev) };
   const gap = c / m.now - 1, up = dir.d > 0 && dir.w > 0 && dir.m > 0, down = dir.d < 0 && dir.w < 0 && dir.m < 0;
-  const zone = up && gap > STANCE.boilGap ? 0 : down && gap < -STANCE.iceGap ? 4 : gap > STANCE.nearGap ? 1 : gap >= -STANCE.nearGap ? 2 : 3;
-  return { close: c, dir, ma10m: m.now, gap, zone };
+  const zone = up && gap >= hot ? 0 : down && gap <= cold ? 4 : Math.abs(gap) <= STANCE.nearGap ? 2 : gap > 0 && dir.m > 0 ? 1 : 3;
+  return { close: c, dir, ma10m: m.now, gap, hot, cold, zone };
 }
 /** 單一市場的水溫與長期均線位階。null＝資料不足（10 月線需要 11 個月）。 */
 export function temperature(s, d) {
@@ -594,19 +624,19 @@ export function temperature(s, d) {
   if (days(s.dates[i], d) > P.staleDays) return { stale: true, date: s.dates[i] };
   const t = tempCore(s, i);
   if (!t) return null;
-  const { close: c, dir, ma10m, gap, zone } = t;
+  const { close: c, dir, ma10m, gap, hot, cold, zone } = t;
   const long = STANCE.longMas.map(([k, label]) => {
     const v = periodMa(s, 'm', i, k)?.now ?? null;
     return { months: k, label, ma: v, gap: finite(v) ? c / v - 1 : null, touch: finite(v) ? c <= v * (1 + STANCE.touch) : null };
   });
   let hi = c;
   for (let j = Math.max(0, i - STANCE.ddLookback + 1); j < i; j++) hi = Math.max(hi, s.close[j]);
-  return { date: s.dates[i], close: c, dir, ma10m, gap, zone, long, dd1y: c / hi - 1 };
+  return { date: s.dates[i], close: c, dir, ma10m, gap, hot, cold, zone, long, dd1y: c / hi - 1 };
 }
 /** 水溫走勢：每週一筆（各市場該週最後一個交易日的水溫），給走勢圖與五市場熱度條。
  *  dates＝每週各市場最後交易日中最晚的一天；rows[k]＝該市場第 k 週的 {date, close, ma10m, gap, zone, dir}。
  *  整週休市（例如台股農曆年）沿用上一週並標 carried: true；開始有資料之前＝null。 */
-export function temperatureHistory(ctx) {
+export function temperatureHistory(ctx, q = {}) {
   const byWeek = new Map();
   for (const [id] of STANCE.markets) {
     const s = ctx.s[id];
@@ -614,7 +644,7 @@ export function temperatureHistory(ctx) {
     for (let i = 1; i < s.dates.length; i++) {
       const d = s.dates[i], k = weekKey(d);
       if (i + 1 < s.dates.length && weekKey(s.dates[i + 1]) === k) continue;
-      const t = tempCore(s, i);
+      const t = tempCore(s, i, q);
       if (!t) continue;
       let w = byWeek.get(k);
       if (!w) byWeek.set(k, (w = { date: d, by: {} }));

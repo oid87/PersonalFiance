@@ -292,23 +292,34 @@ test('downturnReport covers the six requested markets with 50 and 100MA', () => 
 });
 
 // ── 位階與分批 ────────────────────────────────────────────────────────────
-test('temperature: steady rise far above the 10-month line → 過熱; steady fall far below → 極冷; flat → 盤整', () => {
-  const dates = businessDays('2015-01-01', 900);
-  const up = N.temperature(N.buildSeries(rows(dates, dates.map((_, i) => 100 * 1.002 ** i))), dates.at(-1));
-  const dn = N.temperature(N.buildSeries(rows(dates, dates.map((_, i) => 100 * 0.998 ** i))), dates.at(-1));
-  const fl = N.temperature(N.buildSeries(rows(dates, flat(900, 100))), dates.at(-1));
-  assert.equal(N.ZONES[up.zone].label, '過熱');
-  assert.deepEqual(up.dir, { d: 1, w: 1, m: 1 });
-  assert.equal(N.ZONES[dn.zone].label, '極冷');
+test('temperature: thresholds come from the market\'s own past gaps; spike above them → 過熱, deep fall → 極冷, flat → 盤整', () => {
+  const dates = businessDays('2012-01-02', 1400), base = i => 100 * (1 + 0.08 * Math.sin(i / 45));
+  const up = N.buildSeries(rows(dates, dates.map((_, i) => (i < 1320 ? base(i) : base(1319) * 1.006 ** (i - 1319)))));
+  const dn = N.buildSeries(rows(dates, dates.map((_, i) => (i < 1250 ? base(i) : base(1249) * 0.99 ** (i - 1249)))));
+  const fl = N.temperature(N.buildSeries(rows(dates, flat(1400, 100))), dates.at(-1));
+  const u = N.temperature(up, dates.at(-1)), d = N.temperature(dn, dates.at(-1));
+  assert.equal(N.ZONES[u.zone].label, '過熱');
+  assert.deepEqual(u.dir, { d: 1, w: 1, m: 1 });
+  assert.ok(u.gap >= u.hot && u.hot >= 0.03, 'above its own 過熱線');
+  assert.equal(N.ZONES[d.zone].label, '極冷');
+  assert.ok(d.gap <= d.cold && d.cold <= -0.03);
   assert.equal(N.ZONES[fl.zone].label, '盤整');
-  assert.equal(up.long[0].months, 24);
+  assert.ok(Math.abs(fl.hot - 0.03) < 1e-12 && Math.abs(fl.cold + 0.03) < 1e-12, 'lines never fall inside the ±3% band');
+  assert.equal(u.long[0].months, 24);
   assert.equal(N.temperature(N.buildSeries(rows(dates.slice(0, 100), flat(100, 100))), dates[99]), null, 'needs 11 months for the 10-month line');
+  assert.equal(N.temperature(N.buildSeries(rows(dates.slice(0, 700), flat(700, 100))), dates[699]), null, 'needs ~3 years of gaps for the percentile lines');
+  // 10 月線下彎但價格站上 → 偏冷（不是偏熱）
+  const turn = dates.map((_, i) => (i < 962 ? 150 : i < 1150 ? 100 : 100 + (i - 1150) * 0.75));   // 10 個月前還在高檔、急跌後反彈
+  const t = N.temperature(N.buildSeries(rows(dates, turn)), dates[1170]);
+  assert.ok(t.gap > 0.03 && t.dir.m < 0, JSON.stringify([t.gap, t.dir]));
+  assert.equal(N.ZONES[t.zone].label, '偏冷');
 });
 
-test('temperature has no look-ahead: later rows in the same week/month do not change the result', () => {
-  const dates = businessDays('2015-01-01', 900), closes = dates.map((_, i) => 100 + 10 * Math.sin(i / 37));
-  const d = dates[700];
-  const a = N.temperature(N.buildSeries(rows(dates, closes)), d), b = N.temperature(N.buildSeries(rows(dates.slice(0, 701), closes.slice(0, 701))), d);
+test('temperature has no look-ahead: later rows (and later gaps in the percentile) do not change the result', () => {
+  const dates = businessDays('2012-01-02', 1400), closes = dates.map((_, i) => 100 + 10 * Math.sin(i / 37) + i * 0.01);
+  const d = dates[1200];
+  const a = N.temperature(N.buildSeries(rows(dates, closes)), d), b = N.temperature(N.buildSeries(rows(dates.slice(0, 1201), closes.slice(0, 1201))), d);
+  assert.ok(a && Number.isFinite(a.hot));
   assert.deepEqual(a, b);
 });
 
@@ -357,24 +368,25 @@ test('noObsNow: no daily stats → null and the batch condition stays unavailabl
 });
 
 test('temperatureHistory: one row per week, last row matches temperature() and zones follow the rules', () => {
-  const n = DATES.length, up = Array.from({ length: n }, (_, i) => 100 * 1.004 ** i);
-  const crash = up.map((v, i) => (i < n - 120 ? v : up[n - 121] * 0.99 ** (i - (n - 121))));
-  const ctx = N.buildContext(rawWith({ TWII: rows(DATES, crash), SPX: rows(DATES, up) }));
+  const dates = businessDays('2012-01-02', 1400), n = dates.length, end = dates.at(-1), base = i => 100 * (1 + 0.08 * Math.sin(i / 45));
+  const spike = dates.map((_, i) => (i < 1320 ? base(i) : base(1319) * 1.006 ** (i - 1319)));
+  const crash = dates.map((_, i) => (i < 1250 ? base(i) : base(1249) * 0.99 ** (i - 1249)));
+  const ctx = N.buildContext(rawWith({ TWII: rows(dates, crash), SPX: rows(dates, spike) }));
   const h = N.temperatureHistory(ctx);
   assert.equal(new Set(h.dates).size, h.dates.length, 'unique dates');
   assert.deepEqual([...h.dates].sort(), h.dates, 'ascending');
-  assert.ok(h.dates.length > 10 && h.dates.length <= Math.ceil(n / 5) + 1);
   const tw = h.markets.find(m => m.id === 'TWII'), spx = h.markets.find(m => m.id === 'SPX');
-  const now = N.temperature(ctx.s.TWII, last);
+  assert.ok(tw.rows.filter(Boolean).length > 50 && tw.rows.filter(Boolean).length <= Math.ceil(n / 5) + 1);
+  const now = N.temperature(ctx.s.TWII, end);
   assert.equal(tw.rows.at(-1).zone, now.zone);
-  assert.ok(Math.abs(tw.rows.at(-1).gap - now.gap) < 1e-12);
-  assert.equal(now.zone, 4, 'steady fall → 極冷');
-  assert.equal(spx.rows.at(-1).zone, 0, 'steady rise → 過熱');
+  assert.ok(Math.abs(tw.rows.at(-1).gap - now.gap) < 1e-12 && Math.abs(tw.rows.at(-1).cold - now.cold) < 1e-12);
+  assert.equal(now.zone, 4, 'deep fall → 極冷');
+  assert.equal(spx.rows.at(-1).zone, 0, 'spike → 過熱');
   assert.ok(tw.rows.every(r => r === null || (r.zone >= 0 && r.zone <= 4)));
-  assert.ok(h.dates[0] >= '2023-10-01', `10 月線要先有 10 個月的資料：${h.dates[0]}`);
+  assert.ok(tw.rows.find(Boolean).date >= '2014-06-01', `分位線要先有約 3 年的資料：${tw.rows.find(Boolean).date}`);
   // 一整週休市：沿用上一週
-  const holiday = DATES.filter(d => !(d >= '2024-02-05' && d <= '2024-02-09'));
-  const h2 = N.temperatureHistory(N.buildContext(rawWith({ TWII: rows(holiday, holiday.map((_, i) => 100 + i)), SPX: rows(DATES, up) })));
-  const k = h2.dates.findIndex(d => d >= '2024-02-05' && d <= '2024-02-09'), tw2 = h2.markets.find(m => m.id === 'TWII').rows;
+  const holiday = dates.filter(d => !(d >= '2016-02-08' && d <= '2016-02-12'));
+  const h2 = N.temperatureHistory(N.buildContext(rawWith({ TWII: rows(holiday, holiday.map((_, i) => base(i))), SPX: rows(dates, spike) })));
+  const k = h2.dates.findIndex(d => d >= '2016-02-08' && d <= '2016-02-12'), tw2 = h2.markets.find(m => m.id === 'TWII').rows;
   assert.ok(k > 0 && tw2[k].carried && tw2[k].date === tw2[k - 1].date, 'TW holiday week carries the previous week');
 });
