@@ -49,17 +49,17 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     }));
     check('lead-lag table lists the three averages', (await page.locator('#nonnormal-leadlag tbody tr').count()) === 3);
     check('stance: five boxes with a lit count and verdict', (await page.locator('#nonnormal-boxes .nonnormal-box').count()) === 5 && /亮 \d\/5 格/.test(await text('boxes')) && /尚未轉冷|提高警覺|強烈訊號/.test(await text('boxes')));
-    check('stance: temperature table lists five markets with a zone, day/week/month direction and distance to 2/5/10-year lines', await page.evaluate(() => {
+    check('stance: temperature table lists six markets (incl. 韓股) with a zone, day/week/month direction and distance to 2/5/10-year lines', await page.evaluate(() => {
       const rows = [...document.querySelectorAll('#nonnormal-temp tbody tr')];
-      return rows.length === 5 && rows.every(r => /過熱|偏熱|盤整|偏冷|極冷/.test(r.cells[1].textContent) && /日.週.月./.test(r.cells[2].textContent.replace(/\s/g, '')) && /[+-]\d+%/.test(r.cells[5].textContent));
+      return rows.length === 6 && rows.every(r => /過熱|偏熱|盤整|偏冷|極冷/.test(r.cells[1].textContent) && /日.週.月./.test(r.cells[2].textContent.replace(/\s/g, '')) && /[+-]\d+%/.test(r.cells[5].textContent));
     }));
-    check('temperature history: price + 10-month line + zone background, gap pane, five-market heat strip; last week matches the table', await page.evaluate(() => {
+    check('temperature history: price + 10-month line + zone background, gap pane, six-market heat strip; last week matches the table', await page.evaluate(() => {
       const c = echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')), o = c?.getOption();
       if (!o) return false;
       const xs = o.xAxis[0].data, heat = o.series.find(s => s.type === 'heatmap'), bg = o.series.find(s => s.type === 'bar');
       const zones = ['過熱', '偏熱', '盤整', '偏冷', '極冷'], tw = [...document.querySelectorAll('#nonnormal-temp tbody tr')][0].cells[1].textContent.trim();
       const lastTw = heat.data.find(([x, y]) => x === xs.length - 1 && y === 0)?.[2];
-      return o.yAxis[3].data.length === 5 && bg.data.filter(Boolean).length > 500 && o.series.some(s => s.markArea?.data?.length === 5) && zones[lastTw] === tw
+      return o.yAxis[3].data.length === 6 && bg.data.filter(Boolean).length > 500 && o.series.some(s => s.markArea?.data?.length === 5) && zones[lastTw] === tw
         && document.querySelectorAll('#nonnormal-temp-legend .nonnormal-zone').length === 5;
     }));
     await page.click('[data-nonnormal-temp-market="SOX"]');

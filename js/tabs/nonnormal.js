@@ -26,7 +26,7 @@ const HELP = {
   downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
   stance: '大跌時用來判斷「跌多深、到第幾批」，平常大多是空的。五格：定位＝加權水溫是不是極冷；位置＝加權離 5 年線 3% 以內或跌破；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30、近 22 個交易日無觀察類股 ≥ 3 天、或近 30 日有一天跌停 ≥ 300 家（任一）；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫：10 日、10 週、10 月三條均線的方向＋價格離 10 月線多遠（過熱＞+10% 且三線上揚；極冷＜−5% 且三線下彎；±3% 內＝盤整）。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。三批是給指數的分批節奏（20／30／50，越跌越買、最後一批最大）：每批的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
-  tempchart: '每週一筆（各市場該週最後一個交易日）。上：價格與 10 月線，底色＝當週水溫。中：價格離 10 月線多少 %，色帶＝各區門檻；+10% 以上要三條均線都上揚才算過熱、−5% 以下要三條都下彎才算極冷，所以色帶和底色偶爾不一致。下：五個市場的水溫，看是不是一起變冷。上方按鈕切換市場與期間，也可以拖拉下方滑桿。',
+  tempchart: '每週一筆（各市場該週最後一個交易日）。上：實線＝價格，橘色虛線＝10 月線（最近 10 個月的月底收盤平均，這個月用最新收盤代替，所以月中只會小幅移動、換月時才明顯跳一格；可以當 40 週線看：2003 起加權、S&P 500、韓股兩者平均只差約 0.7%，±3% 分區約 96% 的日子相同），底色＝當週水溫。中：價格離 10 月線多少 %，灰色虛線＝門檻（+10%、±3%、−5%），色帶＝各區；+10% 以上要三條均線都上揚才算過熱、−5% 以下要三條都下彎才算極冷，所以色帶和底色偶爾不一致。下：六個市場的水溫，看是不是一起變冷。上方按鈕切換市場與期間，也可以拖拉下方滑桿。',
   cash: '現金為王（izaax，同「現金為王」頁）：4 或 8 週內黃金、比特幣、美債 TLT、QQQ 全部下跌，且恐懼貪婪低點 < 25。逃往黃金：其他都跌、只有黃金漲，且恐懼貪婪 < 25。同一期間誰漲最多＝資金往哪裡去。',
 };
 
@@ -589,7 +589,7 @@ function drawTemp(keepWindow = false) {
   const lineLabel = (v, text, position) => ({ yAxis: v, label: { show: !!text, formatter: text, position, color: PALETTE.muted, fontSize: 11 } });
   chartOption(3, {
     animation: false,
-    legend: { show: false },
+    legend: { top: 0, right: R, itemWidth: 22, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: [m.label, '10 月線（虛線）'] },
     tooltip: {
       trigger: 'axis', axisPointer: { type: 'line' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 13 },
       formatter(params) {
@@ -602,7 +602,7 @@ function drawTemp(keepWindow = false) {
       },
     },
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
-    grid: [{ left: L, right: R, top: 14, height: '40%' }, { left: L, right: R, top: '50%', height: '22%' }, { left: L, right: R, top: '77%', height: '12%' }],
+    grid: [{ left: L, right: R, top: 30, height: '38%' }, { left: L, right: R, top: '50%', height: '22%' }, { left: L, right: R, top: '76%', height: '14%' }],
     xAxis: [axis(0, false), axis(1, false), axis(2, true)],
     yAxis: [yAxis(0, { name: m.label, nameTextStyle: { color: PALETTE.muted, fontSize: 11 } }),
       { type: 'value', gridIndex: 0, min: 0, max: 1, show: false },
@@ -616,13 +616,13 @@ function drawTemp(keepWindow = false) {
       { name: '水溫底色', type: 'bar', xAxisIndex: 0, yAxisIndex: 1, silent: true, barCategoryGap: 0, z: 0, tooltip: { show: false },
         data: rows.map(r => (r ? { value: 1, itemStyle: { color: ZONE_COLORS[r.zone], opacity: 0.22 } } : null)) },
       { name: m.label, type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => num(r, 'close')), showSymbol: false, lineStyle: { width: 1.3, color: PALETTE.text }, itemStyle: { color: PALETTE.text } },
-      { name: '10 月線', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => num(r, 'ma10m')), showSymbol: false, lineStyle: { width: 1.2, type: 'dashed', color: '#d29922' }, itemStyle: { color: '#d29922' } },
+      { name: '10 月線（虛線）', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => num(r, 'ma10m')), showSymbol: false, lineStyle: { width: 1.2, type: 'dashed', color: '#d29922' }, itemStyle: { color: '#d29922' } },
       { name: '離 10 月線', type: 'line', xAxisIndex: 1, yAxisIndex: 2, data: rows.map(r => num(r, 'gap', 100)), showSymbol: false, lineStyle: { width: 1.3, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
         markArea: { silent: true, data: GAP_BANDS.map(([lo, hi], z) => [{ yAxis: lo, itemStyle: { color: ZONE_COLORS[z], opacity: 0.14 } }, { yAxis: hi }]) },
         markLine: { silent: true, symbol: 'none', lineStyle: { type: 'dashed', width: 1, color: PALETTE.muted },
-          data: [lineLabel(N.STANCE.boilGap * 100, `+${N.STANCE.boilGap * 100}% 過熱線`, 'insideEndTop'), lineLabel(N.STANCE.nearGap * 100), lineLabel(-N.STANCE.nearGap * 100),
+          data: [lineLabel(N.STANCE.boilGap * 100, `+${N.STANCE.boilGap * 100}% 過熱線`, 'insideEndTop'), lineLabel(N.STANCE.nearGap * 100, `±${N.STANCE.nearGap * 100}% 盤整`, 'insideStartTop'), lineLabel(-N.STANCE.nearGap * 100),
             lineLabel(-N.STANCE.iceGap * 100, `−${N.STANCE.iceGap * 100}% 極冷線`, 'insideEndBottom')] } },
-      { name: '五市場水溫', type: 'heatmap', xAxisIndex: 2, yAxisIndex: 3, data: heat, itemStyle: { borderWidth: 0 }, emphasis: { disabled: true } },
+      { name: '各市場水溫', type: 'heatmap', xAxisIndex: 2, yAxisIndex: 3, data: heat, itemStyle: { borderWidth: 0 }, emphasis: { disabled: true } },
     ],
   });
   if (prev && prev.startValue != null) charts[3].dispatchAction({ type: 'dataZoom', startValue: prev.startValue, endValue: prev.endValue });
