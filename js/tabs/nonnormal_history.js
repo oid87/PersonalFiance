@@ -155,7 +155,8 @@ function fitIndexAxis() {
 }
 
 // ── 水溫走勢 ────────────────────────────────────────────────────────────
-const ZONE_COLORS = ['#ef4444', '#f0883e', '#8b949e', '#58a6ff', '#1f6feb'];   // 與 .nonnormal-zone--* 同色
+const ZONE_COLORS = ['#ef4444', '#f0883e', '#8b949e', '#58a6ff', '#1f6feb'];
+const NO_DATA = 'rgba(128,128,128,0.22)';   // 熱度條上還沒有足夠歷史的格子（與 .nonnormal-zone--na 同色）   // 與 .nonnormal-zone--* 同色
 const TEMP_RANGES = { '3y': 156, '5y': 260, '10y': 520, all: null };
 const NEAR = N.STANCE.nearGap * 100;   // 盤整帶 ±3%
 let tempHist = null, tempMarket = 'TWII', tempRange = '5y';
@@ -168,7 +169,7 @@ function drawTemp(keepWindow = false) {
   if (!charts[1]) charts[1] = echarts.init(byId('temp-chart'), isLight() ? null : 'dark');
   const m = tempMarketOf(h), rows = m.rows, num = (r, k, f = 1) => (r && finite(r[k]) ? +(r[k] * f).toFixed(2) : null);
   const lastI = rows.findLastIndex(Boolean), lastR = rows[lastI];
-  const L = mob() ? 52 : 64, R = mob() ? 10 : 24;
+  const L = mob() ? 62 : 76, R = mob() ? 10 : 24;   // 左邊要放得下熱度條的「▶ 那斯達克」
   const axis = (gridIndex, show) => ({ type: 'category', gridIndex, data: h.dates, boundaryGap: true, axisTick: { show: false },
     axisLine: { lineStyle: { color: PALETTE.muted } }, axisLabel: { show, color: PALETTE.muted, fontSize: 12, formatter: d => d.slice(0, 7) }, splitLine: { show: false } });
   const yAxis = (gridIndex, extra = {}) => ({ type: 'value', gridIndex, scale: true, axisLabel: { color: PALETTE.muted, fontSize: 12 }, splitLine: { lineStyle: { color: PALETTE.grid } }, ...extra });
@@ -185,7 +186,7 @@ function drawTemp(keepWindow = false) {
         if (i == null) return '';
         const head = r ? `<b>${h.dates[i]}</b>｜${m.label}${r.carried ? `（休市，沿用 ${r.date}）` : ''} ${r.close.toLocaleString('en-US', { maximumFractionDigits: 2 })}・10 月線 ${r.ma10m.toLocaleString('en-US', { maximumFractionDigits: 0 })}・離 ${pctTxt(r.gap, 1)}（過熱線 ${pctTxt(r.hot, 0)}／極冷線 ${pctTxt(r.cold, 0)}）`
           : `<b>${h.dates[i]}</b>｜${m.label} 無資料`;
-        const all = h.markets.map(mk => { const z = zoneOf(mk.rows[i]); return `${mk.label} <b style="color:${z ? ZONE_COLORS[mk.rows[i].zone] : PALETTE.muted}">${z ? z.label : '—'}</b>`; });
+        const all = h.markets.map(mk => { const z = zoneOf(mk.rows[i]); return `${mk.label} <b style="color:${z ? ZONE_COLORS[mk.rows[i].zone] : PALETTE.muted}">${z ? z.label : '資料不足'}</b>`; });
         return [head, all.join('　')].join('<br>');
       },
     },
@@ -198,7 +199,7 @@ function drawTemp(keepWindow = false) {
         min: v => Math.floor(v.min) - 2, max: v => Math.ceil(v.max) + 2 }),
       { type: 'category', gridIndex: 2, data: h.markets.map(mk => mk.label), inverse: true, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false },
         axisLabel: { interval: 0, color: PALETTE.muted, fontSize: mob() ? 11 : 12, formatter: v => (v === m.label ? `▶ ${v}` : v) } }],
-    visualMap: { show: false, type: 'piecewise', seriesIndex: 4, dimension: 2, pieces: [...ZONE_COLORS.map((color, value) => ({ value, color })), { value: -1, color: 'rgba(128,128,128,0.06)' }] },
+    visualMap: { show: false, type: 'piecewise', seriesIndex: 4, dimension: 2, pieces: [...ZONE_COLORS.map((color, value) => ({ value, color })), { value: -1, color: NO_DATA }] },
     dataZoom: [{ type: 'inside', xAxisIndex: [0, 1, 2], filterMode: 'filter' }, { type: 'slider', xAxisIndex: [0, 1, 2], height: 16, bottom: 6, filterMode: 'filter' }],
     series: [
       { name: '水溫底色', type: 'bar', xAxisIndex: 0, yAxisIndex: 1, silent: true, barCategoryGap: 0, z: 0, tooltip: { show: false },
@@ -245,7 +246,8 @@ export function tempNowNodes(context, date, marketId) {
 }
 const renderTempNow = () => byId('temp-now').replaceChildren(...tempNowNodes(ctx, weeks.at(-1).date, tempMarket));
 function renderTempLegend() {
-  byId('temp-legend').replaceChildren(...N.ZONES.map(z => node('span', z.label, { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc })));
+  byId('temp-legend').replaceChildren(...N.ZONES.map(z => node('span', z.label, { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc })),
+    node('span', '資料不足', { class: 'nonnormal-zone nonnormal-zone--na', title: '還沒有足夠的歷史：10 月線要 10 個月，過熱線／極冷線要約 3 年（櫃買 2017-02、S&P 500（VOO）2014-06 起才有）' }));
 }
 
 

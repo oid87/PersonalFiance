@@ -212,7 +212,7 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
       const zones = ['過熱', '偏熱', '盤整', '偏冷', '極冷'], tw = document.querySelector('#nonnormalhist-temp-now .nonnormal-zone').textContent.trim();
       const lastTw = heat.data.find(([x, y]) => x === xs.length - 1 && y === 0)?.[2];
       return o.yAxis[3].data.length === 6 && bg.data.filter(Boolean).length > 500 && ['過熱線', '極冷線'].every(n => o.series.find(s => s.name === n)?.data.filter(v => v != null).length > 300) && new Set(o.series.find(s => s.name === '過熱線').data.filter(v => v != null)).size > 50 && zones[lastTw] === tw
-        && document.querySelectorAll('#nonnormalhist-temp-legend .nonnormal-zone').length === 5;
+        && document.querySelectorAll('#nonnormalhist-temp-legend .nonnormal-zone').length === 6 && !!document.querySelector('#nonnormalhist-temp-legend .nonnormal-zone--na');
     }));
     await page.click('[data-nonnormalhist-temp-market="SOX"]');
     await page.click('[data-nonnormalhist-temp-range="all"]');

@@ -1173,6 +1173,7 @@
 :is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-zone--warm { color:var(--muted); }
 :is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-zone--cool { color:#58a6ff; border-color:#58a6ff; }
 :is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-zone--ice { background:#1f6feb; border-color:#1f6feb; color:#fff; }
+#tab-nonnormalhist .nonnormal-zone--na { background:rgba(128,128,128,0.22); color:var(--muted); border-style:dashed; }
 #tab-nonnormal .nonnormal-touch { color:#ef4444; font-weight:700; }
 #tab-nonnormal .nonnormal-batch h4 { display:flex; flex-wrap:wrap; align-items:center; gap:6px; color:var(--text); }
 #tab-nonnormal .nonnormal-batch--on { border-color:rgba(239,68,68,0.7); }
