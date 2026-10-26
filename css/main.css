@@ -18,15 +18,29 @@
       --text-base: 13px;
       --fear-h: 0px;
     }
+    /* 主題四選一（header 右上，cookie「theme」）：白＝body.light（預設）、米白＝body.light.beige、灰＝body.dim、黑＝都沒有 */
     body.light {
-      /* 米白底：比純白柔和、OLED 上也略省電；面板跟著改暖灰 */
-      --bg: #faf7f0;
-      --panel: #f3efe6;
+      --bg: #ffffff;
+      --panel: #f6f8fa;
       --border: #d0d7de;
       --text: #1f2328;
       --muted: #57606a;
       --accent: #0969da;
       --fg: var(--text);
+    }
+    body.light.beige {
+      /* 米白底：比純白柔和；面板跟著改暖灰 */
+      --bg: #faf7f0;
+      --panel: #f3efe6;
+    }
+    body.dim {
+      /* 灰：深灰底，比黑色柔和、比白色不刺眼；文字與格線跟著調亮一點 */
+      --bg: #22272e;
+      --panel: #2d333b;
+      --border: #444c56;
+      --text: #cdd9e5;
+      --muted: #909dab;
+      --accent: #6cb6ff;
     }
     * { box-sizing: border-box; }
     body {
@@ -47,19 +61,26 @@
     }
     header h1 { margin: 0; font-size: 18px; font-weight: 600; }
     header .sub { color: var(--muted); font-size: 13px; }
-    #theme-btn {
+    .theme-picker {
       margin-left: auto;
-      background: none;
+      align-self: center;
+      display: inline-flex;
       border: 1px solid var(--border);
       border-radius: 999px;
+      overflow: hidden;
+    }
+    .theme-picker button {
+      background: none;
+      border: 0;
       color: var(--muted);
       cursor: pointer;
-      font-size: 15px;
+      font-size: 13px;
       padding: 2px 10px;
       line-height: 1.6;
-      align-self: center;
     }
-    #theme-btn:hover { color: var(--text); border-color: var(--text); }
+    .theme-picker button + button { border-left: 1px solid var(--border); }
+    .theme-picker button:hover { color: var(--text); }
+    .theme-picker button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 
     .tab-section[hidden] { display: none !important; }
 
@@ -680,7 +701,7 @@
         min-height: 44px;
       }
       select { height: 44px; }
-      :is(#theme-btn, .cat-btn, .sub-btn, #all-screens-btn, #category-select,
+      :is(.theme-picker button, .cat-btn, .sub-btn, #all-screens-btn, #category-select,
         #screen-dialog button, #screen-search, .chip, .ui-details > summary,
         .info-panel-header, .period-control button, .period-control select,
         #custom-ticker-input, #fear-threshold, #ma-select, #ma-custom, .date-inputs input) {

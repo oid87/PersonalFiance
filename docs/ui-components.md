@@ -19,7 +19,8 @@
 - `.ui-card`：共用摘要卡片；`.section-title`、`.section-subtitle`、`.status`：標題與狀態文字。
 - `.table-scroll`：讓寬表格在自身區域水平捲動；需有可辨識的 `aria-label` 和 `tabindex="0"` 供鍵盤操作。
 - `.ui-details`：次要表格或方法說明，使用原生 `<details><summary>`。主要圖表與判讀保持可見；初始化時需量測寬度的圖表可以先保持 `open`。
-- 間距使用 `--space-1/2/3/4/6`，文字大小使用 `--text-sm/base`。`--fg` 保留為 `--text` 的相容別名，明暗主題同步更新。
+- 間距使用 `--space-1/2/3/4/6`，文字大小使用 `--text-sm/base`。`--fg` 保留為 `--text` 的相容別名，各主題同步更新。
+- 主題四選一（header 右上 `#theme-picker`）：白（預設，`body.light`）、米白（`body.light.beige`）、灰（`body.dim`）、黑（都沒有）。選擇存在 cookie `theme`（一年，`path=/`），不跟系統深淺色；`index.html` 開頭的小段 script 在第一次繪製前套上 class。白↔米白只換 CSS 變數、圖表不重建；淺／灰／黑之間切換才呼叫 `applyThemeAll()`。圖表顏色用 `PALETTE`（`js/utils/theme.js`），灰色主題的格線／邊框／tooltip 底色由 `isDim()` 換成較亮的灰，別在 tab 裡寫死深色主題的 `#21262d`。
 
 手機橫式（高 ≤500px）時標題列收起、深淺色按鈕併入分類列；主圖最高一屏（`100dvh - 16px`），多面板圖保留原高度、改用放大圖表（見 chart-focus.md）。手機版以局部捲動或換行處理寬內容，不在 body 設定全站水平裁切。觸控環境的導覽、chip、日期欄位及折疊標題至少高 44px；趨勢控制列與寬表格可橫向滑動。圖表上的垂直單指滑動交給頁面捲動，水平滑動仍交給圖表；雙指圖表手勢不攔截。`viewport-fit=cover` 搭配 body 的 safe-area padding，讓橫向瀏海側仍可操作。
 

@@ -15,7 +15,7 @@
 //
 // ⚠️ 無市場 consensus 預期資料(免費源撈不到),故不計算 CPI surprise,只呈現公布日當日反應。
 
-import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
+import { isLight, tc, mob, PALETTE, isDim } from '../utils/theme.js';
 import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { tsToLocalDate } from '../utils/dates.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
@@ -223,7 +223,7 @@ function renderHeatmap() {
   const tipBdr  = PALETTE.border;
   const textClr = PALETTE.text2;
   // check_reuse: keep — 這是 diverging 熱力圖色階的中點(inRange:[GREEN,neutral,RED]),是資料編碼色不是格線色;換 PALETTE.grid 是語意類別錯置
-  const neutral = tc("#21262d", "#f0f2f5");
+  const neutral = isDim() ? "#373e47" : tc("#21262d", "#f0f2f5");   // 灰色主題：深灰底上要再亮一點
   const cellBdr = PALETTE.cellBorder;
 
   heatChart.setOption({

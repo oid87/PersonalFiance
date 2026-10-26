@@ -82,7 +82,7 @@ function check(name, ok, detail = null) { report.cases.push({ name, ok: !!ok, de
   }
   await page.locator('#usrisk-risk-chart').scrollIntoViewIfNeeded();
   await page.evaluate(() => { const c = echarts.getInstanceByDom(document.querySelector('#usrisk-risk-chart')); c.dispatchAction({ type: 'dataZoom', start: 30, end: 80 }); c.dispatchAction({ type: 'legendUnSelect', name: '研究門檻' }); });
-  await page.locator('#theme-btn').click();
+  await page.locator('#theme-picker :is([data-theme-choice="white"],[data-theme-choice="dark"]):not([aria-pressed="true"])').click();
   check('theme retains zoom and legend', await page.evaluate(() => { const o = echarts.getInstanceByDom(document.querySelector('#usrisk-risk-chart')).getOption(); return o.dataZoom[0].start === 30 && o.legend[0].selected['研究門檻'] === false; }));
   await page.evaluate(() => { location.hash = '#tab=trend'; });
   await page.waitForSelector('#tab-trend:not([hidden])');

@@ -66,7 +66,7 @@ const base = process.env.BREADTH_TEST_URL || 'http://127.0.0.1:8766';
     const before=await text('study-status'), metadata=await text('metadata');await page.locator('[data-breadth-universe="NDX"]').click();await page.waitForTimeout(250);assert.equal(await text('study-status'),before);assert.equal(await text('metadata'),metadata);
     for (const theme of ['dark','light']) {
       const current=await page.evaluate(()=>document.body.classList.contains('light')?'light':'dark');
-      if(current!==theme) await page.locator('#theme-btn').click();
+      if(current!==theme) await page.locator('#theme-picker :is([data-theme-choice="white"],[data-theme-choice="dark"]):not([aria-pressed="true"])').click();
       assert.equal(await text('study-status'),before);assert.ok(await chart('ad-chart'));
       assert.equal(await page.evaluate(()=>document.body.classList.contains('light')),theme==='light');
       await page.locator('#breadth-advanced-panel').screenshot({path:`/tmp/breadth-p3p4p5-panel-${theme}.png`});

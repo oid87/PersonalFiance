@@ -8,10 +8,24 @@
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body class="light">
+  <script>
+    // 主題：白（預設）／米白／灰／黑，存在 cookie「theme」。在第一次繪製前套上，避免先閃一下白色（boot.js 之後接手切換）。
+    (function () {
+      var m = document.cookie.match(/(?:^|;\s*)theme=(white|beige|dim|dark)(?:;|$)/), t = m ? m[1] : 'white';
+      document.body.classList.toggle('light', t === 'white' || t === 'beige');
+      document.body.classList.toggle('beige', t === 'beige');
+      document.body.classList.toggle('dim', t === 'dim');
+    })();
+  </script>
   <header>
     <h1>Market Trend</h1>
     <span class="sub">VOO · QQQ · SPY · 0050 · GLD · BTC · VIX · Fear &amp; Greed</span>
-    <button id="theme-btn" title="切換明暗主題">☾</button>
+    <div id="theme-picker" class="theme-picker" role="group" aria-label="主題顏色">
+      <button type="button" data-theme-choice="white" aria-pressed="true" title="白色背景">白</button>
+      <button type="button" data-theme-choice="beige" aria-pressed="false" title="米白背景">米白</button>
+      <button type="button" data-theme-choice="dim" aria-pressed="false" title="深灰背景">灰</button>
+      <button type="button" data-theme-choice="dark" aria-pressed="false" title="黑色背景">黑</button>
+    </div>
   </header>
 
   <div class="navigation-row">

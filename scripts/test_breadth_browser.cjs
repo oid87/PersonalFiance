@@ -72,7 +72,7 @@ async function option(page) { return page.evaluate(() => echarts.getInstanceByDo
     const shots=[];
     for (const theme of ['dark','light']) {
       const current=await page.evaluate(() => document.body.classList.contains('light')?'light':'dark');
-      if(current !== theme) await page.locator('#theme-btn').click();
+      if(current !== theme) await page.locator('#theme-picker :is([data-theme-choice="white"],[data-theme-choice="dark"]):not([aria-pressed="true"])').click();
       const shot=path.join(os.tmpdir(),`breadth-p1p2-${theme}.png`); await page.screenshot({path:shot,fullPage:true});shots.push(shot);
       assert.equal(await page.evaluate(() => Boolean(echarts.getInstanceByDom(document.getElementById('breadth-study-chart')))),true);
     }

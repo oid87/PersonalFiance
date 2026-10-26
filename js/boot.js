@@ -1,5 +1,5 @@
 import { loaded, active } from './state.js';
-import { isLight } from './utils/theme.js';
+import { isLight, isDim } from './utils/theme.js';
 import { isDataFresh, ensureLoaded } from './utils/data.js';
 import { chipPicker } from './utils/dom.js';
 import { initSharedUI } from './utils/ui.js';
@@ -45,38 +45,28 @@ setupResizeHandler();
 initSharedUI();
 initChartFocus();
 
-function applyTheme(light) {
-  if (light === isLight()) return;
+// 主題四選一：白（預設）／米白／灰／黑。存在 cookie「theme」（一年），不跟系統深淺色。
+// 白與米白都是 body.light（圖表配色相同，只換背景變數）；灰＝body.dim（深色配色，格線等幾色調亮）。
+// 圖表配色組（淺／灰／黑）有變才重建圖表，白↔米白不用。
+const THEMES = ['white', 'beige', 'dim', 'dark'];
+const readTheme = () => document.cookie.match(/(?:^|;\s*)theme=(white|beige|dim|dark)(?:;|$)/)?.[1] || 'white';
+const chartGroup = () => (isLight() ? 'light' : isDim() ? 'dim' : 'dark');
+function applyTheme(choice) {
+  const light = choice === 'white' || choice === 'beige', before = chartGroup();
   document.body.classList.toggle('light', light);
-  document.getElementById('theme-btn').textContent = light ? '☾' : '☀';
-  void applyThemeAll(light);
+  document.body.classList.toggle('beige', choice === 'beige');
+  document.body.classList.toggle('dim', choice === 'dim');
+  for (const b of document.querySelectorAll('#theme-picker [data-theme-choice]')) b.setAttribute('aria-pressed', String(b.dataset.themeChoice === choice));
+  if (chartGroup() !== before) void applyThemeAll(light);
 }
-
-// 主題跟隨系統深淺色；手動切換優先，但只到系統深淺色下次改變為止
-// （localStorage 記下手動選擇當時的系統深淺色，不同就回到跟隨系統）。
-const systemDark = window.matchMedia?.('(prefers-color-scheme: dark)');
-const systemTheme = () => (systemDark?.matches ? 'dark' : 'light');
-
-function followSystem() {
-  try { localStorage.removeItem('theme'); localStorage.removeItem('themeSystem'); } catch {}
-  applyTheme(systemTheme() === 'light');
-}
-
-document.getElementById('theme-btn').addEventListener('click', () => {
-  const light = !isLight();
-  applyTheme(light);
-  try {
-    localStorage.setItem('theme', light ? 'light' : 'dark');
-    localStorage.setItem('themeSystem', systemTheme());
-  } catch {}
+document.getElementById('theme-picker').addEventListener('click', e => {
+  const choice = e.target.closest?.('[data-theme-choice]')?.dataset.themeChoice;
+  if (!THEMES.includes(choice)) return;
+  document.cookie = `theme=${choice}; max-age=31536000; path=/; SameSite=Lax`;
+  applyTheme(choice);
 });
-systemDark?.addEventListener('change', followSystem);
-try {
-  const savedTheme = localStorage.getItem('theme');
-  if (localStorage.getItem('themeSystem') === systemTheme() && (savedTheme === 'light' || savedTheme === 'dark')) {
-    applyTheme(savedTheme === 'light');
-  } else followSystem();
-} catch { applyTheme(systemTheme() === 'light'); }
+try { localStorage.removeItem('theme'); localStorage.removeItem('themeSystem'); } catch {}   // 舊版（跟隨系統＋localStorage）留下的設定
+applyTheme(readTheme());
 
 initNavigation({
   switchTo,

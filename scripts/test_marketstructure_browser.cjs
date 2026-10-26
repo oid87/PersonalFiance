@@ -61,7 +61,7 @@ const url = process.argv[2] || 'http://127.0.0.1:8765';
     await page.unroute('**/data/cftc_positions.json');
     await refresh();
     checks.push('malformed 200 response never reports fresh');
-    for (let i=0; i<2; i++) { await page.locator('#theme-btn').click(); await page.waitForTimeout(100); }
+    for (let i=0; i<2; i++) { await page.locator('#theme-picker :is([data-theme-choice="white"],[data-theme-choice="dark"]):not([aria-pressed="true"])').click(); await page.waitForTimeout(100); }
     await page.setViewportSize({ width:390, height:844 });
     await page.waitForTimeout(300);
     assert.ok(await page.evaluate(() => {

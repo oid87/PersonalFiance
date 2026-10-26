@@ -10,6 +10,12 @@ export function tc(dark, light) {
   return isLight() ? light : dark;
 }
 
+/** 灰色主題（body.dim）：深灰底，圖表沿用深色配色，只有底色相關的幾個 PALETTE 值換成較亮的灰。 */
+export function isDim() {
+  return document.body.classList.contains("dim");
+}
+const dimOr = (dim, dark, light) => (isLight() ? light : isDim() ? dim : dark);
+
 export function mob() {
   return window.innerWidth < 600 || window.innerHeight < 500;
 }
@@ -28,14 +34,15 @@ export function mob() {
 // NOT a frozen snapshot — tc() depends on document.body.classList at call
 // time, so freezing at module-load time would bake in whichever theme was
 // active on first import and never update on theme toggle.
+// 灰色主題：格線／邊框／tooltip 底色要比深灰底（#22272e）亮，否則黑色主題的值放上去會看不見。
 export const PALETTE = {
-  get muted()      { return tc("#8b949e", "#57606a"); },
-  get border()     { return tc("#30363d", "#d0d7de"); },
-  get bg()         { return tc("#161b22", "#ffffff"); },
-  get text()       { return tc("#e6edf3", "#1f2328"); },
-  get text2()      { return tc("#c9d1d9", "#24292f"); },
-  get grid()       { return tc("#21262d", "#e1e4e8"); },
-  get cellBorder() { return tc("#0d1117", "#ffffff"); },
+  get muted()      { return dimOr("#909dab", "#8b949e", "#57606a"); },
+  get border()     { return dimOr("#444c56", "#30363d", "#d0d7de"); },
+  get bg()         { return dimOr("#2d333b", "#161b22", "#ffffff"); },
+  get text()       { return dimOr("#cdd9e5", "#e6edf3", "#1f2328"); },
+  get text2()      { return dimOr("#adbac7", "#c9d1d9", "#24292f"); },
+  get grid()       { return dimOr("#373e47", "#21262d", "#e1e4e8"); },
+  get cellBorder() { return dimOr("#22272e", "#0d1117", "#ffffff"); },
 };
 
 // ── echartsBase ──────────────────────────────────────────────────────────

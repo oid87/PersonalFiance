@@ -343,9 +343,9 @@ async function run(options = {}) {
         await page.evaluate(() => { location.hash = '#tab=stressdash'; }); await chartReady('stressdash');
         await page.evaluate(() => { location.hash = '#tab=trend'; }); await chartReady('trend');
         assert(same(await maState(), before), 'Same-document return lost selections/data/signals');
-        await page.locator('#theme-btn').click(); await frame();
+        await page.locator('#theme-picker :is([data-theme-choice="white"],[data-theme-choice="dark"]):not([aria-pressed="true"])').click(); await frame();
         assert(same(await maState(), before), 'Theme lost selections/data/signals');
-        await page.locator('#theme-btn').click(); await frame();
+        await page.locator('#theme-picker :is([data-theme-choice="white"],[data-theme-choice="dark"]):not([aria-pressed="true"])').click(); await frame();
         return { selected: before.selected, nonMAUnchanged: true, signalsUnchanged: true };
       }],
     ];
@@ -445,8 +445,8 @@ async function run(options = {}) {
         await page.evaluate(() => { location.hash = '#tab=stressdash'; }); await chartReady('stressdash');
         await page.evaluate(() => { location.hash = '#tab=trend'; }); await chartReady('trend');
         assert(same(await seriesState(), original), 'FPE route return changed series');
-        await page.locator('#theme-btn').click(); await frame(); assert(same(await seriesState(), original), 'FPE theme changed series');
-        await page.locator('#theme-btn').click(); await frame();
+        await page.locator('#theme-picker :is([data-theme-choice="white"],[data-theme-choice="dark"]):not([aria-pressed="true"])').click(); await frame(); assert(same(await seriesState(), original), 'FPE theme changed series');
+        await page.locator('#theme-picker :is([data-theme-choice="white"],[data-theme-choice="dark"]):not([aria-pressed="true"])').click(); await frame();
         for (let i = 0; i < 4; i++) { await page.locator('#trend-fpe-toggle').click(); await frame(); const now = await seriesState();
           assert((!!now.fpe) === (i % 2 === 1), 'FPE toggle state leaked');
           assert(same(now.nonFPE, before.nonFPE) && same(now.selectedMA, [150]), 'FPE toggle changed other series');

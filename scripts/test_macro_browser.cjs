@@ -222,7 +222,7 @@ async function run(options) {
             assert(/載入|重試中/.test(await page.locator('#biz-status').innerText()), 'No visible retry pending state');
             await page.evaluate(() => { for (let i = 0; i < 4; i++) document.getElementById('macro-biz-retry').click(); });
             assert(control.count === before + 1, 'Repeated pending clicks started extra requests');
-            await page.locator('#theme-btn').click(); await page.setViewportSize({ width: viewport.width, height: viewport.height - 40 });
+            await page.locator('#theme-picker :is([data-theme-choice="white"],[data-theme-choice="dark"]):not([aria-pressed="true"])').click(); await page.setViewportSize({ width: viewport.width, height: viewport.height - 40 });
             await control.release(outcome); await settled(page);
             const result = await snapshot(page);
             const saved = state.charts[0].options, current = result.charts[0].options;

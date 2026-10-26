@@ -71,7 +71,8 @@ const tableTabs = new Set(['cashking', 'earnings', 'tools']);
     const sections = await page.locator('.tab-section').count();
     if (seen.size !== sections) errors.push({ tab: 'wiring', message: `navigation ${seen.size} != sections ${sections}` });
     // Exercise every initialized chart under both themes and resizing, then revisit the new tab.
-    for (let i = 0; i < 2; i++) { await page.locator('#theme-btn').click(); await page.waitForTimeout(200); }
+    for (let i = 0; i < 2; i++) { await page.locator('#theme-picker :is([data-theme-choice="white"],[data-theme-choice="dark"]):not([aria-pressed="true"])').click(); await page.waitForTimeout(200); }
+    for (const t of ['dim', 'beige', 'white']) { await page.locator(`#theme-picker [data-theme-choice="${t}"]`).click(); await page.waitForTimeout(200); }   // 灰／米白也重建一次
     await page.setViewportSize(mobile ? { width: 844, height: 390 } : { width: 1200, height: 850 });
     await page.waitForTimeout(200);
     if (seen.has('marketstructure')) {
