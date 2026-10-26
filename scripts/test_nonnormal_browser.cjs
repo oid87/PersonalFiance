@@ -48,6 +48,16 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
       return m && Number(m[1]) === lit;
     }));
     check('lead-lag table lists the three averages', (await page.locator('#nonnormal-leadlag tbody tr').count()) === 3);
+    check('stance: five boxes with a lit count and verdict', (await page.locator('#nonnormal-boxes .nonnormal-box').count()) === 5 && /亮 \d\/5 格/.test(await text('boxes')) && /尚未轉冷|提高警覺|強烈訊號/.test(await text('boxes')));
+    check('stance: temperature table lists five markets with a zone, day/week/month direction and distance to 2/5/10-year lines', await page.evaluate(() => {
+      const rows = [...document.querySelectorAll('#nonnormal-temp tbody tr')];
+      return rows.length === 5 && rows.every(r => /過熱|偏熱|盤整|偏冷|極冷/.test(r.cells[1].textContent) && /日.週.月./.test(r.cells[2].textContent.replace(/\s/g, '')) && /[+-]\d+%/.test(r.cells[5].textContent));
+    }));
+    check('stance: three batch cards 20/30/50 with per-condition marks', await page.evaluate(() => {
+      const c = [...document.querySelectorAll('#nonnormal-batches .nonnormal-batch')];
+      return c.length === 3 && ['20%', '30%', '50%'].every((w, i) => c[i].querySelector('h4').textContent.includes(w)) && c.every(x => /未到|接近|到位/.test(x.textContent) && x.querySelectorAll('li').length >= 4);
+    }));
+    check('turnaround: VIX ladder goes up to ≥ 60 with episode counts; margin ladder has the 135% tier', /≥ 60/.test(await text('turn')) && /2000 起盤中 \d+ 次/.test(await text('turn')) && /< 135%/.test(await text('turn')));
     check('cash panel: 4w and 8w states, five ranked assets, chart drawn', (await page.locator('#nonnormal-cash-state .nonnormal-cash-pill').count()) === 2
       && (await page.locator('#nonnormal-cash-rank .nonnormal-rank-row').count()) === 5 && (await page.locator('#nonnormal-cash-chart canvas').count()) > 0);
     check('TLT row notes the 10Y yield change over the same dates', /^同期 10Y 殖利率 [+-]?\d+bp/.test(await page.locator('#nonnormal-cash-rank .nonnormal-rank-note').innerText()));

@@ -87,12 +87,12 @@ function rollingExtreme(c, len, pick) {
 /** rows [{date, close|value, low?}] → feature series. Rows with a non-finite value are dropped, never filled. */
 export function buildSeries(rows = [], field = 'close') {
   const pts = rows.filter(r => r && typeof r.date === 'string' && finite(r[field]))
-    .map(r => ({ date: r.date, v: r[field], low: finite(r.low) ? r.low : null }))
+    .map(r => ({ date: r.date, v: r[field], low: finite(r.low) ? r.low : null, high: finite(r.high) ? r.high : null }))
     .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
     .filter((r, i, a) => i === 0 || r.date !== a[i - 1].date);
   const close = pts.map(p => p.v);
   return {
-    dates: pts.map(p => p.date), close, low: pts.map(p => p.low),
+    dates: pts.map(p => p.date), close, low: pts.map(p => p.low), high: pts.map(p => p.high),
     ma: { [P.maShort]: rollingMean(close, P.maShort), [P.maLong]: rollingMean(close, P.maLong), [P.ma2y]: rollingMean(close, P.ma2y) },
     hi: rollingExtreme(close, P.window, Math.max), lo: rollingExtreme(close, P.window, Math.min),
   };
@@ -175,7 +175,10 @@ export const VIX_ZONES = [
   { max: 20, label: '15–20 正常', action: '正常策略' },
   { max: 30, label: '20–30 不安', action: '注意資金' },
   { max: 40, label: '30–40 恐慌', action: '先不亂賣；突破 30 準備資金' },
-  { max: Infinity, label: '≥ 40 極度恐慌', action: '行動窗口' },
+  { max: 45, label: '40–45 明顯恐慌', action: '第一批的條件之一' },
+  { max: 50, label: '45–50', action: '第二批的條件之一' },
+  { max: 60, label: '50–60 極度恐慌', action: '分批的核心區' },
+  { max: Infinity, label: '≥ 60 歷史級崩跌', action: '極罕見' },
 ];
 export const vixZone = v => (finite(v) ? VIX_ZONES.findIndex(z => v < z.max) : -1);
 
@@ -183,7 +186,8 @@ export const MARGIN_TIERS = [
   { min: 166, label: '≥ 166% 無壓力' },
   { min: 150, label: '150–166%' },
   { min: 140, label: '< 150% 承壓' },
-  { min: 130, label: '< 140% 接近追繳' },
+  { min: 135, label: '< 140% 接近追繳' },
+  { min: 130, label: '< 135% 追繳擴大' },
   { min: -Infinity, label: '< 130% 斷頭（強烈反向）' },
 ];
 export const marginTier = r => (finite(r) ? MARGIN_TIERS.findIndex(t => r >= t.min) : -1);
@@ -493,6 +497,134 @@ export function turnaround(ctx, d) {
     asymmetricHint: usable(v) ? v.close >= P.vix[2] : null,     // VIX 30–40 以上是不對稱機會的工具之一
     marginBelow140: m ? m.value < P.margin[2] : null,           // 多燈同亮條件之一（上市、上櫃取低者）
   };
+}
+
+// ── 位階與分批（大跌時「跌多深、到第幾批」；描述性，不計入上方訊號數與等級）────────────
+// 水溫：10 日、10 週、10 月三條均線的方向＋價格相對 10 月線的位置。週／月均線用「已收完的前幾期收盤＋評估日當天收盤」，
+// 不偷看本期之後的資料。長期均線用月線 24／60／120 個月（2／5／10 年線）。門檻 gap 類為本專案定義，見 docs。
+export const STANCE = Object.freeze({
+  markets: [['TWII', '加權'], ['TWOII', '櫃買'], ['SOX', '費半'], ['NDX', '那斯達克'], ['SPX', 'S&P 500']],
+  len: 10,            // 三條均線都取 10 期
+  boilGap: 0.10,      // 過熱：三條上揚且高於 10 月線 > 10%
+  iceGap: 0.05,       // 極冷：三條下彎且低於 10 月線 > 5%
+  nearGap: 0.03,      // 貼近 10 月線 ±3% ＝盤整
+  longMas: [[24, '2 年線'], [60, '5 年線'], [120, '10 年線']],
+  touch: 0.03,        // 「到位」：收盤不高於該均線 3%（含跌破）
+  ddLookback: 250,    // 距一年高點：250 個交易日內的最高收盤
+  recentDays: 30,     // VIX 盤中最高、融資維持率最低：看近 30 個日曆日
+  fundDays: 90,       // 護盤基金進場後 90 個日曆日內算「已進場」
+});
+export const ZONES = [
+  { id: 'boil', label: '過熱', desc: '三條均線都上揚，價格遠高於 10 月線' },
+  { id: 'hot', label: '偏熱', desc: '價格在 10 月線之上' },
+  { id: 'warm', label: '盤整', desc: '價格貼近 10 月線（±3%）' },
+  { id: 'cool', label: '偏冷', desc: '價格跌破 10 月線' },
+  { id: 'ice', label: '極冷', desc: '三條均線都下彎，價格深跌破 10 月線' },
+];
+// 國家金融安定基金進場期間的第一天（宣布多在前一晚）。資料：歷次公告整理；2022、2025 兩次另以新聞核對。
+export const STABILIZATION_FUND = ['2000-03-16', '2000-10-03', '2004-05-20', '2008-09-19', '2011-12-20', '2015-08-25', '2020-03-19', '2022-07-13', '2025-04-09'];
+
+const ymKey = d => d.slice(0, 7);
+function weekKey(d) {   // ISO 週（以週四所在日期判斷年份）
+  const t = new Date(Date.parse(d)), day = (t.getUTCDay() + 6) % 7;
+  t.setUTCDate(t.getUTCDate() - day + 3);
+  return iso(t.getTime());
+}
+/** 每日索引 → 週／月期別，以及每期最後一筆收盤。快取在序列上。 */
+function periods(s, kind) {
+  const k = kind === 'w' ? '_wk' : '_mo';
+  if (s[k]) return s[k];
+  const key = kind === 'w' ? weekKey : ymKey, idx = new Int32Array(s.dates.length), close = [];
+  let prev = null;
+  s.dates.forEach((d, i) => { const q = key(d); if (q !== prev) { close.push(s.close[i]); prev = q; } else close[close.length - 1] = s.close[i]; idx[i] = close.length - 1; });
+  return (s[k] = { idx, close });
+}
+/** n 期均線（截至每日索引 i：前 n−1 期收盤＋當天收盤）與上一期收完時的 n 期均線。 */
+function periodMa(s, kind, i, n) {
+  const { idx, close } = periods(s, kind), p = idx[i];
+  if (p < n) return null;
+  let sum = 0;
+  for (let j = p - n + 1; j < p; j++) sum += close[j];
+  const now = (sum + s.close[i]) / n;
+  return { now, prev: (sum + close[p - n]) / n };
+}
+const sign = x => (x > 0 ? 1 : x < 0 ? -1 : 0);
+/** 單一市場的水溫與長期均線位階。null＝資料不足（10 月線需要 11 個月）。 */
+export function temperature(s, d) {
+  const i = s ? indexLE(s, d) : -1;
+  if (i < 1) return null;
+  if (days(s.dates[i], d) > P.staleDays) return { stale: true, date: s.dates[i] };
+  const n = STANCE.len, ma = (s.ma[n] ??= rollingMean(s.close, n));
+  const w = periodMa(s, 'w', i, n), m = periodMa(s, 'm', i, n);
+  if (!finite(ma[i]) || !finite(ma[i - 1]) || !w || !m) return null;
+  const c = s.close[i], dir = { d: sign(ma[i] - ma[i - 1]), w: sign(w.now - w.prev), m: sign(m.now - m.prev) };
+  const gap = c / m.now - 1, up = dir.d > 0 && dir.w > 0 && dir.m > 0, down = dir.d < 0 && dir.w < 0 && dir.m < 0;
+  const zone = up && gap > STANCE.boilGap ? 0 : down && gap < -STANCE.iceGap ? 4 : gap > STANCE.nearGap ? 1 : gap >= -STANCE.nearGap ? 2 : 3;
+  const long = STANCE.longMas.map(([k, label]) => {
+    const v = periodMa(s, 'm', i, k)?.now ?? null;
+    return { months: k, label, ma: v, gap: finite(v) ? c / v - 1 : null, touch: finite(v) ? c <= v * (1 + STANCE.touch) : null };
+  });
+  let hi = c;
+  for (let j = Math.max(0, i - STANCE.ddLookback + 1); j < i; j++) hi = Math.max(hi, s.close[j]);
+  return { date: s.dates[i], close: c, dir, ma10m: m.now, gap, zone, long, dd1y: c / hi - 1 };
+}
+/** 近 recentDays 個日曆日內的極值：VIX 用盤中最高（缺就用收盤），融資維持率取上市／上櫃中較低的最低值。 */
+function recentExtreme(s, d, pick, field = 'close') {
+  const i = s ? indexLE(s, d) : -1, from = iso(Date.parse(d) - STANCE.recentDays * DAY);
+  if (i < 0 || s.dates[i] < from) return null;
+  let v = null, date = null;
+  for (let j = i; j >= 0 && s.dates[j] >= from; j--) {
+    const x = finite(s[field]?.[j]) ? s[field][j] : s.close[j];
+    if (v === null || pick(x, v)) { v = x; date = s.dates[j]; }
+  }
+  return { value: v, date };
+}
+export const fundActive = d => STABILIZATION_FUND.filter(x => x <= d && days(x, d) <= STANCE.fundDays).at(-1) || null;
+/** VIX 盤中最高 ≥ th 的「次數」：自上次 ≥ th 起隔 60 個交易日以上才算新的一次（2000 起的資料）。 */
+export function vixEpisodes(ctx, th, d = ctx.lastDate) {
+  const s = ctx.s.VIX, end = indexLE(s, d);
+  let n = 0, last = -Infinity;
+  for (let i = 0; i <= end; i++) {
+    const x = finite(s.high[i]) ? s.high[i] : s.close[i];
+    if (x >= th) { if (i - last > 60) n++; last = i; }
+  }
+  return n;
+}
+const batchState = conds => {
+  const ok = conds.filter(c => c.ok !== null), met = ok.filter(c => c.ok).length, r = ok.length ? met / ok.length : 0;
+  return { conds, met, available: ok.length, state: r >= 0.75 ? 'on' : r >= 0.5 ? 'near' : 'off' };
+};
+export const BATCHES = [{ label: '第一批', weight: 20 }, { label: '第二批', weight: 30 }, { label: '第三批', weight: 50 }];
+export const BOX_VERDICT = n => (n >= 3 ? '強烈訊號' : n >= 1 ? '提高警覺' : '尚未轉冷');
+
+/** 加權為主的位階報告：各市場水溫、五格（定位／位置／壓力／情緒／外部）與指數三批的條件。
+ *  批次狀態：可判斷的條件中到位 ≥ 75%＝到位、≥ 50%＝接近（本專案定義；歷史上條件很少同時全部成立）。 */
+export function stance(ctx, d) {
+  const temps = STANCE.markets.map(([id, label]) => ({ id, label, ...(temperature(ctx.s[id], d) || { missing: true }) }));
+  const tw = temps[0].missing || temps[0].stale ? null : temps[0];
+  const vix = recentExtreme(ctx.s.VIX, d, (a, b) => a > b, 'high');
+  const lows = [['上市', ctx.s.MARGIN], ['上櫃', ctx.s.MARGIN_OTC]].map(([m, s]) => { const r = recentExtreme(s, d, (a, b) => a < b); return r && { ...r, market: m }; }).filter(Boolean);
+  const margin = lows.length ? lows.reduce((a, b) => (b.value < a.value ? b : a)) : null;
+  const fund = fundActive(d);
+  const intl = ['sox', 'ndx', 'spx', 'kospi'].map(id => SIGNALS.find(x => x.id === id).eval(ctx, d)).filter(r => r.state === 'on').length;
+  const y5 = tw?.long[1], y2 = tw?.long[0], y10 = tw?.long[2];
+  const v = th => (vix ? vix.value >= th : null), mg = th => (margin ? margin.value < th : null);
+  const boxes = [
+    { key: 'pos', label: '定位', what: '水溫', lit: tw ? tw.zone === 4 : null, text: tw ? ZONES[tw.zone].label : '無資料' },
+    { key: 'depth', label: '位置', what: '跌多深', lit: y5?.touch ?? null, text: y5 && finite(y5.gap) ? `距 5 年線 ${pct(y5.gap, 0)}` : '無資料' },
+    { key: 'press', label: '壓力', what: '融資', lit: mg(P.margin[1]), text: margin ? `近 30 日最低 ${margin.value.toFixed(1)}%（${margin.market}）` : '無資料' },
+    { key: 'mood', label: '情緒', what: 'VIX', lit: v(30), text: vix ? `近 30 日盤中最高 ${vix.value.toFixed(1)}` : '無資料' },
+    { key: 'ext', label: '外部', what: '國際與護盤', lit: intl >= 2 || !!fund, text: `4 個國際股市有 ${intl} 個轉弱${fund ? `；護盤基金 ${fund} 進場` : ''}` },
+  ];
+  const lit = boxes.filter(b => b.lit).length;
+  const c = (text, ok) => ({ text, ok: ok ?? null });
+  const dd = th => (tw ? tw.dd1y <= -th : null);
+  const batches = [
+    [c('VIX 盤中破 40', v(40)), c('距一年高點跌 30%', dd(0.30)), c('跌破 2 年線', y2 && finite(y2.gap) ? y2.gap < 0 : null), c('五格亮 1 格以上', lit >= 1)],
+    [c('VIX 盤中破 45', v(45)), c('融資維持率 < 140%', mg(P.margin[2])), c('距一年高點跌 40%', dd(0.40)), c('到 5 年線（±3%）', y5?.touch ?? null), c('連續多日無觀察類股（尚無資料）', null)],
+    [c('VIX 盤中 ≥ 50', v(50)), c('融資維持率 < 135%', mg(135)), c('護盤基金進場', !!fund), c('到 10 年線（±3%）', y10?.touch ?? null), c('五格亮 4 格以上', lit >= 4)],
+  ].map((conds, k) => ({ ...BATCHES[k], ...batchState(conds) }));
+  return { date: d, temps, boxes, lit, verdict: BOX_VERDICT(lit), batches, vix, margin, fund, intl };
 }
 
 // ── backtest helpers ─────────────────────────────────────────────────────

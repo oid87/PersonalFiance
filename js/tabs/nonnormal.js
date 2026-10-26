@@ -1,7 +1,7 @@
 // 極端狀態儀表板 — 每週一次的多重確認儀表板（描述性，不是買賣訊號）。
 // 引擎：js/tabs/nonnormal_calc.mjs（與 scripts/research/backtest_nonnormal.mjs 共用）。
 // 版面：等級橫幅 → 報價卡（最新值、日漲跌、近 6 個月走勢＋50／100 日均線，亮燈卡加紅框；點卡片開大圖；六個股市卡另列 50／100 日線下彎，不計分）→ 資金流向（現金為王，
-// 與 cashking 頁共用 cashking_calc.mjs）→ 共振歷史圖 → 時間差 → 轉機；
+// 與 cashking 頁共用 cashking_calc.mjs）→ 共振歷史圖 → 時間差 → 位階與分批（五格、水溫、三批，不計分）→ 轉機；
 // 案例回測與閾值來源收在頁尾 <details>，打開才算。
 import { isLight, echartsBase, PALETTE, mob } from '../utils/theme.js';
 import { requestJSON } from '../utils/data.js';
@@ -25,6 +25,7 @@ const HELP = {
   level: '0–1 個亮：常態（單一訊號視為雜訊）｜2–3：留意｜≥4 且橫跨 ≥2 組：警戒｜≥6 且三組都亮：高度警戒。每週五評估，本週未結束時用最新資料日。',
   downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
+  stance: '大跌時用來判斷「跌多深、到第幾批」，平常大多是空的。五格：定位＝加權水溫是不是極冷；位置＝加權離 5 年線 3% 以內或跌破；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫：10 日、10 週、10 月三條均線的方向＋價格離 10 月線多遠（過熱＞+10% 且三線上揚；極冷＜−5% 且三線下彎；±3% 內＝盤整）。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。三批是給指數的分批節奏（20／30／50，越跌越買、最後一批最大）：每批的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
   cash: '現金為王（izaax，同「現金為王」頁）：4 或 8 週內黃金、比特幣、美債 TLT、QQQ 全部下跌，且恐懼貪婪低點 < 25。逃往黃金：其他都跌、只有黃金漲，且恐懼貪婪 < 25。同一期間誰漲最多＝資金往哪裡去。',
 };
 
@@ -515,6 +516,48 @@ function renderLeadLag(d) {
   table('leadlag', ['均線', '櫃買', '加權', ''], N.leadLag(ctx, d).map(r => [r.label, st(r.otcBelowSince), st(r.twiiBelowSince), r.note]));
 }
 
+// ── stance: five boxes, water temperature, batches ───────────────────────
+const ARROW = x => (x > 0 ? '↑' : x < 0 ? '↓' : '→');
+const arrows = dir => { const el = node('span', null, { class: 'nonnormal-dirs' }); for (const [k, v] of [['日', dir.d], ['週', dir.w], ['月', dir.m]]) el.append(node('span', k + ARROW(v), { class: dirClass(v) })); return el; };
+const pctTxt = (x, d = 0) => (finite(x) ? `${x >= 0 ? '+' : ''}${(x * 100).toFixed(d)}%` : '—');
+const BOX_HINT = { pos: '加權的水溫是不是「極冷」', depth: '加權離 5 年線（月線 60 個月均線）3% 以內或已跌破', press: '上市、上櫃融資維持率取較低者，近 30 日最低低於 150%',
+  mood: 'VIX 近 30 日盤中最高 ≥ 30', ext: '費半、那斯達克、S&P 500、韓股至少 2 個轉弱，或護盤基金進場' };
+const BATCH_STATE = { on: ['到位', 'nonnormal-why-state--on'], near: ['接近', 'nonnormal-why-state--near'], off: ['未到', ''] };
+function renderStance(d) {
+  const st = N.stance(ctx, d);
+  const head = node('div', null, { class: 'nonnormal-boxes-head' });
+  head.append(node('b', `亮 ${st.lit}/5 格`), node('span', st.verdict, { class: 'nonnormal-why-state' + (st.lit >= 3 ? ' nonnormal-why-state--on' : st.lit ? ' nonnormal-why-state--near' : '') }),
+    node('span', '亮 1 格提高警覺，亮 3–4 格才算強烈訊號', { class: 'nonnormal-boxes-note' }));
+  const grid = node('div', null, { class: 'nonnormal-boxes' });
+  for (const b of st.boxes) {
+    const el = node('div', null, { class: 'nonnormal-box' + (b.lit ? ' nonnormal-box--on' : b.lit === null ? ' nonnormal-box--na' : ''), title: BOX_HINT[b.key] });
+    const k = node('div', null, { class: 'nonnormal-box-k' });
+    k.append(node('span', b.lit ? '●' : '○', { class: 'nonnormal-box-dot', 'aria-hidden': 'true' }), node('span', b.label, { class: 'nonnormal-box-name' }), node('small', b.what));
+    el.append(k, node('div', b.text, { class: 'nonnormal-box-v' }));
+    grid.append(el);
+  }
+  byId('boxes').replaceChildren(head, grid, node('p', '水溫由熱到冷：過熱 → 偏熱 → 盤整 → 偏冷 → 極冷。極冷＝大跌後可以開始分批的位置；過熱＝漲過頭。均線方向：日／週／月＝10 日、10 週、10 月線，↑ 上揚、↓ 下彎。「離…線」＝現在價格比那條線高（+）或低（−）多少，紅字＝已到或跌破。手機可左右滑動表格。', { class: 'nonnormal-temp-note' }));
+
+  const zone = t => { const z = N.ZONES[t.zone]; return node('span', z.label, { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc }); };
+  const dist = l => { const el = node('span', pctTxt(l.gap)); if (l.touch) el.className = 'nonnormal-touch'; return el; };
+  table('temp', ['市場', '水溫', '均線方向', '離 10 月線', '離 2 年線', '離 5 年線', '離 10 年線', '離一年高點'], st.temps.map(t => {
+    if (t.missing || t.stale) return [t.label, t.stale ? `資料停在 ${t.date}` : '資料不足', '', '', '', '', '', ''];
+    return [t.label, zone(t), arrows(t.dir), pctTxt(t.gap, 1), ...t.long.map(dist), pctTxt(t.dd1y, 1)];
+  }));
+
+  byId('batches').replaceChildren(...st.batches.map(b => {
+    const card = node('article', null, { class: 'ui-card nonnormal-card nonnormal-batch' + (b.state === 'on' ? ' nonnormal-batch--on' : '') });
+    const h = node('h4', `${b.label}（${b.weight}%）`), [txt, cls] = BATCH_STATE[b.state];
+    h.append(' ', node('span', `${txt} ${b.met}/${b.available}`, { class: 'nonnormal-why-state ' + cls }));
+    const ul = node('ul', null, { class: 'nonnormal-batch-list' });
+    for (const c of b.conds) ul.append(node('li', `${c.ok === null ? '－' : c.ok ? '✓' : '✗'} ${c.text}`, { class: c.ok ? 'nonnormal-ok' : c.ok === null ? 'nonnormal-na' : '' }));
+    card.append(h, ul);
+    return card;
+  }));
+  const parts = [st.vix && `VIX 近 30 日盤中最高 ${st.vix.value.toFixed(1)}（${st.vix.date}）`, st.margin && `融資維持率近 30 日最低 ${st.margin.market} ${st.margin.value.toFixed(1)}%（${st.margin.date}）`];
+  byId('batch-note').textContent = `指數的分批節奏：越跌越買、最後一批最大，每批都要比上一批更極端才放。${parts.filter(Boolean).join('；')}。`;
+}
+
 // ── turnaround ──────────────────────────────────────────────────────────
 function readChecks() { try { return JSON.parse(localStorage.getItem(CHECK_KEY) || '{}') || {}; } catch { return {}; } }
 function writeChecks(v) { try { localStorage.setItem(CHECK_KEY, JSON.stringify(v)); } catch { /* private mode: keep in memory only */ } }
@@ -527,7 +570,8 @@ function ladder(title, items, current) {
 }
 function renderTurn(d) {
   const t = N.turnaround(ctx, d), checks = readChecks(), m = t.margin;
-  const vix = ladder(`VIX ${t.vix ? t.vix.value.toFixed(1) : '無資料'}`, N.VIX_ZONES.map(z => `${z.label}・${z.action}`), t.vix?.zone ?? -1);
+  const times = i => (i > 0 && N.VIX_ZONES[i - 1].max >= 40 ? `（2000 起盤中 ${N.vixEpisodes(ctx, N.VIX_ZONES[i - 1].max)} 次）` : '');
+  const vix = ladder(`VIX ${t.vix ? t.vix.value.toFixed(1) : '無資料'}`, N.VIX_ZONES.map((z, i) => `${z.label}・${z.action}${times(i)}`), t.vix?.zone ?? -1);
   const mTitle = m ? ['融資維持率', finite(m.listed) && `上市 ${m.listed.toFixed(1)}%`, finite(m.otc) && `上櫃 ${m.otc.toFixed(1)}%`].filter(Boolean).join(' ') : '融資維持率 無資料';
   const mg = ladder(mTitle, N.MARGIN_TIERS.map(x => x.label), m?.tier ?? -1);
   const box = node('article', null, { class: 'ui-card nonnormal-card' });
@@ -587,7 +631,7 @@ function renderAll() {
       const running = new Date(Date.parse(now.date)).getUTCDay() !== 5;
       const last = id => ctx.s[id]?.dates?.at(-1);
       byId('asof').textContent = `${now.date}${running ? '（本週至今）' : ''}・美股收盤 ${last('SPX')}、台股收盤 ${last('TWII')}・每日 06:00（美股收盤後）、18:00（台股收盤後）自動更新`;
-      renderSummary(now, prev); renderCards(now); renderCash(); drawChart(); renderLeadLag(now.date); renderTurn(now.date);
+      renderSummary(now, prev); renderCards(now); renderCash(); drawChart(); renderLeadLag(now.date); renderStance(now.date); renderTurn(now.date);
       drawDetail();
       if (byId('cases-details').open) renderCases();
       if (byId('sources-details').open) renderSources();

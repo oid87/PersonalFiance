@@ -52,9 +52,9 @@ test('levelOf: single signal is noise; alert needs ≥4 lit across ≥2 groups; 
 });
 
 test('tiers: VIX zones and margin-ratio tiers use the reference boundaries', () => {
-  assert.deepEqual([14.99, 15, 19.99, 20, 30, 39.9, 40, 82].map(N.vixZone), [0, 1, 1, 2, 3, 3, 4, 4]);
+  assert.deepEqual([14.99, 15, 19.99, 20, 30, 39.9, 40, 45, 50, 59.9, 60, 82].map(N.vixZone), [0, 1, 1, 2, 3, 3, 4, 5, 6, 6, 7, 7]);
   assert.equal(N.vixZone(null), -1);
-  assert.deepEqual([200, 166, 165.9, 150, 149.9, 140, 139.9, 130, 129.9].map(N.marginTier), [0, 0, 1, 1, 2, 2, 3, 3, 4]);
+  assert.deepEqual([200, 166, 165.9, 150, 149.9, 140, 139.9, 135, 134.9, 130, 129.9].map(N.marginTier), [0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5]);
 });
 
 test('SOX: a 15% drop from the 20-day high lights even while still above the 100-day average', () => {
@@ -289,4 +289,50 @@ test('downturnReport covers the six requested markets with 50 and 100MA', () => 
   assert.deepEqual(N.DOWNTURN.mas, [50, 100]);
   const w = N.evaluateWeek(N.buildContext(rawWith()), last);
   assert.equal(w.count, 0, '下彎面板不改變亮燈數');
+});
+
+// ── 位階與分批 ────────────────────────────────────────────────────────────
+test('temperature: steady rise far above the 10-month line → 過熱; steady fall far below → 極冷; flat → 盤整', () => {
+  const dates = businessDays('2015-01-01', 900);
+  const up = N.temperature(N.buildSeries(rows(dates, dates.map((_, i) => 100 * 1.002 ** i))), dates.at(-1));
+  const dn = N.temperature(N.buildSeries(rows(dates, dates.map((_, i) => 100 * 0.998 ** i))), dates.at(-1));
+  const fl = N.temperature(N.buildSeries(rows(dates, flat(900, 100))), dates.at(-1));
+  assert.equal(N.ZONES[up.zone].label, '過熱');
+  assert.deepEqual(up.dir, { d: 1, w: 1, m: 1 });
+  assert.equal(N.ZONES[dn.zone].label, '極冷');
+  assert.equal(N.ZONES[fl.zone].label, '盤整');
+  assert.equal(up.long[0].months, 24);
+  assert.equal(N.temperature(N.buildSeries(rows(dates.slice(0, 100), flat(100, 100))), dates[99]), null, 'needs 11 months for the 10-month line');
+});
+
+test('temperature has no look-ahead: later rows in the same week/month do not change the result', () => {
+  const dates = businessDays('2015-01-01', 900), closes = dates.map((_, i) => 100 + 10 * Math.sin(i / 37));
+  const d = dates[700];
+  const a = N.temperature(N.buildSeries(rows(dates, closes)), d), b = N.temperature(N.buildSeries(rows(dates.slice(0, 701), closes.slice(0, 701))), d);
+  assert.deepEqual(a, b);
+});
+
+test('fundActive: within 90 calendar days of an entry start, else null', () => {
+  assert.equal(N.fundActive('2025-04-09'), '2025-04-09');
+  assert.equal(N.fundActive('2025-06-30'), '2025-04-09');
+  assert.equal(N.fundActive('2025-07-09'), null);
+  assert.equal(N.fundActive('2025-04-08'), null);
+});
+
+test('data check: VIX intraday-high episodes since 2000 ≥40/50/60 are 11/6/4', { skip: !haveData }, () => {
+  const ctx = realContext();
+  assert.deepEqual([40, 50, 60].map(t => N.vixEpisodes(ctx, t, '2026-10-23')), [11, 6, 4]);
+});
+
+test('data check: 2025-04-09 → 加權極冷, five boxes lit, all three batches 到位; 2022-10-25 → first batch 到位', { skip: !haveData }, () => {
+  const ctx = realContext();
+  const a = N.stance(ctx, '2025-04-09');
+  assert.equal(N.ZONES[a.temps[0].zone].label, '極冷');
+  assert.equal(a.lit, 5);
+  assert.deepEqual(a.batches.map(b => b.state), ['on', 'on', 'on']);
+  const b = N.stance(ctx, '2022-10-25');
+  assert.equal(b.batches[0].state, 'on');
+  assert.notEqual(b.batches[2].state, 'on');
+  const c = N.stance(ctx, '2026-07-30');
+  assert.deepEqual(c.batches.map(x => x.state), ['off', 'off', 'off']);
 });
