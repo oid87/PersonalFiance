@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 92,
+  "source_count": 93,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -2500,6 +2500,60 @@
           "null_policy": "non_nullable_required_only"
         },
         "data/tw_sector_map_cache.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tw_daily_stats.py",
+      "outputs": [
+        "data/tw_daily_stats.json",
+        "data/tw_daily_stats_cache.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_tw_sector_flow.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tw_daily_stats.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date",
+            "down",
+            "limit_down"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "down",
+            "limit_down",
+            "limit_up",
+            "n",
+            "no_obs",
+            "obs",
+            "obs_groups",
+            "tpex_down",
+            "tpex_limit_down",
+            "twse_down",
+            "twse_limit_down",
+            "up"
+          ]
+        },
+        "data/tw_daily_stats_cache.json": {
           "profile": "heterogeneous_object",
           "key_fields": [],
           "required_fields": [],

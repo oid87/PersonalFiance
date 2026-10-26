@@ -336,3 +336,22 @@ test('data check: 2025-04-09 → 加權極冷, five boxes lit, all three batches
   const c = N.stance(ctx, '2026-07-30');
   assert.deepEqual(c.batches.map(x => x.state), ['off', 'off', 'off']);
 });
+
+test('noObsNow: count over the last 22 trading days, current streak, tier; mood box and second batch use it', () => {
+  const flags = [...flat(40, 0), 1, 0, 1, 1, 1];
+  const daily = DATES.slice(-flags.length).map((date, i) => ({ date, limit_down: i === flags.length - 1 ? 420 : 2, no_obs: flags[i] }));
+  const ctx = N.buildContext(rawWith({ daily }));
+  const r = N.noObsNow(ctx, last);
+  assert.deepEqual([r.count, r.streak, N.NO_OBS_TIERS[r.tier].label.slice(0, 3)], [4, 3, '3–4']);
+  const st = N.stance(ctx, last);
+  assert.equal(st.boxes.find(b => b.key === 'mood').lit, true);
+  assert.match(st.boxes.find(b => b.key === 'mood').text, /跌停最多 420 家・無觀察類股 4 天/);
+  assert.equal(st.batches[1].conds.find(c => /無觀察類股/.test(c.text)).ok, true);
+  assert.equal(N.turnaround(ctx, last).noObs.count, 4);
+});
+
+test('noObsNow: no daily stats → null and the batch condition stays unavailable', () => {
+  const ctx = N.buildContext(rawWith());
+  assert.equal(N.noObsNow(ctx, last), null);
+  assert.equal(N.stance(ctx, last).batches[1].conds.find(c => /無觀察類股/.test(c.text)).ok, null);
+});

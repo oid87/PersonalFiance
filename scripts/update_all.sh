@@ -107,6 +107,7 @@ run_script optional fetch_inflation_exp.py
 run_script optional fetch_credit.py
 run_script optional fetch_bdc.py
 run_script optional fetch_tw_sector_flow.py
+run_script optional fetch_tw_daily_stats.py
 run_script optional fetch_banini.py
 run_script optional fetch_net_liquidity.py
 run_script optional fetch_yield_curve.py

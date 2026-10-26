@@ -443,6 +443,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_tw_sector_flow.py
 
+      - name: Fetch Taiwan daily stats (TWSE MI_INDEX + TPEx 收盤行情, 漲跌停家數與觀察類股)
+        continue-on-error: true
+        run: python scripts/fetch_tw_daily_stats.py
+
       - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
         continue-on-error: true
         run: python scripts/fetch_taiwan_mktcap_anchor.py

@@ -1145,6 +1145,7 @@
 #tab-nonnormal .nonnormal-dt-on { color:#ef4444; font-weight:600; }
 #tab-nonnormal .nonnormal-dt-sus { display:inline-block; margin-top:2px; padding:0 7px; border-radius:999px; font-size:12px; line-height:18px; background:#ef4444; color:#fff; white-space:nowrap; }
 #tab-nonnormal .nonnormal-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:var(--space-3,12px); margin:8px 0; }
+#tab-nonnormal .nonnormal-grid--turn { grid-template-columns:repeat(2,minmax(0,1fr)); }
 #tab-nonnormal .nonnormal-card { min-width:0; padding:var(--space-3,12px); }
 #tab-nonnormal .nonnormal-card h4 { margin:0 0 6px; font-size:calc(var(--text-sm,13px) + 1px); color:var(--muted); font-weight:600; }
 #tab-nonnormal .nonnormal-boxes-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin:0 0 8px; font-size:calc(var(--text-sm,13px) + 2px); }
@@ -1177,6 +1178,7 @@
 #tab-nonnormal .nonnormal-batch-list .nonnormal-ok { color:var(--text); font-weight:600; }
 #tab-nonnormal .nonnormal-batch-list .nonnormal-na { opacity:.7; }
 #tab-nonnormal .nonnormal-batch-note { margin:2px 0 8px; font-size:14px; }
+#tab-nonnormal .nonnormal-turn-note { margin:6px 0 0; color:var(--muted); font-size:13px; }
 #tab-nonnormal .nonnormal-controls { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 8px; }
 #tab-nonnormal .nonnormal-chart { width:100%; height:620px; min-height:460px; margin:8px 0; }
 #tab-nonnormal table { border-collapse:collapse; width:100%; font-size:calc(var(--text-sm,13px) + 1px); }

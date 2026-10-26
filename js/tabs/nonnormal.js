@@ -25,20 +25,21 @@ const HELP = {
   level: '0–1 個亮：常態（單一訊號視為雜訊）｜2–3：留意｜≥4 且橫跨 ≥2 組：警戒｜≥6 且三組都亮：高度警戒。每週五評估，本週未結束時用最新資料日。',
   downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
-  stance: '大跌時用來判斷「跌多深、到第幾批」，平常大多是空的。五格：定位＝加權水溫是不是極冷；位置＝加權離 5 年線 3% 以內或跌破；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫：10 日、10 週、10 月三條均線的方向＋價格離 10 月線多遠（過熱＞+10% 且三線上揚；極冷＜−5% 且三線下彎；±3% 內＝盤整）。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。三批是給指數的分批節奏（20／30／50，越跌越買、最後一批最大）：每批的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
+  stance: '大跌時用來判斷「跌多深、到第幾批」，平常大多是空的。五格：定位＝加權水溫是不是極冷；位置＝加權離 5 年線 3% 以內或跌破；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30、近 22 個交易日無觀察類股 ≥ 3 天、或近 30 日有一天跌停 ≥ 300 家（任一）；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫：10 日、10 週、10 月三條均線的方向＋價格離 10 月線多遠（過熱＞+10% 且三線上揚；極冷＜−5% 且三線下彎；±3% 內＝盤整）。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。三批是給指數的分批節奏（20／30／50，越跌越買、最後一批最大）：每批的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
   cash: '現金為王（izaax，同「現金為王」頁）：4 或 8 週內黃金、比特幣、美債 TLT、QQQ 全部下跌，且恐懼貪婪低點 < 25。逃往黃金：其他都跌、只有黃金漲，且恐懼貪婪 < 25。同一期間誰漲最多＝資金往哪裡去。',
 };
 
-// 報價卡：[序列, 名稱, 對應訊號, 格式]。格式 px＝價格、yield＝殖利率（漲跌用 bp）、ratio＝百分比（漲跌用百分點）、score＝0–100 分數（漲跌用點）。
+// 報價卡：[序列, 名稱, 對應訊號, 格式]。格式 px＝價格、yield＝殖利率（漲跌用 bp）、ratio＝百分比（漲跌用百分點）、score＝0–100 分數（漲跌用點）、
+// count＝家數、days＝天數（這兩種不畫均線）。
 const CARD_GROUPS = [
   { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['KOSPI', '韓股', 'kospi']] },
   { group: 'B', title: '金融市場', cards: [['US10Y', '美債 10Y', 'us10y', 'yield'], ['DXY', '美元指數', 'dxy'], ['GOLD', '黃金', 'gold'], ['OIL', '布蘭特原油', 'oil'], ['VIX', 'VIX', 'vix'], ['VXN', 'VXN'], ['FG', '恐懼貪婪', null, 'score'], ['BTC', '比特幣']] },
-  { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '台股市場廣度', 'breadth', 'ratio']] },
+  { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '台股市場廣度', 'breadth', 'ratio'], ['LIMIT_DOWN', '跌停家數', null, 'count'], ['NO_OBS', '無觀察類股', null, 'days']] },
   { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield'], ['US_BREADTH', '美股市場廣度', null, 'ratio']] },
 ];
 // 卡片上的英文代號（實際用的標的；指標類用通用簡稱）
 const TICKERS = { SOX: 'SOXX', NDX: 'QQQ', SPX: 'VOO', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
-  FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'TW Breadth', US_BREADTH: 'SPY',
+  FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'TW Breadth', US_BREADTH: 'SPY', LIMIT_DOWN: 'TWSE+TPEx', NO_OBS: 'TWSE+TPEx',
   N225: 'N225', HSI: 'HSI', SSE: 'SSE', STOXX50E: 'SX5E', US2Y: 'US2Y' };
 const CARD_BY_SERIES = new Map(CARD_GROUPS.flatMap(g => g.cards.map(c => [c[0], c])));
 // 點卡片的大圖左欄：為什麼把這張圖放進儀表板（本專案整理，用自己的話寫）
@@ -60,6 +61,8 @@ const REASONS = {
   MARGIN: '散戶槓桿的壓力表。越低代表越多人接近追繳，跌到斷頭區時反而常是低點附近。',
   MARGIN_OTC: '上櫃散戶融資比重更高、波動更大，常比上市先出事。本站 2026-08-24 起才有資料。',
   BREADTH_PCT: '台股偏多家數占比（偏多／偏多＋偏空）。指數上漲但多數個股不漲＝廣度收窄，上漲只靠少數權值股撐著。',
+  LIMIT_DOWN: '上市＋上櫃股票當天收在跌停的家數。平常個位數到幾十家；幾百家以上代表恐慌性賣壓，2025-04-07 有 1,702 家。只顯示，不計分；會用在下方「情緒」那一格。',
+  NO_OBS: '近 22 個交易日（約一個月）中，盤面完全沒有「觀察類股」的天數。觀察類股＝當天上漲、創 10 日新高、成交量 ≥ 4 倍 20 日均量且 ≥ 1,000 張，同一類股至少 3 檔（參數用 2024、2025 年兩段已知情況校準）。整天找不到代表市場沒有新的強勢股；1 天提高注意、3 天以上可開始分批、5 天以上極度恐慌。',
   US_BREADTH: 'S&P 500（SPY）成分股中，股價站上 200 日線的比例。低於 50% 代表多數美股已轉弱，可對照台股廣度看是不是全球一起收窄。',
   N225: '第三層以後的市場，用來確認是不是全球同步轉弱。',
   HSI: '中港資金與中國景氣的溫度計，用來確認是不是全球同步轉弱。',
@@ -68,7 +71,7 @@ const REASONS = {
   US2Y: '和 10Y 比較看殖利率曲線：2Y 高於 10Y（倒掛）是長循環訊號，只註記不計分。',
 };
 // 大圖的參考線（訊號門檻）
-const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75], US_BREADTH: [50] };   // 訊號 id，或不計分卡片的序列 id
+const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75], US_BREADTH: [50], LIMIT_DOWN: [N.NO_OBS.limitDownExtreme], NO_OBS: [N.NO_OBS.start, 5] };   // 訊號 id，或不計分卡片的序列 id
 // 資金流向：現金為王的 4 檔（state.js CK_ASSETS）＋ SPY 只顯示
 const CASH_LABELS = { GLD: '黃金（GLD）', BTC: '比特幣', TLT: '美債（TLT）', QQQ: 'QQQ', SPY: 'SPY' };
 const CASH_ASSETS = [...CK_ASSETS, { key: 'SPY', color: '#a371f7', file: 'data/SPY.json', displayOnly: true }];
@@ -153,6 +156,8 @@ function fmtValue(v, kind) {
   if (kind === 'yield') return v.toFixed(2) + '%';
   if (kind === 'ratio') return v.toFixed(1) + '%';
   if (kind === 'score') return v.toFixed(0);
+  if (kind === 'count') return `${v.toLocaleString('en-US')} 家`;
+  if (kind === 'days') return `${v} 天`;
   return v.toLocaleString('en-US', { minimumFractionDigits: pxDigits(v), maximumFractionDigits: pxDigits(v) });
 }
 /** Day/week change text: price → "+12.3 +0.45%"; yield → "+3bp"; ratio → "+1.2"（百分點）; score → "-7.4"（點）. pctOnly drops the absolute part. */
@@ -160,14 +165,16 @@ function fmtChange(abs, rel, kind, ref, pctOnly = false) {
   if (!finite(abs)) return '—';
   if (kind === 'yield') return `${signed(Math.round(abs * 100), 0)}bp`;
   if (kind === 'ratio' || kind === 'score') return signed(abs, 1);
+  if (kind === 'count' || kind === 'days') return signed(abs, 0);
   const p = finite(rel) ? signed(rel * 100, 2) + '%' : '';
   return pctOnly ? p || '—' : `${signed(abs, pxDigits(ref))} ${p}`.trim();
 }
+const NO_MA = new Set(['count', 'days']);
 const dirClass = x => (!finite(x) || x === 0 ? 'nonnormal-flat' : x > 0 ? 'nonnormal-up' : 'nonnormal-down');
 
-function sparkline(q) {
+function sparkline(q, noMa = false) {
   const W = 120, H = 40, n = q.close.length;
-  const vals = [...q.close, ...MAS.flatMap(k => q.ma[k])].filter(finite);
+  const vals = [...q.close, ...(noMa ? [] : MAS.flatMap(k => q.ma[k]))].filter(finite);
   const lo = Math.min(...vals), hi = Math.max(...vals);
   // x 依日期：資料比 6 個月短（例如上櫃維持率 2026-08-24 起）時只畫在右側，不拉滿整個寬度
   const t0 = Date.parse(q.from), t1 = Date.parse(q.dates.at(-1)), span = t1 - t0 || 1;
@@ -185,8 +192,7 @@ function sparkline(q) {
   const line = path(q.close);
   const add = (cls, d) => { if (!d) return; const p = document.createElementNS(SVG, 'path'); p.setAttribute('class', cls); p.setAttribute('d', d); svg.append(p); };
   add('area', line && `${line}L${x(n - 1).toFixed(1)},${H}L${x(0).toFixed(1)},${H}Z`);
-  add('ma100', path(q.ma[100]));
-  add('ma50', path(q.ma[50]));
+  if (!noMa) { add('ma100', path(q.ma[100])); add('ma50', path(q.ma[50])); }
   add('px', line);
   return svg;
 }
@@ -210,7 +216,7 @@ function quoteCard([id, name, sigId, kind = 'px'], now) {
   if (!q) { el.append(node('div', '—', { class: 'nonnormal-q-val' }), node('p', sig?.reason || '尚無資料', { class: 'nonnormal-q-foot' })); return el; }
   el.append(node('div', fmtValue(q.last, kind), { class: 'nonnormal-q-val ' + dirClass(q.chg) }),
     node('div', fmtChange(q.chg, q.chgPct, kind, q.last), { class: 'nonnormal-q-chg ' + dirClass(q.chg) }),
-    sparkline(q));
+    sparkline(q, NO_MA.has(kind)));
   const foot = node('p', null, { class: 'nonnormal-q-foot' });
   foot.append(q.stale ? `資料停在 ${q.date}` : `週 ${fmtChange(q.w1, q.w1Pct, kind, q.last, true)}`);
   if (state === 'on' && sig.tags.length) foot.append('・', node('b', sig.tags.join('・')));
@@ -273,6 +279,7 @@ function renderCards(now) {
 
 // ── detail dialog（點卡片：同樣半年，但用完整座標與 tooltip 看精確值）────────
 const valueFmt = (kind, ref) => v => (!finite(v) ? '—' : kind === 'yield' ? v.toFixed(2) + '%' : kind === 'ratio' ? v.toFixed(1) + '%' : kind === 'score' ? v.toFixed(1)
+  : NO_MA.has(kind) ? Math.round(v).toLocaleString('en-US')
   : v.toLocaleString('en-US', { minimumFractionDigits: pxDigits(ref), maximumFractionDigits: pxDigits(ref) }));
 function openDetail(def) {
   detail = def;
@@ -307,7 +314,7 @@ function drawDetail() {
   const line = (name, data, color, width, extra = {}) => ({ name, type: 'line', data, showSymbol: false, connectNulls: false, lineStyle: { width, color }, itemStyle: { color }, ...extra });
   chartOption(1, {
     animation: false,
-    legend: { top: 0, right: 0, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: ['收盤', '50MA', '100MA'] },
+    legend: { top: 0, right: 0, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: NO_MA.has(kind) ? [] : ['收盤', '50MA', '100MA'] },
     grid: { left: 8, right: 16, top: 30, bottom: 4, containLabel: true },
     tooltip: { trigger: 'axis', valueFormatter: fmt },
     xAxis: { type: 'category', data: q.dates, boundaryGap: false, axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: v => v.slice(5) } },
@@ -315,8 +322,7 @@ function drawDetail() {
     dataZoom: [],
     series: [
       line('收盤', q.close, PALETTE.text, 1.6, { areaStyle: { opacity: 0.06 }, markLine: lines.length ? { silent: true, symbol: 'none', lineStyle: { type: 'dashed', color: '#ef4444' }, data: lines } : undefined }),
-      line('50MA', q.ma[50], '#e3b341', 1.2, { markLine: turn(50, '#e3b341') }),
-      line('100MA', q.ma[100], '#58a6ff', 1.2, { markLine: turn(100, '#58a6ff') }),
+      ...(NO_MA.has(kind) ? [] : [line('50MA', q.ma[50], '#e3b341', 1.2, { markLine: turn(50, '#e3b341') }), line('100MA', q.ma[100], '#58a6ff', 1.2, { markLine: turn(100, '#58a6ff') })]),
     ],
   });
 }
@@ -521,7 +527,7 @@ const ARROW = x => (x > 0 ? '↑' : x < 0 ? '↓' : '→');
 const arrows = dir => { const el = node('span', null, { class: 'nonnormal-dirs' }); for (const [k, v] of [['日', dir.d], ['週', dir.w], ['月', dir.m]]) el.append(node('span', k + ARROW(v), { class: dirClass(v) })); return el; };
 const pctTxt = (x, d = 0) => (finite(x) ? `${x >= 0 ? '+' : ''}${(x * 100).toFixed(d)}%` : '—');
 const BOX_HINT = { pos: '加權的水溫是不是「極冷」', depth: '加權離 5 年線（月線 60 個月均線）3% 以內或已跌破', press: '上市、上櫃融資維持率取較低者，近 30 日最低低於 150%',
-  mood: 'VIX 近 30 日盤中最高 ≥ 30', ext: '費半、那斯達克、S&P 500、韓股至少 2 個轉弱，或護盤基金進場' };
+  mood: `任一成立：VIX 近 30 日盤中最高 ≥ 30；近 22 個交易日無觀察類股 ≥ ${N.NO_OBS.start} 天；近 30 日有一天跌停 ≥ ${N.NO_OBS.limitDownExtreme} 家`, ext: '費半、那斯達克、S&P 500、韓股至少 2 個轉弱，或護盤基金進場' };
 const BATCH_STATE = { on: ['到位', 'nonnormal-why-state--on'], near: ['接近', 'nonnormal-why-state--near'], off: ['未到', ''] };
 function renderStance(d) {
   const st = N.stance(ctx, d);
@@ -574,6 +580,9 @@ function renderTurn(d) {
   const vix = ladder(`VIX ${t.vix ? t.vix.value.toFixed(1) : '無資料'}`, N.VIX_ZONES.map((z, i) => `${z.label}・${z.action}${times(i)}`), t.vix?.zone ?? -1);
   const mTitle = m ? ['融資維持率', finite(m.listed) && `上市 ${m.listed.toFixed(1)}%`, finite(m.otc) && `上櫃 ${m.otc.toFixed(1)}%`].filter(Boolean).join(' ') : '融資維持率 無資料';
   const mg = ladder(mTitle, N.MARGIN_TIERS.map(x => x.label), m?.tier ?? -1);
+  const no = t.noObs, ldNow = N.at(ctx.s.LIMIT_DOWN, d);
+  const obs = ladder(no ? `無觀察類股 近 22 個交易日 ${no.count} 天${no.streak ? `（連續 ${no.streak} 天）` : ''}` : '無觀察類股 無資料', N.NO_OBS_TIERS.map(x => x.label), no?.tier ?? -1);
+  if (ldNow && !ldNow.stale) obs.append(node('p', `${ldNow.date} 跌停 ${ldNow.close.toLocaleString('en-US')} 家（上市＋上櫃）`, { class: 'nonnormal-turn-note' }));
   const box = node('article', null, { class: 'ui-card nonnormal-card' });
   const item = (key, text, auto) => {
     const label = node('label', null, { class: 'nonnormal-check' }), input = node('input', null, { type: 'checkbox', 'data-check': key });
@@ -584,8 +593,8 @@ function renderTurn(d) {
   box.append(node('h4', '轉機三訊號'),
     item('exhaust', '賣壓衰竭'), item('asym', `不對稱機會${t.asymmetricHint ? '（VIX ≥ 30）' : ''}`), item('policy', '政策止血'),
     node('h4', '多燈同亮'),
-    item('mispriced', '族群被錯殺'), item('buyback', '公司派低點買回'), item('margin140', '融資維持率 < 140%', t.marginBelow140), item('noLeaders', '連續多日無觀察類股'));
-  byId('turn').replaceChildren(vix, mg, box);
+    item('mispriced', '族群被錯殺'), item('buyback', '公司派低點買回'), item('margin140', '融資維持率 < 140%', t.marginBelow140), item('noLeaders', `連續多日無觀察類股${no ? `（近 22 日 ≥ ${N.NO_OBS.start} 天）` : ''}`, no ? no.count >= N.NO_OBS.start : null));
+  byId('turn').replaceChildren(vix, mg, obs, box);
 }
 
 // ── collapsed: cases + sources ──────────────────────────────────────────

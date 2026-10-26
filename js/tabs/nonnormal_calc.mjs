@@ -55,7 +55,7 @@ export const SERIES = [
   { id: 'TWII', file: 'TWII.json', label: '加權指數' },
   { id: 'TWOII', file: 'TWOII.json', label: '櫃買指數' },
 ];
-export const EXTRA_FILES = { marginMm: 'taiwan_margin_ratio_mm.json', marginDaily: 'taiwan_margin_ratio.json', tpex: 'tpex_margin.json', breadth: 'tw_breadth_ls.json' };
+export const EXTRA_FILES = { marginMm: 'taiwan_margin_ratio_mm.json', marginDaily: 'taiwan_margin_ratio.json', tpex: 'tpex_margin.json', breadth: 'tw_breadth_ls.json', daily: 'tw_daily_stats.json' };
 
 // 兩個本專案的定義選擇，預設值在看歷史案例前依原則決定；回測 CLI 會列出四種組合的敏感度。
 //   trendSlope：國際股市「轉弱」＝跌破短均線「且均線下彎」（費半趨勢：跌破均線且長期向下）。
@@ -159,6 +159,12 @@ export function buildContext(raw = {}, opts = {}) {
   const breadth = (raw.breadth || []).filter(r => finite(r?.bull) && finite(r?.bear)).sort((a, b) => (a.date < b.date ? -1 : 1));
   s.BREADTH = { dates: breadth.map(r => r.date), rows: breadth };
   s.BREADTH_PCT = buildSeries(breadth.filter(r => r.bull + r.bear > 0).map(r => ({ date: r.date, close: (r.bull / (r.bull + r.bear)) * 100 })));
+  // 台股每日統計（上市＋上櫃）：跌停家數、近 22 個交易日的無觀察類股天數
+  const daily = (raw.daily || []).filter(r => typeof r?.date === 'string' && finite(r.limit_down)).sort((a, b) => (a.date < b.date ? -1 : 1));
+  s.LIMIT_DOWN = buildSeries(daily.map(r => ({ date: r.date, close: r.limit_down })));
+  const obs = daily.filter(r => finite(r.no_obs));
+  s.NO_OBS = buildSeries(obs.map((r, i) => ({ date: r.date, close: obs.slice(Math.max(0, i - NO_OBS.window + 1), i + 1).reduce((a, x) => a + x.no_obs, 0) })));
+  s.NO_OBS.flags = obs.map(r => r.no_obs);
   const last = s.TWII.dates.at(-1) || null, lastUs = s.SPX.dates.at(-1) || null;
   return { s, opts: { ...DEFAULT_OPTS, ...opts }, lastDate: [last, lastUs].filter(Boolean).sort().at(-1) || null };
 }
@@ -191,6 +197,25 @@ export const MARGIN_TIERS = [
   { min: -Infinity, label: '< 130% 斷頭（強烈反向）' },
 ];
 export const marginTier = r => (finite(r) ? MARGIN_TIERS.findIndex(t => r >= t.min) : -1);
+
+// 無觀察類股：近 22 個交易日（約一個月）裡，沒有任何「帶量創短期新高」族群的天數（定義見 scripts/fetch_tw_daily_stats.py）。
+export const NO_OBS = Object.freeze({ window: 22, start: 3, limitDownExtreme: 300 });
+export const NO_OBS_TIERS = [
+  { min: 0, label: '0 天 正常' },
+  { min: 1, label: '1 天 提高注意' },
+  { min: 2, label: '2 天 檢視 ETF 的走勢與位階' },
+  { min: 3, label: '3–4 天 可以開始分批' },
+  { min: 5, label: '≥ 5 天（約四分之一的交易日）極度恐慌' },
+];
+export const noObsTier = n => (finite(n) ? NO_OBS_TIERS.findLastIndex(t => n >= t.min) : -1);
+/** 近 22 個交易日無觀察類股天數、目前連續天數與資料日。null＝沒有資料或過期。 */
+export function noObsNow(ctx, d) {
+  const s = ctx.s.NO_OBS, f = at(s, d);
+  if (!usable(f)) return null;
+  let streak = 0;
+  for (let j = f.i; j >= 0 && s.flags[j] === 1; j--) streak++;
+  return { count: f.close, streak, date: f.date, tier: noObsTier(f.close) };
+}
 
 // ── signals ───────────────────────────────────────────────────────────────
 const pct = (x, d = 1) => (finite(x) ? `${x >= 0 ? '+' : ''}${(x * 100).toFixed(d)}%` : '—');
@@ -496,6 +521,7 @@ export function turnaround(ctx, d) {
     margin: m ? { value: m.value, market: m.market, listed: m.listed?.close ?? null, otc: m.otc?.close ?? null, tier: marginTier(m.value), asOf: m.asOf } : null,
     asymmetricHint: usable(v) ? v.close >= P.vix[2] : null,     // VIX 30–40 以上是不對稱機會的工具之一
     marginBelow140: m ? m.value < P.margin[2] : null,           // 多燈同亮條件之一（上市、上櫃取低者）
+    noObs: noObsNow(ctx, d),                                    // 無觀察類股（近 22 個交易日天數）
   };
 }
 
@@ -609,11 +635,14 @@ export function stance(ctx, d) {
   const intl = ['sox', 'ndx', 'spx', 'kospi'].map(id => SIGNALS.find(x => x.id === id).eval(ctx, d)).filter(r => r.state === 'on').length;
   const y5 = tw?.long[1], y2 = tw?.long[0], y10 = tw?.long[2];
   const v = th => (vix ? vix.value >= th : null), mg = th => (margin ? margin.value < th : null);
+  const no = noObsNow(ctx, d), ld = recentExtreme(ctx.s.LIMIT_DOWN, d, (a, b) => a > b);
+  const moodLit = [v(30), no ? no.count >= NO_OBS.start : null, ld ? ld.value >= NO_OBS.limitDownExtreme : null];
   const boxes = [
     { key: 'pos', label: '定位', what: '水溫', lit: tw ? tw.zone === 4 : null, text: tw ? ZONES[tw.zone].label : '無資料' },
     { key: 'depth', label: '位置', what: '跌多深', lit: y5?.touch ?? null, text: y5 && finite(y5.gap) ? `距 5 年線 ${pct(y5.gap, 0)}` : '無資料' },
     { key: 'press', label: '壓力', what: '融資', lit: mg(P.margin[1]), text: margin ? `近 30 日最低 ${margin.value.toFixed(1)}%（${margin.market}）` : '無資料' },
-    { key: 'mood', label: '情緒', what: 'VIX', lit: v(30), text: vix ? `近 30 日盤中最高 ${vix.value.toFixed(1)}` : '無資料' },
+    { key: 'mood', label: '情緒', what: 'VIX・觀察類股・跌停', lit: moodLit.every(x => x === null) ? null : moodLit.some(Boolean),
+      text: [vix && `VIX 盤中最高 ${vix.value.toFixed(1)}`, ld && `跌停最多 ${ld.value} 家`, no && `無觀察類股 ${no.count} 天（近 22 日）`].filter(Boolean).join('・') || '無資料' },
     { key: 'ext', label: '外部', what: '國際與護盤', lit: intl >= 2 || !!fund, text: `4 個國際股市有 ${intl} 個轉弱${fund ? `；護盤基金 ${fund} 進場` : ''}` },
   ];
   const lit = boxes.filter(b => b.lit).length;
@@ -621,10 +650,10 @@ export function stance(ctx, d) {
   const dd = th => (tw ? tw.dd1y <= -th : null);
   const batches = [
     [c('VIX 盤中破 40', v(40)), c('距一年高點跌 30%', dd(0.30)), c('跌破 2 年線', y2 && finite(y2.gap) ? y2.gap < 0 : null), c('五格亮 1 格以上', lit >= 1)],
-    [c('VIX 盤中破 45', v(45)), c('融資維持率 < 140%', mg(P.margin[2])), c('距一年高點跌 40%', dd(0.40)), c('到 5 年線（±3%）', y5?.touch ?? null), c('連續多日無觀察類股（尚無資料）', null)],
+    [c('VIX 盤中破 45', v(45)), c('融資維持率 < 140%', mg(P.margin[2])), c('距一年高點跌 40%', dd(0.40)), c('到 5 年線（±3%）', y5?.touch ?? null), c(`近 22 個交易日無觀察類股 ≥ ${NO_OBS.start} 天`, no ? no.count >= NO_OBS.start : null)],
     [c('VIX 盤中 ≥ 50', v(50)), c('融資維持率 < 135%', mg(135)), c('護盤基金進場', !!fund), c('到 10 年線（±3%）', y10?.touch ?? null), c('五格亮 4 格以上', lit >= 4)],
   ].map((conds, k) => ({ ...BATCHES[k], ...batchState(conds) }));
-  return { date: d, temps, boxes, lit, verdict: BOX_VERDICT(lit), batches, vix, margin, fund, intl };
+  return { date: d, temps, boxes, lit, verdict: BOX_VERDICT(lit), batches, vix, margin, fund, intl, noObs: no, limitDown: ld };
 }
 
 // ── backtest helpers ─────────────────────────────────────────────────────
