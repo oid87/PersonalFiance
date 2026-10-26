@@ -390,3 +390,17 @@ test('temperatureHistory: one row per week, last row matches temperature() and z
   const k = h2.dates.findIndex(d => d >= '2016-02-08' && d <= '2016-02-12'), tw2 = h2.markets.find(m => m.id === 'TWII').rows;
   assert.ok(k > 0 && tw2[k].carried && tw2[k].date === tw2[k - 1].date, 'TW holiday week carries the previous week');
 });
+
+test('sellExhaustion: limit-down spike then ≤ 1/10 within 10 trading days; turnaround VIX carries intraday high and 30-day peak', () => {
+  const mk = lds => N.buildContext(rawWith({ daily: DATES.slice(-lds.length).map((date, i) => ({ date, limit_down: lds[i], no_obs: 0 })) }));
+  const last = DATES.at(-1);
+  const hit = N.sellExhaustion(mk([...Array(30).fill(5), 800, 400, 60, ...Array(5).fill(20)]), last);
+  assert.equal(hit.ok, true);
+  assert.equal(hit.peak, 800);
+  assert.equal(hit.value, 60);
+  assert.equal(N.sellExhaustion(mk([...Array(30).fill(5), 250, 10, 5, 5]), last).ok, false, 'peak below 300');
+  assert.equal(N.sellExhaustion(mk([...Array(5).fill(5), 800, ...Array(35).fill(5)]), last).ok, false, 'older than keep window');
+  assert.equal(N.sellExhaustion(N.buildContext(rawWith()), last), null);
+  const t = N.turnaround(N.buildContext(rawWith()), last);
+  if (t.vix) { assert.ok('high' in t.vix); assert.ok(!t.vix.peak || t.vix.peak.value >= t.vix.value); }
+});

@@ -516,15 +516,36 @@ export function quote(s, d, { span = 183, mas = [50, 100] } = {}) {
 }
 
 // ── turnaround panel ──────────────────────────────────────────
+// 只放資料能自動判斷的項目；要看新聞、財報或公告才知道的（不對稱機會、政策止血、族群被錯殺、公司派低點買回）不列。
 export function turnaround(ctx, d) {
-  const v = at(ctx.s.VIX, d), m = marginNow(ctx, d);
+  const v = at(ctx.s.VIX, d), m = marginNow(ctx, d), ok = usable(v);
+  const hi = ok ? ctx.s.VIX.high[indexLE(ctx.s.VIX, d)] : null, peak = ok ? recentExtreme(ctx.s.VIX, d, (a, b) => a > b, 'high') : null;
   return {
-    vix: usable(v) ? { value: v.close, zone: vixZone(v.close), asOf: v.date } : null,
+    // 區間看收盤；盤中高點與近 30 日盤中最高另外標（極端情境的 VIX 條件看盤中最高）
+    vix: ok ? { value: v.close, zone: vixZone(v.close), asOf: v.date, high: finite(hi) ? hi : null, peak: peak && { ...peak, zone: vixZone(peak.value) } } : null,
     margin: m ? { value: m.value, market: m.market, listed: m.listed?.close ?? null, otc: m.otc?.close ?? null, tier: marginTier(m.value), asOf: m.asOf } : null,
-    asymmetricHint: usable(v) ? v.close >= P.vix[2] : null,     // VIX 30–40 以上是不對稱機會的工具之一
+    exhaustion: sellExhaustion(ctx, d),                         // 賣壓衰竭（跌停家數）
     marginBelow140: m ? m.value < P.margin[2] : null,           // 多燈同亮條件之一（上市、上櫃取低者）
     noObs: noObsNow(ctx, d),                                    // 無觀察類股（近 22 個交易日天數）
   };
+}
+
+/** 賣壓衰竭（本專案定義）：某天跌停 ≥ peak 家後，within 個交易日內跌停家數降到該峰值的 ratio 以下；成立後保留 keep 個交易日。
+ *  2015 起成立日：2015-08-25、2018-10-12、2020-01-31、2020-03-20、2024-08-06、2025-04-10、2025-04-22（多在波段低點隔天）。 */
+export const EXHAUST = Object.freeze({ peak: NO_OBS.limitDownExtreme, within: 10, ratio: 0.1, keep: 20 });
+export function sellExhaustion(ctx, d) {
+  const s = ctx.s.LIMIT_DOWN, end = s ? indexLE(s, d) : -1;
+  if (end < 0 || days(s.dates[end], d) > P.staleDays) return null;
+  for (let j = end; j >= Math.max(1, end - EXHAUST.keep + 1); j--) {
+    let k = j - 1;
+    for (let i = k - 1; i >= Math.max(0, j - EXHAUST.within); i--) if (s.close[i] > s.close[k]) k = i;
+    if (s.close[k] >= EXHAUST.peak && s.close[j] <= s.close[k] * EXHAUST.ratio) {
+      let f = k + 1;   // 顯示該峰值之後第一次降到門檻以下的那天
+      while (s.close[f] > s.close[k] * EXHAUST.ratio) f++;
+      return { ok: true, date: s.dates[f], value: s.close[f], peakDate: s.dates[k], peak: s.close[k] };
+    }
+  }
+  return { ok: false };
 }
 
 // ── 位階與極端情境（大跌時「跌多深、到第幾個極端情境」；描述性，不計入上方訊號數與等級）────────────

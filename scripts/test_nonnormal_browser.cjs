@@ -96,11 +96,9 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
     const sources = await text('sources');
     check('thresholds listed without source labels', sources.includes('20 個交易日') && !sources.includes('本專案'));
     // interactions
-    const box = page.locator('#nonnormal-turn input[data-check="policy"]');
-    await box.check();
-    check('manual checklist persists in localStorage', JSON.parse(await page.evaluate(() => localStorage.getItem('nonnormal-checklist-v1'))).policy === true);
-    await box.uncheck();
-    check('auto checklist item is read-only', await page.locator('#nonnormal-turn input[data-check="margin140"]').isDisabled());
+    const turn = await text('turn');
+    check('turnaround lists only automatic items (no checkboxes, no manual items)', (await page.locator('#nonnormal-turn input').count()) === 0 && /賣壓衰竭/.test(turn) && !/政策止血：|族群被錯殺（|^.*公司派低點買回$/m.test(turn.replace(/不對稱機會、政策止血、族群被錯殺、公司派低點買回/, '')));
+    check('VIX card shows intraday high and the 30-day intraday peak', /盤中高 \d+\.\d/.test(turn) && /近 30 日盤中最高 \d+\.\d（\d{4}-\d{2}-\d{2}）/.test(turn));
     await page.locator('#tab-nonnormal .info-pop-btn').first().click();
     check('info popover opens', await page.locator('#info-popover').isVisible());
     await page.keyboard.press('Escape');

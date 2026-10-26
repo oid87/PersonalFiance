@@ -1226,9 +1226,7 @@
 #tab-nonnormal .nonnormal-tag--project { color:#58a6ff; border-color:#58a6ff; }
 #tab-nonnormal .nonnormal-ladder { margin:4px 0; padding-left:20px; line-height:1.7; font-size:calc(var(--text-sm,13px) + 1px); }
 #tab-nonnormal .nonnormal-ladder li.nonnormal-current { font-weight:700; color:var(--text); background:rgba(227,179,65,0.18); border-radius:4px; }
-#tab-nonnormal .nonnormal-check { display:flex; gap:8px; align-items:center; min-height:36px; line-height:1.4; font-size:calc(var(--text-sm,13px) + 1px); }
-#tab-nonnormal .nonnormal-check input { width:18px; height:18px; flex:0 0 auto; margin:0; }
-#tab-nonnormal .nonnormal-check + h4 { margin-top:10px; }
+#tab-nonnormal .nonnormal-ladder li.nonnormal-peak { color:var(--text); outline:1px dashed rgba(227,179,65,0.7); outline-offset:-1px; border-radius:4px; }
 #tab-nonnormal .nonnormal-dots { display:inline-flex; flex-wrap:wrap; gap:2px; max-width:320px; }
 #tab-nonnormal .nonnormal-dot { width:9px; height:14px; border-radius:2px; display:inline-block; }
 #tab-nonnormal .nonnormal-dot--after { opacity:0.35; }
@@ -1258,7 +1256,6 @@
   :is(#tab-nonnormal, #tab-nonnormalhist) .nonnormal-chart { height:560px; }
   #tab-nonnormal .info-pop-btn { min-width:44px; min-height:44px; }
   #tab-nonnormal .chip { min-height:44px; display:inline-flex; align-items:center; }
-  #tab-nonnormal .nonnormal-check { min-height:44px; }
   #tab-nonnormal .nonnormal-cash-chart { height:260px; }
   #tab-nonnormal .nonnormal-rank-row { grid-template-columns:8em minmax(0,1fr) 4em; font-size:13px; }
   #tab-nonnormal .nonnormal-dialog { padding:10px; max-height:calc(100dvh - 24px); overflow:auto; }

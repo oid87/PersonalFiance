@@ -17,7 +17,6 @@ import { LEVEL_COLORS, ARROW, pctTxt, tempNowNodes } from './nonnormal_history.j
 const byId = id => document.getElementById('nonnormal-' + id);
 const finite = v => typeof v === 'number' && Number.isFinite(v);
 const REQUIRED = ['TWII', 'SPX', 'VIX'];
-const CHECK_KEY = 'nonnormal-checklist-v1';
 const SVG = 'http://www.w3.org/2000/svg';
 const MAS = [50, 100];
 const DOUBLE_TAP_MS = 500;
@@ -483,35 +482,35 @@ function renderStance(d) {
 }
 
 // ── turnaround ──────────────────────────────────────────────────────────
-function readChecks() { try { return JSON.parse(localStorage.getItem(CHECK_KEY) || '{}') || {}; } catch { return {}; } }
-function writeChecks(v) { try { localStorage.setItem(CHECK_KEY, JSON.stringify(v)); } catch { /* private mode: keep in memory only */ } }
-function ladder(title, items, current) {
+function ladder(title, items, current, peak = -1) {
   const el = node('article', null, { class: 'ui-card nonnormal-card' });
   const ol = node('ol', null, { class: 'nonnormal-ladder' });
-  items.forEach((t, i) => ol.append(node('li', t, { class: i === current ? 'nonnormal-current' : '' })));
+  items.forEach((t, i) => ol.append(node('li', t, { class: [i === current && 'nonnormal-current', i === peak && i !== current && 'nonnormal-peak'].filter(Boolean).join(' ') })));
   el.append(node('h4', title), ol);
   return el;
 }
 function renderTurn(d) {
-  const t = N.turnaround(ctx, d), checks = readChecks(), m = t.margin;
+  const t = N.turnaround(ctx, d), m = t.margin, v = t.vix;
   const times = i => (i > 0 && N.VIX_ZONES[i - 1].max >= 40 ? `（2000 起盤中 ${N.vixEpisodes(ctx, N.VIX_ZONES[i - 1].max)} 次）` : '');
-  const vix = ladder(`VIX ${t.vix ? t.vix.value.toFixed(1) : '無資料'}`, N.VIX_ZONES.map((z, i) => `${z.label}・${z.action}${times(i)}`), t.vix?.zone ?? -1);
+  const peakZone = v?.peak && v.peak.zone > v.zone ? v.peak.zone : -1;
+  const vix = ladder(v ? `VIX ${v.value.toFixed(1)}（${md(v.asOf)} 收盤${finite(v.high) ? `，盤中高 ${v.high.toFixed(1)}` : ''}）` : 'VIX 無資料',
+    N.VIX_ZONES.map((z, i) => `${z.label}・${z.action}${times(i)}${i === peakZone ? '　← 近 30 日盤中最高' : ''}`), v?.zone ?? -1, peakZone);
+  if (v?.peak) vix.append(node('p', `近 30 日盤中最高 ${v.peak.value.toFixed(1)}（${v.peak.date}）。區間以收盤標示；極端情境的 VIX 條件看盤中最高。資料到前一個美股收盤，盤中即時高點看不到。`, { class: 'nonnormal-turn-note' }));
   const mTitle = m ? ['融資維持率', finite(m.listed) && `上市 ${m.listed.toFixed(1)}%`, finite(m.otc) && `上櫃 ${m.otc.toFixed(1)}%`].filter(Boolean).join(' ') : '融資維持率 無資料';
   const mg = ladder(mTitle, N.MARGIN_TIERS.map(x => x.label), m?.tier ?? -1);
   const no = t.noObs, ldNow = N.at(ctx.s.LIMIT_DOWN, d);
   const obs = ladder(no ? `無觀察類股 近 22 個交易日 ${no.count} 天${no.streak ? `（連續 ${no.streak} 天）` : ''}` : '無觀察類股 無資料', N.NO_OBS_TIERS.map(x => x.label), no?.tier ?? -1);
   if (ldNow && !ldNow.stale) obs.append(node('p', `${ldNow.date} 跌停 ${ldNow.close.toLocaleString('en-US')} 家（上市＋上櫃）`, { class: 'nonnormal-turn-note' }));
   const box = node('article', null, { class: 'ui-card nonnormal-card' });
-  const item = (key, text, auto) => {
-    const label = node('label', null, { class: 'nonnormal-check' }), input = node('input', null, { type: 'checkbox', 'data-check': key });
-    if (auto != null) { input.checked = !!auto; input.disabled = true; } else input.checked = !!checks[key];
-    label.append(input, ' ' + text + (auto != null ? '（自動）' : ''));
-    return label;
-  };
-  box.append(node('h4', '轉機三訊號'),
-    item('exhaust', '賣壓衰竭'), item('asym', `不對稱機會${t.asymmetricHint ? '（VIX ≥ 30）' : ''}`), item('policy', '政策止血'),
-    node('h4', '多燈同亮'),
-    item('mispriced', '族群被錯殺'), item('buyback', '公司派低點買回'), item('margin140', '融資維持率 < 140%', t.marginBelow140), item('noLeaders', `連續多日無觀察類股${no ? `（近 22 日 ≥ ${N.NO_OBS.start} 天）` : ''}`, no ? no.count >= N.NO_OBS.start : null));
+  const ul = node('ul', null, { class: 'nonnormal-batch-list' });
+  const item = (ok, text, tail = '') => ul.append(node('li', `${ok == null ? '－' : ok ? '✓' : '✗'} ${text}${tail}`, { class: ok ? 'nonnormal-ok' : ok == null ? 'nonnormal-na' : '' }));
+  const ex = t.exhaustion, X = N.EXHAUST;
+  item(ex?.ok ?? null, `賣壓衰竭：跌停 ≥ ${X.peak} 家後 ${X.within} 個交易日內降到 1/${Math.round(1 / X.ratio)} 以下`,
+    ex?.ok ? `（${md(ex.peakDate)} ${ex.peak.toLocaleString('en-US')} 家 → ${md(ex.date)} ${ex.value} 家）` : `（近 ${X.keep} 個交易日）`);
+  item(t.marginBelow140, '融資維持率 < 140%（上市、上櫃取低者）');
+  item(no ? no.count >= N.NO_OBS.start : null, `連續多日無觀察類股（近 22 日 ≥ ${N.NO_OBS.start} 天）`);
+  box.append(node('h4', '轉機訊號（自動判斷）'), ul,
+    node('p', '只列資料能自動判斷的項目。不對稱機會、政策止血、族群被錯殺、公司派低點買回要看新聞、財報或公告，不列入。', { class: 'nonnormal-turn-note' }));
   byId('turn').replaceChildren(vix, mg, obs, box);
 }
 
@@ -589,11 +588,6 @@ function wire() {
   dlg.querySelector('.nonnormal-dialog-close').addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });   // 點背景關閉
   dlg.addEventListener('close', () => { detail = null; });
-  byId('turn').addEventListener('change', e => {
-    const key = e.target?.dataset?.check;
-    if (!key || e.target.disabled) return;
-    const v = readChecks(); v[key] = e.target.checked; writeChecks(v);
-  });
   const lazy = (id, fn) => byId(id).addEventListener('toggle', e => { if (e.target.open && ctx) { try { fn(); } catch (err) { byId('status').textContent = '計算失敗：' + err.message; } } });
   lazy('cases-details', renderCases);
   lazy('sources-details', renderSources);
