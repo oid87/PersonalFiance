@@ -577,24 +577,54 @@ function periodMa(s, kind, i, n) {
   return { now, prev: (sum + close[p - n]) / n };
 }
 const sign = x => (x > 0 ? 1 : x < 0 ? -1 : 0);
-/** 單一市場的水溫與長期均線位階。null＝資料不足（10 月線需要 11 個月）。 */
-export function temperature(s, d) {
-  const i = s ? indexLE(s, d) : -1;
-  if (i < 1) return null;
-  if (days(s.dates[i], d) > P.staleDays) return { stale: true, date: s.dates[i] };
+/** 第 i 天的水溫核心：三條 10 期均線的方向、離 10 月線多遠、落在哪一區。null＝資料不足。 */
+function tempCore(s, i) {
   const n = STANCE.len, ma = (s.ma[n] ??= rollingMean(s.close, n));
   const w = periodMa(s, 'w', i, n), m = periodMa(s, 'm', i, n);
   if (!finite(ma[i]) || !finite(ma[i - 1]) || !w || !m) return null;
   const c = s.close[i], dir = { d: sign(ma[i] - ma[i - 1]), w: sign(w.now - w.prev), m: sign(m.now - m.prev) };
   const gap = c / m.now - 1, up = dir.d > 0 && dir.w > 0 && dir.m > 0, down = dir.d < 0 && dir.w < 0 && dir.m < 0;
   const zone = up && gap > STANCE.boilGap ? 0 : down && gap < -STANCE.iceGap ? 4 : gap > STANCE.nearGap ? 1 : gap >= -STANCE.nearGap ? 2 : 3;
+  return { close: c, dir, ma10m: m.now, gap, zone };
+}
+/** 單一市場的水溫與長期均線位階。null＝資料不足（10 月線需要 11 個月）。 */
+export function temperature(s, d) {
+  const i = s ? indexLE(s, d) : -1;
+  if (i < 1) return null;
+  if (days(s.dates[i], d) > P.staleDays) return { stale: true, date: s.dates[i] };
+  const t = tempCore(s, i);
+  if (!t) return null;
+  const { close: c, dir, ma10m, gap, zone } = t;
   const long = STANCE.longMas.map(([k, label]) => {
     const v = periodMa(s, 'm', i, k)?.now ?? null;
     return { months: k, label, ma: v, gap: finite(v) ? c / v - 1 : null, touch: finite(v) ? c <= v * (1 + STANCE.touch) : null };
   });
   let hi = c;
   for (let j = Math.max(0, i - STANCE.ddLookback + 1); j < i; j++) hi = Math.max(hi, s.close[j]);
-  return { date: s.dates[i], close: c, dir, ma10m: m.now, gap, zone, long, dd1y: c / hi - 1 };
+  return { date: s.dates[i], close: c, dir, ma10m, gap, zone, long, dd1y: c / hi - 1 };
+}
+/** 水溫走勢：每週一筆（各市場該週最後一個交易日的水溫），給走勢圖與五市場熱度條。
+ *  dates＝每週各市場最後交易日中最晚的一天；rows[k]＝該市場第 k 週的 {date, close, ma10m, gap, zone, dir}。
+ *  整週休市（例如台股農曆年）沿用上一週並標 carried: true；開始有資料之前＝null。 */
+export function temperatureHistory(ctx) {
+  const byWeek = new Map();
+  for (const [id] of STANCE.markets) {
+    const s = ctx.s[id];
+    if (!s) continue;
+    for (let i = 1; i < s.dates.length; i++) {
+      const d = s.dates[i], k = weekKey(d);
+      if (i + 1 < s.dates.length && weekKey(s.dates[i + 1]) === k) continue;
+      const t = tempCore(s, i);
+      if (!t) continue;
+      let w = byWeek.get(k);
+      if (!w) byWeek.set(k, (w = { date: d, by: {} }));
+      if (d > w.date) w.date = d;
+      w.by[id] = { date: d, ...t };
+    }
+  }
+  const keys = [...byWeek.keys()].sort();
+  const fill = id => { let last = null; return keys.map(k => { const r = byWeek.get(k).by[id]; if (r) return (last = r); return last && { ...last, carried: true }; }); };
+  return { dates: keys.map(k => byWeek.get(k).date), markets: STANCE.markets.map(([id, label]) => ({ id, label, rows: fill(id) })) };
 }
 /** 近 recentDays 個日曆日內的極值：VIX 用盤中最高（缺就用收盤），融資維持率取上市／上櫃中較低的最低值。 */
 function recentExtreme(s, d, pick, field = 'close') {

@@ -355,3 +355,26 @@ test('noObsNow: no daily stats → null and the batch condition stays unavailabl
   assert.equal(N.noObsNow(ctx, last), null);
   assert.equal(N.stance(ctx, last).batches[1].conds.find(c => /無觀察類股/.test(c.text)).ok, null);
 });
+
+test('temperatureHistory: one row per week, last row matches temperature() and zones follow the rules', () => {
+  const n = DATES.length, up = Array.from({ length: n }, (_, i) => 100 * 1.004 ** i);
+  const crash = up.map((v, i) => (i < n - 120 ? v : up[n - 121] * 0.99 ** (i - (n - 121))));
+  const ctx = N.buildContext(rawWith({ TWII: rows(DATES, crash), SPX: rows(DATES, up) }));
+  const h = N.temperatureHistory(ctx);
+  assert.equal(new Set(h.dates).size, h.dates.length, 'unique dates');
+  assert.deepEqual([...h.dates].sort(), h.dates, 'ascending');
+  assert.ok(h.dates.length > 10 && h.dates.length <= Math.ceil(n / 5) + 1);
+  const tw = h.markets.find(m => m.id === 'TWII'), spx = h.markets.find(m => m.id === 'SPX');
+  const now = N.temperature(ctx.s.TWII, last);
+  assert.equal(tw.rows.at(-1).zone, now.zone);
+  assert.ok(Math.abs(tw.rows.at(-1).gap - now.gap) < 1e-12);
+  assert.equal(now.zone, 4, 'steady fall → 極冷');
+  assert.equal(spx.rows.at(-1).zone, 0, 'steady rise → 過熱');
+  assert.ok(tw.rows.every(r => r === null || (r.zone >= 0 && r.zone <= 4)));
+  assert.ok(h.dates[0] >= '2023-10-01', `10 月線要先有 10 個月的資料：${h.dates[0]}`);
+  // 一整週休市：沿用上一週
+  const holiday = DATES.filter(d => !(d >= '2024-02-05' && d <= '2024-02-09'));
+  const h2 = N.temperatureHistory(N.buildContext(rawWith({ TWII: rows(holiday, holiday.map((_, i) => 100 + i)), SPX: rows(DATES, up) })));
+  const k = h2.dates.findIndex(d => d >= '2024-02-05' && d <= '2024-02-09'), tw2 = h2.markets.find(m => m.id === 'TWII').rows;
+  assert.ok(k > 0 && tw2[k].carried && tw2[k].date === tw2[k - 1].date, 'TW holiday week carries the previous week');
+});

@@ -53,6 +53,21 @@ const check = (name, ok, detail = null) => { cases.push({ name, ok: !!ok, detail
       const rows = [...document.querySelectorAll('#nonnormal-temp tbody tr')];
       return rows.length === 5 && rows.every(r => /過熱|偏熱|盤整|偏冷|極冷/.test(r.cells[1].textContent) && /日.週.月./.test(r.cells[2].textContent.replace(/\s/g, '')) && /[+-]\d+%/.test(r.cells[5].textContent));
     }));
+    check('temperature history: price + 10-month line + zone background, gap pane, five-market heat strip; last week matches the table', await page.evaluate(() => {
+      const c = echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')), o = c?.getOption();
+      if (!o) return false;
+      const xs = o.xAxis[0].data, heat = o.series.find(s => s.type === 'heatmap'), bg = o.series.find(s => s.type === 'bar');
+      const zones = ['過熱', '偏熱', '盤整', '偏冷', '極冷'], tw = [...document.querySelectorAll('#nonnormal-temp tbody tr')][0].cells[1].textContent.trim();
+      const lastTw = heat.data.find(([x, y]) => x === xs.length - 1 && y === 0)?.[2];
+      return o.yAxis[3].data.length === 5 && bg.data.filter(Boolean).length > 500 && o.series.some(s => s.markArea?.data?.length === 5) && zones[lastTw] === tw
+        && document.querySelectorAll('#nonnormal-temp-legend .nonnormal-zone').length === 5;
+    }));
+    await page.click('[data-nonnormal-temp-market="SOX"]');
+    await page.click('[data-nonnormal-temp-range="all"]');
+    check('temperature history: market chip switches the top panes, 全部 starts at that market\'s first week', await page.evaluate(() => {
+      const c = echarts.getInstanceByDom(document.getElementById('nonnormal-temp-chart')), o = c.getOption(), z = o.dataZoom[0];
+      return o.yAxis[0].name === '費半' && o.xAxis[0].data[z.startValue] >= '2002-01-01' && z.endValue === o.xAxis[0].data.length - 1;
+    }));
     check('stance: three batch cards 20/30/50 with per-condition marks', await page.evaluate(() => {
       const c = [...document.querySelectorAll('#nonnormal-batches .nonnormal-batch')];
       return c.length === 3 && ['20%', '30%', '50%'].every((w, i) => c[i].querySelector('h4').textContent.includes(w)) && c.every(x => /未到|接近|到位/.test(x.textContent) && x.querySelectorAll('li').length >= 4);

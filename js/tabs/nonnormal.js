@@ -26,6 +26,7 @@ const HELP = {
   downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
   stance: '大跌時用來判斷「跌多深、到第幾批」，平常大多是空的。五格：定位＝加權水溫是不是極冷；位置＝加權離 5 年線 3% 以內或跌破；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30、近 22 個交易日無觀察類股 ≥ 3 天、或近 30 日有一天跌停 ≥ 300 家（任一）；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫：10 日、10 週、10 月三條均線的方向＋價格離 10 月線多遠（過熱＞+10% 且三線上揚；極冷＜−5% 且三線下彎；±3% 內＝盤整）。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。三批是給指數的分批節奏（20／30／50，越跌越買、最後一批最大）：每批的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
+  tempchart: '每週一筆（各市場該週最後一個交易日）。上：價格與 10 月線，底色＝當週水溫。中：價格離 10 月線多少 %，色帶＝各區門檻；+10% 以上要三條均線都上揚才算過熱、−5% 以下要三條都下彎才算極冷，所以色帶和底色偶爾不一致。下：五個市場的水溫，看是不是一起變冷。上方按鈕切換市場與期間，也可以拖拉下方滑桿。',
   cash: '現金為王（izaax，同「現金為王」頁）：4 或 8 週內黃金、比特幣、美債 TLT、QQQ 全部下跌，且恐懼貪婪低點 < 25。逃往黃金：其他都跌、只有黃金漲，且恐懼貪婪 < 25。同一期間誰漲最多＝資金往哪裡去。',
 };
 
@@ -77,7 +78,7 @@ const CASH_LABELS = { GLD: '黃金（GLD）', BTC: '比特幣', TLT: '美債（T
 const CASH_ASSETS = [...CK_ASSETS, { key: 'SPY', color: '#a371f7', file: 'data/SPY.json', displayOnly: true }];
 
 let ctx = null, loadedAt = 0, missing = [], weeks = [], charts = [], rangeKey = '3y', generation = 0;
-let ck = null, cashWin = 4, detail = null;   // ck = { raw, rows }；charts[0] 共振史、[1] 大圖、[2] 資金流向
+let ck = null, cashWin = 4, detail = null;   // ck = { raw, rows }；charts[0] 共振史、[1] 大圖、[2] 資金流向、[3] 水溫走勢
 
 function node(tag, text, attrs = {}) {
   const el = document.createElement(tag);
@@ -564,6 +565,80 @@ function renderStance(d) {
   byId('batch-note').textContent = `指數的分批節奏：越跌越買、最後一批最大，每批都要比上一批更極端才放。${parts.filter(Boolean).join('；')}。`;
 }
 
+// ── water-temperature history ───────────────────────────────────────────
+const ZONE_COLORS = ['#ef4444', '#f0883e', '#8b949e', '#58a6ff', '#1f6feb'];   // 與 .nonnormal-zone--* 同色
+const TEMP_RANGES = { '3y': 156, '5y': 260, '10y': 520, all: null };
+// 離 10 月線的門檻（%）：由上而下過熱／偏熱／盤整／偏冷／極冷
+const GAP_BANDS = [[N.STANCE.boilGap * 100, 1e4], [N.STANCE.nearGap * 100, N.STANCE.boilGap * 100], [-N.STANCE.nearGap * 100, N.STANCE.nearGap * 100], [-N.STANCE.iceGap * 100, -N.STANCE.nearGap * 100], [-1e4, -N.STANCE.iceGap * 100]];
+let tempHist = null, tempMarket = 'TWII', tempRange = '5y';
+const tempHistory = () => (tempHist?.ctx === ctx ? tempHist : (tempHist = { ctx, ...N.temperatureHistory(ctx) }));
+const tempMarketOf = h => h.markets.find(x => x.id === tempMarket) || h.markets[0];
+function drawTemp(keepWindow = false) {
+  const h = tempHistory();
+  if (!h.dates.length) return;
+  const prev = keepWindow && charts[3] ? charts[3].getOption()?.dataZoom?.[0] : null;   // 切換市場時保留目前看的期間
+  if (!charts[3]) charts[3] = echarts.init(byId('temp-chart'), isLight() ? null : 'dark');
+  const m = tempMarketOf(h), rows = m.rows, num = (r, k, f = 1) => (r && finite(r[k]) ? +(r[k] * f).toFixed(2) : null);
+  const L = mob() ? 52 : 64, R = mob() ? 10 : 24;
+  const axis = (gridIndex, show) => ({ type: 'category', gridIndex, data: h.dates, boundaryGap: true, axisTick: { show: false },
+    axisLine: { lineStyle: { color: PALETTE.muted } }, axisLabel: { show, color: PALETTE.muted, fontSize: 12, formatter: d => d.slice(0, 7) }, splitLine: { show: false } });
+  const yAxis = (gridIndex, extra = {}) => ({ type: 'value', gridIndex, scale: true, axisLabel: { color: PALETTE.muted, fontSize: 12 }, splitLine: { lineStyle: { color: PALETTE.grid } }, ...extra });
+  const zoneOf = r => (r ? N.ZONES[r.zone] : null);
+  const heat = [];
+  h.markets.forEach((mk, y) => mk.rows.forEach((r, x) => heat.push([x, y, r ? r.zone : -1])));
+  const lineLabel = (v, text, position) => ({ yAxis: v, label: { show: !!text, formatter: text, position, color: PALETTE.muted, fontSize: 11 } });
+  chartOption(3, {
+    animation: false,
+    legend: { show: false },
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'line' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 13 },
+      formatter(params) {
+        const i = params?.[0]?.dataIndex, r = rows[i];
+        if (i == null) return '';
+        const head = r ? `<b>${h.dates[i]}</b>｜${m.label}${r.carried ? `（休市，沿用 ${r.date}）` : ''} ${r.close.toLocaleString('en-US', { maximumFractionDigits: 2 })}・10 月線 ${r.ma10m.toLocaleString('en-US', { maximumFractionDigits: 0 })}・離 ${pctTxt(r.gap, 1)}`
+          : `<b>${h.dates[i]}</b>｜${m.label} 無資料`;
+        const all = h.markets.map(mk => { const z = zoneOf(mk.rows[i]); return `${mk.label} <b style="color:${z ? ZONE_COLORS[mk.rows[i].zone] : PALETTE.muted}">${z ? z.label : '—'}</b>`; });
+        return [head, all.join('　')].join('<br>');
+      },
+    },
+    axisPointer: { link: [{ xAxisIndex: 'all' }] },
+    grid: [{ left: L, right: R, top: 14, height: '40%' }, { left: L, right: R, top: '50%', height: '22%' }, { left: L, right: R, top: '77%', height: '12%' }],
+    xAxis: [axis(0, false), axis(1, false), axis(2, true)],
+    yAxis: [yAxis(0, { name: m.label, nameTextStyle: { color: PALETTE.muted, fontSize: 11 } }),
+      { type: 'value', gridIndex: 0, min: 0, max: 1, show: false },
+      yAxis(1, { scale: false, name: '離 10 月線', nameTextStyle: { color: PALETTE.muted, fontSize: 11 }, axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: v => `${v}%` },
+        min: v => Math.floor(Math.min(v.min, -N.STANCE.iceGap * 100 - 3)), max: v => Math.ceil(Math.max(v.max, N.STANCE.boilGap * 100 + 3)) }),
+      { type: 'category', gridIndex: 2, data: h.markets.map(mk => mk.label), inverse: true, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false },
+        axisLabel: { interval: 0, color: PALETTE.muted, fontSize: mob() ? 11 : 12, formatter: v => (v === m.label ? `▶ ${v}` : v) } }],
+    visualMap: { show: false, type: 'piecewise', seriesIndex: 4, dimension: 2, pieces: [...ZONE_COLORS.map((color, value) => ({ value, color })), { value: -1, color: 'rgba(128,128,128,0.06)' }] },
+    dataZoom: [{ type: 'inside', xAxisIndex: [0, 1, 2], filterMode: 'filter' }, { type: 'slider', xAxisIndex: [0, 1, 2], height: 16, bottom: 6, filterMode: 'filter' }],
+    series: [
+      { name: '水溫底色', type: 'bar', xAxisIndex: 0, yAxisIndex: 1, silent: true, barCategoryGap: 0, z: 0, tooltip: { show: false },
+        data: rows.map(r => (r ? { value: 1, itemStyle: { color: ZONE_COLORS[r.zone], opacity: 0.22 } } : null)) },
+      { name: m.label, type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => num(r, 'close')), showSymbol: false, lineStyle: { width: 1.3, color: PALETTE.text }, itemStyle: { color: PALETTE.text } },
+      { name: '10 月線', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => num(r, 'ma10m')), showSymbol: false, lineStyle: { width: 1.2, type: 'dashed', color: '#d29922' }, itemStyle: { color: '#d29922' } },
+      { name: '離 10 月線', type: 'line', xAxisIndex: 1, yAxisIndex: 2, data: rows.map(r => num(r, 'gap', 100)), showSymbol: false, lineStyle: { width: 1.3, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
+        markArea: { silent: true, data: GAP_BANDS.map(([lo, hi], z) => [{ yAxis: lo, itemStyle: { color: ZONE_COLORS[z], opacity: 0.14 } }, { yAxis: hi }]) },
+        markLine: { silent: true, symbol: 'none', lineStyle: { type: 'dashed', width: 1, color: PALETTE.muted },
+          data: [lineLabel(N.STANCE.boilGap * 100, `+${N.STANCE.boilGap * 100}% 過熱線`, 'insideEndTop'), lineLabel(N.STANCE.nearGap * 100), lineLabel(-N.STANCE.nearGap * 100),
+            lineLabel(-N.STANCE.iceGap * 100, `−${N.STANCE.iceGap * 100}% 極冷線`, 'insideEndBottom')] } },
+      { name: '五市場水溫', type: 'heatmap', xAxisIndex: 2, yAxisIndex: 3, data: heat, itemStyle: { borderWidth: 0 }, emphasis: { disabled: true } },
+    ],
+  });
+  if (prev && prev.startValue != null) charts[3].dispatchAction({ type: 'dataZoom', startValue: prev.startValue, endValue: prev.endValue });
+  else applyTempRange();
+}
+function applyTempRange() {
+  const ch = charts[3], h = tempHist;
+  if (!ch || !h?.dates.length) return;
+  const first = Math.max(0, tempMarketOf(h).rows.findIndex(Boolean)), key = TEMP_RANGES[tempRange];
+  const start = key ? Math.max(first, h.dates.length - key) : first;
+  ch.dispatchAction({ type: 'dataZoom', startValue: start, endValue: h.dates.length - 1 });
+}
+function renderTempLegend() {
+  byId('temp-legend').replaceChildren(...N.ZONES.map(z => node('span', z.label, { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc })));
+}
+
 // ── turnaround ──────────────────────────────────────────────────────────
 function readChecks() { try { return JSON.parse(localStorage.getItem(CHECK_KEY) || '{}') || {}; } catch { return {}; } }
 function writeChecks(v) { try { localStorage.setItem(CHECK_KEY, JSON.stringify(v)); } catch { /* private mode: keep in memory only */ } }
@@ -640,7 +715,7 @@ function renderAll() {
       const running = new Date(Date.parse(now.date)).getUTCDay() !== 5;
       const last = id => ctx.s[id]?.dates?.at(-1);
       byId('asof').textContent = `${now.date}${running ? '（本週至今）' : ''}・美股收盤 ${last('SPX')}、台股收盤 ${last('TWII')}・每日 06:00（美股收盤後）、18:00（台股收盤後）自動更新`;
-      renderSummary(now, prev); renderCards(now); renderCash(); drawChart(); renderLeadLag(now.date); renderStance(now.date); renderTurn(now.date);
+      renderSummary(now, prev); renderCards(now); renderCash(); drawChart(); renderLeadLag(now.date); renderStance(now.date); renderTempLegend(); drawTemp(true); renderTurn(now.date);
       drawDetail();
       if (byId('cases-details').open) renderCases();
       if (byId('sources-details').open) renderSources();
@@ -651,6 +726,8 @@ function renderAll() {
 function wire() {
   if (!bindOnce(byId('range'))) return;
   chipPicker(byId('range'), 'nonnormal-range', key => { rangeKey = key; applyRange(); });
+  chipPicker(byId('temp-market'), 'nonnormal-temp-market', key => { tempMarket = key; if (ctx) drawTemp(true); });
+  chipPicker(byId('temp-range'), 'nonnormal-temp-range', key => { tempRange = key; applyTempRange(); });
   chipPicker(byId('cash-range'), 'nonnormal-cash', key => { cashWin = Number(key); if (ck) renderCash(); });
   // 開大圖：0.5 秒內在同一張卡上點兩下（滑鼠、觸控相同）。捲動頁面時瀏覽器會送 pointercancel、或手指移動超過門檻，都不算點擊。
   // 鍵盤 Enter／Space 與輔助技術的點擊（click.detail === 0）直接開。
@@ -696,5 +773,5 @@ export function getCharts() { return charts.filter(Boolean); }
 export function resize() { getCharts().forEach(c => c.resize()); }
 export function onThemeChange() {
   if (!ctx) return;
-  return preserveChartState(getCharts, () => { charts.forEach(c => c?.dispose()); charts = []; drawChart(); drawCash(); drawDetail(); });
+  return preserveChartState(getCharts, () => { charts.forEach(c => c?.dispose()); charts = []; drawChart(); drawCash(); drawDetail(); drawTemp(); });
 }
