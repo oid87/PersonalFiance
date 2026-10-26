@@ -9,7 +9,7 @@ import { registerAll, switchTo, applyThemeAll, setupResizeHandler } from './swit
 import { registryEntries } from './navigation-catalog.mjs';
 import { initNavigation } from './navigation.js';
 
-installZoomFloor();   // 全站 dataZoom 最短約 9 個月；要在任何 tab 呼叫 echarts.init 之前
+installZoomFloor();   // 全站 dataZoom 最短 1 年；要在任何 tab 呼叫 echarts.init 之前
 const entries = registryEntries();
 const entriesById = new Map(entries.map(entry => [entry.id, entry]));
 
