@@ -32,6 +32,8 @@ export const DEFAULTS = Object.freeze({
   waveExit: 5,                     // 回撤收斂到 < 5% 結束
   fearThr: 15,                     // 恐懼貪婪 < 此值視為恐懼區（可調 5～25）
   ratioWindow: 20,                 // 「四週內」維持率高點窗（交易日，含當日）
+  swingHigh: 60,                   // tooltip「60 日高點→現在」窗（交易日，含當日）
+  swingLow: 20,                    // tooltip「20 日低點→現在」窗（交易日，含當日）
 });
 
 export const DD_BANDS = [5, 10, 12, 15, 18, 20, 25];
@@ -83,6 +85,13 @@ function rollingMax(values, L) {
     out[i] = { max: best, idx: bi };
   }
   return out;
+}
+const rollingMin = (values, L) => rollingMax(values.map(v => -v), L).map(r => ({ min: -r.max, idx: r.idx }));
+// 各序列在自身日曆上的 swingHigh 日高點與 swingLow 日低點（值＋日期）
+function swingOf(rows, key, c) {
+  const v = rows.map(r => r[key]);
+  const hi = rollingMax(v, c.swingHigh), lo = rollingMin(v, c.swingLow);
+  return rows.map((r, i) => ({ hi: hi[i].max, hiDate: rows[hi[i].idx].date, lo: lo[i].min, loDate: rows[lo[i].idx].date }));
 }
 
 /** 維持率合併：mm（ratio_all，2004～）與 recon（2022-12～）重疊區間數值一致；以 recon 為準。 */
@@ -137,6 +146,8 @@ export function buildDataset({ twii, margin, ratio = [], fearGreed = [] }, cfg =
   const rtHi4 = rollingMax(rt.map(r => r.ratio), c.ratioWindow);
   rt.forEach((r, i) => { r.r4 = { high: rtHi4[i].max, date: rt[rtHi4[i].idx].date, diff: r.ratio - rtHi4[i].max }; });
 
+  const twSw = swingOf(tw, 'close', c), mgSw = swingOf(mg, 'margin_money', c), rtSw = swingOf(rt, 'ratio', c);
+
   const days = [];
   const twiiOnly = [], marginOnly = [];
   for (const r of tw) if (r.date >= c.start && r.date <= c.end && !mgIdx.has(r.date)) twiiOnly.push(r.date);
@@ -148,7 +159,8 @@ export function buildDataset({ twii, margin, ratio = [], fearGreed = [] }, cfg =
     if (ti === undefined) continue;
     const mi = mgIdx.get(m.date);
     const d = { date: m.date, ti, mi, close: tw[ti].close, low: tw[ti].low, high: tw[ti].high, open: tw[ti].open,
-      margin: m.margin_money, dd: tw[ti].dd, dd252: tw[ti].dd252, m: {}, x: {}, dm1: null, ratio: null, ratioDrop: null, r4: null, fg: null };
+      margin: m.margin_money, dd: tw[ti].dd, dd252: tw[ti].dd252, m: {}, x: {}, dm1: null, ratio: null, ratioDrop: null, r4: null, fg: null,
+      sw: { x: twSw[ti], m: mgSw[mi], r: null } };
     for (const N of [1, 2, 3, 5, ...c.windows]) {
       // 融資在自身日曆上回推 N 個交易日；指數同理（兩邊日曆只差 2021-04-06，見 gaps）
       d.m[N] = mi - N >= 0 ? (m.margin_money / mg[mi - N].margin_money - 1) * 100 : null;
@@ -158,7 +170,7 @@ export function buildDataset({ twii, margin, ratio = [], fearGreed = [] }, cfg =
     const fi = fgIdx.get(m.date);
     if (fi !== undefined) d.fg = fgRows[fi].value;
     const ri = rtIdx.get(m.date);
-    if (ri !== undefined) { d.ratio = rt[ri].ratio; d.ratioDrop = rt[ri].ratioDrop; d.r4 = rt[ri].r4; }
+    if (ri !== undefined) { d.ratio = rt[ri].ratio; d.ratioDrop = rt[ri].ratioDrop; d.r4 = rt[ri].r4; d.sw.r = rtSw[ri]; }
     days.push(d);
   }
 

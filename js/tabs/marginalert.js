@@ -190,6 +190,28 @@ function lagLine(days, i) {
   if (!p(2) || !isNum(p(2).ratio)) return '';
   return `T-2→T 維持率 ${[2, 1, 0].map(k => f(p(k).ratio, 0)).join('→')}`;
 }
+// 60 日高點→現在（跌了多少）與 20 日低點→現在（漲了多少）：指數 %、融資 億＋%、維持率 點；
+// 「融資÷指數」＝融資變動% ÷ 指數變動%（>1 融資動得比指數兇；指數變動 <1% 時不算）
+function swingTable(d) {
+  const { x, m, r } = d.sw ?? {};
+  if (!x || !m) return '';
+  const pc = (now, base) => (isNum(now) && isNum(base) && base ? (now / base - 1) * 100 : null);
+  const col = ref => {
+    const xp = pc(d.close, x[ref]), mp = pc(d.margin, m[ref]);
+    return { xp, mp, amt: d.margin - m[ref], rp: r && isNum(d.ratio) ? d.ratio - r[ref] : null,
+      lev: isNum(xp) && isNum(mp) && Math.abs(xp) >= 1 ? mp / xp : null };
+  };
+  const H = col('hi'), L = col('lo');
+  const td = 'style="padding:0 0 0 6px;text-align:right;white-space:nowrap"';
+  const row = (name, a, b) => `<tr><td style="white-space:nowrap">${name}</td><td ${td}>${a}</td><td ${td}>${b}</td></tr>`;
+  const mg = c => `${sg(c.amt, 0)}億 ${sg(c.mp, 1)}%`;
+  return `<table style="border-collapse:collapse;font-size:11px;width:100%">` +
+    `<tr style="color:${PALETTE.muted}"><td></td><td ${td}>60日高→今</td><td ${td}>20日低→今</td></tr>` +
+    row('加權', `${sg(H.xp, 1)}%`, `${sg(L.xp, 1)}%`) +
+    row('融資', mg(H), mg(L)) +
+    (r ? row('維持率', sg(H.rp, 1), sg(L.rp, 1)) : '') +
+    row('融資÷指數', isNum(H.lev) ? `${f(H.lev, 2)}×` : '—', isNum(L.lev) ? `${f(L.lev, 2)}×` : '—') + '</table>';
+}
 
 function buildOption() {
   const { ds } = res;
@@ -233,9 +255,11 @@ function buildOption() {
         const belowGate = !fired && isNum(d.m[1]) && d.m[1] <= -ui.th;     // 融資達標但回撤閘門未過
         const oneDay = `單日 ${sg(d.m[1], 2)}%（${sg(d.dm1, 0)} 億）`;
         const z = zoneOf(d.ratio);
+        const sw = swingTable(d);
         const sec = t => `<div style="margin-top:3px;padding-top:3px;border-top:1px solid ${PALETTE.border}">${t}</div>`;
         return `<b>${d.date}</b>${fired ? ' 🔔' : ''}<br>加權 ${f(d.close, 0)}（${sg(d.x[1], 2)}%）｜距高 -${f(d.dd)}%` +
           `<br>融資 ${f(d.margin, 0)} 億｜${fired ? hot(oneDay + ' 觸發') : oneDay}${belowGate ? '<br>（未達回撤閘門，不算警報）' : ''}` +
+          (sw ? sec(sw) : '') +
           (isNum(d.ratio) ? sec(`維持率 ${f(d.ratio, 1)}${d.r4 ? `（四週 ${sg(d.r4.diff, 1)}）` : ''}｜${zoneText(z)}<br>${projLine(d)}` + (lagLine(days, i) ? `<br>${lagLine(days, i)}` : '')) : '') +
           (isNum(d.fg) ? `<div>恐懼貪婪 ${f(d.fg, 1)}</div>` : '');
       },
