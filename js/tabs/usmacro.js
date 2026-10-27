@@ -248,6 +248,14 @@ function render() {
   document.querySelectorAll('#usmacro-picker [data-usmacro-symbol]').forEach(el => el.classList.toggle('active', el.dataset.usmacroSymbol === activeSymbol));
   drawChart();
 }
+// 每日總覽用：同 activate() 的輸入與診斷，只回傳四組指標的總方向。
+export async function overviewSummary(context = {}) {
+  const inputs = await readInputs(context);
+  if (!inputs) return null;
+  const m = diagnoseUsMacro(inputs).macro;
+  return { date: inputs.asOf, direction: m.direction, text: stateText(m.direction), counts: m.counts ?? null };
+}
+
 export async function activate(context = {}) {
   if (loaded && !sources?.unavailableOptional.length) { chart?.resize(); return; }
   const status=document.getElementById('usmacro-status');

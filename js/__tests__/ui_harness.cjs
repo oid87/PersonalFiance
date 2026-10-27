@@ -71,18 +71,10 @@ async function main() {
     await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(800);
 
-    // Discover every tab id by clicking through each category button and
-    // collecting the rendered sub-nav's data-tab values (CATEGORIES itself
-    // is a module-local const in boot.js, not exported).
-    const catIds = await page.$$eval('.cat-btn', els => els.map(e => e.dataset.cat));
-    const tabIds = [];
-    const seen = new Set();
-    for (const catId of catIds) {
-      await page.click(`.cat-btn[data-cat="${catId}"]`);
-      await page.waitForTimeout(150);
-      const ids = await page.$$eval('#sub-nav .sub-btn', els => els.map(e => e.dataset.tab));
-      for (const id of ids) if (!seen.has(id)) { seen.add(id); tabIds.push(id); }
-    }
+    // Discover every tab id from the catalogue (category → page → view); works for
+    // both the flat pre-2026-10-28 catalogue and the paged one, so before/after runs match.
+    const tabIds = await page.evaluate(async () =>
+      (await import('/js/navigation-catalog.mjs')).NAV_ITEMS.map(item => item.id));
 
     const switcherHandle = await page.evaluateHandle(async () => {
       const mod = await import('/js/switcher.js');

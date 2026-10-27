@@ -46,7 +46,7 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 本文件**不再維護** tab／資料檔的完整對照表 — 歷史證明必 drift（上一版只覆蓋 26 個 tab 中的 7 個）。要查現況，直接看程式碼：
 
 - `ls js/tabs/` = 目前所有 tab 清單
-- `js/navigation-catalog.mjs` 的 `CATEGORIES` = 導覽結構（8 分類、74 個畫面）；`js/navigation.js` 動態渲染分類、sub-nav 與「全部畫面」搜尋，**`index.html` 沒有靜態 tab 按鈕**
+- `js/navigation-catalog.mjs` 的 `CATEGORIES` = 導覽結構，三層「分類 → 頁 → 視圖」（首頁「每日總覽」＋8 分類、34 頁；每個視圖就是一個 tab id）；`js/navigation.js` 動態渲染分類、sub-nav（頁）、view-nav（頁內切換）與「全部畫面」搜尋，**`index.html` 沒有靜態 tab 按鈕**
 - `ls scripts/` = 所有抓取腳本
 - `.github/workflows/fetch.yml` + `forward_pe.yml` = CI 實際跑的清單
 
@@ -64,7 +64,7 @@ FinMind 來源的腳本需 token：CI 用 GitHub secret `FINMIND_TOKEN`（workfl
 ## 新增一個 tab
 
 1. `js/tabs/<id>.js` — export `activate({ signal, isCurrent })`（切入載入，成功前 await 首次 render）、`getCharts()`，選用 `onThemeChange(light)`、`resize()`；必要資料錯誤向外 throw，optional 資料標示 partial。**起手用 `js/scaffold/_template.js` 當範本**（已 import 四支 utils + echartsBase + ensureLoaded），別從舊 tab 複製起手。
-2. `js/navigation-catalog.mjs` 的 `CATEGORIES` 選一個分類加入 `{ id, label }`，需要時補搜尋別名；模組預設 `js/tabs/<id>.js`，只有不一致的檔名才加 `MODULE_FILE` 對應。`boot.js` 由 catalogue 動態註冊，無需新增靜態 import。
+2. `js/navigation-catalog.mjs` 的 `CATEGORIES` 把新 tab 以 `view(id, label)` 加進最相近那頁的 `views`（同一題的新切面別再開新頁）；真的是新主題才在分類下開 `{ id: 'p-…', label, views }`，頁 id 一律 `p-` 開頭、不可與 tab id 重複。需要時補搜尋別名；模組預設 `js/tabs/<id>.js`，只有不一致的檔名才加 `MODULE_FILE` 對應。`boot.js` 由 catalogue 動態註冊，無需新增靜態 import。
 3. `index.html` 加 `<section id="tab-<id>" class="tab-section" hidden>`（不用加 nav 按鈕，sub-nav 是動態渲染的）。
 4. 主題色用 CSS 變數（`--bg/--panel/--border/--text/--muted`）；JS 內的色對/百分位/日期工具一律用 `js/utils/`（`PALETTE`/`math`/`dates`/`data`/`dom`，以及圖表狀態 `chartLifecycle`、可及性 `ui`／`tooltip`，速查表見下方），別內聯 `tc("#hex","#hex")` 或自寫 percentile。控制項一次性綁定用 `dom.bindOnce(el)`，chip 單選群組用 `dom.chipPicker(host, attr, onPick)`（host 內混有別組 chip 時加 `{ onlyMatching: true }`），別手寫 `dataset.built` 或 `closest(".chip[data-…]")` 委派（`check_reuse` 會抓）。多選切換、已選取短路、多個 closest 的分派器不適用 `chipPicker`。
 5. ⚠️ **lint 對「還沒登錄 navigation-catalog 的新 tab 檔」完全不掃——含手動指定檔名也跳過**（刻意設計：避免掃到擱置死檔；2026-07-19 實測連塞違規進未接線檔、指名掃它都靜默 exit 0）。**唯一解法：先做第 2 步登錄、再寫 tab 內容**——接線後 hook 與 lint 自動納管。順序反過來（寫完才接線）的話，接線後要記得整檔重掃一次 `python3 ../Financial_work/check_reuse.py js/tabs/<id>.js`。

@@ -6,7 +6,7 @@ import { parseTabHash, tabHash, readFavorites, visibleDialogGeometry } from '../
 
 test('registry is lazy and boot has no static tab imports', () => {
   const entries = registryEntries();
-  assert.equal(entries.length, 81);
+  assert.equal(entries.length, 82);
   assert.deepEqual(entries.map(entry => entry.id), NAV_ITEMS.map(item => item.id));
   assert.ok(entries.every(entry => typeof entry.load === 'function'));
   const boot = readFileSync(new URL('../boot.js', import.meta.url), 'utf8');
@@ -58,7 +58,9 @@ test('unknown failure is capped after one query retry', async () => {
 
 test('deep links, invalid ids, favorites, and visible viewport stay bounded', () => {
   assert.deepEqual(parseTabHash('#tab=fsi'), { id: 'fsi', valid: true, rangeKey: null, range: null });
-  assert.equal(parseTabHash('#tab=%E0%A4%A').id, 'trend');
+  assert.equal(parseTabHash('#tab=%E0%A4%A').id, 'overview');
+  assert.equal(parseTabHash('').id, 'overview');
+  assert.equal(parseTabHash('#tab=no-such-tab').id, 'overview');
   assert.equal(parseTabHash('#tab=no-such-tab').valid, false);
   assert.equal(tabHash('trend', { key: 'range', value: '1Y' }), '#tab=trend&rangeKey=range&range=1Y');
   assert.deepEqual([...readFavorites({ getItem: () => '["fsi","fsi","invalid"]' })], ['fsi']);

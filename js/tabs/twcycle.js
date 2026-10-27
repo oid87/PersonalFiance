@@ -9,14 +9,14 @@ let rangePreset = "10";         // 年
 let controlsBound = false;
 
 // 五燈：分數區間 + 顏色 + 狀態（由分數反推，較 light 字串穩定）
-const BANDS = [
+export const BANDS = [
   { key: "藍",   name: "藍燈",   lo: 9,  hi: 16, color: "#2f6fed", desc: "低迷" },
   { key: "黃藍", name: "黃藍燈", lo: 17, hi: 22, color: "#17a2b8", desc: "轉弱" },
   { key: "綠",   name: "綠燈",   lo: 23, hi: 31, color: "#3fb950", desc: "穩定" },
   { key: "黃紅", name: "黃紅燈", lo: 32, hi: 37, color: "#f0883e", desc: "轉熱" },
   { key: "紅",   name: "紅燈",   lo: 38, hi: 45, color: "#e24b4a", desc: "熱絡" },
 ];
-const bandOf = s => BANDS.find(b => s >= b.lo && s <= b.hi) || BANDS[2];
+export const bandOf = s => BANDS.find(b => s >= b.lo && s <= b.hi) || BANDS[2];
 
 export async function init(context = {}) {
   const status = document.getElementById("twcycle-status");

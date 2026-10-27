@@ -63,7 +63,7 @@ export async function init(context = {}) {
   }
 }
 
-function sentLabel(v) {
+export function sentLabel(v) {
   if (v < 20) return "極度恐懼";
   if (v < 40) return "恐懼";
   if (v < 60) return "中性";
@@ -71,7 +71,7 @@ function sentLabel(v) {
   return "極度貪婪";
 }
 
-function sentColor(v) {
+export function sentColor(v) {
   if (v < 20) return "#ef4444";
   if (v < 40) return "#f97316";
   if (v < 60) return "#eab308";

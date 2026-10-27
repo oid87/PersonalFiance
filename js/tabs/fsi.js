@@ -90,14 +90,25 @@ function setText(id, txt, color) {
   if (color) el.style.color = color;
 }
 
+function fsiLevel(v) {
+  if      (v >= 5)  return { lSig: "高壓力 · 風險明顯升高", lClr: "#f85149" };
+  else if (v >= 0)  return { lSig: "壓力高於常態",          lClr: "#f0883e" };
+  else if (v >= -2) return { lSig: "低於常態 · 大致穩定",   lClr: "#3fb950" };
+  else              return { lSig: "明顯低於常態 · 寬鬆",   lClr: "#3fb950" };
+}
+
+// 每日總覽用：同 updateCards() 第 1 張卡。
+export async function overviewSummary(context = {}) {
+  await loadAll(context);
+  if (!rows) return null;
+  const last = rows[rows.length - 1], { lSig, lClr } = fsiLevel(last.fsi);
+  return { date: last.date, value: (last.fsi >= 0 ? "+" : "") + last.fsi.toFixed(2), signal: lSig, color: lClr };
+}
+
 function updateCards() {
   const last = rows[rows.length - 1];
   // 1. level
-  let lSig, lClr;
-  if      (last.fsi >= 5)  { lSig = "高壓力 · 風險明顯升高"; lClr = "#f85149"; }
-  else if (last.fsi >= 0)  { lSig = "壓力高於常態";          lClr = "#f0883e"; }
-  else if (last.fsi >= -2) { lSig = "低於常態 · 大致穩定";   lClr = "#3fb950"; }
-  else                     { lSig = "明顯低於常態 · 寬鬆";   lClr = "#3fb950"; }
+  const { lSig, lClr } = fsiLevel(last.fsi);
   setText("fsi-level-val", (last.fsi >= 0 ? "+" : "") + last.fsi.toFixed(2), PALETTE.text);
   setText("fsi-level-sub", `${last.date}｜0＝歷史均值`, "var(--muted)");
   setText("fsi-level-signal", lSig, lClr);

@@ -35,6 +35,7 @@
     <button id="all-screens-btn" type="button" aria-haspopup="dialog" aria-controls="screen-dialog">全部畫面</button>
   </div>
   <nav id="sub-nav" class="sub-nav" aria-label="分類內畫面"></nav>
+  <nav id="view-nav" class="view-nav" aria-label="頁內切換" hidden></nav>
 
   <dialog id="screen-dialog" aria-labelledby="screen-dialog-title">
     <div class="screen-dialog-header">
@@ -56,8 +57,11 @@
     <div id="screen-results"></div>
   </dialog>
 
+  <!-- ── 每日總覽（首頁）──────────────────────────────────────────── -->
+  <section id="tab-overview" class="tab-section"></section>
+
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
-  <section id="tab-trend" class="tab-section">
+  <section id="tab-trend" class="tab-section" hidden>
     <div class="controls">
       <div id="series-picker"></div>
 
