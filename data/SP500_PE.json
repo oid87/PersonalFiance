@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-29",
+  "updated": "2026-10-30",
   "note": "S&P 500 monthly trailing P/E (TTM). Source: multpl.com",
   "data": [
     {
@@ -7483,8 +7483,8 @@
       "pe": 26.29
     },
     {
-      "date": "2026-10-28",
-      "pe": 26.44
+      "date": "2026-10-29",
+      "pe": 26.33
     }
   ]
 }
