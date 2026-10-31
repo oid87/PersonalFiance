@@ -3,21 +3,24 @@ import { CATEGORIES, NAV_ITEMS, searchNavigation } from './navigation-catalog.mj
 const VALID_IDS = new Set(NAV_ITEMS.map(item => item.id));
 const FAVORITES_KEY = 'pf:favorites:v1';
 
+// 進站預設頁＝主儀表板（各分支由它點進去）；無效或缺少 tab 參數也回到這裡。
+export const DEFAULT_TAB = 'home';
+
 export function parseTabHash(hash) {
   try {
     const params = new URLSearchParams(String(hash || '').replace(/^#/, ''));
-    const requested = params.get('tab') || 'trend';
-    const id = VALID_IDS.has(requested) ? requested : 'trend';
+    const requested = params.get('tab') || DEFAULT_TAB;
+    const id = VALID_IDS.has(requested) ? requested : DEFAULT_TAB;
     const rangeKey = params.get('rangeKey');
     const range = params.get('range');
     return { id, valid: id === requested, rangeKey, range };
   } catch {
-    return { id: 'trend', valid: false, rangeKey: null, range: null };
+    return { id: DEFAULT_TAB, valid: false, rangeKey: null, range: null };
   }
 }
 
 export function tabHash(id, range = null) {
-  const params = new URLSearchParams({ tab: VALID_IDS.has(id) ? id : 'trend' });
+  const params = new URLSearchParams({ tab: VALID_IDS.has(id) ? id : DEFAULT_TAB });
   if (range?.key && range?.value) {
     params.set('rangeKey', range.key);
     params.set('range', range.value);
@@ -148,13 +151,13 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
   const shareStatus = document.getElementById('screen-share-status');
   const categoryByTab = new Map(NAV_ITEMS.map(item => [item.id, item.categoryId]));
   const categoriesById = new Map(CATEGORIES.map(category => [category.id, category]));
-  const lastByCategory = new Map([['trend', 'trend']]);
+  const lastByCategory = new Map([['trend', DEFAULT_TAB]]);
   let storage;
   try { storage = window.localStorage; } catch {}
   const favorites = readFavorites(storage);
   let favoritesOnly = false;
   let currentCategory = 'trend';
-  let currentTab = 'trend';
+  let currentTab = DEFAULT_TAB;
   let selection = 0;
   let lastURLHash = null;
 
@@ -387,7 +390,7 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
     if (window.location.hash === lastURLHash) return;
     const route = parseTabHash(window.location.hash);
     const range = route.range ? { key: route.rangeKey, value: route.range } : null;
-    if (!route.valid) setURL('trend', null, 'replace');
+    if (!route.valid) setURL(DEFAULT_TAB, null, 'replace');
     else lastURLHash = window.location.hash;
     void selectTab(route.id, { historyMode: 'none', range });
   }

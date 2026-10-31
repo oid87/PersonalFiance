@@ -5,6 +5,10 @@ export const CATEGORIES = [
     "label": "走勢與技術",
     "tabs": [
       {
+        "id": "home",
+        "label": "主儀表板"
+      },
+      {
         "id": "trend",
         "label": "趨勢"
       },
@@ -379,6 +383,7 @@ export const CATEGORIES = [
 ];
 
 const ALIASES = {
+  home: ['首頁', '總覽', 'dashboard', 'home', '主儀表板'],
   usrisk: ["美股去槓桿", "US risk", "CFTC", "FINRA", "科技壓力"],
   nonnormal: ["極端", "極端狀態", "共振", "多重確認", "台股", "費半", "櫃買", "VIX"],
   nonnormalhist: ["過往觀察", "回測", "跌停", "跌停家數", "無觀察", "觀察類股", "極端狀態"],

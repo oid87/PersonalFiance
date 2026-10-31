@@ -1,8 +1,8 @@
 # 導覽與按需載入
 
-js/navigation-catalog.mjs 是 73 頁的 id、顯示名稱、八分類與模組路徑的唯一清單。registryEntries() 在 boot.js 註冊 load()，匯入 catalog 不會下載頁籤模組。預設只啟動趨勢；直接開 #tab=fsi 只下載金融壓力頁及其依賴。切換主題不預載未開啟頁。
+js/navigation-catalog.mjs 是 73 頁的 id、顯示名稱、八分類與模組路徑的唯一清單。registryEntries() 在 boot.js 註冊 load()，匯入 catalog 不會下載頁籤模組。進站預設頁是「主儀表板」（`home`，`js/navigation.js` 的 `DEFAULT_TAB`）：只載入 QQQ／VIX／VXN／F&G 四個資料檔，顯示關鍵指標卡與各分類的分支入口，各分支頁由它點進去；直接開 #tab=fsi 只下載金融壓力頁及其依賴。切換主題不預載未開啟頁。
 
-選頁一律走 navigation.js 的 selectTab：同步更新分類、子選單及 section，再由 dispatcher 按需啟用。網址用 #tab=<id>；支援瀏覽器上一頁／下一頁，同頁重選不新增歷史。不存在或損壞的 id 回趨勢。支援的期間 chip 以既有 data-*-range 的鍵和值記入 rangeKey／range；回復前先確認該頁真的存在唯一相符 chip。其他自訂參數不包含在分享連結。
+選頁一律走 navigation.js 的 selectTab：同步更新分類、子選單及 section，再由 dispatcher 按需啟用。網址用 #tab=<id>；支援瀏覽器上一頁／下一頁，同頁重選不新增歷史。不存在或損壞的 id 回主儀表板。支援的期間 chip 以既有 data-*-range 的鍵和值記入 rangeKey／range；回復前先確認該頁真的存在唯一相符 chip。其他自訂參數不包含在分享連結。
 
 「全部畫面」保留 73 頁單一清單及分類搜尋。每列星號可收藏，儲存在 pf:favorites:v1；「只看收藏」是清單篩選，空集合顯示提示。分享目前頁先嘗試複製完整網址，Clipboard 不可用時顯示可選取的連結。壞掉的收藏資料會安全忽略。
 

@@ -48,6 +48,7 @@ const ORIGINAL_LABELS = {
   "infl_nowcast": "通膨Nowcast",
   "cpi": "CPI 分項",
   "trend": "趨勢",
+  "home": "主儀表板",
   "pentagram": "五線譜",
   "macro": "宏觀",
   "usmacro": "美國總經",
@@ -93,8 +94,8 @@ const ids = query => searchNavigation(query).map(item => item.id);
 
 test('all original screens occur once with unchanged labels', () => {
   assert.equal(CATEGORIES.length, 8);
-  assert.equal(NAV_ITEMS.length, 82);
-  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 82);
+  assert.equal(NAV_ITEMS.length, 83);
+  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 83);
   assert.deepEqual(Object.fromEntries(NAV_ITEMS.map(item => [item.id, item.label])), ORIGINAL_LABELS);
   assert.deepEqual(ids(''), NAV_ITEMS.map(item => item.id));
   for (const item of NAV_ITEMS) {

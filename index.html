@@ -57,7 +57,19 @@
   </dialog>
 
   <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
-  <section id="tab-trend" class="tab-section">
+  <!-- ── 主儀表板（預設首頁）─────────────────────────────────────── -->
+  <section id="tab-home" class="tab-section">
+    <header><h2 class="section-title">主儀表板</h2>
+      <p class="section-subtitle">關鍵指標速覽 · 各分支頁請由下方入口點進去</p>
+      <p id="home-asof" class="status" role="status" aria-live="polite">載入中…</p>
+    </header>
+    <div id="home-cards" class="home-cards"></div>
+    <div id="home-chart" class="home-chart" role="img" aria-label="QQQ 近一年收盤、150MA 與 Fear &amp; Greed，標出盤中 −3% 急跌事件"></div>
+    <h3>分支入口</h3>
+    <div id="home-branches" class="home-branches"></div>
+  </section>
+
+  <section id="tab-trend" class="tab-section" hidden>
     <div class="controls">
       <div id="series-picker"></div>
 
