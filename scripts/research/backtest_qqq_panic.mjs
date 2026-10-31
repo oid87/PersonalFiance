@@ -81,6 +81,30 @@ const matches = E.matchEvents(targets, main.rows, C).map(m => ({
   target: m.target, neighbors: m.neighbors, anchor2022: m.rankOf('2022-01-05'),
 }));
 
+// ── 均線跌破研究（125／150MA）──────────────────────────────────────────
+const maBy = Object.fromEntries(E.MA_BREAK.mas.map(p => [p, E.maBreakEvents(F, p)]));
+const maByNoVol = Object.fromEntries(E.MA_BREAK.mas.map(p => [p, E.maBreakEvents(F, p, { ...E.MA_BREAK, rvol: 0 })]));
+const maUnion = E.maBreakUnion(maBy);
+const maBase = E.baselineRates(F);
+const maSets = rows => {
+  const ok = rows.filter(r => !r.alreadyDeep);
+  return [
+    ['一般跌破（主樣本，逐筆）', ok], ['一般跌破｜20 日去重', ok.filter(r => r.isRep)], ['嚴格首次跌破（子樣本）', ok.filter(r => r.strict)],
+    ['一般跌破 × A 無極端恐慌', ok.filter(r => r.panic === 'A')], ['一般跌破 × B 極端恐慌', ok.filter(r => r.panic === 'B')],
+    ['一般跌破 × A 且前 60 日未曾恐慌', ok.filter(r => r.panic === 'A' && r.priorPanic === false)],
+  ].map(([label, rs]) => ({ label, ...E.describeMA(rs) }));
+};
+const maStudy = Object.fromEntries(E.MA_BREAK.mas.map(p => [p, {
+  sets: maSets(maBy[p]),
+  noVolReps: [['不限量｜20 日去重', maByNoVol[p].filter(r => !r.alreadyDeep && r.isRep)], ['不限量 × A｜20 日去重', maByNoVol[p].filter(r => !r.alreadyDeep && r.isRep && r.panic === 'A')], ['不限量 × B｜20 日去重', maByNoVol[p].filter(r => !r.alreadyDeep && r.isRep && r.panic === 'B')]].map(([label, rs]) => ({ label, ...E.describeMA(rs) })),
+  alreadyDeep: maBy[p].filter(r => r.alreadyDeep).map(r => r.date),
+}]));
+// −3% A 事件依「事件日收盤是否在均線下方」分層（問題 2）
+const aByMa = Object.fromEntries([125, 150].map(p => [p, ['above', 'below'].map(pos => {
+  const rs = main.reps.filter(r => r.panic === 'A' && (pos === 'above' ? r.ma[p].status === 'above' : ['reclaimed', 'not_within', 'censored'].includes(r.ma[p].status)));
+  return { pos, ...E.describe(rs, ['deep5_20', 'deep10_60', 'extra60', 'totalDD60', 'panicLater60']) };
+})]));
+
 // ── 區間 ────────────────────────────────────────────────────────────────
 const focusProfile = E.periodProfile(F, C.focus.from, C.focus.to, runs);
 const i21 = F.date.findIndex(d => d >= '2021-11-01');
@@ -134,6 +158,11 @@ const GH = ['group_id', 'threshold_pct', 'anchor_date', 'last_date', 'event_coun
   'rep_event_drawdown_pct', 'rep_deep5_20', 'rep_deep10_20', 'rep_deep5_60', 'rep_deep10_60', 'rep_extra_drop60_pct', 'rep_rebreak20', 'rep_rebreak60', 'rep_total_dd60_pct', 'rep_ret20_open_pct', 'rep_ret60_open_pct', 'rep_mae60_open_pct', 'rep_post_extreme_panic_days', 'rep_window_complete', 'special_periods'];
 writeFileSync(`${outDir}/qqq-panic-divergence-groups.csv`, toCSV(GH, runs.flatMap(R => R.groups.map(g => [g.id, g.threshold, g.anchorDate, g.lastDate, g.count, g.memberDates.join(' '), g.rep.panic, g.rep.panicSub, g.rep.path, b(g.rep.volSurge), b(g.anyPanicB), b(g.laterPanicInGroup), g.groupMinLow, r4(g.deepestDrop),
   r4(g.rep.eventDD), b(g.rep.h[20]?.deep5), b(g.rep.h[20]?.deep10), b(g.rep.h[60]?.deep5), b(g.rep.h[60]?.deep10), r4(g.rep.h[60]?.extra), b(g.rep.h[20]?.rebreak), b(g.rep.h[60]?.rebreak), r4(g.rep.h[60]?.totalDD), r4(g.rep.h[20]?.retOpen), r4(g.rep.h[60]?.retOpen), r4(g.rep.h[60]?.maeOpen), g.rep.post?.panicDays ?? '', b(g.rep.complete), inPeriods(g.anchorDate)]))));
+const MAH = ['ma', 'date', 'strict_first_break', 'is_20d_rep', 'close', 'ma_value', 'dist_pct', 'rvol20', 'intraday_drop_pct', 'close_chg_pct', 'ma150_slope20_pct', 'vix_high', 'fg_value', 'panic_class', 'prior60_extreme_panic',
+  'pre_high_252', 'low_vs_pre_high252_pct', 'already_deep_20', 'post_days_available', 'entry_open_t1', 'reclaim20', 'reclaim_days', 'confirm2p5_20', 'confirm_days', 'below_share60', 'below70_60', 'extra60_vs_close_pct', 'extra120_vs_close_pct', 'mae60_open_pct', 'mae120_open_pct', 'ret60_open_pct', 'ret120_open_pct', 'deep20_120', 'deep_days', 'same_day_other_ma_break'];
+const unionDates = new Map(maUnion.map(u => [u.date, u.mas]));
+writeFileSync(`${outDir}/qqq-panic-divergence-ma-breaks.csv`, toCSV(MAH, E.MA_BREAK.mas.flatMap(p => maBy[p].map(r => [p, r.date, b(r.strict), b(r.isRep), r.close, r4(r.maValue), r4(r.dist), r4(r.rvol), r4(r.dropLow), r4(r.closeChg), r4(r.slope150), r.vixHigh ?? '', r.fg ?? '', r.panic, b(r.priorPanic),
+  r.preHigh252 ?? '', r4(r.dd252), b(r.alreadyDeep), r.avail, r.entryOpen ?? '', r.reclaim20, r.reclaimDays ?? '', r.confirm20, r.confirmDays ?? '', r4(r.belowShare60), b(r.below70), r4(r.extra60), r4(r.extra120), r4(r.mae60), r4(r.mae120), r4(r.ret60), r4(r.ret120), r.deep120, r.deepDays ?? '', b(unionDates.get(r.date).length > 1)]))));
 const MH = ['target_date', 'rank', 'neighbor_date', 'distance', ...E.MATCH_FEATURES.map(f => `nb_${f.key}`), 'nb_panic_class', 'nb_extra_drop60_pct', 'nb_deep10_60', 'nb_total_dd60_pct', 'nb_ret60_open_pct', 'nb_post_extreme_panic_days', 'nb_ma150_status'];
 writeFileSync(`${outDir}/qqq-panic-divergence-matches.csv`, toCSV(MH, matches.flatMap(m => m.neighbors.map((x, k) => [m.target.date, k + 1, x.r.date, r4(x.d), ...E.MATCH_FEATURES.map(f => r4(f.get(x.r))), x.r.panic, r4(x.r.h[60]?.extra), b(x.r.h[60]?.deep10), r4(x.r.h[60]?.totalDD), r4(x.r.h[60]?.retOpen), x.r.post?.panicDays ?? '', x.r.ma[150].status]))));
 
@@ -158,6 +187,7 @@ const out = {
   config: C, provenance, missing: { fearGreed: fgMissing, vixHigh: vixMissing, vxnHigh: vxnMissing },
   samples: sampleTable, comparisons: strip(comparisons), strata: strip(strata), paths, matches: strip(matches.map(slimMatch)),
   periods: strip(profiles),
+  maBreak: strip({ config: E.MA_BREAK, baseline: maBase, study: maStudy, union: { events: maUnion.length, sameDayBoth: maUnion.filter(u => u.mas.length > 1).length }, aByMa }),
 };
 writeFileSync(`${outDir}/qqq-panic-divergence-backtest.json`, JSON.stringify(out, null, 1) + '\n');
 
@@ -175,7 +205,7 @@ const blockTxt = (d, kind) => (!d || !finite(d.lo) ? '—' : kind === 'share' ? 
 const T = (head, rows) => [`| ${head.join(' | ')} |`, `|${head.map(() => '---').join('|')}|`, ...rows.map(r => `| ${r.join(' | ')} |`)].join('\n');
 const L = [];
 L.push('# QQQ 盤中急跌 × 恐慌背離 — 回測數據（自動產生）', '',
-  `研究期間 ${C.start} ～ ${C.end}（實際交易日 ${F.date[F.startIdx]} ～ ${F.date[F.endIdx]}）。本檔由 \`node scripts/research/backtest_qqq_panic.mjs\` 產生，勿手改；方法與解讀見 [qqq-panic-divergence.md](qqq-panic-divergence.md)。逐筆：[events.csv](qqq-panic-divergence-events.csv)、[groups.csv](qqq-panic-divergence-groups.csv)、[matches.csv](qqq-panic-divergence-matches.csv)；完整數值：[backtest.json](qqq-panic-divergence-backtest.json)。`, '',
+  `研究期間 ${C.start} ～ ${C.end}（實際交易日 ${F.date[F.startIdx]} ～ ${F.date[F.endIdx]}）。本檔由 \`node scripts/research/backtest_qqq_panic.mjs\` 產生，勿手改；方法與解讀見 [qqq-panic-divergence.md](qqq-panic-divergence.md)。逐筆：[events.csv](qqq-panic-divergence-events.csv)、[groups.csv](qqq-panic-divergence-groups.csv)、[matches.csv](qqq-panic-divergence-matches.csv)、[ma-breaks.csv](qqq-panic-divergence-ma-breaks.csv)；完整數值：[backtest.json](qqq-panic-divergence-backtest.json)。`, '',
   '純描述性研究，不是買賣訊號。群組統計只用每群第一筆；逐筆（未去重）統計彼此重疊，只給點估計。未來窗未滿者為**右設限**，不納入該 horizon 的統計。', '');
 L.push('## 1. 資料來源與可取得時點', '', T(['資料', '檔案', '列數／涵蓋', 'SHA-256（前 16 碼）', 'updated', '來源', '可取得時點'],
   provenance.map(p => [p.key, `\`${p.path}\``, `${p.rows}｜${p.first} ～ ${p.last}`, p.sha256.slice(0, 16), p.updated ?? '—', p.origin, p.timing])), '',
@@ -215,7 +245,22 @@ for (const m of matches) {
     T(['名次', '歷史事件', '距離', '分類', '回撤', '距 150MA', '150MA 斜率', 'RVOL', 'VIX H', 'F&G', '前 60 日恐慌', '60 日額外跌幅', '額外跌 ≥10%', '60 日總回撤', '60 日報酬', '之後極端恐慌'],
       m.neighbors.map((x, k) => { const r = x.r; return [k + 1, r.date, x.d.toFixed(2), r.panic, f1(r.eventDD), f1(r.ma[150].dist), f1(r.slope150), finite(r.volRatio) ? r.volRatio.toFixed(2) : '—', r.vixHigh, r.fg ?? '缺', r.priorPanic === null ? '—' : r.priorPanic ? '是' : '否', f1(r.h[60]?.extra), r.h[60]?.deep10 ? '是' : '否', f1(r.h[60]?.totalDD), f1(r.h[60]?.retOpen), r.post?.panicDays != null ? `+${r.post.panicDays} 日` : '無']; })), '');
 }
-L.push('## 7. 特殊區間', '', '區間輪廓只用區間內（與之前）的資料；「區間後 60 日」是事後才知道的結果，2026 區間尚無此資料。', '',
+L.push('## 7. 均線跌破研究（125／150MA）', '',
+  `一般跌破＝Close_{T-1} ≥ MA_{T-1}、Close_T < MA_T、RVOL20 ≥ ${E.MA_BREAK.rvol}；嚴格首次跌破＝另要求 T-20～T-1 收盤都在 MA 上方。訊號 T 日收盤後才成立，報酬以 T+1 開盤為基準；額外跌幅以 Close_T 為基準。各指標獨立計算，不組成互斥的「真／假跌破」分類。事件日 Low 已相對前 252 日高點跌超過 20% 的樣本另列、不納入統計。125 與 150 分開測試；兩條線同一天跌破共 ${maUnion.filter(u => u.mas.length > 1).length} 天，合併後 ${maUnion.length} 個獨立日期。`, '',
+  `**基準（研究期間每個交易日，不限事件）**：60 日內相對當日收盤額外跌 ≥10% 為 ${p0(maBase.deep10_60.value)}（${maBase.deep10_60.count}/${maBase.deep10_60.n}）；120 日內首次進入 −20% 深度修正為 ${p0(maBase.deep120.value)}（${maBase.deep120.count}/${maBase.deep120.n}）。逐日樣本高度重疊，只作參照水準。`, '');
+const maCell = (o, kind) => (!o || !o.n ? '—' : kind === 'share' ? `${p0(o.value)}（${o.count}/${o.n}）${finite(o.wilson?.lo) ? ` W[${p0(o.wilson.lo)}, ${p0(o.wilson.hi)}]` : ''}` : `${f1(o.value)}（n=${o.n}）`);
+for (const p of E.MA_BREAK.mas) {
+  const S = maStudy[p];
+  L.push(`### ${p}MA`, '', T(['樣本', 'n', ...E.MA_METRICS.map(m => m.label)], [...S.sets, ...S.noVolReps.map(x => ({ ...x, label: x.label + '（敏感度：不要求 RVOL）' }))].map(x => [x.label, x.n, ...E.MA_METRICS.map(m => maCell(x.m[m.key], m.kind))])), '',
+    `事件日已在 −20% 深度修正中而另列：${S.alreadyDeep.join('、') || '無'}。`, '',
+    T(['日期', '嚴格首次', '分類', 'RVOL', '距 MA', '盤中', 'VIX H', 'F&G', '20 日站回', '20 日 ×1.025', '60 日低於 MA ≥70%', '60／120 日額外跌幅', '120 日進入 −20%'],
+      maBy[p].map(r => [r.date, r.strict ? '是' : '否', r.panic, r.rvol.toFixed(2), f1(r.dist), f1(r.dropLow), r.vixHigh ?? '—', r.fg ?? '缺', r.reclaim20 === 'yes' ? `是（+${r.reclaimDays}）` : r.reclaim20 === 'no' ? '否' : '右設限', r.confirm20 === 'yes' ? `是（+${r.confirmDays}）` : r.confirm20 === 'no' ? '否' : '右設限',
+        r.below70 === null ? '右設限' : r.below70 ? '是' : '否', `${f1(r.extra60)}／${f1(r.extra120)}`, r.deep120 === 'yes' ? `是（+${r.deepDays}）` : r.deep120 === 'no' ? '否' : r.deep120 === 'already' ? '已在其中' : '右設限'])), '');
+}
+L.push('### −3% A 事件 × 事件日相對均線（20 日去重）', '', T(['均線', '位置', 'n', '20 日額外跌 ≥5%', '60 日額外跌 ≥10%', '60 日額外跌幅 中位', '60 日總回撤 中位', '60 日內升級極端恐慌'],
+  [125, 150].flatMap(p => aByMa[p].map(x => [`${p}MA`, x.pos === 'above' ? '收盤在上方' : '收盤在下方', x.n, `${p0(x.m.deep5_20.value)}（${x.m.deep5_20.count}/${x.m.deep5_20.n}）`, `${p0(x.m.deep10_60.value)}（${x.m.deep10_60.count}/${x.m.deep10_60.n}）`, f1(x.m.extra60.value), f1(x.m.totalDD60.value), `${p0(x.m.panicLater60.value)}（${x.m.panicLater60.count}/${x.m.panicLater60.n}）`]))), '');
+
+L.push('## 8. 特殊區間', '', '區間輪廓只用區間內（與之前）的資料；「區間後 60 日」是事後才知道的結果，2026 區間尚無此資料。', '',
   T(['區間', '交易日', '區間報酬', '最大回撤（252 日高）', '收盤 < 150MA', '收盤 < 300MA', '150MA 斜率', '觸 300MA 日', 'VIX H 最高', 'VXN H 最高', 'VIX H≥30 日', 'F&G 最低', 'F&G 中位', 'F&G<15 日', '-3% 事件（A/B）', '-2% 事件（A/B）', '-3% 爆量 A', '60 日新低收盤次數', '區間後 60 日報酬／最低'],
     profiles.map(({ label, profile: p, after }) => [label, p.days, f1(p.ret), f1(p.maxDD252), p0(p.belowMa150), p0(p.belowMa300), f1(p.ma150Slope), p.touch300, p.vixHMax ?? '—', p.vxnHMax ?? '—', p.vixPanicDays, p.fgMin ?? '—', f1(p.fgMedian), `${p.fgPanicDays}${p.fgMissing ? `（缺 ${p.fgMissing}）` : ''}`,
       `${p.events[-3].raw}（${p.events[-3].A}/${p.events[-3].B}）`, `${p.events[-2].raw}（${p.events[-2].A}/${p.events[-2].B}）`, p.events[-3].aVolSurge, p.newLow60, after ? `${f1(after.ret60)}／${f1(after.minLowVsEndClose)}` : '尚無'])), '');

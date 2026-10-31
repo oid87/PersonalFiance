@@ -193,6 +193,44 @@ def main() -> int:
         if not (math.isclose(d["lo"], lo, abs_tol=1e-5) and math.isclose(d["hi"], hi, abs_tol=1e-5)):
             errors.append(f"newcombe {key}: json [{d['lo']}, {d['hi']}] expected [{lo}, {hi}]")
 
+    # 均線跌破研究：逐筆重算事件清單與主要結果
+    ma_rows = list(csv.DictReader((csv_dir / "qqq-panic-divergence-ma-breaks.csv").open()))
+    got_ma = {(int(r["ma"]), r["date"]): r for r in ma_rows}
+    exp_ma = {}
+    for per in (125, 150):
+        mav = [sma(per, i) for i in range(len(D))]
+        for i in range(max(1, start), end + 1):
+            if mav[i] is None or mav[i - 1] is None or rvol[i] is None:
+                continue
+            if not (C[i - 1] >= mav[i - 1] and C[i] < mav[i] and rvol[i] >= 1.5):
+                continue
+            avail = min(120, end - i)
+            strict = all(C[j] > mav[j] for j in range(i - 20, i))
+            ph = max(H[i - 252:i])
+            already = L[i] / ph - 1 <= -0.20
+            k = next((j for j in range(i + 1, i + min(20, avail) + 1) if C[j] > mav[j]), None)
+            e = {"strict_first_break": int(strict), "already_deep_20": int(already),
+                 "reclaim20": "yes" if k is not None else ("no" if avail >= 20 else "censored")}
+            if avail >= 60:
+                e["extra60_vs_close_pct"] = min(0.0, (min(L[i + 1:i + 61]) / C[i] - 1) * 100)
+                e["below70_60"] = int(sum(1 for j in range(i + 1, i + 61) if C[j] < mav[j]) / 60 >= 0.7)
+            if avail >= 120:
+                e["extra120_vs_close_pct"] = min(0.0, (min(L[i + 1:i + 121]) / C[i] - 1) * 100)
+            if not already:
+                dk = next((j for j in range(i + 1, i + avail + 1) if L[j] / ph - 1 <= -0.20), None)
+                e["deep20_120"] = "yes" if dk is not None else ("no" if avail >= 120 else "censored")
+            exp_ma[(per, D[i])] = e
+    for k in sorted(set(exp_ma) ^ set(got_ma)):
+        errors.append(f"ma-break event set differs at {k}")
+    for k, e in exp_ma.items():
+        r = got_ma.get(k)
+        if not r:
+            continue
+        for field, val in e.items():
+            checked += 1
+            if not same(r[field], val):
+                errors.append(f"ma {k} {field}: csv={r[field]!r} expected={val!r}")
+
     counts = {t: sum(1 for k in expected if k[0] == t) for t in THRESHOLDS}
     gcounts = {t: sum(1 for k in groups_expected if k.startswith(f"{t}#")) for t in THRESHOLDS}
     print(f"events {counts} groups {gcounts}; checked {checked} values; mismatches {len(errors)}")

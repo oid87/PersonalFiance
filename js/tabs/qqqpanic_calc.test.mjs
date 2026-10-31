@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULTS, buildFrame, isEvent, eventRow, rawEvents, groupEvents, runThreshold, panicClass, wilson, newcombe, bootstrapCI, bootstrapDiff, quantile, sma, compareAB, periodProfile, priorPercentile, matchEvents, yearBlockCI } from './qqqpanic_calc.mjs';
+import { DEFAULTS, buildFrame, isEvent, eventRow, rawEvents, groupEvents, runThreshold, panicClass, wilson, newcombe, bootstrapCI, bootstrapDiff, quantile, sma, compareAB, periodProfile, priorPercentile, matchEvents, yearBlockCI, maBreakEvents, maBreakUnion } from './qqqpanic_calc.mjs';
 
 function businessDays(start, n) {
   const out = []; let t = Date.parse(start);
@@ -242,4 +242,26 @@ test('matching never uses later or same-group events and returns fixed-k neighbo
 test('year-block bootstrap needs at least three years', () => {
   const rows = [{ date: '2020-01-01', x: 1 }, { date: '2021-01-01', x: 2 }];
   assert.equal(yearBlockCI(rows, rs => rs.length).lo, null);
+});
+
+test('MA break: general needs prior close ≥ MA, close < MA and RVOL ≥ 1.5; strict also needs 20 days above', () => {
+  const { dates, raw } = fixture(560);
+  for (let i = 380; i < 400; i++) raw.QQQ[i] = { ...raw.QQQ[i], close: 103, high: 103.5, open: 103 };   // above MA for 20 days
+  raw.QQQ[400] = { ...raw.QQQ[400], close: 95, low: 94.5, open: 102, volume: 5000 };                   // break with RVOL 5
+  raw.QQQ[401] = { ...raw.QQQ[401], close: 101, high: 101.5 };
+  raw.QQQ[402] = { ...raw.QQQ[402], close: 95, low: 94.8, volume: 1200 };                              // re-break but RVOL < 1.5
+  const F = buildFrame(raw, cfgFor(dates));
+  const ev = maBreakEvents(F, 150);
+  assert.deepEqual(ev.map(r => r.date), [dates[400]]);
+  assert.equal(ev[0].strict, true);
+  assert.equal(ev[0].reclaim20, 'yes');
+  assert.equal(ev[0].reclaimDays, 1);
+  assert.equal(ev[0].alreadyDeep, false);
+  assert.equal(maBreakEvents(F, 150, { ...DEFAULTS, mas: [150], rvol: 0, strictDays: 20, post: 120, deep: -20, preHighDays: 252, below: 0.7 }).length, 2);
+});
+
+test('MA break union counts a same-day 125/150 break once', () => {
+  const u = maBreakUnion({ 125: [{ date: '2024-01-02', idx: 1 }], 150: [{ date: '2024-01-02', idx: 1 }, { date: '2024-02-01', idx: 20 }] });
+  assert.equal(u.length, 2);
+  assert.deepEqual(u[0].mas, [125, 150]);
 });

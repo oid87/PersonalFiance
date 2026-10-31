@@ -2497,7 +2497,13 @@
     <div class="qqqpanic-control"><label for="qqqpanic-period">區間事件（≤ −2%）</label><select id="qqqpanic-period"></select></div>
     <div id="qqqpanic-period-events" class="table-scroll"></div>
 
-    <p class="note-muted">逐筆資料與報告：<a href="docs/research/qqq-panic-divergence-events.csv">events.csv</a>、<a href="docs/research/qqq-panic-divergence-groups.csv">groups.csv</a>、<a href="docs/research/qqq-panic-divergence-matches.csv">matches.csv</a>、<a href="docs/research/qqq-panic-divergence-backtest.md">回測數據</a>、<a href="docs/research/qqq-panic-divergence.md">方法與解讀</a>。本頁由 <code>js/tabs/qqqpanic_calc.mjs</code> 即時重算，與報告共用同一引擎；資料檔若被上游修訂，數字可能與報告快照不同。</p>
+    <h3 data-qp-help="ma">9. 爆量跌破 125／150MA 之後</h3>
+    <div id="qqqpanic-ma" class="chip-row" role="group" aria-label="均線"><span class="chip active" data-qp-ma="150">150MA</span><span class="chip" data-qp-ma="125">125MA</span></div>
+    <p id="qqqpanic-ma-base" class="note-muted"></p>
+    <div id="qqqpanic-ma-stats" class="table-scroll"></div>
+    <div id="qqqpanic-ma-events" class="table-scroll"></div>
+
+    <p class="note-muted">逐筆資料與報告：<a href="docs/research/qqq-panic-divergence-events.csv">events.csv</a>、<a href="docs/research/qqq-panic-divergence-ma-breaks.csv">ma-breaks.csv</a>、<a href="docs/research/qqq-panic-divergence-groups.csv">groups.csv</a>、<a href="docs/research/qqq-panic-divergence-matches.csv">matches.csv</a>、<a href="docs/research/qqq-panic-divergence-backtest.md">回測數據</a>、<a href="docs/research/qqq-panic-divergence.md">方法與解讀</a>。本頁由 <code>js/tabs/qqqpanic_calc.mjs</code> 即時重算，與報告共用同一引擎；資料檔若被上游修訂，數字可能與報告快照不同。</p>
   </section>
 
   <section id="tab-uscap" class="tab-section" hidden>

@@ -530,3 +530,103 @@ export function matchEvents(targets, pool, cfg = DEFAULTS) {
   });
 }
 export const MATCH_NOTE = '標準化用歷史池（目標日前、60 日窗完整）的平均與樣本標準差；同群組只保留距離最近的一筆。';
+
+// ── 均線跌破研究（125／150MA）──────────────────────────────────────────
+// 一般跌破（主樣本）：Close_{T-1} ≥ MA_{T-1}、Close_T < MA_T、RVOL20_T ≥ 1.5。
+// 嚴格首次跌破（子樣本）：另要求 T-20～T-1 每日收盤都 > 當日 MA。
+// 訊號 T 日收盤後才成立；報酬以 T+1 開盤為基準，額外跌幅以 Close_T 為基準。各指標獨立計算，不組成互斥分類。
+export const MA_BREAK = Object.freeze({ mas: [125, 150], rvol: 1.5, strictDays: 20, post: 120, deep: -20, preHighDays: 252, below: 0.7 });
+
+export function maBreakRow(F, i, p, cfg = F.cfg, M = MA_BREAK) {
+  const ma = F.ma[p], d = F.date, at = k => (k === null ? null : d[k]);
+  const avail = Math.max(0, Math.min(M.post, F.endIdx - i));
+  let strict = i >= M.strictDays;
+  for (let j = i - M.strictDays; strict && j < i; j++) if (!(finite(ma[j]) && F.c[j] > ma[j])) strict = false;
+  const preHigh = i >= M.preHighDays ? wMax(F.h, i - M.preHighDays, i - 1).value : null;
+  const pc = panicClass(F.vixH[i], F.fg[i], cfg);
+  const pre0 = i - cfg.preWin, pv = pre0 >= 0 ? wMax(F.vixH, pre0, i - 1).value : null, pf = pre0 >= 0 ? wMin(F.fg, pre0, i - 1).value : null;
+  const priorPanic = (finite(pv) && pv >= cfg.vixPanic) || (finite(pf) && pf < cfg.fgPanic) ? true : finite(pv) && finite(pf) ? false : null;
+  const ddT = pctOf(F.l[i], preHigh);
+  const r = {
+    date: d[i], idx: i, ma: p, strict, close: F.c[i], maValue: ma[i], dist: pctOf(F.c[i], ma[i]), rvol: F.rvol[i],
+    dropLow: intradayDrop(F, i), closeChg: pctOf(F.c[i], F.c[i - 1]), slope150: i >= 20 ? pctOf(F.ma[150][i], F.ma[150][i - 20]) : null,
+    vixHigh: F.vixH[i], fg: F.fg[i], panic: pc.cls, priorPanic,
+    preHigh252: preHigh, dd252: ddT, alreadyDeep: finite(ddT) ? ddT <= M.deep : null,
+    avail, entryOpen: avail >= 1 ? F.o[i + 1] : null,
+  };
+  const within = (n, pred) => { const k = firstIdx(i + 1, i + Math.min(n, avail), pred); return { k, status: k !== null ? 'yes' : avail >= n ? 'no' : 'censored' }; };
+  const rc = within(20, j => finite(ma[j]) && F.c[j] > ma[j]);
+  const cf = within(20, j => finite(ma[j]) && F.c[j] > ma[j] * (1 + cfg.maConfirm));
+  r.reclaim20 = rc.status; r.reclaimDays = rc.k === null ? null : rc.k - i;
+  r.confirm20 = cf.status; r.confirmDays = cf.k === null ? null : cf.k - i;
+  if (avail >= 60) { let below = 0; for (let j = i + 1; j <= i + 60; j++) if (F.c[j] < ma[j]) below++; r.belowShare60 = below / 60; r.below70 = r.belowShare60 >= M.below; }
+  else { r.belowShare60 = null; r.below70 = null; }
+  for (const h of [60, 120]) {
+    if (avail < h) { r[`extra${h}`] = null; r[`mae${h}`] = null; r[`ret${h}`] = null; continue; }
+    const lo = wMin(F.l, i + 1, i + h).value;
+    r[`extra${h}`] = Math.min(0, pctOf(lo, F.c[i]));
+    r[`mae${h}`] = Math.min(0, pctOf(lo, r.entryOpen));
+    r[`ret${h}`] = pctOf(F.c[i + h], r.entryOpen);
+  }
+  if (r.alreadyDeep === false && finite(preHigh)) {
+    const dp = within(M.post, j => finite(F.l[j]) && F.l[j] / preHigh - 1 <= M.deep / 100);
+    r.deep120 = dp.status; r.deepDays = dp.k === null ? null : dp.k - i;
+  } else { r.deep120 = r.alreadyDeep ? 'already' : 'unavailable'; r.deepDays = null; }
+  return r;
+}
+
+export function maBreakEvents(F, p, M = MA_BREAK) {
+  const ma = F.ma[p], out = [];
+  for (let i = Math.max(1, F.startIdx); i <= F.endIdx; i++) {
+    if (!finite(ma[i]) || !finite(ma[i - 1]) || !finite(F.rvol[i])) continue;
+    if (F.c[i - 1] >= ma[i - 1] && F.c[i] < ma[i] && F.rvol[i] >= M.rvol) out.push(maBreakRow(F, i, p, F.cfg, M));
+  }
+  const groups = groupEvents(out.map(r => r.idx), F.cfg.groupWin);
+  const reps = new Set(groups.map(g => g.anchor));
+  out.forEach(r => { r.isRep = reps.has(r.idx); });
+  return out;
+}
+// 125 與 150 合併：同一天兩條線都跌破只算一個事件（保留兩邊旗標）。
+export function maBreakUnion(byMa) {
+  const m = new Map();
+  for (const [p, rows] of Object.entries(byMa)) for (const r of rows) {
+    if (!m.has(r.date)) m.set(r.date, { ...r, mas: [] });
+    m.get(r.date).mas.push(+p);
+  }
+  return [...m.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
+}
+
+const yn = s => (s === 'yes' ? true : s === 'no' ? false : null);
+export const MA_METRICS = Object.freeze([
+  { key: 'reclaim20', label: '20 日內首次收盤站回 MA', kind: 'share', get: r => yn(r.reclaim20) },
+  { key: 'confirm20', label: '20 日內收盤突破 MA×1.025', kind: 'share', get: r => yn(r.confirm20) },
+  { key: 'below70', label: '60 日內收盤低於 MA 的天數 ≥ 70%', kind: 'share', get: r => r.below70 },
+  { key: 'deep120', label: '120 日內首次進入相對前 252 日高點 −20%', kind: 'share', get: r => yn(r.deep120) },
+  { key: 'deep10_60', label: '60 日內相對 Close_T 額外跌 ≥ 10%', kind: 'share', get: r => (finite(r.extra60) ? r.extra60 <= -10 : null) },
+  { key: 'extra60', label: '60 日最大額外跌幅 %（相對 Close_T）', kind: 'median', get: r => r.extra60 },
+  { key: 'extra120', label: '120 日最大額外跌幅 %（相對 Close_T）', kind: 'median', get: r => r.extra120 },
+  { key: 'ret60', label: '60 日報酬 %（T+1 開盤）', kind: 'median', get: r => r.ret60 },
+]);
+export function describeMA(rows) {
+  const out = { n: rows.length, m: {} };
+  for (const M of MA_METRICS) {
+    const vals = rows.map(M.get);
+    if (M.kind === 'share') { const v = vals.filter(x => x === true || x === false), k = v.filter(Boolean).length; out.m[M.key] = { n: v.length, count: k, value: v.length ? k / v.length : null, wilson: wilson(k, v.length) }; }
+    else { const s = sortNum(vals); out.m[M.key] = { n: s.length, value: quantile(s, 0.5), p10: quantile(s, 0.1), p90: quantile(s, 0.9) }; }
+  }
+  return out;
+}
+
+// 基準：研究期間每個交易日（不限事件）的同樣指標，用來判斷均線跌破是否「提高」辨識度。
+export function baselineRates(F, M = MA_BREAK) {
+  let n10 = 0, k10 = 0, nDeep = 0, kDeep = 0;
+  for (let i = Math.max(M.preHighDays, F.startIdx); i <= F.endIdx; i++) {
+    const avail = F.endIdx - i;
+    if (avail >= 60) { const lo = wMin(F.l, i + 1, i + 60).value; n10++; if (lo / F.c[i] - 1 <= -0.10) k10++; }
+    const preHigh = wMax(F.h, i - M.preHighDays, i - 1).value;
+    if (F.l[i] / preHigh - 1 <= M.deep / 100) continue;   // 已在深度修正中，不算「首次進入」
+    const k = firstIdx(i + 1, i + Math.min(M.post, avail), j => F.l[j] / preHigh - 1 <= M.deep / 100);
+    if (k !== null) { nDeep++; kDeep++; } else if (avail >= M.post) nDeep++;
+  }
+  return { deep10_60: { n: n10, count: k10, value: n10 ? k10 / n10 : null, wilson: wilson(k10, n10) }, deep120: { n: nDeep, count: kDeep, value: nDeep ? kDeep / nDeep : null, wilson: wilson(kDeep, nDeep) } };
+}

@@ -20,12 +20,13 @@ const HELP = {
   dist: 'A0＝無極端恐慌且前 60 日也未曾恐慌；A1＝當天無極端恐慌、但前 60 日曾恐慌（已回落）；B＝當天極端恐慌。盒鬚為 P10／四分位／中位／P90，點為個別事件。右設限事件不納入。',
   path: '只作事後描述：A 事件「之後」是否升級成極端恐慌，是未來才知道的資訊，T 日的 A/B 分類不變，不能拿來模擬當天決策。',
   ab: '比例：點估計（件數/n）與 Wilson 95%；B − A 用 Newcombe 95%。中位數：percentile bootstrap 95%。年份區塊 bootstrap 以日曆年為重抽單位，處理同年事件與未來窗重疊，屬敏感度分析。區間包含 0 代表分不出差異。未去重逐筆樣本彼此重疊，只給點估計。',
+  ma: '一般跌破＝前一日收盤 ≥ MA、當日收盤 < MA、RVOL20 ≥ 1.5；嚴格首次跌破另要求前 20 日收盤都在 MA 上方。訊號在 T 日收盤後才成立，報酬以 T+1 開盤為基準，額外跌幅以 Close_T 為基準。各指標獨立計算，不組成互斥的真／假跌破分類。事件日已跌超過 −20% 的樣本另列。「不要求 RVOL」是敏感度：2022 年初的跌破量能未達 1.5 倍，主樣本會漏掉。',
   match: '特徵只用 T 日及以前：事前 60 日回撤、距 125／150MA、150MA 20 日斜率、RVOL20、VIX High、F&G、前 60 日是否已極端恐慌；權重全部為 1、事前固定。只從「目標日之前、60 日窗已完整」的事件中找，同一群組只留最近一筆。相似度不是未來發生機率。',
 };
 const METRIC_LABEL = { extra60: '60 日相對事件日 Low 額外跌幅 %', extra20: '20 日相對事件日 Low 額外跌幅 %', totalDD60: '60 日最大總回撤 %（相對事前高點）', ret20: '20 日報酬 %（T+1 開盤）', ret60: '60 日報酬 %（T+1 開盤）', mae60: '60 日最大不利 %（T+1 開盤）' };
 const CLS_COLOR = { B: '#ef4444', A1: '#f0883e', A0: '#58a6ff', 'A?': '#8b949e', U: '#8b949e' };
 
-let res = null, loadedAt = 0, charts = {}, thr = C.main, setKey = 'gv', rangeKey = 'all', metricKey = 'extra60', abCache = new Map();
+let res = null, loadedAt = 0, charts = {}, thr = C.main, setKey = 'gv', rangeKey = 'all', metricKey = 'extra60', abCache = new Map(), maKey = 150, maCache = null;
 
 function node(tag, text, attrs = {}) {
   const el = document.createElement(tag);
@@ -284,13 +285,30 @@ function renderPeriodEvents() {
       r.ma[150].status === 'above' ? '上方' : r.ma[150].status === 'reclaimed' ? `下方→+${r.ma[150].reclaimDays} 日站回` : r.ma[150].status === 'not_within' ? '下方、60 日未站回' : '下方、右設限']));
 }
 
+function renderMA() {
+  if (!maCache) {
+    const by = Object.fromEntries(E.MA_BREAK.mas.map(p => [p, E.maBreakEvents(res.F, p)]));
+    const noVol = Object.fromEntries(E.MA_BREAK.mas.map(p => [p, E.maBreakEvents(res.F, p, { ...E.MA_BREAK, rvol: 0 })]));
+    maCache = { by, noVol, base: E.baselineRates(res.F) };
+  }
+  const rows = maCache.by[maKey], ok = rows.filter(r => !r.alreadyDeep), nv = maCache.noVol[maKey].filter(r => !r.alreadyDeep && r.isRep), b = maCache.base;
+  byId('ma-base').textContent = `基準（研究期間每個交易日）：60 日內額外跌 ≥10% ${p0(b.deep10_60.value)}；120 日內首次進入 −20% ${p0(b.deep120.value)}。事件日已在 −20% 中而另列：${rows.filter(r => r.alreadyDeep).map(r => r.date).join('、') || '無'}。`;
+  const sets = [['一般跌破（主樣本）', ok], ['嚴格首次跌破', ok.filter(r => r.strict)], ['× A 無極端恐慌', ok.filter(r => r.panic === 'A')], ['× B 極端恐慌', ok.filter(r => r.panic === 'B')],
+    ['不要求 RVOL｜20 日去重（敏感度）', nv], ['不要求 RVOL × A（敏感度）', nv.filter(r => r.panic === 'A')], ['不要求 RVOL × B（敏感度）', nv.filter(r => r.panic === 'B')]];
+  const cellMA = (o, kind) => (!o || !o.n ? '—' : kind === 'share' ? `${p0(o.value)}（${o.count}/${o.n}）` : `${f1(o.value)}（n=${o.n}）`);
+  table('ma-stats', ['樣本', 'n', ...E.MA_METRICS.map(m => m.label)], sets.map(([label, rs]) => { const d = E.describeMA(rs); return [label, `${d.n}`, ...E.MA_METRICS.map(m => cellMA(d.m[m.key], m.kind))]; }));
+  const st = (s, days) => (s === 'yes' ? `是（+${days}）` : s === 'no' ? '否' : s === 'already' ? '已在其中' : '右設限');
+  table('ma-events', ['日期', '嚴格首次', '分類', 'RVOL', '距 MA', 'VIX H', 'F&G', '20 日站回', '20 日 ×1.025', '60 日低於 MA ≥70%', '60／120 日額外跌幅', '120 日進入 −20%'],
+    rows.map(r => [r.date, r.strict ? '是' : '否', r.panic, r.rvol.toFixed(2), f1(r.dist), `${r.vixHigh ?? '—'}`, `${r.fg ?? '缺'}`, st(r.reclaim20, r.reclaimDays), st(r.confirm20, r.confirmDays), r.below70 === null ? '右設限' : r.below70 ? '是' : '否', `${f1(r.extra60)}／${f1(r.extra120)}`, st(r.deep120, r.deepDays)]));
+}
+
 // ── orchestration ───────────────────────────────────────────────────────
 function renderSelection() {
   renderCards(); drawTS(); drawScatter(); drawDist(); drawPath(); renderAB(); renderStrata();
 }
 function renderAll() {
   try {
-    renderSelection(); renderMatch(); renderProfiles();
+    renderSelection(); renderMatch(); renderProfiles(); renderMA();
     byId('status').textContent = `完成。${byId('status').dataset.fgNote || ''}`;
   } catch (e) { byId('status').textContent = '計算失敗：' + e.message; throw e; }
 }
@@ -302,6 +320,7 @@ function wire() {
   chipPicker(byId('set'), 'qp-set', safe(v => { setKey = v; renderSelection(); }));
   chipPicker(byId('range'), 'qp-range', safe(v => { rangeKey = v; applyRange(); }));
   chipPicker(byId('metric'), 'qp-metric', safe(v => { metricKey = v; drawDist(); }));
+  chipPicker(byId('ma'), 'qp-ma', safe(v => { maKey = +v; renderMA(); }));
   byId('strat').replaceChildren(...E.STRATA.map(s => node('option', s.label, { value: s.key })));
   byId('strat').value = 'panicSub';
   byId('strat').addEventListener('change', safe(renderStrata));
@@ -315,7 +334,7 @@ export async function activate(context = {}) {
   if (res && Date.now() - loadedAt < 300_000) { resize(); return; }
   const fresh = await load(context);
   if (fresh === false) return;
-  loadedAt = Date.now(); matchCache = null; profCache = null;
+  loadedAt = Date.now(); matchCache = null; profCache = null; maCache = null;
   wire();
   byId('status').textContent = '計算中…';
   renderAll();
