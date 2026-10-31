@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DEFAULTS, buildFrame, isEvent, eventRow, rawEvents, groupEvents, runThreshold, panicClass, wilson, bootstrapCI, bootstrapDiff, quantile, sma, compareAB, periodProfile } from './qqqpanic_calc.mjs';
+import { DEFAULTS, buildFrame, isEvent, eventRow, rawEvents, groupEvents, runThreshold, panicClass, wilson, newcombe, bootstrapCI, bootstrapDiff, quantile, sma, compareAB, periodProfile, priorPercentile, matchEvents, yearBlockCI } from './qqqpanic_calc.mjs';
 
 function businessDays(start, n) {
   const out = []; let t = Date.parse(start);
@@ -184,4 +184,62 @@ test('periodProfile counts only days inside the window', () => {
   assert.equal(p.days, 21);
   assert.equal(p.events[-3].raw, 1);
   assert.equal(periodProfile(F, dates[421], dates[430], runs).events[-3].raw, 0);
+});
+
+test('Newcombe matches the published hybrid-score interval (12/14 vs 12/12)', () => {
+  const d = newcombe(12, 14, 12, 12);
+  assert.ok(Math.abs(d.est - 0.142857) < 1e-5);
+  assert.ok(Math.abs(d.lo - -0.12051) < 1e-4 && Math.abs(d.hi - 0.39941) < 1e-4);
+});
+
+test('volume percentile uses only T-252..T-1', () => {
+  const arr = Array.from({ length: 300 }, (_, i) => i);   // strictly rising: today beats every prior day
+  const p = priorPercentile(arr, 252);
+  assert.equal(p[251], null);
+  assert.equal(p[252], 100);
+  arr[260] = -1;
+  assert.equal(priorPercentile(arr, 252)[260], 0);
+});
+
+test('gap and session drop split the intraday drop; A0/A1 depend only on T-60..T-1', () => {
+  const { dates, raw } = fixture();
+  raw.QQQ[400] = { ...raw.QQQ[400], open: 97, low: 96.5 };
+  raw.VIX[350] = { ...raw.VIX[350], high: 33 };            // inside pre window → A1
+  raw.VIX[401] = { ...raw.VIX[401], high: 33 };            // future: must not change A0/A1
+  const F = buildFrame(raw, cfgFor(dates));
+  const r = eventRow(F, 400);
+  assert.ok(Math.abs(r.gap - -3) < 1e-9);
+  assert.ok(Math.abs(r.sessionDrop - (96.5 / 97 - 1) * 100) < 1e-9);
+  assert.equal(r.panic, 'A');
+  assert.equal(r.panicSub, 'A1');
+  assert.equal(r.path, 'A→B ≤20日');
+  raw.VIX[350] = { ...raw.VIX[350], high: 16 };
+  assert.equal(eventRow(buildFrame(raw, cfgFor(dates)), 400).panicSub, 'A0');
+});
+
+test('deep5/deep10 flags are relative to event-day Low', () => {
+  const { dates, raw } = fixture();
+  raw.QQQ[400] = { ...raw.QQQ[400], low: 96 };
+  raw.QQQ[430] = { ...raw.QQQ[430], low: 96 * 0.94 };
+  const r = eventRow(buildFrame(raw, cfgFor(dates)), 400);
+  assert.equal(r.h[20].deep5, false);
+  assert.equal(r.h[60].deep5, true);
+  assert.equal(r.h[60].deep10, false);
+});
+
+test('matching never uses later or same-group events and returns fixed-k neighbours', () => {
+  const { dates, raw } = fixture(700);
+  for (const i of [380, 420, 460, 500, 540, 580, 620]) raw.QQQ[i] = { ...raw.QQQ[i], low: 96 };
+  raw.QQQ[625] = { ...raw.QQQ[625], low: 96 };            // same group as 620
+  const F = buildFrame(raw, cfgFor(dates));
+  const R = runThreshold(F, -3);
+  const target = R.rows.find(r => r.idx === 620);
+  const [m] = matchEvents([target], R.rows);
+  assert.ok(m.neighbors.length <= 5);
+  for (const x of m.neighbors) { assert.ok(x.r.date < target.date); assert.notEqual(x.r.groupId, target.groupId); assert.equal(x.r.complete, true); }
+});
+
+test('year-block bootstrap needs at least three years', () => {
+  const rows = [{ date: '2020-01-01', x: 1 }, { date: '2021-01-01', x: 2 }];
+  assert.equal(yearBlockCI(rows, rs => rs.length).lo, null);
 });
