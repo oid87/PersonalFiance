@@ -594,6 +594,13 @@ function wire() {
   for (const h of document.querySelectorAll('#tab-nonnormal [data-help]')) h.append(' ', infoButton(HELP[h.dataset.help], '說明：' + h.dataset.help));
 }
 
+// 每日總覽用：同 renderAll() 的本週／上週燈號，加上轉機觀察的 VIX 區間。load() 不設 loadedAt，之後打開本頁仍會正常繪製。
+export async function overviewSummary(context = {}) {
+  if (!ctx && (await load(context)) === false) return null;
+  const now = weeks.at(-1), prev = weeks.at(-2) || null;
+  return { now, prev, level: N.LEVELS[now.level], vix: N.turnaround(ctx, now.date).vix };
+}
+
 export async function activate(context = {}) {
   initInfoPopovers();
   if (ctx && Date.now() - loadedAt < 300_000) { resize(); return; }

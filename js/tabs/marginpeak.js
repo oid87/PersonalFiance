@@ -16,6 +16,12 @@ let viewMode = 'table'; // 'table' = 現有中位數對拍表格＋雙軸圖；'
 // 事件研究視窗長度（交易日）。投影片 x 軸大約到 220+ 天，這裡抓 ~12 個月的交易日數當上限；
 // 資料量不夠支撐更長窗口時，各相對位置樣本數自然遞減（見 buildEventStudy 的 filter(v => v != null)）。
 
+// 每日總覽用：同狀態列的「現值 YoY」。
+export async function overviewSummary(context = {}) {
+  await loadAll(context);
+  return state ? { yoy: state.curYoy, date: state.curDate } : null;
+}
+
 // ── data load ────────────────────────────────────────────────────────
 async function loadAll(context = {}) {
   if (state) return;

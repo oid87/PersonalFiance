@@ -103,7 +103,7 @@ export async function switchTo(id) {
 
   document.querySelectorAll(".tab-section").forEach(s => { s.hidden = true; });
   section.hidden = false;
-  document.querySelectorAll(".sub-btn").forEach(b =>
+  document.querySelectorAll(".view-btn").forEach(b =>
     b.classList.toggle("active", b.dataset.tab === id));
 
   const pending = activations.get(id);

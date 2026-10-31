@@ -19,3 +19,48 @@
     padding: var(--space-3);
   }
 }
+
+/* ── 每日總覽（首頁）────────────────────────────────────────────────
+   四套警報燈號＋六個主題卡；燈號色只在本頁使用。 */
+#tab-overview {
+  --ov-ok: #1a7f37; --ov-watch: #9a6700; --ov-alert: #cf222e;
+  padding: var(--space-4) var(--space-6) var(--space-6);
+}
+body:not(.light) #tab-overview { --ov-ok: #3fb950; --ov-watch: #e3b341; --ov-alert: #ff7b72; }
+#tab-overview .ov-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-2); }
+#tab-overview .ov-head h2 { margin: 0; font-size: 20px; }
+#tab-overview .ov-asof { color: var(--muted); font-size: 13px; }
+#tab-overview .ov-market { display: flex; gap: 4px; margin-left: auto; }
+#tab-overview .ov-lead { margin: 0 0 var(--space-4); color: var(--muted); font-size: 13px; line-height: 1.6; }
+#tab-overview h3 { margin: var(--space-4) 0 var(--space-2); font-size: 15px; }
+#tab-overview .ov-grid { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 15.5rem), 1fr)); }
+#tab-overview .ov-card {
+  display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 12px 14px;
+  border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: 10px;
+  background: var(--panel); color: inherit; text-decoration: none; overflow-wrap: anywhere;
+}
+#tab-overview a.ov-card:hover { border-color: var(--accent); }
+#tab-overview a.ov-card:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+#tab-overview .ov-card.ov-lv-ok { border-left-color: var(--ov-ok); }
+#tab-overview .ov-card.ov-lv-watch { border-left-color: var(--ov-watch); }
+#tab-overview .ov-card.ov-lv-alert { border-left-color: var(--ov-alert); }
+#tab-overview .ov-card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+#tab-overview .ov-card-title { font-size: 13px; color: var(--muted); }
+#tab-overview .ov-card-go { font-size: 12px; color: var(--accent); white-space: nowrap; }
+#tab-overview .ov-state { font-size: 19px; font-weight: 700; line-height: 1.25; }
+#tab-overview .ov-lv-ok .ov-state, #tab-overview .ov-row.ov-lv-ok .ov-row-state { color: var(--ov-ok); }
+#tab-overview .ov-lv-watch .ov-state, #tab-overview .ov-row.ov-lv-watch .ov-row-state { color: var(--ov-watch); }
+#tab-overview .ov-lv-alert .ov-state, #tab-overview .ov-row.ov-lv-alert .ov-row-state { color: var(--ov-alert); }
+#tab-overview .ov-detail { font-size: 13px; line-height: 1.5; }
+#tab-overview .ov-date { font-size: 12px; color: var(--muted); }
+#tab-overview .ov-rows { display: flex; flex-direction: column; gap: 8px; }
+#tab-overview .ov-row { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; align-items: baseline; }
+#tab-overview .ov-row-label { font-size: 13px; }
+#tab-overview .ov-row-value { font-size: 17px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+#tab-overview .ov-row-state { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+#tab-overview .ov-na .ov-row-value, #tab-overview .ov-na .ov-state { color: var(--muted); font-weight: 400; }
+#tab-overview .ov-foot { margin-top: var(--space-4); color: var(--muted); font-size: 12px; line-height: 1.6; }
+@media (max-width: 768px) {
+  #tab-overview { padding: var(--space-3); }
+  #tab-overview .ov-market { margin-left: 0; }
+}

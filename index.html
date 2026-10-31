@@ -35,6 +35,7 @@
     <button id="all-screens-btn" type="button" aria-haspopup="dialog" aria-controls="screen-dialog">全部畫面</button>
   </div>
   <nav id="sub-nav" class="sub-nav" aria-label="分類內畫面"></nav>
+  <nav id="view-nav" class="view-nav" aria-label="頁內切換" hidden></nav>
 
   <dialog id="screen-dialog" aria-labelledby="screen-dialog-title">
     <div class="screen-dialog-header">
@@ -56,19 +57,10 @@
     <div id="screen-results"></div>
   </dialog>
 
-  <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
-  <!-- ── 主儀表板（預設首頁）─────────────────────────────────────── -->
-  <section id="tab-home" class="tab-section">
-    <header><h2 class="section-title">主儀表板</h2>
-      <p class="section-subtitle">關鍵指標速覽 · 各分支頁請由下方入口點進去</p>
-      <p id="home-asof" class="status" role="status" aria-live="polite">載入中…</p>
-    </header>
-    <div id="home-cards" class="home-cards"></div>
-    <div id="home-chart" class="home-chart" role="img" aria-label="QQQ 近一年收盤、150MA 與 Fear &amp; Greed，標出盤中 −3% 急跌事件"></div>
-    <h3>分支入口</h3>
-    <div id="home-branches" class="home-branches"></div>
-  </section>
+  <!-- ── 每日總覽（首頁）──────────────────────────────────────────── -->
+  <section id="tab-overview" class="tab-section"></section>
 
+  <!-- ── 趨勢 tab ────────────────────────────────────────────────── -->
   <section id="tab-trend" class="tab-section" hidden>
     <div class="controls">
       <div id="series-picker"></div>

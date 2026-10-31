@@ -59,6 +59,14 @@ function rangeCutoff(key) {
   return d.toISOString().slice(0, 10);
 }
 
+// 每日總覽用：同 updateCards() 第 1 張卡（綜合壓力分數與分區）。
+export async function overviewSummary(context = {}) {
+  await loadAll(context);
+  if (!rows) return null;
+  const last = rows[rows.length - 1], z = zone(last.composite);
+  return { date: last.date, value: last.composite.toFixed(0), signal: z.sig, color: z.clr };
+}
+
 function zone(v) {
   if (v >= 75) return { sig: "高壓 · 系統性風險明顯", clr: "#f85149" };
   if (v >= 50) return { sig: "偏高 · 壓力高於中位", clr: "#f0883e" };

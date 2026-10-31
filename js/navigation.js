@@ -1,10 +1,7 @@
-import { CATEGORIES, NAV_ITEMS, searchNavigation } from './navigation-catalog.mjs';
+import { CATEGORIES, DEFAULT_TAB, NAV_ITEMS, PAGES, itemTitle, searchNavigation } from './navigation-catalog.mjs';
 
 const VALID_IDS = new Set(NAV_ITEMS.map(item => item.id));
 const FAVORITES_KEY = 'pf:favorites:v1';
-
-// 進站預設頁＝主儀表板（各分支由它點進去）；無效或缺少 tab 參數也回到這裡。
-export const DEFAULT_TAB = 'home';
 
 export function parseTabHash(hash) {
   try {
@@ -138,6 +135,7 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
   const categoryNav = document.getElementById('category-nav');
   const categorySelect = document.getElementById('category-select');
   const subNav = document.getElementById('sub-nav');
+  const viewNav = document.getElementById('view-nav');
   const openButton = document.getElementById('all-screens-btn');
   const dialog = document.getElementById('screen-dialog');
   const closeButton = document.getElementById('screen-dialog-close');
@@ -150,13 +148,18 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
   const shareInput = document.getElementById('screen-share-url');
   const shareStatus = document.getElementById('screen-share-status');
   const categoryByTab = new Map(NAV_ITEMS.map(item => [item.id, item.categoryId]));
+  const pageByTab = new Map(NAV_ITEMS.map(item => [item.id, item.pageId]));
   const categoriesById = new Map(CATEGORIES.map(category => [category.id, category]));
-  const lastByCategory = new Map([['trend', DEFAULT_TAB]]);
+  const pagesById = new Map(PAGES.map(page => [page.id, page]));
+  // 回到分類時開上次看的頁，回到頁時開上次看的視圖。
+  const lastPageByCategory = new Map();
+  const lastTabByPage = new Map();
   let storage;
   try { storage = window.localStorage; } catch {}
   const favorites = readFavorites(storage);
   let favoritesOnly = false;
-  let currentCategory = 'trend';
+  let currentCategory = categoryByTab.get(DEFAULT_TAB);
+  let currentPage = pageByTab.get(DEFAULT_TAB);
   let currentTab = DEFAULT_TAB;
   let selection = 0;
   let lastURLHash = null;
@@ -192,21 +195,52 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
 
   function renderSubNav() {
     subNav.replaceChildren();
-    for (const tab of categoriesById.get(currentCategory).tabs) {
+    const pages = categoriesById.get(currentCategory).pages;
+    // 只有一頁一個視圖的分類（每日總覽）不需要這一列。
+    subNav.hidden = pages.length === 1 && pages[0].views.length === 1;
+    for (const page of pages) {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'sub-btn';
+      button.dataset.page = page.id;
+      button.textContent = page.label;
+      button.classList.toggle('active', page.id === currentPage);
+      if (page.id === currentPage) button.setAttribute('aria-current', 'page');
+      button.addEventListener('click', () => {
+        void selectTab(lastTabByPage.get(page.id) || page.views[0].id);
+        subNav.querySelector('.sub-btn[data-page="' + page.id + '"]')?.focus();
+      });
+      subNav.append(button);
+    }
+    subNav.querySelector('.sub-btn.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  function renderViewNav() {
+    viewNav.replaceChildren();
+    const views = pagesById.get(currentPage).views;
+    viewNav.hidden = views.length < 2;
+    if (views.length < 2) return;
+    for (const tab of views) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'view-btn';
       button.dataset.tab = tab.id;
       button.textContent = tab.label;
       button.classList.toggle('active', tab.id === currentTab);
       if (tab.id === currentTab) button.setAttribute('aria-current', 'page');
       button.addEventListener('click', () => {
         void selectTab(tab.id);
-        subNav.querySelector('.sub-btn[data-tab="' + tab.id + '"]')?.focus();
+        viewNav.querySelector('.view-btn[data-tab="' + tab.id + '"]')?.focus();
       });
-      subNav.append(button);
+      viewNav.append(button);
     }
-    subNav.querySelector('.sub-btn.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    viewNav.querySelector('.view-btn.active')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
+  // 選完畫面後焦點回到導覽：多視圖頁回切換列，單一視圖頁回子選單。
+  function navButtonFor(id) {
+    return viewNav.querySelector('.view-btn[data-tab="' + id + '"]') ||
+      subNav.querySelector('.sub-btn[data-page="' + pageByTab.get(id) + '"]');
   }
 
   function setURL(id, range, mode) {
@@ -249,10 +283,13 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
     }
     const mySelection = ++selection;
     currentCategory = categoryId;
+    currentPage = pageByTab.get(id);
     currentTab = id;
-    lastByCategory.set(categoryId, id);
+    lastPageByCategory.set(categoryId, currentPage);
+    lastTabByPage.set(currentPage, id);
     markCategory();
     renderSubNav();
+    renderViewNav();
     setURL(id, range, historyMode);
     const okay = await switchTo(id);
     if (mySelection !== selection) return okay;
@@ -268,7 +305,8 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
   function chooseCategory(id) {
     const category = categoriesById.get(id);
     if (!category) return;
-    void selectTab(lastByCategory.get(id) || category.tabs[0].id);
+    const page = pagesById.get(lastPageByCategory.get(id)) || category.pages[0];
+    void selectTab(lastTabByPage.get(page.id) || page.views[0].id);
   }
 
   function renderResults() {
@@ -291,18 +329,18 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
         button.type = 'button';
         button.className = 'screen-result';
         button.dataset.tab = item.id;
-        button.textContent = item.label;
-        button.setAttribute('aria-label', item.label + '，' + category.label);
+        button.textContent = itemTitle(item);
+        button.setAttribute('aria-label', itemTitle(item) + '，' + category.label);
         button.addEventListener('click', () => {
           void selectTab(item.id);
-          closeDialog(subNav.querySelector('.sub-btn[data-tab="' + item.id + '"]'));
+          closeDialog(navButtonFor(item.id));
         });
         const favorite = document.createElement('button');
         favorite.type = 'button';
         favorite.className = 'screen-favorite';
         favorite.dataset.favoriteTab = item.id;
         favorite.textContent = favorites.has(item.id) ? '★' : '☆';
-        favorite.setAttribute('aria-label', (favorites.has(item.id) ? '取消收藏' : '收藏') + item.label);
+        favorite.setAttribute('aria-label', (favorites.has(item.id) ? '取消收藏' : '收藏') + itemTitle(item));
         favorite.setAttribute('aria-pressed', String(favorites.has(item.id)));
         favorite.addEventListener('click', () => {
           if (favorites.has(item.id)) favorites.delete(item.id);
@@ -399,5 +437,6 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
 
   markCategory();
   renderSubNav();
+  renderViewNav();
   restoreFromURL();
 }

@@ -58,9 +58,9 @@ test('unknown failure is capped after one query retry', async () => {
 
 test('deep links, invalid ids, favorites, and visible viewport stay bounded', () => {
   assert.deepEqual(parseTabHash('#tab=fsi'), { id: 'fsi', valid: true, rangeKey: null, range: null });
-  assert.equal(parseTabHash('#tab=%E0%A4%A').id, 'home');
-  assert.equal(parseTabHash('').id, 'home');
-  assert.equal(parseTabHash('#tab=no-such').id, 'home');
+  assert.equal(parseTabHash('#tab=%E0%A4%A').id, 'overview');
+  assert.equal(parseTabHash('').id, 'overview');
+  assert.equal(parseTabHash('#tab=no-such-tab').id, 'overview');
   assert.equal(parseTabHash('#tab=no-such-tab').valid, false);
   assert.equal(tabHash('trend', { key: 'range', value: '1Y' }), '#tab=trend&rangeKey=range&range=1Y');
   assert.deepEqual([...readFavorites({ getItem: () => '["fsi","fsi","invalid"]' })], ['fsi']);

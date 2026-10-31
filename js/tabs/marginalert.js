@@ -125,6 +125,22 @@ function deriveSelection() {
   fear = raw.fearGreed?.length ? fearAnalysis(ds, ui.fearThr, flags, cfg) : null;
 }
 
+// 每日總覽用：同 renderZone() 的最新維持率分區，加上 deriveSelection() 的今日是否為警報日。
+// 不碰頁面 DOM；res 會留著，之後打開本頁不必重算。
+export async function overviewSummary(context = {}) {
+  await loadAll(context);
+  if (!raw || context.signal?.aborted || context.isCurrent?.() === false) return null;
+  if (!res) recompute();
+  const { ds } = res, days = ds.days;
+  const last = [...days].reverse().find(d => isNum(d.ratio));
+  const flags = singleDayFlags(ds, ui.th).filter(i => ds.days[i].dd >= ui.gate);
+  return {
+    date: days.at(-1)?.date ?? null, ratio: last?.ratio ?? null, ratioDate: last?.date ?? null,
+    zone: zoneOf(last?.ratio), triggered: flags.includes(days.length - 1),
+    marginDay: days.at(-1)?.m?.[1] ?? null, th: ui.th, warn: WARN_LV, boom: BOOM_LV,
+  };
+}
+
 // ── 圖 ───────────────────────────────────────────────────────────────
 // F&G < thr 的連續區段 → markArea 的 [start,end] 對
 function fearSegments(days, thr) {

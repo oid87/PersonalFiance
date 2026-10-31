@@ -41,6 +41,16 @@ function setText(id, txt, color) {
   if (color) el.style.color = color;
 }
 
+// 每日總覽用：同 updateCards() 的 10Y−2Y 卡。
+export async function overviewSummary(context = {}) {
+  await loadAll(context);
+  if (!rows) return null;
+  const r2 = lastNonNull("t10y2y");
+  if (!r2) return null;
+  const v = r2.t10y2y;
+  return { date: r2.date, value: (v >= 0 ? "+" : "") + v.toFixed(2) + "%", signal: v < 0 ? "倒掛中" : "正常", color: v < 0 ? "#f85149" : "#3fb950" };
+}
+
 function lastNonNull(key) {
   for (let i = rows.length - 1; i >= 0; i--) {
     if (rows[i][key] != null) return rows[i];

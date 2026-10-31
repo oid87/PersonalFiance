@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { CATEGORIES, NAV_ITEMS, normalizeSearch, searchNavigation } from '../navigation-catalog.mjs';
+import { CATEGORIES, DEFAULT_TAB, NAV_ITEMS, PAGES, itemTitle, normalizeSearch, searchNavigation } from '../navigation-catalog.mjs';
 
 // Frozen id/label contract from the navigation before the regrouping.
 const ORIGINAL_LABELS = {
@@ -48,7 +48,6 @@ const ORIGINAL_LABELS = {
   "infl_nowcast": "通膨Nowcast",
   "cpi": "CPI 分項",
   "trend": "趨勢",
-  "home": "主儀表板",
   "pentagram": "五線譜",
   "macro": "宏觀",
   "usmacro": "美國總經",
@@ -87,13 +86,14 @@ const ORIGINAL_LABELS = {
   "tw_jp_kr_gdp": "台日韓GDP對照",
   "sox_vs_tw_semi_pe": "半導體估值(全球vs台灣)",
   "trendonify_pe": "Trendonify PE",
-  "marketstructure": "市場結構"
+  "marketstructure": "市場結構",
+  "overview": "每日總覽"
 };
 
 const ids = query => searchNavigation(query).map(item => item.id);
 
 test('all original screens occur once with unchanged labels', () => {
-  assert.equal(CATEGORIES.length, 8);
+  assert.equal(CATEGORIES.length, 9);
   assert.equal(NAV_ITEMS.length, 83);
   assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 83);
   assert.deepEqual(Object.fromEntries(NAV_ITEMS.map(item => [item.id, item.label])), ORIGINAL_LABELS);
@@ -119,4 +119,27 @@ test('search handles names, ids, category context, aliases, case and spaces', ()
   assert.equal(ids('P/E 台灣').includes('sox_vs_tw_semi_pe'), true);
   assert.deepEqual(ids('no-such-screen'), []);
   assert.equal(new Set(ids('融資')).size, ids('融資').length);
+});
+
+test('81 original screens plus QQQ恐慌背離 are grouped into 34 pages under the overview home', () => {
+  assert.equal(DEFAULT_TAB, 'overview');
+  assert.equal(CATEGORIES[0].id, 'home');
+  assert.deepEqual(CATEGORIES[0].pages.map(page => page.views.map(view => view.id)), [['overview']]);
+  const pages = PAGES.filter(page => page.categoryId !== 'home');
+  assert.equal(pages.length, 34);
+  assert.equal(new Set(PAGES.map(page => page.id)).size, PAGES.length);
+  // Page ids live in their own namespace so they can never shadow a #tab=<id> route.
+  const viewIds = new Set(NAV_ITEMS.map(item => item.id));
+  for (const page of PAGES) {
+    assert.equal(viewIds.has(page.id), false, page.id);
+    assert.ok(page.views.length >= 1, page.id);
+  }
+  assert.equal(pages.reduce((sum, page) => sum + page.views.length, 0), 82);
+  const stress = PAGES.find(page => page.id === 'p-stress');
+  assert.deepEqual(stress.views.map(view => view.id), ['stressdash', 'fsi', 'nfci', 'emfsi', 'twstress']);
+  const fsi = NAV_ITEMS.find(item => item.id === 'fsi');
+  assert.equal(fsi.pageLabel, '金融壓力');
+  assert.equal(itemTitle(fsi), '金融壓力');
+  assert.equal(itemTitle(NAV_ITEMS.find(item => item.id === 'nfci')), '金融壓力｜金融狀況');
+  assert.ok(ids('金融壓力').includes('emfsi'));
 });

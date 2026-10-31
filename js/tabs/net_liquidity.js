@@ -44,6 +44,16 @@ function findNDaysAgo(days) {
   return best;
 }
 
+// 每日總覽用：同 updateCards() 的水位與近 3 個月變化。
+export async function overviewSummary(context = {}) {
+  await loadAll(context);
+  if (!rows) return null;
+  const last = rows[rows.length - 1], m3 = findNDaysAgo(90);
+  const chg = m3 && m3.net_liq != null ? last.net_liq - m3.net_liq : null;
+  return { date: last.date, value: fmtT(last.net_liq), chg3m: chg == null ? null : (chg >= 0 ? "▲ +" : "▼ ") + fmtT(Math.abs(chg)).replace("$", ""),
+    signal: chg == null ? null : chg >= 0 ? "近3月擴張" : "近3月緊縮", color: chg == null ? null : chg >= 0 ? "#3fb950" : "#f85149" };
+}
+
 function fmtT(millions) {
   if (millions == null) return "—";
   return "$" + (millions / 1e6).toFixed(2) + " T";

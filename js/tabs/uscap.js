@@ -266,6 +266,12 @@ function wire() {
   for (const h of document.querySelectorAll('#tab-uscap [data-help]')) h.append(' ', infoButton(HELP[h.dataset.help], '說明：' + h.dataset.help));
 }
 
+// 每日總覽用：同 renderMarket() 的 liveStatus。load() 只填資料，loadedAt 由 activate() 設定，所以之後打開本頁仍會正常繪製。
+export async function overviewSummary(context = {}) {
+  if (!ds && (await load(context)) === false) return null;
+  return { asset, cfg: frame().cfg, status: U.liveStatus(frame(), ds) };
+}
+
 export async function activate(context = {}) {
   initInfoPopovers();
   if (ds && Date.now() - loadedAt < 300_000) { resize(); return; }   // re-entry with the same data: nothing to recompute

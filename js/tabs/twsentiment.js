@@ -155,11 +155,11 @@ export async function init(context = {}) {
   }
 }
 
-function fgLabel(v) {
+export function fgLabel(v) {
   if (v < 20) return "極度恐懼"; if (v < 40) return "恐懼";
   if (v < 60) return "中性"; if (v < 80) return "貪婪"; return "極度貪婪";
 }
-function fgColor(v) {
+export function fgColor(v) {
   if (v < 20) return "#ef4444"; if (v < 40) return "#f97316";
   if (v < 60) return "#eab308"; if (v < 80) return "#22c55e"; return "#16a34a";
 }
