@@ -2452,6 +2452,54 @@
     <div id="nonnormalhist-us-yearly" class="table-scroll" tabindex="0" aria-label="美股每年訊號天數"></div>
     <p class="nonnormalhist-note">限制：已下市或被併購的成分股多半抓不到資料，早年有效檔數偏少（2013 年 QQQ 約 62 檔、SOXX 14 檔），有倖存者偏差。SOXX 組只有二十檔上下，「一個月都沒有」比較常發生，訊號比另外兩組多（例如 2022 年整年半導體空頭）。</p>
   </section>
+  <section id="tab-qqqpanic" class="tab-section" hidden>
+    <header><h2 class="section-title">QQQ 盤中急跌 × 恐慌背離回測</h2>
+      <p class="section-subtitle">盤中跌幅（Low ÷ 前收）· VIX High／Fear &amp; Greed 恐慌分類 · 事前 60 日／事後 60 日分開 · 2015-01-01～2026-10-30</p>
+      <p class="callout-warn">描述性研究，不是買賣訊號或預測。A＝VIX High &lt; 30 且 F&amp;G ≥ 15；B＝VIX High ≥ 30 或 F&amp;G &lt; 15；VXN 只作輔助。Fear &amp; Greed 沒有發布時間戳，視為盤後才可得；所有分類都要 T 日收盤後才成立，最早以 T+1 開盤為研究進場基準。</p>
+      <p id="qqqpanic-asof" class="status"></p>
+    </header>
+    <div class="qqqpanic-controls">
+      <div class="qqqpanic-control"><span class="qqqpanic-label">盤中跌幅門檻</span><div id="qqqpanic-thr" class="chip-row" role="group" aria-label="盤中跌幅門檻"><span class="chip" data-qp-thr="-2">−2%</span><span class="chip active" data-qp-thr="-3">−3%（主）</span><span class="chip" data-qp-thr="-4">−4%</span><span class="chip" data-qp-thr="-5">−5%（附錄）</span></div></div>
+      <div class="qqqpanic-control"><span class="qqqpanic-label">樣本</span><div id="qqqpanic-set" class="chip-row" role="group" aria-label="樣本"><span class="chip active" data-qp-set="gv">爆量｜20 日去重</span><span class="chip" data-qp-set="g">不限量｜20 日去重</span><span class="chip" data-qp-set="r">不限量｜未去重逐筆</span></div></div>
+    </div>
+    <p id="qqqpanic-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <div id="qqqpanic-cards" class="qqqpanic-grid"></div>
+
+    <h3 data-qp-help="ts">1. 時間序列（上下聯動）</h3>
+    <div id="qqqpanic-range" class="chip-row" role="group" aria-label="區間"></div>
+    <div id="qqqpanic-ts" class="qqqpanic-chart qqqpanic-chart-tall" role="img" aria-label="QQQ、均線、VIX／VXN、Fear &amp; Greed 與事前高點回撤的聯動時間序列"></div>
+
+    <h3 data-qp-help="scatter">2. 事件散點與恐慌分區</h3>
+    <div id="qqqpanic-scatter" class="qqqpanic-chart" role="img" aria-label="事件的 Fear &amp; Greed 與 VIX High 散點，顏色為 60 日額外跌幅"></div>
+
+    <h3 data-qp-help="dist">3. 後續回撤分布（A0／A1／B）</h3>
+    <div id="qqqpanic-metric" class="chip-row" role="group" aria-label="分布指標"><span class="chip active" data-qp-metric="extra60">60 日額外跌幅</span><span class="chip" data-qp-metric="extra20">20 日額外跌幅</span><span class="chip" data-qp-metric="totalDD60">60 日總回撤</span><span class="chip" data-qp-metric="ret20">20 日報酬</span><span class="chip" data-qp-metric="ret60">60 日報酬</span><span class="chip" data-qp-metric="mae60">60 日 MAE</span></div>
+    <div id="qqqpanic-dist" class="qqqpanic-chart" role="img" aria-label="A0、A1、B 三組後續指標分布"></div>
+
+    <h3 data-qp-help="path">4. A 組急跌之後：恐慌是否延遲出現、又跌多深（事後路徑）</h3>
+    <div id="qqqpanic-path" class="qqqpanic-chart qqqpanic-chart-short" role="img" aria-label="A 組事件依恐慌升級時點與 60 日額外跌幅分級的堆疊長條"></div>
+    <p id="qqqpanic-path-note" class="note-muted"></p>
+
+    <h3 data-qp-help="ab">5. A／B 比較</h3>
+    <div id="qqqpanic-ab" class="table-scroll"></div>
+    <p id="qqqpanic-ab-note" class="note-muted"></p>
+
+    <h3>6. 分層</h3>
+    <div class="qqqpanic-control"><label for="qqqpanic-strat">分層方式</label><select id="qqqpanic-strat"></select></div>
+    <div id="qqqpanic-strata" class="table-scroll"></div>
+
+    <h3 data-qp-help="match">7. 2026 事件的歷史相近事件（只用 T 日及以前資料）</h3>
+    <div class="qqqpanic-control"><label for="qqqpanic-target">2026 事件</label><select id="qqqpanic-target"></select></div>
+    <div id="qqqpanic-match" class="table-scroll"></div>
+
+    <h3>8. 特殊區間</h3>
+    <div id="qqqpanic-profiles" class="table-scroll"></div>
+    <div class="qqqpanic-control"><label for="qqqpanic-period">區間事件（≤ −2%）</label><select id="qqqpanic-period"></select></div>
+    <div id="qqqpanic-period-events" class="table-scroll"></div>
+
+    <p class="note-muted">逐筆資料與報告：<a href="docs/research/qqq-panic-divergence-events.csv">events.csv</a>、<a href="docs/research/qqq-panic-divergence-groups.csv">groups.csv</a>、<a href="docs/research/qqq-panic-divergence-matches.csv">matches.csv</a>、<a href="docs/research/qqq-panic-divergence-backtest.md">回測數據</a>、<a href="docs/research/qqq-panic-divergence.md">方法與解讀</a>。本頁由 <code>js/tabs/qqqpanic_calc.mjs</code> 即時重算，與報告共用同一引擎；資料檔若被上游修訂，數字可能與報告快照不同。</p>
+  </section>
+
   <section id="tab-uscap" class="tab-section" hidden>
     <header><h2 class="section-title">美股恐慌性拋售警報（US Capitulation Alert）</h2>
       <p class="section-subtitle">恐慌偵測 · 去槓桿背景 · 止穩確認 — 三個階段分開看，不合成單一分數</p>

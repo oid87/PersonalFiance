@@ -177,6 +177,10 @@ export const CATEGORIES = [
         "label": "美股恐慌拋售警報"
       },
       {
+        "id": "qqqpanic",
+        "label": "QQQ恐慌背離回測"
+      },
+      {
         "id": "twchips",
         "label": "台股籌碼"
       },
@@ -379,6 +383,7 @@ const ALIASES = {
   nonnormal: ["極端", "極端狀態", "共振", "多重確認", "台股", "費半", "櫃買", "VIX"],
   nonnormalhist: ["過往觀察", "回測", "跌停", "跌停家數", "無觀察", "觀察類股", "極端狀態"],
   uscap: ["US Capitulation", "恐慌", "拋售", "Put/Call", "VIX", "VXN", "止穩", "capitulation"],
+  qqqpanic: ["恐慌背離", "盤中急跌", "Fear & Greed", "F&G", "回測", "再破底", "panic divergence"],
   fsi: ['FSI'], nfci: ['NFCI'], cpi: ['CPI'],
   gdp_productivity_decomp: ['GDP'], tw_jp_kr_gdp: ['GDP', '台灣'],
   aaii: ['AAII'], naaim: ['NAAIM'], vixskew: ['VIX'],
