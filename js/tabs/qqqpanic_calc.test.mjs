@@ -265,3 +265,59 @@ test('MA break union counts a same-day 125/150 break once', () => {
   assert.equal(u.length, 2);
   assert.deepEqual(u[0].mas, [125, 150]);
 });
+
+// ── 互動頁預設設定必須與研究腳本一致（真實資料，離線）──────────────────
+import { readFileSync } from 'node:fs';
+import { configure, isFormal, run } from './qqqpanic_calc.mjs';
+const realData = () => {
+  const rd = p => JSON.parse(readFileSync(new URL('../../data/' + p, import.meta.url), 'utf8')).data;
+  return { QQQ: rd('QQQ.json'), VIX: rd('VIX.json'), VXN: rd('VXN.json'), FG: rd('fear_greed.json') };
+};
+const report = () => JSON.parse(readFileSync(new URL('../../docs/research/qqq-panic-divergence-backtest.json', import.meta.url), 'utf8'));
+
+test('UI default configuration reproduces the research report sample counts', () => {
+  const cfg = configure({});
+  assert.equal(isFormal(cfg, -3), true);
+  const { F } = run(realData());
+  for (const s of report().samples) {
+    const R = runThreshold(F, s.threshold, cfg);
+    assert.equal(R.rows.length, s.raw, `raw ${s.threshold}`);
+    assert.equal(R.groups.length, s.groups, `groups ${s.threshold}`);
+    assert.equal(R.rows.filter(r => r.panic === 'A').length, s.rawA);
+    assert.equal(R.rows.filter(r => r.panic === 'B').length, s.rawB);
+    assert.equal(R.reps.filter(r => r.volSurge && r.panic === 'A').length, s.groupVolA);
+  }
+});
+
+test('acceptance: 2026-10-22 / 10-30 values, RVOL 2.0 filter and VIX threshold 20 reclassification', () => {
+  const { F } = run(realData());
+  const R = runThreshold(F, -3, configure({}));
+  const e22 = R.rows.find(r => r.date === '2026-10-22'), e30 = R.rows.find(r => r.date === '2026-10-30');
+  assert.ok(e22 && e30, 'both events kept in the all-events set even though they share a 20-day group');
+  assert.equal(e22.groupId, e30.groupId);
+  assert.ok(Math.abs(e30.dropLow - -4.458) < 0.01);
+  assert.ok(Math.abs(e30.volRatio - 2.32) < 0.01);
+  assert.equal(e30.vixHigh, 23.93);
+  assert.equal(e30.fg, 26.24);
+  assert.equal(e30.panicSub, 'A0');
+  assert.ok(Math.abs(e30.ma[150].dist - -1.90) < 0.01);
+  assert.equal(e30.avail, 0);
+  assert.equal(e30.h[60], null);
+  assert.ok(e22.volRatio < 2 && e30.volRatio >= 2, 'RVOL 2.0 keeps 10-30 and drops 10-22');
+  const R20 = runThreshold(F, -3, configure({ vixPanic: 20 }));
+  assert.equal(R20.rows.find(r => r.date === '2026-10-30').panic, 'B');
+  assert.equal(isFormal(configure({ vixPanic: 20 }), -3), false);
+});
+
+test('exploratory drop definitions and windows recompute events instead of relabelling', () => {
+  const { F } = run(realData());
+  const low = runThreshold(F, -3, configure({})).rows.length;
+  const close = runThreshold(F, -3, configure({ dropDef: 'close' })).rows;
+  assert.ok(close.length < low);
+  for (const r of close) assert.ok(r.closeChg <= -3 + 1e-9);
+  const c120 = configure({ postWin: 120, preWin: 20 });
+  assert.deepEqual(c120.horizons, [5, 20, 60, 120]);
+  assert.deepEqual(configure({ postWin: 20 }).horizons, [5, 20]);
+  const r120 = runThreshold(F, -3, c120).rows.find(x => x.date === '2022-01-05');
+  assert.ok(r120.h[120] && r120.complete && r120.avail === 120);
+});

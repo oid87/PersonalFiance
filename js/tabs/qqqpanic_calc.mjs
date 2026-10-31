@@ -108,9 +108,20 @@ export function sma(arr, p) {
 
 // ── day-level helpers ───────────────────────────────────────────────────
 export const intradayDrop = (F, i) => (i >= 1 ? pctOf(F.l[i], F.c[i - 1]) : null);
-export function isEvent(F, i, thr) {
-  if (i < 1 || !finite(F.l[i]) || !finite(F.c[i - 1])) return false;
-  return F.l[i] / F.c[i - 1] - 1 <= thr / 100;
+// 跌幅定義：low＝前收→當日 Low（正式口徑）；close＝前收→當收、range＝當日 High→Low（僅供探索）
+export const DROP_DEFS = Object.freeze({
+  low: { label: '前收 → 當日 Low（正式）', fn: (F, i) => (i >= 1 ? pctOf(F.l[i], F.c[i - 1]) : null) },
+  close: { label: '前收 → 當日收盤（探索）', fn: (F, i) => (i >= 1 ? pctOf(F.c[i], F.c[i - 1]) : null) },
+  range: { label: '當日 High → Low 振幅（探索）', fn: (F, i) => pctOf(F.l[i], F.h[i]) },
+});
+export function isEvent(F, i, thr, cfg = F.cfg) {
+  if (i < 1) return false;
+  if ((cfg.dropDef || 'low') === 'low') {   // 正式口徑維持原比較式，與 Python 複核逐位一致
+    if (!finite(F.l[i]) || !finite(F.c[i - 1])) return false;
+    return F.l[i] / F.c[i - 1] - 1 <= thr / 100;
+  }
+  const v = DROP_DEFS[cfg.dropDef].fn(F, i);
+  return finite(v) && v <= thr;
 }
 export function panicClass(vixHigh, fg, cfg = DEFAULTS) {
   const vixP = finite(vixHigh) ? vixHigh >= cfg.vixPanic : null;
@@ -119,7 +130,7 @@ export function panicClass(vixHigh, fg, cfg = DEFAULTS) {
   if (vixP === false && fgP === false) return { cls: 'A', vixP, fgP, detail: 'none' };
   return { cls: 'U', vixP, fgP, detail: 'missing' };   // 有缺值且已知部分未成立 → 不歸 A，也不歸 B
 }
-const isPanicDay = (F, j) => (finite(F.vixH[j]) && F.vixH[j] >= F.cfg.vixPanic) || (finite(F.fg[j]) && F.fg[j] < F.cfg.fgPanic);
+const isPanicDay = (F, j, cfg = F.cfg) => (finite(F.vixH[j]) && F.vixH[j] >= cfg.vixPanic) || (finite(F.fg[j]) && F.fg[j] < cfg.fgPanic);
 
 function windowStat(arr, from, to, fn) {   // inclusive indices; returns {value, idx, count}
   let best = null, idx = null, count = 0;
@@ -232,7 +243,7 @@ export function eventRow(F, i, cfg = F.cfg) {
     const fgMax = wMax(F.fg, post0, post1), fgMin = wMin(F.fg, post0, post1);
     const fg15 = firstIdx(post0, post1, j => finite(F.fg[j]) && F.fg[j] < cfg.fgPanic);
     const vix30 = firstIdx(post0, post1, j => finite(F.vixH[j]) && F.vixH[j] >= cfg.vixPanic);
-    const anyP = firstIdx(post0, post1, j => isPanicDay(F, j));
+    const anyP = firstIdx(post0, post1, j => isPanicDay(F, j, cfg));
     r.post = {
       fgMax: fgMax.value, fgMin: fgMin.value, fgMinDate: at(fgMin.idx), fgCount: fgMax.count,
       vixHMax: wMax(F.vixH, post0, post1).value, vixLMin: wMin(F.vixL, post0, post1).value,
@@ -244,15 +255,15 @@ export function eventRow(F, i, cfg = F.cfg) {
   } else r.post = null;
   // A→B 事後路徑（只作事後研究；T 日分類不變）
   r.path = r.panic !== 'A' ? r.panic
-    : finite(r.post?.panicDays) ? (r.post.panicDays <= 20 ? 'A→B ≤20日' : 'A→B 21–60日')
+    : finite(r.post?.panicDays) ? (r.post.panicDays <= Math.min(20, W) ? `A→B ≤${Math.min(20, W)}日` : `A→B 21–${W}日`)
       : r.complete ? 'A 未升級' : '右設限';
   return r;
 }
 
 // ── events / groups ─────────────────────────────────────────────────────
-export function rawEvents(F, thr) {
+export function rawEvents(F, thr, cfg = F.cfg) {
   const out = [];
-  for (let i = Math.max(1, F.startIdx); i <= F.endIdx; i++) if (isEvent(F, i, thr)) out.push(i);
+  for (let i = Math.max(1, F.startIdx); i <= F.endIdx; i++) if (isEvent(F, i, thr, cfg)) out.push(i);
   return out;
 }
 // 錨定法：新群組從第一筆起算 groupWin 個交易日（含當日），之後的事件開新群組。
@@ -266,14 +277,14 @@ export function groupEvents(idxs, groupWin = DEFAULTS.groupWin) {
   return groups;
 }
 
-export function runThreshold(F, thr) {
-  const idxs = rawEvents(F, thr);
-  const rows = idxs.map(i => eventRow(F, i));
+export function runThreshold(F, thr, cfg = F.cfg) {
+  const idxs = rawEvents(F, thr, cfg);
+  const rows = idxs.map(i => eventRow(F, i, cfg));
   const byIdx = new Map(rows.map(r => [r.idx, r]));
   // 60 日冷卻敏感度：只標代表事件，不改主群組
-  const cool = new Set(groupEvents(idxs, F.cfg.coolWin).map(g => g.anchor));
+  const cool = new Set(groupEvents(idxs, cfg.coolWin).map(g => g.anchor));
   rows.forEach(r => { r.isCoolRep = cool.has(r.idx); });
-  const groups = groupEvents(idxs, F.cfg.groupWin).map((g, k) => {
+  const groups = groupEvents(idxs, cfg.groupWin).map((g, k) => {
     const members = g.members.map(i => byIdx.get(i));
     const gid = `${thr}#${String(k + 1).padStart(3, '0')}`;
     members.forEach((m, j) => { m.groupId = gid; m.groupRank = j + 1; m.isRep = j === 0; });
@@ -483,6 +494,18 @@ export function periodProfile(F, from, to, runs) {
     newLow60: cnt(i => i >= 60 && finite(F.c[i]) && F.c[i] < wMin(F.c, i - 60, i - 1).value),
     events: ev,
   };
+}
+
+// 互動頁用：以 DEFAULTS 為底套用可調參數；horizons 依事後窗調整（不超過事後窗，且包含事後窗本身）。
+export function configure(overrides = {}) {
+  const cfg = { ...DEFAULTS, ...overrides };
+  cfg.horizons = [...new Set([5, 20, 60, 120].filter(h => h <= cfg.postWin).concat(cfg.postWin))].sort((a, b) => a - b);
+  return cfg;
+}
+export const FORMAL_KEYS = Object.freeze(['dropDef', 'volSurge', 'vixPanic', 'fgPanic', 'preWin', 'postWin']);
+export function isFormal(cfg, thr) {
+  return thr === DEFAULTS.main && (cfg.dropDef || 'low') === 'low' && cfg.volSurge === DEFAULTS.volSurge && cfg.vixPanic === DEFAULTS.vixPanic
+    && cfg.fgPanic === DEFAULTS.fgPanic && cfg.preWin === DEFAULTS.preWin && cfg.postWin === DEFAULTS.postWin;
 }
 
 export function run(raw, cfg = DEFAULTS) {

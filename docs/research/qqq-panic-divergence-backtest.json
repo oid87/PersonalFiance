@@ -3,7 +3,7 @@
   "study": "2015-01-01 ～ 2026-10-30",
   "first_trading_day": "2015-01-02",
   "last_trading_day": "2026-10-30",
-  "git_head_at_run": "25112a616aa1e4cf07abffa650f5d2b8f4760530",
+  "git_head_at_run": "e83b9f68fed1765673587566d12288a7575d99da",
   "engine": "js/tabs/qqqpanic_calc.mjs"
  },
  "config": {

@@ -1384,3 +1384,13 @@
   #tab-qqqpanic .qqqpanic-chart { height:380px; }
   #tab-qqqpanic .qqqpanic-chart-tall { height:640px; }
 }
+#tab-qqqpanic .qqqpanic-params { display:flex; flex-wrap:wrap; gap:8px 18px; margin:10px 0; }
+#tab-qqqpanic .qqqpanic-param { min-width:0; max-width:100%; }
+#tab-qqqpanic .chip-row input { min-height:36px; padding:4px 8px; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px; max-width:150px; }
+#tab-qqqpanic button.chip { font:inherit; color:inherit; background:none; cursor:pointer; }
+#tab-qqqpanic .qqqpanic-detail { border:1px solid var(--border); border-radius:8px; padding:12px; margin:16px 0; background:var(--panel); }
+#tab-qqqpanic .qqqpanic-detail-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:4px 16px; font-size:var(--text-sm,13px); font-variant-numeric:tabular-nums; }
+#tab-qqqpanic .qqqpanic-mini { width:100%; height:300px; margin-top:10px; }
+#tab-qqqpanic .qqqpanic-list { max-height:420px; overflow:auto; }
+#tab-qqqpanic .qqqpanic-list tbody tr { cursor:pointer; }
+#tab-qqqpanic .qqqpanic-list tbody tr:hover, #tab-qqqpanic tr.qqqpanic-sel { background:rgba(227,179,65,0.15); }

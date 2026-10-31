@@ -13,7 +13,7 @@
 | VXN | `data/VXN.json` | 6482｜2001-01-23 ～ 2026-10-30 | 9bf7eb2382a5853c | 2026-10-31 | Yahoo Finance ^VXN（scripts/fetch_stocks.py） | 同 VIX；僅作輔助 |
 | FG | `data/fear_greed.json` | 3962｜2011-01-03 ～ 2026-10-30 | 37390436d470fa28 | 2026-10-31 | CNN Fear & Greed：2011 起歷史取自 GitHub whit3rabbit/fear-greed-data 鏡像，近期取自 CNN production.dataviz.cnn.io graphdata（scripts/fetch_fear_greed.py） | 每日一值、無盤中時間戳；本研究視為「盤後才可得」 |
 
-研究期間缺漏：Fear & Greed 缺 22 個交易日（2020-06-08 ～ 2020-07-08），不補值；VIX High 缺 0 日；VXN High 缺 0 日。執行時 git HEAD：`25112a616aa1e4cf07abffa650f5d2b8f4760530`（資料以上表 SHA-256 為準）。
+研究期間缺漏：Fear & Greed 缺 22 個交易日（2020-06-08 ～ 2020-07-08），不補值；VIX High 缺 0 日；VXN High 缺 0 日。執行時 git HEAD：`e83b9f68fed1765673587566d12288a7575d99da`（資料以上表 SHA-256 為準）。
 
 ## 2. 樣本量
 
