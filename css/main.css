@@ -758,7 +758,7 @@
       /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
          保留原高度、改用放大圖表 */
       .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
-        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart,
         #kelly-chart, #roc4-chart, #val-chart) {
         max-height: calc(100dvh - 16px);
       }
@@ -1370,8 +1370,14 @@
 #tab-tqqqflow .tqqqflow-h { margin:18px 0 6px; font-size:17px; }
 #tab-tqqqflow .tqqqflow-stats { display:grid; grid-template-columns:repeat(auto-fill, minmax(165px, 1fr)); gap:8px; margin:8px 0; }
 #tab-tqqqflow .tqqqflow-stat { display:flex; flex-direction:column; gap:2px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--panel); min-width:0; }
-#tab-tqqqflow .tqqqflow-stat.is-lit { border-color:#ef4444; }
+#tab-tqqqflow .tqqqflow-stat.is-lit { border-color:#ef4444; border-width:2px; }
+#tab-tqqqflow .tqqqflow-state { margin-left:6px; padding:0 6px; border-radius:999px; font-style:normal; font-size:11px; border:1px solid var(--border); }
+#tab-tqqqflow .tqqqflow-state.is-ok { color:#fff; background:#ef4444; border-color:#ef4444; }
+#tab-tqqqflow .tqqqflow-state.is-no { color:var(--text); }
+#tab-tqqqflow .tqqqflow-state.is-off { color:var(--muted); border-style:dashed; }
+#tab-tqqqflow .tqqqflow-verdict { margin:6px 0 8px; padding:8px 12px; border-left:4px solid #f0883e; background:var(--panel); border-radius:6px; font-size:15px; line-height:1.7; }
 #tab-tqqqflow .tqqqflow-stat b { font-size:20px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+#tab-tqqqflow .tqqqflow-stat b.is-compact { font-size:15px; line-height:1.5; }
 #tab-tqqqflow .tqqqflow-stat span { font-size:12px; color:var(--muted); }
 #tab-tqqqflow .tqqqflow-params { display:flex; flex-wrap:wrap; gap:8px 18px; margin:10px 0; }
 #tab-tqqqflow .tqqqflow-label { display:block; margin-bottom:4px; color:var(--muted); font-size:13px; }
@@ -1383,7 +1389,7 @@
 #tab-tqqqflow .chip-row { display:flex; flex-wrap:wrap; gap:6px; }
 #tab-tqqqflow .tqqqflow-tablehead { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:18px 0 6px; }
 #tab-tqqqflow .tqqqflow-tablehead .tqqqflow-h { margin:0; }
-#tab-tqqqflow .tqqqflow-chart { width:100%; height:480px; min-height:380px; margin:8px 0; }
+#tab-tqqqflow .tqqqflow-chart { width:100%; height:860px; min-height:700px; margin:8px 0; }
 #tab-tqqqflow table { border-collapse:collapse; width:100%; font-size:14px; }
 #tab-tqqqflow th, #tab-tqqqflow td { padding:5px 8px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap; font-variant-numeric:tabular-nums; }
 #tab-tqqqflow th:first-child, #tab-tqqqflow td:first-child { text-align:left; }
@@ -1398,12 +1404,14 @@
 #tab-tqqqflow .tqqqflow-cur { outline:2px solid var(--text); outline-offset:-2px; }
 #tab-tqqqflow .tqqqflow-details { margin:12px 0; font-size:14px; line-height:1.7; }
 #tab-tqqqflow .tqqqflow-details summary { cursor:pointer; color:var(--muted); min-height:32px; }
-#tab-tqqqflow .tqqqflow-details ul { margin:4px 0; padding-left:1.3em; }
+#tab-tqqqflow .tqqqflow-details :is(ul, ol) { margin:4px 0; padding-left:1.3em; }
+#tab-tqqqflow .tqqqflow-howto { margin:4px 0 8px; padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:var(--panel); }
+#tab-tqqqflow .tqqqflow-howto summary { color:var(--text); font-weight:600; }
 @media (max-width: 640px) {
   #tab-tqqqflow .tqqqflow-stats { grid-template-columns:repeat(2, minmax(0, 1fr)); }
   #tab-tqqqflow .chip { min-height:44px; display:inline-flex; align-items:center; }
   #tab-tqqqflow .tqqqflow-switch { min-height:36px; min-width:52px; }
-  #tab-tqqqflow .tqqqflow-chart { height:440px; }
+  #tab-tqqqflow .tqqqflow-chart { height:820px; }
   #tab-tqqqflow th, #tab-tqqqflow td { padding:5px 6px; font-size:13px; }
 }
 #tab-qqqpanic .qqqpanic-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--space-3,12px); margin:12px 0; }

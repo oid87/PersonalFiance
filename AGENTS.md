@@ -168,5 +168,6 @@ Vercel（personal-fiance-nine.vercel.app）連 GitHub `main`，push 即自動部
 標準迴圈:讀 memory 入口與本檔 → 用 write-spec skill 寫 spec(驗收條件要可機械核對)→ 實作交 executor subagent(sonnet, effort medium)→ 驗收交 verifier subagent(sonnet, effort high)→ 主模型 final review 全部驗收／diff／限制 → 新結論/眉角收錄 memory。
 - **Claude Code 與 Codex/ChatGPT 共用本 repo**:Claude 讀 `CLAUDE.md` + `.claude/skills/` + `.claude/agents/`;Codex 讀 `AGENTS.md` + `.agents/skills/` + `.codex/agents/`。**`CLAUDE.md` 與 `.claude/skills/` 是唯一來源**,`AGENTS.md` 與 `.agents/skills/` 由 `python3 scripts/sync_agent_docs.py` 產生、勿手改;改完本檔或 skill 一定要重跑(`scripts/tests/test_agent_docs.py` 會在不同步時失敗)。`.claude/` 在 `.gitignore` 裡、只存在本機;`.codex/agents/*.toml` 手動維護,與 `.claude/agents/*.md` 保持同義。
 - 主迴圈保持 context 乾淨:大量讀檔/盤點交 subagent,只收摘要。
+- **新頁面或版面大改,推上去之前至少派一個 subagent(Opus、effort low)當「第一次看的讀者」審查**:只給 Playwright 截的桌機＋手機整頁截圖(不給原始碼、不先講設計意圖,避免被帶著走),請它用 3 句話說出這頁想表達什麼、今天狀態、歷史結果,再列出看不懂的地方與前 3 項該改的。說不出重點就先改版面再推。(2026-11-01 使用者要求:TQQQ 資金流頁把淨值與流入疊成雙軸一張圖,使用者看不懂。)
 - 同一判斷被糾正第二次 → 寫進本檔;同一套步驟重複第三次 → 做成 skill。目前 skills:add-tab、fetch-script。
 - git:只有當次已授權 shipping 才 stage／commit;只 stage 該功能相關檔案,不要 git add -A。QA 先驗 task diff 與新檔交付完整性,不能為驗收 stage 他人 WIP；已授權 commit 時實作檔與 wiring 必須同 commit(教訓:twsectorflow 實作檔漏 add)。

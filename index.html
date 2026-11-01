@@ -2541,15 +2541,25 @@
   <section id="tab-tqqqflow" class="tab-section" hidden>
     <header class="tqqqflow-head"><h2 class="section-title">TQQQ 大額資金流入回測</h2><span id="tqqqflow-asof" class="status"></span></header>
     <p id="tqqqflow-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <p id="tqqqflow-verdict" class="tqqqflow-verdict" aria-live="polite"></p>
     <p class="tqqqflow-note">TQQQ 單日淨流入很大的那天之後，QQQ／QLD／TQQQ 漲跌多少？流量＝ProShares 官方每日流通股數變化 × 淨值（與 ETFIQ 逐日相同），2010-02 起。只是回顧歷史，不是買賣訊號。</p>
     <div id="tqqqflow-now" class="tqqqflow-stats" aria-live="polite"></div>
+    <details class="tqqqflow-details tqqqflow-howto" open>
+      <summary>怎麼看這頁</summary>
+      <ol>
+        <li><b>上面的卡片＝今天</b>：每張卡標「達標／未達／未啟用」；「今天是否觸發」要所有已啟用的條件都達標才算，觸發時會變紅框。</li>
+        <li><b>按鈕＝定義事件</b>：先選流入門檻、回撤、冷卻、進場時點；虛線框裡的恐懼貪婪／VIX／VXN 按「開」才會加進條件。「T 收盤」要收盤後才知道流量，實際買不到，只用來重現原表。</li>
+        <li><b>圖＝每次事件長什麼樣</b>：橘色直線往上看 TQQQ 後來漲還是跌，往下看當天流入多大、QQQ 跌多深、市場多恐慌。</li>
+        <li><b>表＝事件後漲跌</b>：「事件後報酬」看每筆 5–60 日漲跌；「超額」大於 0＝比平常日子好。少於 5 筆時只是幾個個案，別當成規律。</li>
+      </ol>
+    </details>
 
     <div class="tqqqflow-params" role="group" aria-label="研究參數">
       <div class="tqqqflow-param"><span class="tqqqflow-label">單日淨流入</span><div id="tqqqflow-thr" class="chip-row"><span class="chip" data-tqqqflow-thr="usd:5e8">≥ 5 億美元</span><span class="chip active" data-tqqqflow-thr="usd:8e8">≥ 8 億美元</span><span class="chip" data-tqqqflow-thr="usd:10e8">≥ 10 億美元</span><span class="chip" data-tqqqflow-thr="pct:0.03">≥ 前日規模 3%</span></div></div>
       <div class="tqqqflow-param"><span class="tqqqflow-label">QQQ 距 52 週高點</span><div id="tqqqflow-dd" class="chip-row"><span class="chip" data-tqqqflow-dd="0">不限</span><span class="chip" data-tqqqflow-dd="0.05">≥ 5%</span><span class="chip active" data-tqqqflow-dd="0.1">≥ 10%</span><span class="chip" data-tqqqflow-dd="0.15">≥ 15%</span></div></div>
       <div class="tqqqflow-param"><span class="tqqqflow-label">冷卻期</span><div id="tqqqflow-cool" class="chip-row"><span class="chip" data-tqqqflow-cool="0">無</span><span class="chip active" data-tqqqflow-cool="20">20 個交易日</span></div></div>
-      <div class="tqqqflow-param"><span class="tqqqflow-label">進場</span><div id="tqqqflow-lag" class="chip-row"><span class="chip" data-tqqqflow-lag="0">T 收盤（對照用）</span><span class="chip active" data-tqqqflow-lag="1">T+1 收盤</span><span class="chip" data-tqqqflow-lag="2">T+2 收盤</span></div></div>
-      <div class="tqqqflow-param"><span class="tqqqflow-label">一鍵設定</span><div id="tqqqflow-preset" class="chip-row"><span class="chip active" data-tqqqflow-preset="spec">研究設定</span><span class="chip" data-tqqqflow-preset="chart">只看資金流（原表口徑）</span></div></div>
+      <div class="tqqqflow-param"><span class="tqqqflow-label">進場</span><div id="tqqqflow-lag" class="chip-row"><span class="chip" data-tqqqflow-lag="0">T 收盤（無法實際交易）</span><span class="chip active" data-tqqqflow-lag="1">T+1 收盤</span><span class="chip" data-tqqqflow-lag="2">T+2 收盤</span></div></div>
+      <div class="tqqqflow-param"><span class="tqqqflow-label">一鍵設定</span><div id="tqqqflow-preset" class="chip-row"><span class="chip active" data-tqqqflow-preset="spec">預設：8 億＋回撤 10%</span><span class="chip" data-tqqqflow-preset="chart">只看流入 ≥ 8 億（重現原表）</span></div></div>
     </div>
     <div class="tqqqflow-params tqqqflow-filters" role="group" aria-label="情緒與波動條件">
       <span class="tqqqflow-filters-title">情緒與波動條件（開關，可同時開；T 日收盤值）</span>
@@ -2558,9 +2568,13 @@
       <div class="tqqqflow-param tqqqflow-filter"><span class="tqqqflow-label">VXN 收盤 ≥ <button type="button" class="tqqqflow-switch" role="switch" aria-checked="false" data-tqqqflow-switch="vxn" aria-label="VXN 收盤條件開關">關</button></span><div id="tqqqflow-vxn" class="chip-row"><span class="chip" data-tqqqflow-vxn="25">25</span><span class="chip active" data-tqqqflow-vxn="30">30</span><span class="chip" data-tqqqflow-vxn="35">35</span><span class="chip" data-tqqqflow-vxn="40">40</span><span class="chip" data-tqqqflow-vxn="45">45</span></div></div>
     </div>
 
-    <h3 class="tqqqflow-h">TQQQ 淨值與每日淨流入</h3>
-    <p class="tqqqflow-note">上：TQQQ 淨值（左軸）與每日淨流入（右軸，紅＝流入、綠＝流出），直線＝目前條件的事件日。下：QQQ 距 52 週收盤高點，虛線＝回撤門檻。</p>
-    <div id="tqqqflow-chart" class="tqqqflow-chart" role="img" aria-label="TQQQ 淨值、每日淨流入與事件日，下方為 QQQ 距 52 週高點"></div>
+    <h3 class="tqqqflow-h">走勢與條件（五格共用時間軸）</h3>
+    <p class="tqqqflow-note">橘色直線＝事件日；紅虛線＝已啟用的門檻，灰虛線＝未啟用。點圖看當天數值，底下拉桿改時間範圍。</p>
+    <div id="tqqqflow-chart" class="tqqqflow-chart" role="img" aria-label="五格共用時間軸：TQQQ 淨值、每日淨流入、QQQ 距 52 週高點、CNN 恐懼貪婪、VIX 與 VXN，標出事件日與門檻"></div>
+
+    <h3 class="tqqqflow-h">換個門檻還成立嗎</h3>
+    <p class="tqqqflow-note">先看這張：只有當放寬門檻、事件變多時超額報酬還是正的，結果才比較可信。每格＝事件數＋20 日超額報酬（比平常日子），全期、沿用目前的冷卻期、進場時點與開關；粗框＝目前選的組合。</p>
+    <div id="tqqqflow-sens" class="table-scroll" tabindex="0" aria-label="門檻敏感度"></div>
 
     <div class="tqqqflow-tablehead"><h3 class="tqqqflow-h">事件後報酬</h3>
       <div id="tqqqflow-asset" class="chip-row"><span class="chip" data-tqqqflow-asset="QQQ">QQQ</span><span class="chip" data-tqqqflow-asset="QLD">QLD</span><span class="chip active" data-tqqqflow-asset="TQQQ">TQQQ</span></div>
@@ -2572,10 +2586,6 @@
 
     <h3 class="tqqqflow-h">三檔比較</h3>
     <div id="tqqqflow-compare" class="table-scroll" tabindex="0" aria-label="QQQ、QLD、TQQQ 比較"></div>
-
-    <h3 class="tqqqflow-h">換個門檻還成立嗎</h3>
-    <p class="tqqqflow-note">全期、目前冷卻期、進場時點與情緒／波動開關下，各門檻組合的事件數與 20 日超額報酬（對無訊號日）。粗框＝目前選的組合。</p>
-    <div id="tqqqflow-sens" class="table-scroll" tabindex="0" aria-label="門檻敏感度"></div>
 
     <details class="tqqqflow-details">
       <summary>口徑與限制</summary>
