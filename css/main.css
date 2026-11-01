@@ -1362,6 +1362,44 @@
   #tab-nonnormalhist .nonnormalhist-link { margin-left:0; min-height:44px; display:inline-flex; align-items:center; }
   #tab-nonnormalhist th, #tab-nonnormalhist td { padding:6px 6px; font-size:13px; }
 }
+/* ── TQQQ 資金流回測（tqqqflow）── */
+#tab-tqqqflow .tqqqflow-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; padding:12px 0 4px; }
+#tab-tqqqflow .tqqqflow-head .section-title { font-size:19px; padding:0; border-top:0; margin:0; }
+#tab-tqqqflow .tqqqflow-head .status { border-top:0; padding:0; }
+#tab-tqqqflow .tqqqflow-note { color:var(--muted); font-size:13px; line-height:1.6; margin:4px 0 8px; }
+#tab-tqqqflow .tqqqflow-h { margin:18px 0 6px; font-size:17px; }
+#tab-tqqqflow .tqqqflow-stats { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:8px 0; }
+#tab-tqqqflow .tqqqflow-stat { display:flex; flex-direction:column; gap:2px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--panel); min-width:0; }
+#tab-tqqqflow .tqqqflow-stat.is-lit { border-color:#ef4444; }
+#tab-tqqqflow .tqqqflow-stat b { font-size:20px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+#tab-tqqqflow .tqqqflow-stat span { font-size:12px; color:var(--muted); }
+#tab-tqqqflow .tqqqflow-params { display:flex; flex-wrap:wrap; gap:8px 18px; margin:10px 0; }
+#tab-tqqqflow .tqqqflow-label { display:block; margin-bottom:4px; color:var(--muted); font-size:13px; }
+#tab-tqqqflow .chip-row { display:flex; flex-wrap:wrap; gap:6px; }
+#tab-tqqqflow .tqqqflow-tablehead { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:18px 0 6px; }
+#tab-tqqqflow .tqqqflow-tablehead .tqqqflow-h { margin:0; }
+#tab-tqqqflow .tqqqflow-chart { width:100%; height:480px; min-height:380px; margin:8px 0; }
+#tab-tqqqflow table { border-collapse:collapse; width:100%; font-size:14px; }
+#tab-tqqqflow th, #tab-tqqqflow td { padding:5px 8px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap; font-variant-numeric:tabular-nums; }
+#tab-tqqqflow th:first-child, #tab-tqqqflow td:first-child { text-align:left; }
+#tab-tqqqflow thead th { color:var(--muted); font-weight:600; }
+#tab-tqqqflow .table-scroll { max-width:100%; overflow-x:auto; margin:4px 0 10px; }
+#tab-tqqqflow #tqqqflow-summary table, #tab-tqqqflow #tqqqflow-compare table, #tab-tqqqflow #tqqqflow-sens table { max-width:760px; }
+#tab-tqqqflow .tqqqflow-sep th, #tab-tqqqflow .tqqqflow-sep td { border-top:2px solid var(--border); }
+#tab-tqqqflow .tqqqflow-up { color:#ef4444; }
+#tab-tqqqflow .tqqqflow-down { color:#3fb950; }
+#tab-tqqqflow .tqqqflow-flat, #tab-tqqqflow .tqqqflow-dim { color:var(--muted); }
+#tab-tqqqflow .tqqqflow-tag { display:inline-block; margin-left:6px; padding:0 6px; border:1px solid var(--border); border-radius:999px; font-size:11px; color:var(--muted); }
+#tab-tqqqflow .tqqqflow-cur { outline:2px solid var(--text); outline-offset:-2px; }
+#tab-tqqqflow .tqqqflow-details { margin:12px 0; font-size:14px; line-height:1.7; }
+#tab-tqqqflow .tqqqflow-details summary { cursor:pointer; color:var(--muted); min-height:32px; }
+#tab-tqqqflow .tqqqflow-details ul { margin:4px 0; padding-left:1.3em; }
+@media (max-width: 640px) {
+  #tab-tqqqflow .tqqqflow-stats { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  #tab-tqqqflow .chip { min-height:44px; display:inline-flex; align-items:center; }
+  #tab-tqqqflow .tqqqflow-chart { height:440px; }
+  #tab-tqqqflow th, #tab-tqqqflow td { padding:5px 6px; font-size:13px; }
+}
 #tab-qqqpanic .qqqpanic-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--space-3,12px); margin:12px 0; }
 #tab-qqqpanic .qqqpanic-grid .ui-card { min-width:0; padding:var(--space-3,12px); }
 #tab-qqqpanic .qqqpanic-grid h4 { margin:0 0 6px; font-size:var(--text-sm,13px); color:var(--muted); font-weight:600; }

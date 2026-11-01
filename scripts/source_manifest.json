@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 94,
+  "source_count": 95,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -3189,6 +3189,30 @@
       "status": "scheduled",
       "output_contracts": {
         "data/us_risk_observations.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_proshares_flows.py",
+      "outputs": [
+        "data/proshares_flows.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/proshares_flows.json": {
           "profile": "heterogeneous_object",
           "key_fields": [],
           "required_fields": [],

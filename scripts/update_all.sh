@@ -43,6 +43,7 @@ run_script required fetch_stocks.py || exit 1
 run_script optional prep_relstrength.py
 run_script optional prep_vxnvix.py
 run_script optional fetch_leverage.py
+run_script optional fetch_proshares_flows.py
 run_script optional fetch_fear_greed.py
 run_script optional fetch_aaii.py
 run_script optional fetch_taiwan_pcratio.py

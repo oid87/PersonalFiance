@@ -45,7 +45,7 @@ export const CATEGORIES = [
       view('nonnormal', '極端狀態儀表板'), view('nonnormalhist', '過往觀察')] },
     { id: 'p-usalert', label: '美股警報', views: [
       view('usrisk', '美股風險觀察'), view('uscap', '美股恐慌拋售警報'),
-      view('qqqpanic', 'QQQ恐慌背離回測')] },
+      view('qqqpanic', 'QQQ恐慌背離回測'), view('tqqqflow', 'TQQQ資金流回測')] },
     { id: 'p-twmarginalert', label: '台股融資警報', views: [view('marginalert', '台股融資去槓桿警報')] },
     { id: 'p-stress', label: '金融壓力', views: [
       view('stressdash', '壓力總覽'), view('fsi', '金融壓力'), view('nfci', '金融狀況'),
@@ -97,6 +97,7 @@ const ALIASES = {
   nonnormalhist: ["過往觀察", "回測", "跌停", "跌停家數", "無觀察", "觀察類股", "極端狀態"],
   uscap: ["US Capitulation", "恐慌", "拋售", "Put/Call", "VIX", "VXN", "止穩", "capitulation"],
   qqqpanic: ["恐慌背離", "盤中急跌", "Fear & Greed", "F&G", "回測", "再破底", "panic divergence"],
+  tqqqflow: ["TQQQ", "QLD", "資金流", "淨流入", "申購", "ETF flow", "ProShares", "ETFIQ", "回測"],
   fsi: ['FSI'], nfci: ['NFCI'], cpi: ['CPI'],
   gdp_productivity_decomp: ['GDP'], tw_jp_kr_gdp: ['GDP', '台灣'],
   aaii: ['AAII'], naaim: ['NAAIM'], vixskew: ['VIX'],

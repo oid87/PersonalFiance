@@ -58,6 +58,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_leverage.py
 
+      - name: Fetch ProShares TQQQ/QLD NAV + shares (TQQQ flow study)
+        continue-on-error: true
+        run: python scripts/fetch_proshares_flows.py
+
       - name: Fetch Fear & Greed
         continue-on-error: true
         run: python scripts/fetch_fear_greed.py

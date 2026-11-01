@@ -2538,6 +2538,54 @@
     <p class="note-muted">研究資料與報告：<a href="docs/research/qqq-panic-divergence-events.csv">events.csv</a>、<a href="docs/research/qqq-panic-divergence-groups.csv">groups.csv</a>、<a href="docs/research/qqq-panic-divergence-matches.csv">matches.csv</a>、<a href="docs/research/qqq-panic-divergence-ma-breaks.csv">ma-breaks.csv</a>、<a href="docs/research/qqq-panic-divergence-backtest.md">回測數據</a>、<a href="docs/research/qqq-panic-divergence.md">方法與解讀</a>。本頁由 <code>js/tabs/qqqpanic_calc.mjs</code> 即時重算，與研究腳本共用同一引擎。</p>
   </section>
 
+  <section id="tab-tqqqflow" class="tab-section" hidden>
+    <header class="tqqqflow-head"><h2 class="section-title">TQQQ 大額資金流入回測</h2><span id="tqqqflow-asof" class="status"></span></header>
+    <p id="tqqqflow-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <p class="tqqqflow-note">TQQQ 單日淨流入很大的那天之後，QQQ／QLD／TQQQ 漲跌多少？流量＝ProShares 官方每日流通股數變化 × 淨值（與 ETFIQ 逐日相同），2010-02 起。只是回顧歷史，不是買賣訊號。</p>
+    <div id="tqqqflow-now" class="tqqqflow-stats" aria-live="polite"></div>
+
+    <div class="tqqqflow-params" role="group" aria-label="研究參數">
+      <div class="tqqqflow-param"><span class="tqqqflow-label">單日淨流入</span><div id="tqqqflow-thr" class="chip-row"><span class="chip" data-tqqqflow-thr="usd:5e8">≥ 5 億美元</span><span class="chip active" data-tqqqflow-thr="usd:8e8">≥ 8 億美元</span><span class="chip" data-tqqqflow-thr="usd:10e8">≥ 10 億美元</span><span class="chip" data-tqqqflow-thr="pct:0.03">≥ 前日規模 3%</span></div></div>
+      <div class="tqqqflow-param"><span class="tqqqflow-label">QQQ 距 52 週高點</span><div id="tqqqflow-dd" class="chip-row"><span class="chip" data-tqqqflow-dd="0">不限</span><span class="chip" data-tqqqflow-dd="0.05">≥ 5%</span><span class="chip active" data-tqqqflow-dd="0.1">≥ 10%</span><span class="chip" data-tqqqflow-dd="0.15">≥ 15%</span></div></div>
+      <div class="tqqqflow-param"><span class="tqqqflow-label">冷卻期</span><div id="tqqqflow-cool" class="chip-row"><span class="chip" data-tqqqflow-cool="0">無</span><span class="chip active" data-tqqqflow-cool="20">20 個交易日</span></div></div>
+      <div class="tqqqflow-param"><span class="tqqqflow-label">進場</span><div id="tqqqflow-lag" class="chip-row"><span class="chip" data-tqqqflow-lag="0">T 收盤（對照用）</span><span class="chip active" data-tqqqflow-lag="1">T+1 收盤</span><span class="chip" data-tqqqflow-lag="2">T+2 收盤</span></div></div>
+      <div class="tqqqflow-param"><span class="tqqqflow-label">一鍵設定</span><div id="tqqqflow-preset" class="chip-row"><span class="chip active" data-tqqqflow-preset="spec">研究設定</span><span class="chip" data-tqqqflow-preset="chart">只看資金流（原表口徑）</span></div></div>
+    </div>
+
+    <h3 class="tqqqflow-h">TQQQ 淨值與每日淨流入</h3>
+    <p class="tqqqflow-note">上：TQQQ 淨值（左軸）與每日淨流入（右軸，紅＝流入、綠＝流出），直線＝目前條件的事件日。下：QQQ 距 52 週收盤高點，虛線＝回撤門檻。</p>
+    <div id="tqqqflow-chart" class="tqqqflow-chart" role="img" aria-label="TQQQ 淨值、每日淨流入與事件日，下方為 QQQ 距 52 週高點"></div>
+
+    <div class="tqqqflow-tablehead"><h3 class="tqqqflow-h">事件後報酬</h3>
+      <div id="tqqqflow-asset" class="chip-row"><span class="chip" data-tqqqflow-asset="QQQ">QQQ</span><span class="chip" data-tqqqflow-asset="QLD">QLD</span><span class="chip active" data-tqqqflow-asset="TQQQ">TQQQ</span></div>
+      <div id="tqqqflow-group" class="chip-row"><span class="chip active" data-tqqqflow-group="all">全期</span><span class="chip" data-tqqqflow-group="is">樣本內 2010–2020</span><span class="chip" data-tqqqflow-group="oos">樣本外 2021 起</span></div>
+    </div>
+    <p id="tqqqflow-summary-note" class="tqqqflow-note"></p>
+    <div id="tqqqflow-events" class="table-scroll" tabindex="0" aria-label="事件明細"></div>
+    <div id="tqqqflow-summary" class="table-scroll" tabindex="0" aria-label="事件統計"></div>
+
+    <h3 class="tqqqflow-h">三檔比較</h3>
+    <div id="tqqqflow-compare" class="table-scroll" tabindex="0" aria-label="QQQ、QLD、TQQQ 比較"></div>
+
+    <h3 class="tqqqflow-h">換個門檻還成立嗎</h3>
+    <p class="tqqqflow-note">全期、目前冷卻期與進場時點下，各門檻組合的事件數與 20 日超額報酬（對無訊號日）。粗框＝目前選的組合。</p>
+    <div id="tqqqflow-sens" class="table-scroll" tabindex="0" aria-label="門檻敏感度"></div>
+
+    <details class="tqqqflow-details">
+      <summary>口徑與限制</summary>
+      <ul>
+        <li><b>流量</b>：ProShares 每天公布的流通股數已含當日申購贖回，淨流入＝（今日股數 − 昨日股數）× 今日淨值，收盤後才知道。和 ETFIQ 公布的 TQQQ 每日流量逐日相同（<span id="tqqqflow-etfiq"></span>）。</li>
+        <li><b>時差</b>：T＝流量發生日。T 收盤進場拿不到（流量收盤後才公布），只用來對照原表；T+1 收盤＝ProShares 當晚公布後隔天可下單；T+2 收盤＝以 ETFIQ 再晚一晚更新為準。</li>
+        <li><b>拆股</b>：ProShares 拆股後會回溯調整全部歷史淨值與股數，序列連續；每次抓取整份重抓，不和舊資料混接。</li>
+        <li><b>重疊</b>：冷卻期內的符合日不算新事件；事件之間不到 60 個交易日的標「重疊」，長天期報酬並不獨立。</li>
+        <li><b>基準</b>：無訊號日＝所有不符合條件的交易日，同樣時點進場、同一期間；有回撤條件時另列「回撤也到了、但流入未達門檻」的日子，用來分辨是資金流還是回撤本身的效果。</li>
+        <li><b>樣本外</b>：2021 年前 TQQQ 規模小，固定 8 億美元在 2021 前從未出現，樣本內沒有事件；要比較前後期改用「前日規模 3%」。8 億門檻是看過 2021–2026 資料才定的，近期結果有挑選偏誤。</li>
+        <li><b>報酬</b>：TQQQ／QLD 用淨值、QQQ 用收盤價，都不含息；最大不利＝進場後到該天期內最低收盤相對進場價。回撤＝QQQ 收盤距近 252 個交易日收盤高點（2015 年前 QQQ 還沒收復 2000 年高點，不能用歷史高點）。</li>
+      </ul>
+    </details>
+    <p class="tqqqflow-note">資料：ProShares 官方 NAV／流通股數；對帳：ETFIQ（etfiq.com）。</p>
+  </section>
+
   <section id="tab-uscap" class="tab-section" hidden>
     <header><h2 class="section-title">美股恐慌性拋售警報（US Capitulation Alert）</h2>
       <p class="section-subtitle">恐慌偵測 · 去槓桿背景 · 止穩確認 — 三個階段分開看，不合成單一分數</p>
