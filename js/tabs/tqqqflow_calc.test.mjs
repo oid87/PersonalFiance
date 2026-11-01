@@ -99,3 +99,27 @@ test('real data reproduces the ≥$800M TQQQ inflow table', () => {
   // 2021 前 TQQQ 規模小，固定 8 億從未出現。
   assert.ok(r.events.every(e => e.date >= '2021-01-01'));
 });
+
+test('F&G / VIX / VXN switches filter signals; missing values never pass when on', () => {
+  const { flows, qqqRows } = synth({ flows: { 40: 9e8, 120: 9e8, 200: 9e8 } });
+  const d = i => flows.funds.TQQQ.data[i][0];
+  const fg = [[d(40), 10], [d(120), 50]];              // day 200 has no F&G
+  const vix = [[d(40), 35], [d(120), 35], [d(200), 18]];
+  const vxn = [[d(40), 40], [d(120), 25], [d(200), 45]];
+  const s = C.buildSeries(flows, qqqRows, { fg, vix, vxn });
+  const base = { ...C.CHART_PRESET, lag: 1 };
+  const dates = p => C.runStudy(s, p).events.map(e => e.date);
+  assert.deepEqual(dates(base), [d(40), d(120), d(200)]);
+  assert.deepEqual(dates({ ...base, fgOn: true, fgMax: 25 }), [d(40)]);
+  assert.deepEqual(dates({ ...base, vixOn: true, vixMin: 30 }), [d(40), d(120)]);
+  assert.deepEqual(dates({ ...base, vxnOn: true, vxnMin: 30 }), [d(40), d(200)]);
+  assert.deepEqual(dates({ ...base, fgOn: true, vixOn: true, vxnOn: true, vxnMin: 30, vixMin: 30 }), [d(40)]);
+  const ev = C.runStudy(s, base).events[0];
+  assert.deepEqual([ev.fg, ev.vix, ev.vxn], [10, 35, 40]);
+  // market-condition baseline only exists when some non-flow filter is on
+  assert.equal(C.runStudy(s, base).stats.all.TQQQ[5].mktBase, null);
+  assert.ok(C.runStudy(s, { ...base, vixOn: true, vixMin: 30 }).stats.all.TQQQ[5].mktBaseN >= 0);
+  const st = C.currentStatus(s, C.runStudy(s, { ...base, vixOn: true, vixMin: 30 }));
+  assert.equal(st.vixHit, false);   // last day has no VIX value
+  assert.equal(st.fgHit, true);     // switch off → always passes
+});

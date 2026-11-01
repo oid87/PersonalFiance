@@ -1,8 +1,9 @@
 // TQQQ 大額資金流入回測 — TQQQ 單日淨流入很大的那天之後，QQQ／QLD／TQQQ 的 5–60 日報酬、最大不利跌幅、
 // 相對無訊號日的超額報酬。
-// 版面：最新狀態四格 → 參數（門檻／回撤／冷卻／進場／一鍵設定）→ TQQQ 淨值＋每日淨流入＋QQQ 回撤圖
+// 版面：最新狀態卡（流入、回撤、恐懼貪婪、VIX、VXN、是否觸發、上次事件）→ 參數（門檻／回撤／冷卻／進場／情緒與波動開關／一鍵設定）→ TQQQ 淨值＋每日淨流入＋QQQ 回撤圖
 //       → 事件明細與統計（資產、期間 chip）→ 三檔比較 → 門檻敏感度 → 口徑與限制。
-// 計算：js/tabs/tqqqflow_calc.mjs；資料：data/proshares_flows.json（scripts/fetch_proshares_flows.py）＋ data/QQQ.json。
+// 計算：js/tabs/tqqqflow_calc.mjs；資料：data/proshares_flows.json（scripts/fetch_proshares_flows.py）＋ data/QQQ.json，
+//       開關用 data/fear_greed.json、VIX.json、VXN.json（選用：載不到時對應開關停用）。
 import { loaded } from '../state.js';
 import { isLight, echartsBase, PALETTE, mob } from '../utils/theme.js';
 import { ensureLoaded, requestJSON } from '../utils/data.js';
@@ -15,6 +16,11 @@ const finite = v => typeof v === 'number' && Number.isFinite(v);
 const RED = '#ef4444', GREEN = '#3fb950';
 const GROUP_LABEL = { all: '全期', is: '樣本內 2010–2020', oos: '樣本外 2021 起' };
 const CHART_START = '2021-01-01';
+// 情緒／波動開關：k → [狀態卡標題, 比較方向, 小數位]
+const FILTERS = { fg: ['CNN 恐懼貪婪', '≤', 0], vix: ['VIX 收盤', '≥', 1], vxn: ['VXN 收盤', '≥', 1] };
+const switchOf = k => document.querySelector(`#tab-tqqqflow [data-tqqqflow-switch="${k}"]`);
+const LIMIT = k => (k === 'fg' ? 'fgMax' : `${k}Min`);
+let missing = [];
 
 let series = null, meta = null, loadedAt = 0, chart = null, study = null;
 let params = { ...C.DEFAULTS }, asset = 'TQQQ', group = 'all';
@@ -52,13 +58,20 @@ function table(id, headers, body, { sepRows = [] } = {}) {
 const thrText = p => (p.thrMode === 'pct' ? `前日規模 ${(p.thr * 100).toFixed(0)}%` : `${(p.thr / 1e8).toFixed(0)} 億美元`);
 const ddText = p => (p.ddMin > 0 ? `QQQ 距 52 週高點 ≥ ${(p.ddMin * 100).toFixed(0)}%` : '不限回撤');
 const lagText = p => (p.lag === 0 ? 'T 收盤進場（對照用）' : `T+${p.lag} 收盤進場`);
-const sameParams = (a, b) => ['thrMode', 'thr', 'ddMin', 'cooldown', 'lag'].every(k => a[k] === b[k]);
+const sameParams = (a, b) => C.PARAM_KEYS.every(k => a[k] === b[k]);
+const filterText = p => Object.entries(FILTERS).filter(([k]) => p[`${k}On`]).map(([k, [name, op]]) => `${name} ${op} ${p[LIMIT(k)]}`).join('・');
+const num = (x, d) => (finite(x) ? x.toFixed(d) : '—');
 
 // ── data ────────────────────────────────────────────────────────────────
 async function load(context) {
-  const [flows] = await Promise.all([requestJSON('data/proshares_flows.json', { signal: context.signal }), ensureLoaded('QQQ', context)]);
+  const optional = ['data/fear_greed.json', 'data/VIX.json', 'data/VXN.json'];
+  const [flows, , ...extra] = await Promise.all([requestJSON('data/proshares_flows.json', { signal: context.signal }), ensureLoaded('QQQ', context),
+    ...optional.map(f => requestJSON(f, { signal: context.signal }).catch(e => { if (context.signal?.aborted) throw e; return null; }))]);
   if (context.signal?.aborted || context.isCurrent?.() === false) return false;
-  series = C.buildSeries(flows, loaded.QQQ);
+  const rows = (j, field) => (j?.data ?? []).filter(r => finite(r?.[field])).map(r => [r.date, r[field]]);
+  const [fg, vix, vxn] = [rows(extra[0], 'value'), rows(extra[1], 'close'), rows(extra[2], 'close')];
+  missing = Object.keys(FILTERS).filter((k, i) => ![fg, vix, vxn][i].length);
+  series = C.buildSeries(flows, loaded.QQQ, { fg, vix, vxn });
   meta = flows;
   byId('asof').textContent = `資料 ${series.dates[0]} ～ ${series.dates.at(-1)}`;
   const ck = flows.etfiq_check;
@@ -80,11 +93,18 @@ function renderNow() {
     const px = asset === 'QQQ' ? series.qqq : asset === 'QLD' ? series.qld : series.tqqq;
     since = `進場後 ${asset} ${pct(px.at(-1) / px[ev.entry] - 1)}`;
   }
+  const mark = ok => (ok ? '✓' : '✗');
+  const checks = [`資金流 ${mark(st.flowHit)}`, p.ddMin > 0 ? `回撤 ${mark(st.ddHit)}` : null,
+    ...Object.keys(FILTERS).filter(k => p[`${k}On`]).map(k => `${k === 'fg' ? '恐懼貪婪' : k.toUpperCase()} ${mark(st[`${k}Hit`])}`)].filter(Boolean);
   byId('now').replaceChildren(
     card(`最新淨流入（${st.date}）`, `${yi(st.flow)}美元`, `占前日規模 ${pct(st.pct)}・門檻 ${thrText(p)}`, st.flowHit),
     card('QQQ 距 52 週高點', pct(st.dd), p.ddMin > 0 ? `門檻 −${(p.ddMin * 100).toFixed(0)}%` : '不限回撤', p.ddMin > 0 && st.ddHit),
+    ...Object.entries(FILTERS).map(([k, [name, op, d]]) => {
+      const on = p[`${k}On`];
+      return card(name, num(st[k], d), missing.includes(k) ? '資料載入失敗' : on ? `開・${op} ${p[LIMIT(k)]} ${st[`${k}Hit`] ? '已達到' : '未達到'}` : `關（${op} ${p[LIMIT(k)]}）`, on && st[`${k}Hit`]);
+    }),
     card('今天是否觸發', st.signal ? (st.cooldownLeft > 0 && ev && ev.i !== series.dates.length - 1 ? '符合（冷卻中）' : '觸發') : '未觸發',
-      `資金流 ${st.flowHit ? '✓' : '✗'}・回撤 ${p.ddMin > 0 ? (st.ddHit ? '✓' : '✗') : '不限'}${st.cooldownLeft > 0 ? `・冷卻剩 ${st.cooldownLeft} 日` : ''}`, st.signal),
+      `${checks.join('・')}${st.cooldownLeft > 0 ? `・冷卻剩 ${st.cooldownLeft} 日` : ''}`, st.signal),
     card('上次事件', ev ? ev.date : '無', ev ? `${st.sessionsSince} 個交易日前・${since}` : '目前條件下沒有事件', false),
   );
 }
@@ -107,7 +127,8 @@ function drawChart() {
       formatter(items) {
         const i = items?.[0]?.dataIndex; if (i == null) return '';
         return [`<b>${s.dates[i]}</b>`, `TQQQ 淨值 ${s.tqqq[i].toFixed(2)}`,
-          `淨流入 ${yi(s.flow[i])}美元（${pct(s.pct[i])}）`, `QQQ 距 52 週高點 ${pct(s.dd[i])}`].join('<br>');
+          `淨流入 ${yi(s.flow[i])}美元（${pct(s.pct[i])}）`, `QQQ 距 52 週高點 ${pct(s.dd[i])}`,
+          `恐懼貪婪 ${num(s.fg[i], 0)}・VIX ${num(s.vix[i], 1)}・VXN ${num(s.vxn[i], 1)}`].join('<br>');
       },
     },
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
@@ -145,7 +166,7 @@ function renderTables() {
   const evs = study.events.filter(e => group === 'all' || e.group === group);
   const isN = study.events.filter(e => e.group === 'is').length, oosN = study.events.length - isN;
   const pending = study.events.filter(e => e.ret[asset][60] == null).length;
-  byId('summary-note').textContent = `條件：單日淨流入 ≥ ${thrText(p)}・${ddText(p)}・冷卻 ${p.cooldown ? `${p.cooldown} 個交易日` : '無'}・${lagText(p)}。`
+  byId('summary-note').textContent = `條件：單日淨流入 ≥ ${thrText(p)}・${ddText(p)}${filterText(p) ? `・${filterText(p)}` : ''}・冷卻 ${p.cooldown ? `${p.cooldown} 個交易日` : '無'}・${lagText(p)}。`
     + `共 ${study.events.length} 筆（樣本內 ${isN}、樣本外 ${oosN}）${pending ? `，${pending} 筆還沒滿 60 日` : ''}。`
     + (evs.length && evs.length < 5 ? ' 這個期間不到 5 筆，平均數只是幾個個案。' : '');
 
@@ -153,11 +174,11 @@ function renderTables() {
     byId('events').replaceChildren(node('p', `${GROUP_LABEL[group]}在目前條件下沒有事件。`, { class: 'tqqqflow-note' }));
     byId('summary').replaceChildren();
   } else {
-    table('events', ['流量日 T', '進場日', '淨流入', '占規模', 'QQQ 回撤', ...H.map(h => `${h} 日`), '60 日最大不利'],
+    table('events', ['流量日 T', '進場日', '淨流入', '占規模', 'QQQ 回撤', '恐懼貪婪', 'VIX', 'VXN', ...H.map(h => `${h} 日`), '60 日最大不利'],
       [...evs].reverse().map(e => {
         const date = node('span', e.date);
         if (e.overlap) date.append(node('span', '重疊', { class: 'tqqqflow-tag', title: '和前一筆事件相隔不到 60 個交易日' }));
-        return [date, e.entryDate ?? '待公布', yi(e.flow), pct(e.pct), pct(e.dd), ...H.map(h => signed(e.ret[asset][h])),
+        return [date, e.entryDate ?? '待公布', yi(e.flow), pct(e.pct), pct(e.dd), num(e.fg, 0), num(e.vix, 1), num(e.vxn, 1), ...H.map(h => signed(e.ret[asset][h])),
           e.mae[asset][60] == null ? '—' : signed(e.mae[asset][60])];
       }));
     const st = study.stats[group][asset], row = (label, f, fmt = signed) => [label, ...H.map(h => { const v = f(st[h]); return v == null ? '—' : fmt(v); })];
@@ -169,7 +190,7 @@ function renderTables() {
       row('平均最大不利', x => x.maeMean), row('最差最大不利', x => x.maeWorst),
       row('無訊號日平均', x => x.base, plain), row('超額（對無訊號日）', x => x.excess),
     ];
-    if (p.ddMin > 0) rows.push(row('同回撤、流入未達門檻日平均', x => x.ddBase, plain), row('超額（對同回撤日）', x => x.ddExcess));
+    if (C.hasMarketFilter(p)) rows.push(row('同市場條件、流入未達門檻日平均', x => x.mktBase, plain), row('超額（對同市場條件日）', x => x.mktExcess));
     table('summary', [`${asset}・${GROUP_LABEL[group]}`, ...H.map(h => `${h} 日`)], rows, { sepRows: [1, 6, 8] });
   }
 
@@ -204,6 +225,12 @@ function syncChips() {
   setActive('dd', 'tqqqflowDd', `${params.ddMin}`);
   setActive('cool', 'tqqqflowCool', `${params.cooldown}`);
   setActive('lag', 'tqqqflowLag', `${params.lag}`);
+  for (const k of Object.keys(FILTERS)) {
+    const on = params[`${k}On`], sw = switchOf(k);
+    setActive(k, `tqqqflow${k[0].toUpperCase()}${k.slice(1)}`, `${params[LIMIT(k)]}`);
+    sw.setAttribute('aria-checked', String(on)); sw.textContent = on ? '開' : '關'; sw.disabled = missing.includes(k);
+    sw.closest('.tqqqflow-filter').classList.toggle('is-off', !on);
+  }
   setActive('preset', 'tqqqflowPreset', sameParams(params, C.DEFAULTS) ? 'spec' : sameParams(params, C.CHART_PRESET) ? 'chart' : '');
 }
 function recompute() {
@@ -216,6 +243,11 @@ function wire() {
   chipPicker(byId('dd'), 'tqqqflow-dd', v => { params = { ...params, ddMin: Number(v) }; recompute(); });
   chipPicker(byId('cool'), 'tqqqflow-cool', v => { params = { ...params, cooldown: Number(v) }; recompute(); });
   chipPicker(byId('lag'), 'tqqqflow-lag', v => { params = { ...params, lag: Number(v) }; recompute(); });
+  for (const k of Object.keys(FILTERS)) {
+    // 點門檻 chip 視同打開這個條件；開關按鈕只切換開／關，保留選過的門檻。
+    chipPicker(byId(k), `tqqqflow-${k}`, v => { if (missing.includes(k)) return; params = { ...params, [`${k}On`]: true, [LIMIT(k)]: Number(v) }; recompute(); });
+    switchOf(k).addEventListener('click', () => { params = { ...params, [`${k}On`]: !params[`${k}On`] }; recompute(); });
+  }
   chipPicker(byId('preset'), 'tqqqflow-preset', v => { params = { ...(v === 'chart' ? C.CHART_PRESET : C.DEFAULTS) }; recompute(); });
   chipPicker(byId('asset'), 'tqqqflow-asset', v => { asset = v; renderNow(); renderTables(); renderSens(); });
   chipPicker(byId('group'), 'tqqqflow-group', v => { group = v; renderTables(); });
@@ -231,7 +263,7 @@ export async function activate(context = {}) {
     throw e;
   }
   loadedAt = Date.now();
-  byId('status').textContent = '';
+  byId('status').textContent = missing.length ? `部分資料載入失敗：${missing.map(k => FILTERS[k][0]).join('、')}（對應開關停用）` : '';
   wire(); drawChart(); recompute();
 }
 export function getCharts() { return chart ? [chart] : []; }

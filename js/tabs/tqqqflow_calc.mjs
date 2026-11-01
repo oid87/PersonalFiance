@@ -8,6 +8,7 @@
 //   • 報酬：TQQQ／QLD 用 NAV、QQQ 用收盤價（皆未含息；ProShares 拆股後回溯調整 NAV 與股數，序列連續）。
 //   • 進場 lag：0 = T 日收盤（流量要收盤後才公布，不可交易，只用來對照外部表格）；1 = T+1 收盤（預設）；
 //     2 = T+2 收盤（以 ETFIQ 隔一晚才更新的公開時間為準）。
+//   • 情緒／波動開關：CNN 恐懼貪婪（2011 起）、VIX、VXN 都用 T 日收盤值；開啟後當天沒有資料就不算符合。
 
 import { mean, percentile } from '../utils/math.js';
 
@@ -15,16 +16,19 @@ export const HORIZONS = Object.freeze([5, 10, 20, 30, 60]);
 export const ASSETS = Object.freeze(['QQQ', 'QLD', 'TQQQ']);
 export const DD_WINDOW = 252;
 export const SPLIT_DATE = '2021-01-01';
-export const DEFAULTS = Object.freeze({ thrMode: 'usd', thr: 8e8, ddMin: 0.10, cooldown: 20, lag: 1 });
+const FILTERS_OFF = { fgOn: false, fgMax: 25, vixOn: false, vixMin: 25, vxnOn: false, vxnMin: 30 };
+export const DEFAULTS = Object.freeze({ thrMode: 'usd', thr: 8e8, ddMin: 0.10, cooldown: 20, lag: 1, ...FILTERS_OFF });
 /** 外部表格（只看資金流 ≥ 8 億、T 日收盤 NAV 起算、無回撤條件、無冷卻）的口徑。 */
-export const CHART_PRESET = Object.freeze({ thrMode: 'usd', thr: 8e8, ddMin: 0, cooldown: 0, lag: 0 });
+export const CHART_PRESET = Object.freeze({ thrMode: 'usd', thr: 8e8, ddMin: 0, cooldown: 0, lag: 0, ...FILTERS_OFF });
+export const PARAM_KEYS = Object.freeze(Object.keys(DEFAULTS));
 
 /**
  * 對齊成同一條交易日軸（QQQ 交易日 ∩ TQQQ 有 NAV 的日子）。
  * @param {{funds:{TQQQ:{data:Array}, QLD:{data:Array}}}} flowsJson
  * @param {Array<[string, number]>} qqqRows  [[date, close], ...]（需含 TQQQ 上市前一年以上，算 252 日高點）
+ * @param {{fg?:Array<[string, number]>, vix?:Array<[string, number]>, vxn?:Array<[string, number]>}} extras  [[date, 收盤值], ...]
  */
-export function buildSeries(flowsJson, qqqRows) {
+export function buildSeries(flowsJson, qqqRows, extras = {}) {
   const tq = flowsJson?.funds?.TQQQ?.data, ql = flowsJson?.funds?.QLD?.data;
   if (!Array.isArray(tq) || tq.length < 2 || !Array.isArray(ql)) throw new Error('ProShares 資料不足');
   if (!Array.isArray(qqqRows) || !qqqRows.length) throw new Error('QQQ 資料不足');
@@ -42,7 +46,8 @@ export function buildSeries(flowsJson, qqqRows) {
     ddByDate.set(date, close / qqqRows[dq[0]][1] - 1);
   });
 
-  const s = { dates: [], qqq: [], qld: [], tqqq: [], flow: [], pct: [], aum: [], dd: [] };
+  const ext = Object.fromEntries(['fg', 'vix', 'vxn'].map(k => [k, new Map(extras[k] ?? [])]));
+  const s = { dates: [], qqq: [], qld: [], tqqq: [], flow: [], pct: [], aum: [], dd: [], fg: [], vix: [], vxn: [] };
   let prev = null;
   for (const [date, close] of qqqRows) {
     if (date < firstTq) continue;
@@ -54,6 +59,7 @@ export function buildSeries(flowsJson, qqqRows) {
       s.dates.push(date); s.qqq.push(close); s.qld.push(qlMap.get(date) ?? null); s.tqqq.push(row[1]);
       s.flow.push(flow); s.pct.push(aumPrev > 0 ? flow / aumPrev : null);
       s.aum.push(row[2] * 1000 * row[1]); s.dd.push(ddByDate.get(date));
+      for (const k of ['fg', 'vix', 'vxn']) s[k].push(ext[k].get(date) ?? null);
     }
     prev = row;
   }
@@ -65,7 +71,7 @@ const priceOf = (s, asset) => (asset === 'QQQ' ? s.qqq : asset === 'QLD' ? s.qld
 
 /** 原始符合條件的日子（未套冷卻），回傳 boolean 陣列。 */
 export function rawSignals(s, p) {
-  return s.dates.map((_, i) => flowHit(s, i, p) && ddHit(s, i, p));
+  return s.dates.map((_, i) => flowHit(s, i, p) && marketHit(s, i, p));
 }
 function flowHit(s, i, p) {
   return p.thrMode === 'pct' ? (s.pct[i] ?? -Infinity) >= p.thr : s.flow[i] >= p.thr;
@@ -73,6 +79,15 @@ function flowHit(s, i, p) {
 function ddHit(s, i, p) {
   return !(p.ddMin > 0) || s.dd[i] <= -p.ddMin;
 }
+const fgHit = (s, i, p) => !p.fgOn || (s.fg[i] != null && s.fg[i] <= p.fgMax);
+const vixHit = (s, i, p) => !p.vixOn || (s.vix[i] != null && s.vix[i] >= p.vixMin);
+const vxnHit = (s, i, p) => !p.vxnOn || (s.vxn[i] != null && s.vxn[i] >= p.vxnMin);
+/** 資金流以外的市場條件（回撤＋開啟的情緒／波動條件）。 */
+function marketHit(s, i, p) {
+  return ddHit(s, i, p) && fgHit(s, i, p) && vixHit(s, i, p) && vxnHit(s, i, p);
+}
+/** 有沒有任何資金流以外的條件（決定要不要算「同市場條件」基準）。 */
+export const hasMarketFilter = p => p.ddMin > 0 || p.fgOn || p.vixOn || p.vxnOn;
 
 /** 套冷卻：訊號後 cooldown 個交易日內的符合日不再計為新事件。 */
 export function applyCooldown(raw, cooldown) {
@@ -112,8 +127,8 @@ function describe(values) {
 /**
  * 主計算。
  * @returns {{events, stats, raw, params}}
- *   events[i] = { i, date, flow, pct, dd, entry, entryDate, group, overlap, ret:{asset:{h}}, mae:{asset:{h}} }
- *   stats[group][asset][h] = { n, mean, median, max, min, win, maeMean, maeWorst, base, baseN, excess, ddBase, ddBaseN, ddExcess }
+ *   events[i] = { i, date, flow, pct, dd, fg, vix, vxn, entry, entryDate, group, overlap, ret:{asset:{h}}, mae:{asset:{h}} }
+ *   stats[group][asset][h] = { n, mean, median, max, min, win, maeMean, maeWorst, base, baseN, excess, mktBase, mktBaseN, mktExcess }
  */
 export function runStudy(s, params = DEFAULTS, { split = SPLIT_DATE, horizons = HORIZONS } = {}) {
   const p = { ...DEFAULTS, ...params };
@@ -125,7 +140,7 @@ export function runStudy(s, params = DEFAULTS, { split = SPLIT_DATE, horizons = 
   let prevEntry = -Infinity;
   const events = idx.map(i => {
     const entry = i + p.lag <= last ? i + p.lag : null;
-    const ev = { i, date: s.dates[i], flow: s.flow[i], pct: s.pct[i], dd: s.dd[i], entry,
+    const ev = { i, date: s.dates[i], flow: s.flow[i], pct: s.pct[i], dd: s.dd[i], fg: s.fg[i], vix: s.vix[i], vxn: s.vxn[i], entry,
       entryDate: entry == null ? null : s.dates[entry], group: groupOf(s.dates[i], split),
       overlap: entry != null && entry - prevEntry < maxH, ret: {}, mae: {} };
     if (entry != null) prevEntry = entry;
@@ -141,8 +156,8 @@ export function runStudy(s, params = DEFAULTS, { split = SPLIT_DATE, horizons = 
   });
 
   // 基準：所有「訊號日」（符合條件、含被冷卻擋掉的）以外的日子，同樣 lag 進場、同一期間分組。
-  // ddBase：回撤條件成立、但資金流未達門檻的日子（只在有回撤條件時才有意義）。
-  const stats = {};
+  // mktBase：資金流以外的條件（回撤、情緒／波動開關）都成立、但資金流未達門檻的日子（有這些條件時才有意義）。
+  const stats = {}, mkt = hasMarketFilter(p);
   for (const g of ['all', 'is', 'oos']) {
     stats[g] = {};
     const inGroup = ev => g === 'all' || ev.group === g;
@@ -162,12 +177,12 @@ export function runStudy(s, params = DEFAULTS, { split = SPLIT_DATE, horizons = 
           const r = fwd(px, d + p.lag, h);
           if (r == null) continue;
           sum += r; n++;
-          if (p.ddMin > 0 && ddHit(s, d, p)) { dsum += r; dn++; }
+          if (mkt && marketHit(s, d, p)) { dsum += r; dn++; }
         }
         st.base = n ? sum / n : null; st.baseN = n;
         st.excess = st.mean != null && st.base != null ? st.mean - st.base : null;
-        st.ddBase = dn ? dsum / dn : null; st.ddBaseN = dn;
-        st.ddExcess = st.mean != null && st.ddBase != null ? st.mean - st.ddBase : null;
+        st.mktBase = dn ? dsum / dn : null; st.mktBaseN = dn;
+        st.mktExcess = st.mean != null && st.mktBase != null ? st.mean - st.mktBase : null;
         stats[g][a][h] = st;
       }
     }
@@ -191,7 +206,9 @@ export function currentStatus(s, study) {
   const lastEv = study.events.at(-1) ?? null;
   const since = lastEv ? i - lastEv.i : null;
   return { date: s.dates[i], flow: s.flow[i], pct: s.pct[i], dd: s.dd[i], aum: s.aum[i],
-    flowHit: flowHit(s, i, p), ddHit: ddHit(s, i, p), signal: !!study.raw[i],
+    fg: s.fg[i], vix: s.vix[i], vxn: s.vxn[i],
+    flowHit: flowHit(s, i, p), ddHit: ddHit(s, i, p), fgHit: fgHit(s, i, p), vixHit: vixHit(s, i, p), vxnHit: vxnHit(s, i, p),
+    signal: !!study.raw[i],
     lastEvent: lastEv, sessionsSince: since,
     cooldownLeft: lastEv && p.cooldown > 0 ? Math.max(0, p.cooldown - since) : 0 };
 }

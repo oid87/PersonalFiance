@@ -1368,13 +1368,18 @@
 #tab-tqqqflow .tqqqflow-head .status { border-top:0; padding:0; }
 #tab-tqqqflow .tqqqflow-note { color:var(--muted); font-size:13px; line-height:1.6; margin:4px 0 8px; }
 #tab-tqqqflow .tqqqflow-h { margin:18px 0 6px; font-size:17px; }
-#tab-tqqqflow .tqqqflow-stats { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:8px 0; }
+#tab-tqqqflow .tqqqflow-stats { display:grid; grid-template-columns:repeat(auto-fill, minmax(165px, 1fr)); gap:8px; margin:8px 0; }
 #tab-tqqqflow .tqqqflow-stat { display:flex; flex-direction:column; gap:2px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--panel); min-width:0; }
 #tab-tqqqflow .tqqqflow-stat.is-lit { border-color:#ef4444; }
 #tab-tqqqflow .tqqqflow-stat b { font-size:20px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
 #tab-tqqqflow .tqqqflow-stat span { font-size:12px; color:var(--muted); }
 #tab-tqqqflow .tqqqflow-params { display:flex; flex-wrap:wrap; gap:8px 18px; margin:10px 0; }
 #tab-tqqqflow .tqqqflow-label { display:block; margin-bottom:4px; color:var(--muted); font-size:13px; }
+#tab-tqqqflow .tqqqflow-switch { margin-left:6px; min-width:40px; min-height:24px; padding:0 10px; border:1px solid var(--border); border-radius:999px; background:var(--panel); color:var(--muted); font-size:12px; cursor:pointer; }
+#tab-tqqqflow .tqqqflow-switch[aria-checked="true"] { background:var(--accent, #1f6feb); border-color:var(--accent, #1f6feb); color:#fff; }
+#tab-tqqqflow .tqqqflow-filter.is-off .chip-row { opacity:0.45; }
+#tab-tqqqflow .tqqqflow-filters { padding:8px 10px; border:1px dashed var(--border); border-radius:8px; }
+#tab-tqqqflow .tqqqflow-filters-title { flex-basis:100%; font-size:13px; font-weight:600; color:var(--text); }
 #tab-tqqqflow .chip-row { display:flex; flex-wrap:wrap; gap:6px; }
 #tab-tqqqflow .tqqqflow-tablehead { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:18px 0 6px; }
 #tab-tqqqflow .tqqqflow-tablehead .tqqqflow-h { margin:0; }
@@ -1397,6 +1402,7 @@
 @media (max-width: 640px) {
   #tab-tqqqflow .tqqqflow-stats { grid-template-columns:repeat(2, minmax(0, 1fr)); }
   #tab-tqqqflow .chip { min-height:44px; display:inline-flex; align-items:center; }
+  #tab-tqqqflow .tqqqflow-switch { min-height:36px; min-width:52px; }
   #tab-tqqqflow .tqqqflow-chart { height:440px; }
   #tab-tqqqflow th, #tab-tqqqflow td { padding:5px 6px; font-size:13px; }
 }
