@@ -6,6 +6,8 @@ on:
     - cron: "0 22 * * 1-5"
     # 10:00 UTC Mon-Fri = 18:00 Taipei（台股收盤後）→ tw job
     - cron: "0 10 * * 1-5"
+    # 13:30 UTC Mon-Fri = 21:30 Taipei（晚間補更新）→ 只跑 tw job
+    - cron: "30 13 * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -317,7 +319,7 @@ jobs:
 
   # ── 台股:只在 18:00 台北(台股收盤後)跑 ──────────────────────────────
   tw:
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 10 * * 1-5'
+    if: github.event_name == 'workflow_dispatch' || (github.event.schedule == '0 10 * * 1-5' || github.event.schedule == '30 13 * * 1-5')
     runs-on: ubuntu-latest
     env:
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
