@@ -63,9 +63,9 @@ export const CATEGORIES = [
       view('twchips', '台股籌碼'), view('twforeign', '外資買賣超'),
       view('taifex_foreign_oi', '外資未平倉'), view('twsectorflow', '外資板塊流向')] },
     { id: 'p-twmargin', label: '台股融資', views: [
-      view('marginheat', '融資熱度'), view('marginmap', '融資斷頭地圖'), view('marginconc', '融資集中度')] },
+      view('marginmap', '融資斷頭地圖'), view('marginconc', '融資集中度')] },
     { id: 'p-usmargin', label: '美股與全球融資', views: [
-      view('marginpeak', '融資峰值'), view('margincost', '美國融資成本'), view('marginglobal', '全球融資餘額')] },
+      view('marginheat', '融資熱度'), view('marginpeak', '融資峰值'), view('margincost', '美國融資成本'), view('marginglobal', '全球融資餘額')] },
   ] },
   { id: 'valuation', label: '估值與產業', pages: [
     { id: 'p-valuation', label: '估值', views: [

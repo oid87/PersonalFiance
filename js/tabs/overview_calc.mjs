@@ -177,6 +177,20 @@ export const THEME_CARDS = [
             date: m.dates[i],
           };
         },
+      }, {
+        label: '上市融資餘額',
+        async load(context) {
+          const rows = (await requestJSON('data/taiwan_margin_total.json', { signal: context.signal }))?.data;
+          const pts = (rows || []).filter(r => isNum(r?.margin_money));
+          const last = need(pts.at(-1), '台股融資');
+          const prev = pts.length > 20 ? pts.at(-21) : null;
+          const chg = prev ? (last.margin_money / prev.margin_money - 1) * 100 : null;
+          return {
+            value: `${Math.round(last.margin_money).toLocaleString('en-US')}億`,
+            state: isNum(chg) ? `近 20 日 ${chg >= 0 ? '+' : ''}${chg.toFixed(1)}%` : '歷史樣本不足',
+            date: last.date,
+          };
+        },
       }],
     },
   },
