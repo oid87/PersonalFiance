@@ -53,7 +53,7 @@ export const CATEGORIES = [
     { id: 'p-credit', label: '信用', views: [view('credit', '信用')] },
     { id: 'p-vol', label: '波動率', views: [
       view('vixskew', 'VIX-SKEW'), view('vix_term', 'VIX期限結構'),
-      view('vvixregime', 'VVIX波動象限'), view('vxnvix', 'VXN-VIX價差')] },
+      view('vvixregime', 'VVIX波動象限'), view('vxnvix', 'VXN-VIX價差'), view('vixspike', 'VIX急升回測')] },
   ] },
   { id: 'flows', label: '籌碼與融資', pages: [
     { id: 'p-radar', label: '美股短線雷達', views: [
@@ -102,6 +102,7 @@ const ALIASES = {
   gdp_productivity_decomp: ['GDP'], tw_jp_kr_gdp: ['GDP', '台灣'],
   aaii: ['AAII'], naaim: ['NAAIM'], vixskew: ['VIX'],
   vix_term: ['VIX'], vvixregime: ['VIX'], vxnvix: ['VIX'],
+  vixspike: ['VIX', 'VIX急升', 'VIX暴漲', '恐慌指數', '單日漲幅', '回測'],
   qqqmacd: ['MACD'], valuation: ['P/E', 'PE'], fwdpe: ['P/E', 'PE'],
   semi_vs_spx_pe: ['P/E', 'PE'], sox_vs_tw_semi_pe: ['P/E', 'PE', '台灣'],
   twsent: ['台灣', '台股'], twstress: ['台灣', '台股'],

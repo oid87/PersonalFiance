@@ -758,7 +758,7 @@
       /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
          保留原高度、改用放大圖表 */
       .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
-        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #vixspike-main-chart,
         #kelly-chart, #roc4-chart, #val-chart) {
         max-height: calc(100dvh - 16px);
       }
@@ -1450,3 +1450,44 @@
 #tab-qqqpanic > header { display:block; padding:12px 0; }
 #tab-qqqpanic > header .section-title { font-size:18px; padding:0; border-top:0; }
 @media (max-width: 760px) { #tab-qqqpanic { padding:0 12px 16px; } }
+
+/* ── VIX 單日急升回測（vixspike）── */
+#tab-vixspike .vixspike-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; padding:12px 0 4px; }
+#tab-vixspike .vixspike-head .section-title { font-size:19px; padding:0; border-top:0; margin:0; }
+#tab-vixspike .vixspike-head .status { border-top:0; padding:0; }
+#tab-vixspike .vixspike-note { color:var(--muted); font-size:13px; line-height:1.6; margin:4px 0 8px; }
+#tab-vixspike .vixspike-h { margin:18px 0 6px; font-size:17px; }
+#tab-vixspike .vixspike-verdict { margin:6px 0 8px; padding:8px 12px; border-left:4px solid #f0883e; background:var(--panel); border-radius:6px; font-size:15px; line-height:1.7; }
+#tab-vixspike .vixspike-verdict:empty { display:none; }
+#tab-vixspike .vixspike-hit { color:#ef4444; }
+#tab-vixspike .vixspike-params { display:flex; flex-wrap:wrap; gap:10px 18px; margin:10px 0; }
+#tab-vixspike .vixspike-label { display:block; margin-bottom:4px; color:var(--muted); font-size:13px; }
+#tab-vixspike .vixspike-range { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:6px; }
+#tab-vixspike .vixspike-range input { width:84px; min-height:34px; padding:2px 8px; border:1px solid var(--border); border-radius:6px; background:var(--panel); color:var(--text); font-size:16px; font-variant-numeric:tabular-nums; }
+#tab-vixspike .vixspike-dim { color:var(--muted); font-size:12px; }
+#tab-vixspike .chip-row { display:flex; flex-wrap:wrap; gap:6px; }
+#tab-vixspike .vixspike-tablehead { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:18px 0 6px; }
+#tab-vixspike .vixspike-tablehead .vixspike-h { margin:0; }
+#tab-vixspike .vixspike-chart { width:100%; height:380px; margin:8px 0; }
+#tab-vixspike .vixspike-chart--main { height:620px; min-height:520px; }
+#tab-vixspike .vixspike-chart--short { height:300px; }
+#tab-vixspike table { border-collapse:collapse; width:100%; font-size:14px; }
+#tab-vixspike th, #tab-vixspike td { padding:5px 8px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap; font-variant-numeric:tabular-nums; }
+#tab-vixspike th:first-child, #tab-vixspike td:first-child { text-align:left; }
+#tab-vixspike thead th { color:var(--muted); font-weight:600; }
+#tab-vixspike .table-scroll { max-width:100%; overflow-x:auto; margin:4px 0 10px; }
+#tab-vixspike #vixspike-stats table, #tab-vixspike #vixspike-top table { max-width:760px; }
+#tab-vixspike .vixspike-events { max-height:520px; overflow-y:auto; }
+#tab-vixspike .vixspike-up { color:#ef4444; }
+#tab-vixspike .vixspike-down { color:#3fb950; }
+#tab-vixspike .vixspike-flat { color:var(--muted); }
+#tab-vixspike .vixspike-details { margin:8px 0; font-size:14px; line-height:1.7; }
+#tab-vixspike .vixspike-details summary { cursor:pointer; font-weight:600; }
+#tab-vixspike .vixspike-details ol, #tab-vixspike .vixspike-details ul { margin:4px 0 4px 20px; padding:0; }
+#tab-vixspike .vixspike-swipe { display:none; }
+@media (max-width: 600px) {
+  #tab-vixspike .vixspike-swipe { display:inline; }
+  #tab-vixspike .vixspike-chart--main { height:540px; min-height:480px; }
+  #tab-vixspike .vixspike-chart { height:320px; }
+  #tab-vixspike .vixspike-chart--short { height:260px; }
+}
