@@ -3561,7 +3561,7 @@
     <details class="vixspike-details" open>
       <summary>怎麼看這頁</summary>
       <ol>
-        <li><b>先設區間</b>：VIX 某天比前一天收盤漲了多少％（看盤中最高或收盤），落在你填的區間就算一次事件。上限留空＝無上限。</li>
+        <li><b>先設區間</b>：VIX 某天比前一天收盤漲了多少％（看盤中最高或收盤），落在你選的區間（每格 5%）就算一次事件。上限選「無上限」＝以上都算。</li>
         <li><b>上面的圖＝事件在哪</b>：橘色直線與橘色長條是事件日；最下格灰色長條是每天的漲幅，橘色底色是你設的區間。</li>
         <li><b>中間的圖＝事件後怎麼走</b>：每條灰線是一次事件後的漲跌，橘色是平均、藍色是中位數，虛線是隨便哪天買進的平均（平常日子）。</li>
         <li><b>區間掃描</b>：把漲幅分組比較，點長條就把區間改成那一組。只是回顧歷史，不是買賣訊號。</li>
@@ -3571,8 +3571,7 @@
     <div class="vixspike-params" role="group" aria-label="回測參數">
       <div class="vixspike-param"><span class="vixspike-label">VIX 漲幅看</span><div id="vixspike-measure" class="chip-row"><span class="chip active" data-vixspike-measure="high">盤中最高 vs 前收</span><span class="chip" data-vixspike-measure="close">收盤 vs 前收</span></div></div>
       <div class="vixspike-param"><span class="vixspike-label">單日漲幅區間（%）</span>
-        <div class="vixspike-range"><input id="vixspike-lo" type="number" inputmode="decimal" min="0" max="500" step="5" value="50" aria-label="漲幅下限（%）"><span>～</span><input id="vixspike-hi" type="number" inputmode="decimal" min="0" max="500" step="5" placeholder="無上限" aria-label="漲幅上限（%），留空＝無上限"><span class="vixspike-dim">％（按 Enter 或離開欄位套用）</span></div>
-        <div id="vixspike-preset" class="chip-row"><span class="chip" data-vixspike-preset="0.2:">≥20%</span><span class="chip" data-vixspike-preset="0.3:">≥30%</span><span class="chip" data-vixspike-preset="0.4:">≥40%</span><span class="chip active" data-vixspike-preset="0.5:">≥50%</span><span class="chip" data-vixspike-preset="0.5:0.6">50–60%</span><span class="chip" data-vixspike-preset="0.5:0.7">50–70%</span><span class="chip" data-vixspike-preset="0.6:">≥60%</span><span class="chip" data-vixspike-preset="0.8:">≥80%</span></div></div>
+        <div class="vixspike-range"><label>從 <select id="vixspike-lo" aria-label="漲幅下限（%）"></select></label><span>～</span><label>到 <select id="vixspike-hi" aria-label="漲幅上限（%）"></select></label><span class="vixspike-dim">每格 5%；上限不含，選「無上限」＝以上都算</span></div></div>
       <div class="vixspike-param"><span class="vixspike-label">看哪個市場</span><div id="vixspike-asset" class="chip-row"><span class="chip active" data-vixspike-asset="SP500">S&amp;P 500</span><span class="chip" data-vixspike-asset="QQQ">那斯達克 QQQ</span><span class="chip" data-vixspike-asset="SOXX">費半 SOXX</span><span class="chip" data-vixspike-asset="TWII">台股加權</span><span class="chip" data-vixspike-asset="0050">0050</span></div></div>
       <div class="vixspike-param"><span class="vixspike-label">進場</span><div id="vixspike-lag" class="chip-row"><span class="chip active" data-vixspike-lag="0">當天收盤</span><span class="chip" data-vixspike-lag="1">隔天收盤</span></div></div>
       <div class="vixspike-param"><span class="vixspike-label">冷卻（同一波只算第一天）</span><div id="vixspike-cool" class="chip-row"><span class="chip" data-vixspike-cool="0">無</span><span class="chip active" data-vixspike-cool="10">10 個交易日</span><span class="chip" data-vixspike-cool="20">20 個交易日</span></div></div>
@@ -3581,7 +3580,7 @@
 
     <h3 class="vixspike-h">事件在哪裡（三格共用時間軸）</h3>
     <p class="vixspike-note">橘色直線＝事件日；最下格灰色長條＝每天的漲幅，橘色底色＝你設的區間，淡橘＝符合但在冷卻期內（併入前一筆）。點圖看當天數值，底下拉桿改時間範圍。</p>
-    <div id="vixspike-main-chart" class="vixspike-chart vixspike-chart--main" role="img" aria-label="三格共用時間軸：標的價格、VIX 收盤、VIX 單日漲幅，標出事件日與區間"></div>
+    <div id="vixspike-main-chart" class="vixspike-chart vixspike-chart--main" role="img" aria-label="三格共用時間軸：標的價格（縱軸跟著可見範圍）、VIX 收盤、VIX 單日漲幅，標出事件日與區間"></div>
 
     <div class="vixspike-tablehead"><h3 class="vixspike-h">事件後怎麼走</h3>
       <div id="vixspike-pathlen" class="chip-row"><span class="chip" data-vixspike-pathlen="20">20 日</span><span class="chip active" data-vixspike-pathlen="60">60 日</span><span class="chip" data-vixspike-pathlen="120">120 日</span></div></div>

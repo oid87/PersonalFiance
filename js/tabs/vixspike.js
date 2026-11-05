@@ -102,6 +102,13 @@ function renderVerdict() {
 }
 
 // ── 圖 1：三格共用時間軸 ────────────────────────────────────────────────
+/** 可見範圍的高低點往外留 10% 高低差，取整到好讀的刻度。side = -1 下緣、1 上緣。 */
+function padRange({ min, max }, side) {
+  const span = Math.max(max - min, Math.abs(max) * 0.01), pad = span * 0.1;
+  const step = 10 ** Math.floor(Math.log10(span / 5));
+  // 價格不會是負的：長期縮小看時下緣最低到 0。
+  return side < 0 ? Math.max(0, Math.floor((min - pad) / step) * step) : Math.ceil((max + pad) / step) * step;
+}
 const PANES = [
   { key: 'px', top: 4, h: 34 },
   { key: 'vix', top: 45, h: 18 },
@@ -136,7 +143,7 @@ function drawMain() {
   const hit = ch.map((x, i) => (study.raw[i] ? x : null));
   const evOnly = ch.map((x, i) => (evSet.has(i) ? x : null));
   const chTop = Math.max(120, Math.ceil(p.lo * 10) * 10 + 30);
-  const names = [`${ASSETS[asset].label}（對數）`, 'VIX 收盤', `VIX 單日漲幅 %（${MEASURE[p.measure]} vs 前收）`];
+  const names = [ASSETS[asset].label, 'VIX 收盤', `VIX 單日漲幅 %（${MEASURE[p.measure]} vs 前收）`];
   chart.setOption(echartsBase({
     animation: false,
     legend: { show: false },
@@ -155,10 +162,11 @@ function drawMain() {
       axisLine: { lineStyle: { color: PALETTE.muted } }, // 每年第一個交易日才標年份，擠的時候自動隱藏重疊的。
       axisLabel: { show: k === last, color: PALETTE.muted, fontSize: 12, hideOverlap: true, formatter: d => d.slice(0, 4),
         interval: i => i > 0 && v.dates[i].slice(0, 4) !== v.dates[i - 1].slice(0, 4) } })),
-    yAxis: PANES.map((pn, k) => ({ type: pn.key === 'px' ? 'log' : 'value', gridIndex: k, name: names[k], nameLocation: 'end', nameGap: 6,
+    yAxis: PANES.map((pn, k) => ({ type: 'value', gridIndex: k, name: names[k], nameLocation: 'end', nameGap: 6,
       nameTextStyle: { color: PALETTE.text, fontSize: 12, fontWeight: 600, align: 'left', padding: [0, 0, 0, -L + 4] },
       scale: pn.key !== 'ch', splitNumber: pn.key === 'px' ? 4 : 3,
-      ...(pn.key === 'px' ? { min: x => +(x.min * 0.9).toPrecision(2), max: x => +(x.max * 1.1).toPrecision(2) } : {}),
+      // 價格格：跟著目前看的時間範圍，上下各留「高低差的 10%」，拉到一年也看得到起伏。
+      ...(pn.key === 'px' ? { min: x => padRange(x, -1), max: x => padRange(x, 1) } : {}),
       // 漲幅格：上限 120%（或區間下限再高一點），少數極端值（2024-08-05 +181%）超出頂端，數值看 tooltip。
       ...(pn.key === 'ch' ? { min: -40, max: chTop } : {}),
       axisLabel: { color: PALETTE.muted, fontSize: 11, formatter: pn.key === 'ch' ? x => `${x}%` : undefined },
@@ -325,9 +333,11 @@ function syncControls() {
   setActive('cool', 'vixspikeCool', `${p.cooldown}`);
   setActive('horizon', 'vixspikeHorizon', `${horizon}`);
   setActive('pathlen', 'vixspikePathlen', `${pathLen}`);
-  setActive('preset', 'vixspikePreset', `${p.lo}:${p.hi ?? ''}`);
-  byId('lo').value = Math.round(p.lo * 100);
-  byId('hi').value = p.hi == null ? '' : Math.round(p.hi * 100);
+  const loPct = Math.round(p.lo * 100);
+  byId('lo').value = `${loPct}`;
+  byId('hi').value = p.hi == null ? '' : `${Math.round(p.hi * 100)}`;
+  // 上限只能選比下限高的格子。
+  for (const o of byId('hi').options) o.disabled = o.value !== '' && Number(o.value) <= loPct;
   byId('lag').querySelector('[data-vixspike-lag="0"]').textContent = ASSETS[asset].next ? '隔天台股收盤' : '當天收盤';
   byId('lag').querySelector('[data-vixspike-lag="1"]').textContent = ASSETS[asset].next ? '再隔一天收盤' : '隔天收盤';
 }
@@ -339,15 +349,27 @@ function setRange(lo, hi) {
   params = { ...params, lo, hi: hi == null || hi <= lo ? null : hi };
   recompute();
 }
-function readInputs() {
-  const lo = Number(byId('lo').value), hiRaw = byId('hi').value.trim(), hi = hiRaw === '' ? null : Number(hiRaw);
-  if (!Number.isFinite(lo) || lo < 0) { syncControls(); return; }
-  setRange(lo / 100, hi != null && Number.isFinite(hi) ? hi / 100 : null);
+// 下拉清單（每格 5%）：下限 0–150%，上限 5–200% 或無上限。
+const LO_STEPS = Array.from({ length: 31 }, (_, k) => k * 5);
+const HI_STEPS = Array.from({ length: 40 }, (_, k) => (k + 1) * 5);
+function fillSelects() {
+  byId('lo').replaceChildren(...LO_STEPS.map(x => new Option(`${x}%`, `${x}`)));
+  byId('hi').replaceChildren(new Option('無上限', ''), ...HI_STEPS.map(x => new Option(`${x}%`, `${x}`)));
+}
+function onLoChange() {
+  const lo = Number(byId('lo').value) / 100, p = params;
+  // 下限調到上限以上時，維持原本的區間寬度往上移（無上限就維持無上限）。
+  let hi = p.hi == null ? null : p.hi > lo + 1e-9 ? p.hi : +(lo + Math.max(0.05, p.hi - p.lo)).toFixed(2);
+  if (hi != null && hi > HI_STEPS.at(-1) / 100) hi = null;
+  setRange(lo, hi);
+}
+function onHiChange() {
+  const v = byId('hi').value;
+  setRange(params.lo, v === '' ? null : Number(v) / 100);
 }
 function wire() {
   if (!bindOnce(byId('measure'))) return;
   chipPicker(byId('measure'), 'vixspike-measure', v => { params = { ...params, measure: v }; recompute(); });
-  chipPicker(byId('preset'), 'vixspike-preset', v => { const [lo, hi] = v.split(':'); setRange(Number(lo), hi === '' ? null : Number(hi)); });
   chipPicker(byId('lag'), 'vixspike-lag', v => { params = { ...params, lag: Number(v) }; recompute(); });
   chipPicker(byId('cool'), 'vixspike-cool', v => { params = { ...params, cooldown: Number(v) }; recompute(); });
   chipPicker(byId('horizon'), 'vixspike-horizon', v => { horizon = Number(v); renderVerdict(); redraw('scan', drawScan); });
@@ -360,10 +382,9 @@ function wire() {
     }
     recompute();
   });
-  for (const id of ['lo', 'hi']) {
-    byId(id).addEventListener('change', readInputs);
-    byId(id).addEventListener('keydown', e => { if (e.key === 'Enter') readInputs(); });
-  }
+  fillSelects();
+  byId('lo').addEventListener('change', onLoChange);
+  byId('hi').addEventListener('change', onHiChange);
 }
 
 // ── lifecycle ────────────────────────────────────────────────────────────
