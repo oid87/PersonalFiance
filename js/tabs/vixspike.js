@@ -11,7 +11,7 @@ import * as C from './vixspike_calc.mjs';
 
 const byId = id => document.getElementById('vixspike-' + id);
 const finite = v => typeof v === 'number' && Number.isFinite(v);
-const RED = '#ef4444', GREEN = '#3fb950', ORANGE = '#f0883e', BLUE = '#58a6ff';
+const RED = '#ef4444', GREEN = '#3fb950', ORANGE = '#f0883e', BLUE = '#58a6ff', PURPLE = '#a371f7';
 const ASSETS = {
   SP500: { file: 'data/SP500.json', label: 'S&P 500', next: false },
   QQQ: { file: 'data/QQQ.json', label: '那斯達克 QQQ', next: false },
@@ -48,6 +48,7 @@ const bucketLabel = (p, [lo, hi]) => (hi == null ? `≥${fmtBound(p, lo)}` : `${
 const fmtVal = (p, x, d = 0) => (isLevel(p) ? num(x, 2) : pct(x, d));
 const condText = p => (isLevel(p) ? `VIX ${MEASURE[p.measure]}進入 ${rangeText(p)}（前一天還不在區間）` : `VIX ${MEASURE[p.measure]}比前一天收盤漲 ${rangeText(p)}`);
 // 一天的開高低收：開 x・高 x・低 x・收 x（收盤漲跌）・振幅（高低差÷前收）。
+const maText = d => (d && finite(d.ma50) ? `50 日均線 ${num(d.ma50)}（收盤${d.close >= d.ma50 ? '高' : '低'}於均線 ${pct0abs(Math.abs(d.close / d.ma50 - 1))}）` : '');
 const ohlcText = (d, dp = 2) => (d ? `開 ${num(d.open, dp)}・高 ${num(d.high, dp)}・低 ${num(d.low, dp)}・收 ${num(d.close, dp)}（${pct(d.ch)}）・振幅 ${pct0abs(d.amp)}` : '—');
 const pct0abs = x => (finite(x) ? `${(x * 100).toFixed(1)}%` : '—');
 const lagText = p => (ASSETS[asset].next ? (p.lag ? '隔天台股再下一個交易日收盤' : '隔天台股收盤') : (p.lag ? 'T+1 收盤' : '當天收盤'));
@@ -96,7 +97,7 @@ function renderVerdict() {
     : (now.hit ? '，<b class="vixspike-hit">落在目前區間</b>' : '，不在目前區間');
   const vd = C.vixDay(vix, vix.dates.length - 1);
   const ad = C.assetDay(a, C.entryIndex(vix, a, vix.dates.length - 1, { lag: 0 }, ASSETS[asset].next));
-  const lines = [`<b>最新 ${now.date}</b>：VIX ${ohlcText(vd)}${isLevel(p) ? '' : `；盤中最高比前收 ${pct(now.chHigh)}`}`
+  const lines = [`<b>最新 ${now.date}</b>：VIX ${ohlcText(vd)}${isLevel(p) ? '' : `；盤中最高比前收 ${pct(now.chHigh)}`}${maText(vd) ? `；${maText(vd)}` : ''}`
     + `${where}${rare}。`
     + (ad ? `<br>${ASSETS[asset].label}${ad.date !== now.date ? `（${ad.date}）` : ''}：${ohlcText(ad)}。` : '')];
   if (!used.length) {
@@ -171,7 +172,7 @@ function drawMain() {
       label: { position: 'insideStartTop', color: ORANGE, fontSize: 11, backgroundColor: PALETTE.bg, padding: [1, 4] },
       data: [{ yAxis: lo, label: { formatter: `下限 ${fmt(lo)}` } }, ...(hi == null ? [] : [{ yAxis: hi, label: { formatter: `上限 ${fmt(hi)}` } }])] },
   });
-  const names = [ASSETS[asset].label, lvl ? `VIX ${MEASURE[p.measure]}` : 'VIX 收盤', `VIX 單日漲幅 %（${!lvl && p.measure === 'close' ? '收盤' : '盤中最高'} vs 前收）`];
+  const names = [ASSETS[asset].label, `${lvl ? `VIX ${MEASURE[p.measure]}` : 'VIX 收盤'}　{ma|━ 50 日均線}`, `VIX 單日漲幅 %（${!lvl && p.measure === 'close' ? '收盤' : '盤中最高'} vs 前收）`];
   chart.setOption(echartsBase({
     animation: false,
     legend: { show: false },
@@ -181,7 +182,7 @@ function drawMain() {
         const i = items?.[0]?.dataIndex; if (i == null) return '';
         const ad = C.assetDay(a, idxOnV[i]), vd = C.vixDay(v, i);
         return [`<b>${v.dates[i]}</b>${evSet.has(i) ? `　<b style="color:${ORANGE}">事件日</b>` : study.raw[i] ? '　（符合，冷卻中）' : ''}`,
-          `<b>VIX</b> ${ohlcText(vd)}`, `　盤中最高比前收 ${pct(vd.chHigh)}`,
+          `<b>VIX</b> ${ohlcText(vd)}`, `　盤中最高比前收 ${pct(vd.chHigh)}${maText(vd) ? `・${maText(vd)}` : ''}`,
           `<b>${ASSETS[asset].label}</b>${ad && ad.date !== v.dates[i] ? `（${ad.date}）` : ''} ${ohlcText(ad)}`].join('<br>');
       },
     },
@@ -192,7 +193,8 @@ function drawMain() {
       axisLabel: { show: k === last, color: PALETTE.muted, fontSize: 12, hideOverlap: true, formatter: d => d.slice(0, 4),
         interval: i => i > 0 && v.dates[i].slice(0, 4) !== v.dates[i - 1].slice(0, 4) } })),
     yAxis: PANES.map((pn, k) => ({ type: 'value', gridIndex: k, name: names[k], nameLocation: 'end', nameGap: 6,
-      nameTextStyle: { color: PALETTE.text, fontSize: 12, fontWeight: 600, align: 'left', padding: [0, 0, 0, -L + 4] },
+      nameTextStyle: { color: PALETTE.text, fontSize: 12, fontWeight: 600, align: 'left', padding: [0, 0, 0, -L + 4],
+        rich: { ma: { color: PURPLE, fontSize: 12, fontWeight: 600 } } },
       scale: pn.key !== 'ch', splitNumber: pn.key === 'px' ? 4 : 3,
       // 價格格：跟著目前看的時間範圍，上下各留「高低差的 10%」，拉到一年也看得到起伏。
       ...(pn.key === 'px' ? { min: x => padRange(x, -1), max: x => padRange(x, 1) } : {}),
@@ -212,6 +214,9 @@ function drawMain() {
       { id: 'vix', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: vixLine, showSymbol: false, sampling: 'lttb',
         lineStyle: { width: 1.1, color: BLUE }, itemStyle: { color: BLUE },
         ...(lvl ? band(p.lo, p.hi, vixTop, x => `${x}`) : {}) },
+      // 50 日均線一律用收盤算（同 CNN Fear & Greed 的 VIX 圖）。
+      { id: 'ma50', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: v.ma50.map(x => (finite(x) ? +x.toFixed(2) : null)), showSymbol: false,
+        sampling: 'lttb', silent: true, lineStyle: { width: 1.6, color: PURPLE }, itemStyle: { color: PURPLE } },
       { id: 'ch', type: 'bar', xAxisIndex: 2, yAxisIndex: 2, data: ch, large: true, barGap: '-100%', itemStyle: { color: PALETTE.muted, opacity: 0.45 },
         ...(lvl ? {} : band(p.lo * 100, p.hi == null ? null : p.hi * 100, chTop, x => `${Math.round(x)}%`)) },
       { id: 'hit', type: 'bar', xAxisIndex: 2, yAxisIndex: 2, data: hit, large: true, itemStyle: { color: ORANGE, opacity: 0.55 } },

@@ -97,3 +97,12 @@ test('level mode: only the day VIX enters the range counts; buckets and status f
   assert.equal(st.hit, true);
   assert.deepEqual(C.bucketScan(v, a, s.params, { horizon: 1 }).map(b => b.lo), C.LEVEL_BUCKETS.map(b => b[0]));
 });
+
+test('movingAvg: null until n days, then simple mean; buildVix carries ma50', () => {
+  assert.deepEqual(C.movingAvg([1, 2, 3, 4, 5], 3), [null, null, 2, 3, 4]);
+  const rows = Array.from({ length: 600 }, (_, i) => ({ date: `2000-${String(1 + Math.floor(i / 28) % 12).padStart(2, '0')}-${String(1 + i % 28).padStart(2, '0')}`, close: 10 + (i % 5) }));
+  const v = C.buildVix([], rows.map((r, i) => ({ ...r, date: `${2000 + Math.floor(i / 336)}-${r.date.slice(5)}` })));
+  assert.equal(v.ma50[48], null);
+  assert.ok(Math.abs(v.ma50[49] - v.close.slice(0, 50).reduce((s, x) => s + x, 0) / 50) < 1e-9);
+  assert.equal(C.vixDay(v, 49).ma50, v.ma50[49]);
+});

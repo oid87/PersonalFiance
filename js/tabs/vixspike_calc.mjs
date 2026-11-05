@@ -49,7 +49,18 @@ export function buildVix(early = [], recent = []) {
     v.amp.push(prev ? (high - low) / prev : null);
   });
   if (v.dates.length < 500) throw new Error('VIX 資料不足');
+  v.ma50 = movingAvg(v.close, 50);
   return v;
+}
+
+/** 簡單移動平均；不滿 n 天為 null。 */
+export function movingAvg(xs, n) {
+  const out = []; let sum = 0;
+  xs.forEach((x, i) => {
+    sum += x; if (i >= n) sum -= xs[i - n];
+    out.push(i >= n - 1 ? sum / n : null);
+  });
+  return out;
 }
 
 /** 開／高／低缺值或不合理時用收盤補：回傳 [open, high, low]，保證 low ≤ open, close ≤ high。 */
@@ -79,7 +90,7 @@ export function assetDay(a, k) {
 /** VIX 第 i 天的開高低收、收盤漲跌、盤中最高漲幅、盤中振幅。 */
 export function vixDay(v, i) {
   return { date: v.dates[i], open: v.open[i], high: v.high[i], low: v.low[i], close: v.close[i], prev: v.prev[i],
-    ch: v.chClose[i], chHigh: v.chHigh[i], amp: v.amp[i] };
+    ch: v.chClose[i], chHigh: v.chHigh[i], amp: v.amp[i], ma50: v.ma50?.[i] ?? null };
 }
 
 /** 條件看的值：單日漲幅（比例）或 VIX 水位（點數），依 measure 取盤中最高或收盤。 */
