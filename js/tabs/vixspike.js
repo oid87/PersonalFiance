@@ -40,6 +40,9 @@ const num = (x, d = 2) => (finite(x) ? x.toFixed(d) : '—');
 const rangeText = p => (p.hi == null ? `≥ ${Math.round(p.lo * 100)}%` : `${Math.round(p.lo * 100)}% ～ ${Math.round(p.hi * 100)}%`);
 const bucketLabel = ([lo, hi]) => (hi == null ? `≥${lo * 100}%` : `${lo * 100}–${hi * 100}%`);
 const condText = p => `VIX ${MEASURE[p.measure]}比前一天收盤漲 ${rangeText(p)}`;
+// 一天的開高低收：開 x・高 x・低 x・收 x（收盤漲跌）・振幅（高低差÷前收）。
+const ohlcText = (d, dp = 2) => (d ? `開 ${num(d.open, dp)}・高 ${num(d.high, dp)}・低 ${num(d.low, dp)}・收 ${num(d.close, dp)}（${pct(d.ch)}）・振幅 ${pct0abs(d.amp)}` : '—');
+const pct0abs = x => (finite(x) ? `${(x * 100).toFixed(1)}%` : '—');
 const lagText = p => (ASSETS[asset].next ? (p.lag ? '隔天台股再下一個交易日收盤' : '隔天台股收盤') : (p.lag ? 'T+1 收盤' : '當天收盤'));
 
 function table(id, headers, body) {
@@ -70,7 +73,7 @@ async function loadVix(context) {
 async function loadAsset(key, signal) {
   if (assetData[key]) return assetData[key];
   const j = await requestJSON(ASSETS[key].file, { signal });
-  assetData[key] = C.buildAsset((j?.data ?? []).map(r => [r.date, r.close]));
+  assetData[key] = C.buildAsset((j?.data ?? []).map(r => [r.date, r.close, r.open, r.high, r.low]));
   return assetData[key];
 }
 
@@ -80,8 +83,11 @@ function renderVerdict() {
   const used = study.events.filter(e => e.entry != null);
   const skipped = study.events.length - used.length;
   const rare = now.ch > 0 && now.rank ? `；1990 年起單日${MEASURE[p.measure]}漲幅 ≥ 這天的只有 ${now.rank} 天（${(now.rank / now.rankN * 100).toFixed(1)}%）` : '';
-  const lines = [`<b>最新 ${now.date}</b>：VIX 收 ${num(now.close)}（${pct(now.chClose)}），盤中最高 ${num(now.high)}（${pct(now.chHigh)}）`
-    + `${now.hit ? '，<b class="vixspike-hit">落在目前區間</b>' : '，不在目前區間'}${rare}。`];
+  const vd = C.vixDay(vix, vix.dates.length - 1);
+  const ad = C.assetDay(a, C.entryIndex(vix, a, vix.dates.length - 1, { lag: 0 }, ASSETS[asset].next));
+  const lines = [`<b>最新 ${now.date}</b>：VIX ${ohlcText(vd)}；盤中最高比前收 ${pct(now.chHigh)}`
+    + `${now.hit ? '，<b class="vixspike-hit">落在目前區間</b>' : '，不在目前區間'}${rare}。`
+    + (ad ? `<br>${ASSETS[asset].label}${ad.date !== now.date ? `（${ad.date}）` : ''}：${ohlcText(ad)}。` : '')];
   if (!used.length) {
     lines.push(`<b>歷史</b>：${condText(p)}，${ASSETS[asset].label}有資料的期間沒有事件。`);
   } else {
@@ -132,11 +138,12 @@ function drawMain() {
   const chart = ensureChart('main'), a = assetData[asset], p = study.params, v = vix;
   const L = mob() ? 44 : 56, R = mob() ? 12 : 24, last = PANES.length - 1;
   // 標的價格對到 VIX 的日子：美股同一天；台股取該日（含）以前最後一個收盤，只用於畫圖。
-  const pxOnV = [];
+  const pxOnV = [], idxOnV = [];
   let j = 0;
   for (const d of v.dates) {
     while (j < a.dates.length && a.dates[j] <= d) j++;
-    pxOnV.push(j && d >= a.dates[0] ? a.px[j - 1] : null);
+    const k = j && d >= a.dates[0] ? j - 1 : null;
+    idxOnV.push(k); pxOnV.push(k == null ? null : a.px[k]);
   }
   const ch = (p.measure === 'close' ? v.chClose : v.chHigh).map(x => (finite(x) ? +(x * 100).toFixed(1) : null));
   const evSet = new Set(study.events.map(e => e.i));
@@ -151,9 +158,10 @@ function drawMain() {
       trigger: 'axis', axisPointer: { type: 'line' }, textStyle: { color: PALETTE.text, fontSize: 13 },
       formatter(items) {
         const i = items?.[0]?.dataIndex; if (i == null) return '';
+        const ad = C.assetDay(a, idxOnV[i]), vd = C.vixDay(v, i);
         return [`<b>${v.dates[i]}</b>${evSet.has(i) ? `　<b style="color:${ORANGE}">事件日</b>` : study.raw[i] ? '　（符合，冷卻中）' : ''}`,
-          `${ASSETS[asset].label} ${num(pxOnV[i])}`, `VIX 收 ${num(v.close[i])}（${pct(v.chClose[i])}）`,
-          `盤中最高 ${num(v.high[i])}（${pct(v.chHigh[i])}）`].join('<br>');
+          `<b>VIX</b> ${ohlcText(vd)}`, `　盤中最高比前收 ${pct(vd.chHigh)}`,
+          `<b>${ASSETS[asset].label}</b>${ad && ad.date !== v.dates[i] ? `（${ad.date}）` : ''} ${ohlcText(ad)}`].join('<br>');
       },
     },
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
@@ -312,13 +320,29 @@ function renderTables() {
   const evs = study.events.filter(e => e.entry != null);
   byId('events-note').textContent = `${condText(p)}、冷卻 ${p.cooldown ? `${p.cooldown} 個交易日` : '無'}、${lagText(p)}進場：共 ${evs.length} 筆，新的在上。`;
   if (!evs.length) byId('events').replaceChildren(node('p', '目前條件下沒有事件。', { class: 'vixspike-note' }));
-  else table('events', ['VIX 日期', '前收', '盤中最高', '收盤', '進場日', ...[1, 5, 20, 60, 120].map(h => `${h} 日`), '60 日內最大跌幅', '同一波（冷卻內併入）'],
-    [...evs].reverse().map(e => [e.date, num(e.prev), `${num(e.high)}（${pct(e.chHigh, 0)}）`, `${num(e.close)}（${pct(e.chClose, 0)}）`, e.entryDate,
+  else table('events', ['VIX 日期', '前收', '開盤', '最高（比前收）', '最低', '收盤（漲跌）', '盤中振幅', `${ASSETS[asset].label}當天`, '進場日',
+    ...[1, 5, 20, 60, 120].map(h => `${h} 日`), '60 日內最大跌幅', '同一波（冷卻內併入）'],
+    [...evs].reverse().map(e => [e.date, num(e.prev), num(e.open), `${num(e.high)}（${pct(e.chHigh, 0)}）`, num(e.low), `${num(e.close)}（${pct(e.chClose, 0)}）`,
+      pct0abs(e.amp), e.day ? signed(e.day.ch) : '—', e.entryDate,
       ...[1, 5, 20, 60, 120].map(h => signed(e.ret[h])), e.mae60 == null ? '—' : signed(e.mae60), e.merged.length ? e.merged.join('、') : '—']));
+  renderRecent();
   // 前 10 名在本頁的狀態：是事件／併入哪一筆／不在區間（或冷卻設定不同）。
   const host = new Map(study.events.flatMap(e => [[e.date, '事件'], ...e.merged.map(d => [d, `併入 ${e.date}`])]));
   table('top', ['排名', '日期', '前收', MEASURE[p.measure], '單日漲幅', '目前設定下'],
     C.extremes(vix, { measure: p.measure }).map((r, k) => [`${k + 1}`, r.date, num(r.prev), num(r.level), pct(r.ch, 0), host.get(r.date) ?? '不在區間']));
+}
+
+// 最近 10 個交易日：VIX 與標的的開高低收、收盤漲跌、盤中振幅（台股取美股那天之後的台股交易日）。
+function renderRecent() {
+  const a = assetData[asset], next = ASSETS[asset].next, n = vix.dates.length;
+  byId('recent-note').textContent = `振幅＝（最高 − 最低）÷ 前一天收盤。${next ? `${ASSETS[asset].label}取美股那天之後的第一個台股交易日（台北時間隔天）。` : ''}`;
+  const rows = [];
+  for (let i = n - 1; i >= Math.max(1, n - 10); i--) {
+    const vd = C.vixDay(vix, i), ad = C.assetDay(a, C.entryIndex(vix, a, i, { lag: 0 }, next));
+    rows.push([vd.date, num(vd.open), num(vd.high), num(vd.low), num(vd.close), signed(vd.ch), signed(vd.chHigh), pct0abs(vd.amp),
+      ad ? (next ? `${ad.date.slice(5)}　${num(ad.close)}` : num(ad.close)) : '—', ad ? signed(ad.ch) : '—', ad ? pct0abs(ad.amp) : '—']);
+  }
+  table('recent', ['日期', 'VIX 開', '高', '低', '收', '收盤漲跌', '最高比前收', '振幅', `${ASSETS[asset].label} 收`, '漲跌', '振幅'], rows);
 }
 
 // ── 控制項 ──────────────────────────────────────────────────────────────

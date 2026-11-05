@@ -3,6 +3,7 @@
 // 口徑：
 //   • VIX 1990 起：1990–1999 取 data/VIX_early.json 的 ^VIX 段（1986–1989 是舊制 VXO，不用），2000 起 data/VIX.json。
 //   • 單日漲幅 = 當日（盤中最高 或 收盤）÷ 前一交易日收盤 − 1。盤中最高是「當天最多漲到多少」，收盤是「收在多少」。
+//   • 盤中振幅 =（最高 − 最低）÷ 前一交易日收盤（VIX 與標的同一口徑）。開／高／低缺值時用收盤補，並保證 低 ≤ 開、收 ≤ 高。
 //   • 區間 [lo, hi)：lo ≤ 漲幅 < hi；hi = null 表示無上限。
 //   • 進場：美股標的 T 日收盤（lag 0）或 T+1 收盤；台股標的的「T」= 美股 T 日之後第一個台股交易日（台北時間隔天），
 //     lag 0 = 該日收盤，lag 1 = 再隔一個台股交易日收盤。報酬以標的自己的交易日數計。
@@ -22,8 +23,8 @@ const finite = v => typeof v === 'number' && Number.isFinite(v);
 
 /**
  * 合併 VIX（1990 起），算每日盤中最高／收盤相對前收的漲幅。
- * @param {Array<{date,high,close}>} early  VIX_early.json 的 data
- * @param {Array<{date,high,close}>} recent VIX.json 的 data
+ * @param {Array<{date,open,high,low,close}>} early  VIX_early.json 的 data
+ * @param {Array<{date,open,high,low,close}>} recent VIX.json 的 data
  */
 export function buildVix(early = [], recent = []) {
   const byDate = new Map();
@@ -32,23 +33,47 @@ export function buildVix(early = [], recent = []) {
     byDate.set(r.date, r);                       // recent 蓋 early
   }
   const rows = [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
-  const v = { dates: [], close: [], high: [], prev: [], chHigh: [], chClose: [] };
+  const v = { dates: [], open: [], high: [], low: [], close: [], prev: [], chHigh: [], chClose: [], amp: [] };
   rows.forEach((r, i) => {
     const prev = i ? rows[i - 1].close : null;
-    const high = finite(r.high) && r.high >= r.close ? r.high : r.close;
-    v.dates.push(r.date); v.close.push(r.close); v.high.push(high); v.prev.push(prev);
+    const [open, high, low] = ohlc(r.close, r.open, r.high, r.low);
+    v.dates.push(r.date); v.open.push(open); v.high.push(high); v.low.push(low); v.close.push(r.close); v.prev.push(prev);
     v.chHigh.push(prev ? high / prev - 1 : null);
     v.chClose.push(prev ? r.close / prev - 1 : null);
+    v.amp.push(prev ? (high - low) / prev : null);
   });
   if (v.dates.length < 500) throw new Error('VIX 資料不足');
   return v;
 }
 
-/** 標的價格：[[date, close], ...] → {dates, px}。 */
+/** 開／高／低缺值或不合理時用收盤補：回傳 [open, high, low]，保證 low ≤ open, close ≤ high。 */
+function ohlc(close, open, high, low) {
+  const o = finite(open) && open > 0 ? open : close;
+  const h = finite(high) && high > 0 ? Math.max(high, o, close) : Math.max(o, close);
+  const l = finite(low) && low > 0 ? Math.min(low, o, close) : Math.min(o, close);
+  return [o, h, l];
+}
+
+/** 標的價格：[[date, close, open?, high?, low?], ...] → {dates, px, open, high, low}。 */
 export function buildAsset(rows) {
   const ok = (rows ?? []).filter(r => r && finite(r[1]) && r[1] > 0).sort((a, b) => (a[0] < b[0] ? -1 : 1));
   if (ok.length < 300) throw new Error('標的資料不足');
-  return { dates: ok.map(r => r[0]), px: ok.map(r => r[1]) };
+  const bars = ok.map(r => ohlc(r[1], r[2], r[3], r[4]));
+  return { dates: ok.map(r => r[0]), px: ok.map(r => r[1]), open: bars.map(b => b[0]), high: bars.map(b => b[1]), low: bars.map(b => b[2]) };
+}
+
+/** 標的第 k 天的開高低收、收盤漲跌、盤中振幅（相對前一天收盤）。 */
+export function assetDay(a, k) {
+  if (k == null || k < 0 || k >= a.dates.length) return null;
+  const prev = k ? a.px[k - 1] : null;
+  return { date: a.dates[k], open: a.open[k], high: a.high[k], low: a.low[k], close: a.px[k], prev,
+    ch: prev ? a.px[k] / prev - 1 : null, amp: prev ? (a.high[k] - a.low[k]) / prev : null };
+}
+
+/** VIX 第 i 天的開高低收、收盤漲跌、盤中最高漲幅、盤中振幅。 */
+export function vixDay(v, i) {
+  return { date: v.dates[i], open: v.open[i], high: v.high[i], low: v.low[i], close: v.close[i], prev: v.prev[i],
+    ch: v.chClose[i], chHigh: v.chHigh[i], amp: v.amp[i] };
 }
 
 const changeOf = (v, p, i) => (p.measure === 'close' ? v.chClose[i] : v.chHigh[i]);
@@ -113,7 +138,8 @@ function describe(values) {
  * @param params {measure:'high'|'close', lo, hi|null, cooldown, lag}
  * @param opts {nextSession: 台股標的=true, horizons, pathLen}
  * @returns {{events, stats, path, raw, params}}
- *   events[k] = { i, date, prev, high, close, chHigh, chClose, ch, entry, entryDate, ret:{h}, mae60, path[], merged[] }
+ *   events[k] = { i, date, prev, open, high, low, close, chHigh, chClose, amp, ch, entry, entryDate, day, ret:{h}, mae60, path[], merged[] }
+ *     day = 標的「當天」（美股 T 日；台股 T 之後第一個台股交易日）的 assetDay()
  *   stats[h]  = { n, mean, median, max, min, win, base, baseMedian, baseWin, baseN, excess }
  *   path      = { len, mean[], median[], base[] }（第 0 日 = 0，累積報酬）
  */
@@ -126,8 +152,10 @@ export function runStudy(v, a, params = DEFAULTS, { nextSession = false, horizon
     const entry = entryIndex(v, a, i, p, nextSession);
     const ret = {};
     for (const h of horizons) ret[h] = entry == null ? null : fwd(a.px, entry, h);
-    return { i, date: v.dates[i], prev: v.prev[i], high: v.high[i], close: v.close[i], chHigh: v.chHigh[i], chClose: v.chClose[i],
-      ch: changeOf(v, p, i), entry, entryDate: entry == null ? null : a.dates[entry], ret,
+    const dayIdx = entryIndex(v, a, i, { ...p, lag: 0 }, nextSession);
+    return { i, date: v.dates[i], prev: v.prev[i], open: v.open[i], high: v.high[i], low: v.low[i], close: v.close[i],
+      chHigh: v.chHigh[i], chClose: v.chClose[i], amp: v.amp[i],
+      ch: changeOf(v, p, i), entry, entryDate: entry == null ? null : a.dates[entry], day: assetDay(a, dayIdx), ret,
       mae60: entry == null ? null : mae(a.px, entry, 60),
       path: entry == null ? null : Array.from({ length: pathLen + 1 }, (_, k) => fwd(a.px, entry, k)) };
   });

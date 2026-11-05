@@ -3582,6 +3582,10 @@
     <p class="vixspike-note">橘色直線＝事件日；最下格灰色長條＝每天的漲幅，橘色底色＝你設的區間，淡橘＝符合但在冷卻期內（併入前一筆）。點圖看當天數值，底下拉桿改時間範圍。</p>
     <div id="vixspike-main-chart" class="vixspike-chart vixspike-chart--main" role="img" aria-label="三格共用時間軸：標的價格（縱軸跟著可見範圍）、VIX 收盤、VIX 單日漲幅，標出事件日與區間"></div>
 
+    <h3 class="vixspike-h">最近 10 個交易日：開高低收與振幅</h3>
+    <p id="vixspike-recent-note" class="vixspike-note"></p>
+    <div id="vixspike-recent" class="table-scroll" tabindex="0" aria-label="最近 10 個交易日 VIX 與標的開高低收"></div>
+
     <div class="vixspike-tablehead"><h3 class="vixspike-h">事件後怎麼走</h3>
       <div id="vixspike-pathlen" class="chip-row"><span class="chip" data-vixspike-pathlen="20">20 日</span><span class="chip active" data-vixspike-pathlen="60">60 日</span><span class="chip" data-vixspike-pathlen="120">120 日</span></div></div>
     <p class="vixspike-note">進場那天＝0。灰線是每一次事件（滑過去看是哪天），橘＝平均、藍＝中位數、虛線＝平常日子平均。</p>
@@ -3614,6 +3618,7 @@
         <li><b>台股</b>：美股 T 日收盤時台北已是隔天清晨，所以「當天」換成隔天台股收盤進場；報酬以台股交易日計。</li>
         <li><b>冷卻</b>：事件後 N 個交易日內又符合，不算新事件；事件之間不到 60 日的長天期報酬會重疊，並不獨立。</li>
         <li><b>平常日子</b>：所有不符合區間的交易日都當進場日，同樣口徑算報酬，用來比較「事件後」有沒有比較好。</li>
+        <li><b>開高低收與振幅</b>：振幅＝（最高 − 最低）÷ 前一天收盤；收盤漲跌＝收盤 ÷ 前一天收盤 − 1。0050 早年部分日子缺開高低，用收盤補。</li>
         <li><b>報酬</b>：收盤價，不含息；0050 已修正 2014 年分割。資料每天台北 06:00（美股）／18:00（台股）更新，沒有盤中即時值。</li>
       </ul>
     </details>
