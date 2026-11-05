@@ -77,3 +77,23 @@ test('events before the asset starts are kept but excluded from stats; scan + st
   assert.equal(st.hit, false);
   assert.equal(C.extremes(v, { top: 1 })[0].date, day(50));
 });
+
+test('level mode: only the day VIX enters the range counts; buckets and status follow the kind', () => {
+  // 收盤 20 → 第 100–104 天 32 → 105 回 20 → 200 天 45（直接跳過 30–40）。
+  const spikes = {};
+  for (let i = 100; i < 105; i++) spikes[i] = { high: 33, close: 32 };
+  spikes[200] = { high: 46, close: 45 };
+  spikes[599] = { high: 31, close: 30.5 };
+  const v = C.buildVix([], synthVix(600, spikes));
+  const a = asset(600);
+  const ev = p => C.runStudy(v, a, { ...C.DEFAULTS, cooldown: 0, kind: 'level', measure: 'close', ...p }).events.map(e => e.i);
+  assert.deepEqual(ev({ lo: 30, hi: null }), [100, 200, 599]);
+  assert.deepEqual(ev({ lo: 30, hi: 40 }), [100, 599]);
+  assert.deepEqual(ev({ lo: 40, hi: null }), [200]);
+  const s = C.runStudy(v, a, { ...C.DEFAULTS, kind: 'level', measure: 'close', lo: 30, hi: null, cooldown: 0 });
+  const st = C.currentStatus(v, s);
+  assert.equal(st.ch, 30.5);
+  assert.equal(st.inside, true);
+  assert.equal(st.hit, true);
+  assert.deepEqual(C.bucketScan(v, a, s.params, { horizon: 1 }).map(b => b.lo), C.LEVEL_BUCKETS.map(b => b[0]));
+});

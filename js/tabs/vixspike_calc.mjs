@@ -4,7 +4,9 @@
 //   • VIX 1990 起：1990–1999 取 data/VIX_early.json 的 ^VIX 段（1986–1989 是舊制 VXO，不用），2000 起 data/VIX.json。
 //   • 單日漲幅 = 當日（盤中最高 或 收盤）÷ 前一交易日收盤 − 1。盤中最高是「當天最多漲到多少」，收盤是「收在多少」。
 //   • 盤中振幅 =（最高 − 最低）÷ 前一交易日收盤（VIX 與標的同一口徑）。開／高／低缺值時用收盤補，並保證 低 ≤ 開、收 ≤ 高。
-//   • 區間 [lo, hi)：lo ≤ 漲幅 < hi；hi = null 表示無上限。
+//   • 區間 [lo, hi)：lo ≤ 值 < hi；hi = null 表示無上限。
+//   • 條件類型 kind：'change' = 單日漲幅（lo/hi 是比例，0.5 = 50%）；'level' = VIX 水位（lo/hi 是點數，盤中最高或收盤），
+//     水位只算「進入區間的那一天」（前一天還不在區間），否則 VIX 高檔期間天天都是事件。
 //   • 進場：美股標的 T 日收盤（lag 0）或 T+1 收盤；台股標的的「T」= 美股 T 日之後第一個台股交易日（台北時間隔天），
 //     lag 0 = 該日收盤，lag 1 = 再隔一個台股交易日收盤。報酬以標的自己的交易日數計。
 //   • 冷卻：事件後 cooldown 個 VIX 交易日內的符合日不算新事件（同一波恐慌只算第一天）。
@@ -14,10 +16,14 @@ import { mean, percentile } from '../utils/math.js';
 
 export const HORIZONS = Object.freeze([1, 5, 10, 20, 60, 120]);
 export const VIX_START = '1990-01-01';
-export const DEFAULTS = Object.freeze({ measure: 'high', lo: 0.5, hi: null, cooldown: 10, lag: 0 });
+export const DEFAULTS = Object.freeze({ kind: 'change', measure: 'high', lo: 0.5, hi: null, cooldown: 10, lag: 0 });
+/** 切換條件類型時的預設區間。 */
+export const KIND_RANGE = Object.freeze({ change: { lo: 0.5, hi: null }, level: { lo: 30, hi: null } });
 export const PARAM_KEYS = Object.freeze(Object.keys(DEFAULTS));
 /** 區間掃描用的分組（下限含、上限不含）。 */
 export const BUCKETS = Object.freeze([[0.1, 0.2], [0.2, 0.3], [0.3, 0.4], [0.4, 0.5], [0.5, 0.6], [0.6, 0.8], [0.8, null]]);
+export const LEVEL_BUCKETS = Object.freeze([[15, 20], [20, 25], [25, 30], [30, 35], [35, 40], [40, 50], [50, null]]);
+export const bucketsOf = kind => (kind === 'level' ? LEVEL_BUCKETS : BUCKETS);
 
 const finite = v => typeof v === 'number' && Number.isFinite(v);
 
@@ -76,12 +82,17 @@ export function vixDay(v, i) {
     ch: v.chClose[i], chHigh: v.chHigh[i], amp: v.amp[i] };
 }
 
-const changeOf = (v, p, i) => (p.measure === 'close' ? v.chClose[i] : v.chHigh[i]);
+/** 條件看的值：單日漲幅（比例）或 VIX 水位（點數），依 measure 取盤中最高或收盤。 */
+export function valueOf(v, p, i) {
+  if (p.kind === 'level') return p.measure === 'close' ? v.close[i] : v.high[i];
+  return p.measure === 'close' ? v.chClose[i] : v.chHigh[i];
+}
 const inRange = (x, lo, hi) => finite(x) && x >= lo && (hi == null || x < hi);
+export const inRangeAt = (v, p, i) => inRange(valueOf(v, p, i), p.lo, p.hi);
 
-/** 原始符合日（未套冷卻）。 */
+/** 原始符合日（未套冷卻）；水位只算進入區間當天。 */
 export function rawSignals(v, p) {
-  return v.dates.map((_, i) => inRange(changeOf(v, p, i), p.lo, p.hi));
+  return v.dates.map((_, i) => inRangeAt(v, p, i) && !(p.kind === 'level' && i > 0 && inRangeAt(v, p, i - 1)));
 }
 
 export function applyCooldown(raw, cooldown) {
@@ -155,7 +166,7 @@ export function runStudy(v, a, params = DEFAULTS, { nextSession = false, horizon
     const dayIdx = entryIndex(v, a, i, { ...p, lag: 0 }, nextSession);
     return { i, date: v.dates[i], prev: v.prev[i], open: v.open[i], high: v.high[i], low: v.low[i], close: v.close[i],
       chHigh: v.chHigh[i], chClose: v.chClose[i], amp: v.amp[i],
-      ch: changeOf(v, p, i), entry, entryDate: entry == null ? null : a.dates[entry], day: assetDay(a, dayIdx), ret,
+      ch: valueOf(v, p, i), entry, entryDate: entry == null ? null : a.dates[entry], day: assetDay(a, dayIdx), ret,
       mae60: entry == null ? null : mae(a.px, entry, 60),
       path: entry == null ? null : Array.from({ length: pathLen + 1 }, (_, k) => fwd(a.px, entry, k)) };
   });
@@ -195,7 +206,7 @@ export function runStudy(v, a, params = DEFAULTS, { nextSession = false, horizon
 }
 
 /** 區間掃描：每個漲幅分組各自的事件數與 horizon 日平均／勝率（同口徑、冷卻、進場）。 */
-export function bucketScan(v, a, params, { nextSession = false, horizon = 20, buckets = BUCKETS } = {}) {
+export function bucketScan(v, a, params, { nextSession = false, horizon = 20, buckets = bucketsOf(params.kind) } = {}) {
   return buckets.map(([lo, hi]) => {
     const st = runStudy(v, a, { ...params, lo, hi }, { nextSession, horizons: [horizon], pathLen: 0 }).stats[horizon];
     return { lo, hi, n: st.n, mean: st.mean, median: st.median, win: st.win, base: st.base, excess: st.excess };
@@ -206,12 +217,12 @@ export function bucketScan(v, a, params, { nextSession = false, horizon = 20, bu
 export function currentStatus(v, study) {
   const i = v.dates.length - 1, p = study.params;
   const last = study.events.at(-1) ?? null;
-  const ch = changeOf(v, p, i);
+  const ch = valueOf(v, p, i);
   // 歷史上單日漲幅 ≥ 今天的日子占比（含今天）。
   let ge = 0, n = 0;
-  if (finite(ch)) v.dates.forEach((_, k) => { const x = changeOf(v, p, k); if (finite(x)) { n++; if (x >= ch) ge++; } });
+  if (finite(ch)) v.dates.forEach((_, k) => { const x = valueOf(v, p, k); if (finite(x)) { n++; if (x >= ch) ge++; } });
   return { date: v.dates[i], prev: v.prev[i], high: v.high[i], close: v.close[i], chHigh: v.chHigh[i], chClose: v.chClose[i],
-    ch, rank: n ? ge : null, rankN: n, hit: !!study.raw[i], lastEvent: last, sessionsSince: last ? i - last.i : null };
+    ch, rank: n ? ge : null, rankN: n, hit: !!study.raw[i], inside: inRangeAt(v, p, i), lastEvent: last, sessionsSince: last ? i - last.i : null };
 }
 
 /** 歷史單日漲幅前 top 名（依口徑），給「多高算罕見」參考。 */
