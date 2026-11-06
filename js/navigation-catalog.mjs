@@ -33,7 +33,7 @@ export const CATEGORIES = [
       view('yield_curve', '殖利率曲線'), view('real_rates', '實質利率')] },
   ] },
   { id: 'sentiment', label: '情緒與曝險', pages: [
-    { id: 'p-sentiment', label: '情緒總分', views: [view('sentiment', '複合情緒'), view('bullbear', '牛熊')] },
+    { id: 'p-sentiment', label: '情緒總分', views: [view('sentiment', '複合情緒'), view('fgparts', '恐懼貪婪七分項'), view('bullbear', '牛熊')] },
     { id: 'p-positioning', label: '散戶與機構部位', views: [
       view('aaii', '散戶情緒'), view('naaim', '經理人曝險'), view('putcall', 'Put/Call'),
       view('marketstructure', '市場結構')] },

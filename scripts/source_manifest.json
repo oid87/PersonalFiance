@@ -734,7 +734,8 @@
     {
       "script": "scripts/fetch_fear_greed.py",
       "outputs": [
-        "data/fear_greed.json"
+        "data/fear_greed.json",
+        "data/fear_greed_components.json"
       ],
       "frequency": "us_session",
       "required": false,
@@ -758,6 +759,28 @@
           "null_policy": "non_nullable_required_only",
           "numeric_fields": [
             "value"
+          ]
+        },
+        "data/fear_greed_components.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "breadth",
+            "junk",
+            "put_call",
+            "safe_haven",
+            "sp125",
+            "sp500",
+            "strength",
+            "vix",
+            "vix50"
           ]
         }
       }

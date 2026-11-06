@@ -1279,6 +1279,28 @@
   </section>
 
   <!-- ── 牛熊指標 tab ────────────────────────────────────────────── -->
+  <section id="tab-fgparts" class="tab-section" hidden>
+    <header class="fgparts-head"><h2 class="section-title">恐懼貪婪七分項 × S&amp;P 500</h2><span id="fgparts-asof" class="status"></span></header>
+    <p id="fgparts-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <div id="fgparts-toggles" class="fgparts-toggles" role="group" aria-label="分項開關"></div>
+    <div id="fgparts-chart" class="fgparts-chart"></div>
+    <div class="fgparts-grid">
+      <div class="fgparts-card">
+        <h3>今天 CNN 公布的分項分數</h3>
+        <div id="fgparts-today"></div>
+      </div>
+      <div class="fgparts-card">
+        <h3>總分怎麼合成</h3>
+        <ol class="fgparts-how">
+          <li><b>七項各自換成 0–100</b>：看每項目前讀數偏離自己近期平均多遠、再除以平常的波動幅度；偏離越往貪婪那邊分數越高，平均附近約 50。</li>
+          <li><b>方向先對齊</b>：Put/Call、垃圾債利差、VIX 越高代表越恐懼，所以反過來計分；動能、強度、廣度、避險需求（股票贏公債）越高越貪婪。</li>
+          <li><b>七項等權平均</b> = 總分。0–25 極度恐懼、25–45 恐懼、45–55 中性、55–75 貪婪、75–100 極度貪婪。</li>
+        </ol>
+        <p class="note-muted"><b>資料限制</b>：CNN 只公開「今天」每項的分數，歷史只給七項原始讀數（2020-08 起）。圖下半部的分項曲線是本頁用「近 126 交易日 z 分數 → 常態累積機率 ×100」重建的近似值，CNN 的精確視窗沒公開；重建總分與 CNN 實際總分的對照見圖例「估算總分」與 <span id="fgparts-fit"></span>。</p>
+      </div>
+    </div>
+  </section>
+
   <section id="tab-bullbear" class="tab-section" hidden>
     <div class="controls">
       <div class="picker-row" id="bb-range-picker">

@@ -1502,3 +1502,23 @@
   #tab-vixspike .vixspike-chart { height:320px; }
   #tab-vixspike .vixspike-chart--short { height:260px; }
 }
+
+/* 恐懼貪婪七分項 */
+#tab-fgparts { padding:0 16px 16px; box-sizing:border-box; }
+@media (max-width:600px) { #tab-fgparts { padding:0 12px 12px; } }
+#tab-fgparts .fgparts-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:12px; padding:12px 0 4px; }
+#tab-fgparts .fgparts-head .section-title { font-size:19px; padding:0; border-top:0; margin:0; }
+#tab-fgparts .fgparts-head .status, #tab-fgparts > .status { border-top:0; padding:0; }
+#tab-fgparts .fgparts-toggles { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+#tab-fgparts .fgparts-toggles .chip { display:inline-flex; align-items:center; gap:6px; }
+#tab-fgparts .fgparts-toggles .chip i { width:10px; height:10px; border-radius:2px; display:inline-block; }
+#tab-fgparts .fgparts-toggles .chip:not(.active) i { opacity:.25; }
+#tab-fgparts .fgparts-chart { width:100%; height:620px; }
+#tab-fgparts .fgparts-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); gap:12px; margin-top:12px; }
+#tab-fgparts .fgparts-card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:12px; min-width:0; }
+#tab-fgparts .fgparts-card h3 { margin:0 0 8px; font-size:15px; }
+#tab-fgparts .fgparts-how { margin:0; padding-left:20px; line-height:1.6; font-size:14px; }
+#tab-fgparts table { width:100%; border-collapse:collapse; font-size:14px; }
+#tab-fgparts td, #tab-fgparts th { padding:4px 6px; border-bottom:1px solid var(--border); text-align:left; }
+#tab-fgparts td.num, #tab-fgparts th.num { text-align:right; font-variant-numeric:tabular-nums; }
+@media (max-width:600px) { #tab-fgparts .fgparts-chart { height:560px; } }
