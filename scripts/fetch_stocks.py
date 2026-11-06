@@ -176,6 +176,31 @@ def apply_splice_fixes(ticker: str, rows: list[dict]) -> list[dict]:
     return rows
 
 
+# Overlapping dates whose close moved more than this between the stored file and
+# a fresh download mean Yahoo re-based the history (a split): the stored rows are
+# on the old basis, so the whole history is re-downloaded instead of merged.
+BASIS_TOLERANCE = 0.05
+
+
+def basis_mismatch(existing: list[dict], new: list[dict]) -> list[str]:
+    """Dates present in both lists whose closes disagree beyond BASIS_TOLERANCE."""
+    old = {r["date"]: r["close"] for r in existing}
+    return [r["date"] for r in new
+            if r["date"] in old and old[r["date"]] > 0
+            and abs(r["close"] / old[r["date"]] - 1.0) > BASIS_TOLERANCE]
+
+
+def basis_jumps(rows: list[dict], since: str) -> list[str]:
+    """Dates on/after `since` whose close jumps more than SPLICE_TRIGGER from the
+    previous row — two price bases mixed in one file (e.g. 500 → 170 → 453)."""
+    out = []
+    for prev, cur in zip(rows, rows[1:]):
+        if cur["date"] >= since and prev["close"] > 0 \
+                and abs(cur["close"] / prev["close"] - 1.0) >= SPLICE_TRIGGER:
+            out.append(cur["date"])
+    return out
+
+
 def update_ticker(ticker: str, stem: str, listing_start: str) -> None:
     out = DATA_DIR / f"{stem}.json"
     existing = load_existing(out)
@@ -194,8 +219,21 @@ def update_ticker(ticker: str, stem: str, listing_start: str) -> None:
         return
 
     new_rows = to_rows(df)
+    full_start = listing_start if ticker in FULL_HISTORY else max(GLOBAL_START, listing_start)
+    if existing and basis_mismatch(existing, new_rows):
+        print(f"  [{ticker}] stored closes disagree with Yahoo on "
+              f"{len(basis_mismatch(existing, new_rows))} dates (split?) -> full re-download from {full_start}")
+        start = full_start
+        df = fetch_range(ticker, full_start)
+        if df.empty:
+            print(f"  [{ticker}] re-download returned no rows, keeping file unchanged")
+            return
+        existing, new_rows = [], to_rows(df)
     merged = merge(existing, new_rows)
     merged = apply_splice_fixes(ticker, merged)
+    jumps = basis_jumps(merged, start)
+    if jumps:
+        raise ValueError(f"mixed price basis around {', '.join(jumps[:5])}; file not written")
 
     payload = {
         "symbol":  stem,

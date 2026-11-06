@@ -214,7 +214,7 @@ test('forwardDrawdown is null until the whole horizon has data', () => {
 
 // ── real repository data: the historical case dates ────────────────────────
 const D = new URL('../../data/', import.meta.url);
-const haveData = ['TWII.json', 'TWOII.json', 'SOXX.json'].every(f => existsSync(new URL(f, D)));
+const haveData = ['TWII.json', 'TWOII.json', 'SOX.json'].every(f => existsSync(new URL(f, D)));
 function realContext() {
   const read = f => (existsSync(new URL(f, D)) ? JSON.parse(readFileSync(new URL(f, D), 'utf8')).data : []);
   const raw = Object.fromEntries(N.SERIES.map(s => [s.id, read(s.file)]));
@@ -292,27 +292,57 @@ test('downturnReport covers the six requested markets with 50 and 100MA', () => 
 });
 
 // ── 位階與分批 ────────────────────────────────────────────────────────────
-test('temperature: thresholds come from the market\'s own past gaps; spike above them → 過熱, deep fall → 極冷, flat → 盤整', () => {
+// 規格表：27 個方向組合 × 5 個價格帶（≥過熱線／+3%～過熱線／±3%／−3%～極冷線／≤極冷線）
+test('classifyWater: all 27 direction combos × 5 gap bands match the rule table', () => {
+  const U = 1, F = 0, Dn = -1, hot = 0.2, cold = -0.1, bands = [0.25, 0.1, 0, -0.05, -0.15];
+  const L = { 滾: 0, 熱: 1, 溫: 2, 冷: 3, 冰: 4 };
+  const rowsTbl = [];
+  for (const s of [U, F, Dn]) for (const m of [U, F, Dn]) for (const l of [U, F, Dn]) {
+    const first = s === U && m === U && l === U ? '滾' : l === U ? '熱' : '溫';
+    const second = l === U ? '熱' : '溫', last = s === Dn && m === Dn ? '冰' : '冷';
+    rowsTbl.push([{ s, m, l }, [first, second, '溫', '冷', last]]);
+  }
+  assert.equal(rowsTbl.length, 27);
+  for (const [dir, want] of rowsTbl) bands.forEach((g, k) => {
+    const r = N.classifyWater(dir, g, hot, cold);
+    assert.equal(r.zone, L[want[k]], `${N.dirText(dir)} gap ${g}`);
+    assert.equal(r.iceKind, r.zone === 4 ? (dir.l < 0 ? 'rhino' : 'flash') : null);
+  });
+  // 邊界：等於過熱線／極冷線算進去；±3% 含邊界算溫水
+  assert.equal(N.classifyWater({ s: U, m: U, l: U }, hot, hot, cold).zone, 0);
+  assert.equal(N.classifyWater({ s: Dn, m: Dn, l: Dn }, cold, hot, cold).zone, 4);
+  assert.equal(N.classifyWater({ s: F, m: F, l: F }, -0.03, hot, cold).zone, 2);
+  assert.equal(N.classifyWater({ s: F, m: F, l: F }, 0.03, hot, cold).zone, 2);
+  assert.equal(N.zoneLabel({ zone: 4, iceKind: 'flash' }), '冰水（急凍）');
+});
+
+test('direction: change beyond ±threshold is ↑/↓, inside is →', () => {
+  assert.deepEqual([0.0011, 0.001, -0.001, -0.0011].map(x => N.direction(x, 0.001)), [1, 0, 0, -1]);
+  assert.deepEqual(N.STANCE.lines, { s: [10, 1, 0.001], m: [50, 5, 0.0025], l: [200, 21, 0.005] });
+});
+
+test('temperature: thresholds come from the market\'s own past gaps; spike above them → 滾水, deep fall → 冰水, flat → 溫水', () => {
   const dates = businessDays('2012-01-02', 1400), base = i => 100 * (1 + 0.08 * Math.sin(i / 45));
   const up = N.buildSeries(rows(dates, dates.map((_, i) => (i < 1320 ? base(i) : base(1319) * 1.006 ** (i - 1319)))));
   const dn = N.buildSeries(rows(dates, dates.map((_, i) => (i < 1250 ? base(i) : base(1249) * 0.99 ** (i - 1249)))));
   const fl = N.temperature(N.buildSeries(rows(dates, flat(1400, 100))), dates.at(-1));
   const u = N.temperature(up, dates.at(-1)), d = N.temperature(dn, dates.at(-1));
-  assert.equal(N.ZONES[u.zone].label, '過熱');
-  assert.deepEqual(u.dir, { d: 1, w: 1, m: 1 });
+  assert.equal(N.ZONES[u.zone].label, '滾水');
+  assert.deepEqual(u.dir, { s: 1, m: 1, l: 1 });
   assert.ok(u.gap >= u.hot && u.hot >= 0.03, 'above its own 過熱線');
-  assert.equal(N.ZONES[d.zone].label, '極冷');
+  assert.equal(N.ZONES[d.zone].label, '冰水');
   assert.ok(d.gap <= d.cold && d.cold <= -0.03);
-  assert.equal(N.ZONES[fl.zone].label, '盤整');
+  assert.equal(N.ZONES[fl.zone].label, '溫水');
+  assert.deepEqual(fl.dir, { s: 0, m: 0, l: 0 }, 'flat lines read →');
   assert.ok(Math.abs(fl.hot - 0.03) < 1e-12 && Math.abs(fl.cold + 0.03) < 1e-12, 'lines never fall inside the ±3% band');
   assert.equal(u.long[0].months, 24);
-  assert.equal(N.temperature(N.buildSeries(rows(dates.slice(0, 100), flat(100, 100))), dates[99]), null, 'needs 11 months for the 10-month line');
-  assert.equal(N.temperature(N.buildSeries(rows(dates.slice(0, 700), flat(700, 100))), dates[699]), null, 'needs ~3 years of gaps for the percentile lines');
-  // 10 月線下彎但價格站上 → 偏冷（不是偏熱）
-  const turn = dates.map((_, i) => (i < 962 ? 150 : i < 1150 ? 100 : 100 + (i - 1150) * 0.75));   // 10 個月前還在高檔、急跌後反彈
+  assert.equal(N.temperature(N.buildSeries(rows(dates.slice(0, 215), flat(215, 100))), dates[214]), null, 'needs 200 days + 21-day comparison');
+  assert.equal(N.temperature(N.buildSeries(rows(dates.slice(0, 900), flat(900, 100))), dates[899]), null, 'needs 750 days of gaps for the percentile lines');
+  // 站上 200 日線 3% 以上、但 200 日線下彎 → 溫水（不是冷水）
+  const turn = dates.map((_, i) => (i < 1000 ? 150 : i < 1150 ? 100 : 100 + (i - 1150) * 0.75));
   const t = N.temperature(N.buildSeries(rows(dates, turn)), dates[1170]);
-  assert.ok(t.gap > 0.03 && t.dir.m < 0, JSON.stringify([t.gap, t.dir]));
-  assert.equal(N.ZONES[t.zone].label, '偏冷');
+  assert.ok(t.gap > 0.03 && t.dir.l < 0, JSON.stringify([t.gap, t.dir]));
+  assert.equal(N.ZONES[t.zone].label, '溫水');
 });
 
 test('temperature has no look-ahead: later rows (and later gaps in the percentile) do not change the result', () => {
@@ -335,10 +365,10 @@ test('data check: VIX intraday-high episodes since 2000 ≥40/50/60 are 11/6/4',
   assert.deepEqual([40, 50, 60].map(t => N.vixEpisodes(ctx, t, '2026-10-23')), [11, 6, 4]);
 });
 
-test('data check: 2025-04-09 → 加權極冷, five boxes lit, all three batches 到位; 2022-10-25 → first batch 到位', { skip: !haveData }, () => {
+test('data check: 2025-04-09 → 加權冰水（急凍）, five boxes lit, all three batches 到位; 2022-10-25 → first batch 到位', { skip: !haveData }, () => {
   const ctx = realContext();
   const a = N.stance(ctx, '2025-04-09');
-  assert.equal(N.ZONES[a.temps[0].zone].label, '極冷');
+  assert.equal(N.zoneLabel(a.temps[0]), '冰水（急凍）');
   assert.equal(a.lit, 5);
   assert.deepEqual(a.batches.map(b => b.state), ['on', 'on', 'on']);
   const b = N.stance(ctx, '2022-10-25');
@@ -403,4 +433,19 @@ test('sellExhaustion: limit-down spike then ≤ 1/10 within 10 trading days; tur
   assert.equal(N.sellExhaustion(N.buildContext(rawWith()), last), null);
   const t = N.turnaround(N.buildContext(rawWith()), last);
   if (t.vix) { assert.ok('high' in t.vix); assert.ok(!t.vix.peak || t.vix.peak.value >= t.vix.value); }
+});
+
+// 規格書案例表（日線等效版，2026-11 實算）
+test('data check: water zones on historical case dates', { skip: !haveData }, () => {
+  const ctx = realContext(), z = (id, d) => N.zoneLabel(N.temperature(ctx.s[id], d));
+  assert.equal(z('TWII', '2008-10-28'), '冰水（灰犀牛型）');
+  assert.equal(z('TWII', '2018-10-26'), '冰水（急凍）');
+  assert.equal(z('TWII', '2020-03-19'), '冰水（急凍）');
+  assert.equal(z('SPX', '2020-03-19'), '冰水（急凍）');
+  assert.equal(z('TWII', '2022-10-25'), '冰水（灰犀牛型）');
+  assert.equal(z('SPX', '2022-10-25'), '冷水');
+  assert.equal(z('TWII', '2024-08-05'), '溫水');
+  assert.equal(z('TWII', '2026-07-30'), '熱水');
+  const s = N.zoneShare(ctx.s.TWII, '2007-01-01', '2026-11-05').share.map(x => +(x * 100).toFixed(1));
+  assert.deepEqual(s, [5.0, 45.3, 30.1, 15.4, 4.2]);
 });

@@ -14,7 +14,7 @@ export const ARROW = x => (x > 0 ? '↑' : x < 0 ? '↓' : '→');
 export const pctTxt = (x, d = 0) => (finite(x) ? `${x >= 0 ? '+' : ''}${(x * 100).toFixed(d)}%` : '—');
 const pp = x => `${(Math.abs(x) * 100).toFixed(1)} 個百分點`;
 const REQUIRED = ['TWII', 'SPX', 'VIX'];
-const TEMP_HELP = '每週一筆（各市場該週最後一個交易日）。上：實線＝價格，橘色虛線＝10 月線（最近 10 個月的月底收盤平均，這個月用最新收盤代替，所以月中只會小幅移動、換月時才明顯跳一格；可以當 40 週線看：2003 起加權、S&P 500、韓股兩者平均只差約 0.7%，±3% 分區約 96% 的日子相同），底色＝當週水溫。中：價格離 10 月線多少 %。紅色虛線＝過熱線、藍色虛線＝極冷線，用該市場「當時以前」的歷史分位算，所以會隨時間移動；灰帶＝±3% 盤整。站到線外還要三條均線同方向才算過熱／極冷，所以線外側的顏色和上方底色偶爾不一致。下：六個市場的水溫，看是不是一起變冷。上方按鈕切換市場與期間，也可以拖拉下方滑桿。';
+const TEMP_HELP = '每週一筆（各市場該週最後一個交易日）。上：實線＝價格，橘色虛線＝200 日線，底色＝當週最後一天的水溫。中：價格離 200 日線多少 %。紅色虛線＝過熱線、藍色虛線＝極冷線，用該市場「當時以前」的歷史分位算，所以會隨時間移動；灰帶＝±3% 溫水。站上過熱線還要短中長都上揚才算滾水；跌破極冷線還要短、中都下彎才算冰水，所以線外側的顏色和上方底色偶爾不一致。下：六個市場的水溫，看是不是一起變冷。上方按鈕切換市場與期間，也可以拖拉下方滑桿。';
 
 let ctx = null, weeks = [], missing = [], loadedAt = 0, charts = [null, null], rangeKey = '3y';   // charts[0] 共振歷史、[1] 水溫走勢
 
@@ -158,7 +158,7 @@ function fitIndexAxis() {
 const ZONE_COLORS = ['#ef4444', '#f0883e', '#8b949e', '#58a6ff', '#1f6feb'];
 const NO_DATA = 'rgba(128,128,128,0.22)';   // 熱度條上還沒有足夠歷史的格子（與 .nonnormal-zone--na 同色）   // 與 .nonnormal-zone--* 同色
 const TEMP_RANGES = { '3y': 156, '5y': 260, '10y': 520, all: null };
-const NEAR = N.STANCE.nearGap * 100;   // 盤整帶 ±3%
+const NEAR = N.STANCE.nearGap * 100;   // 溫水帶 ±3%
 let tempHist = null, tempMarket = 'TWII', tempRange = '5y';
 const tempHistory = () => (tempHist?.ctx === ctx ? tempHist : (tempHist = { ctx, ...N.temperatureHistory(ctx) }));
 const tempMarketOf = h => h.markets.find(x => x.id === tempMarket) || h.markets[0];
@@ -178,13 +178,13 @@ function drawTemp(keepWindow = false) {
   h.markets.forEach((mk, y) => mk.rows.forEach((r, x) => heat.push([x, y, r ? r.zone : -1])));
   chartOption(1, {
     animation: false,
-    legend: { top: 0, right: R, itemWidth: 22, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: [m.label, '10 月線（虛線）', '過熱線', '極冷線'] },
+    legend: { top: 0, right: R, itemWidth: 22, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: [m.label, '200 日線（虛線）', '過熱線', '極冷線'] },
     tooltip: {
       trigger: 'axis', axisPointer: { type: 'line' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 13 },
       formatter(params) {
         const i = params?.[0]?.dataIndex, r = rows[i];
         if (i == null) return '';
-        const head = r ? `<b>${h.dates[i]}</b>｜${m.label}${r.carried ? `（休市，沿用 ${r.date}）` : ''} ${r.close.toLocaleString('en-US', { maximumFractionDigits: 2 })}・10 月線 ${r.ma10m.toLocaleString('en-US', { maximumFractionDigits: 0 })}・離 ${pctTxt(r.gap, 1)}（過熱線 ${pctTxt(r.hot, 0)}／極冷線 ${pctTxt(r.cold, 0)}）`
+        const head = r ? `<b>${h.dates[i]}</b>｜${m.label}${r.carried ? `（休市，沿用 ${r.date}）` : ''} ${r.close.toLocaleString('en-US', { maximumFractionDigits: 2 })}・200 日線 ${r.ma200.toLocaleString('en-US', { maximumFractionDigits: 0 })}・離 ${pctTxt(r.gap, 1)}・${N.dirText(r.dir)}（過熱線 ${pctTxt(r.hot, 0)}／極冷線 ${pctTxt(r.cold, 0)}）`
           : `<b>${h.dates[i]}</b>｜${m.label} 無資料`;
         const all = h.markets.map(mk => { const z = zoneOf(mk.rows[i]); return `${mk.label} <b style="color:${z ? ZONE_COLORS[mk.rows[i].zone] : PALETTE.muted}">${z ? z.label : '資料不足'}</b>`; });
         return [head, all.join('　')].join('<br>');
@@ -195,7 +195,7 @@ function drawTemp(keepWindow = false) {
     xAxis: [axis(0, false), axis(1, false), axis(2, true)],
     yAxis: [yAxis(0, { name: m.label, nameTextStyle: { color: PALETTE.muted, fontSize: 11 } }),
       { type: 'value', gridIndex: 0, min: 0, max: 1, show: false },
-      yAxis(1, { scale: false, name: '離 10 月線', nameTextStyle: { color: PALETTE.muted, fontSize: 11 }, axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: v => `${v}%` },
+      yAxis(1, { scale: false, name: '離 200 日線', nameTextStyle: { color: PALETTE.muted, fontSize: 11 }, axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: v => `${v}%` },
         min: v => Math.floor(v.min) - 2, max: v => Math.ceil(v.max) + 2 }),
       { type: 'category', gridIndex: 2, data: h.markets.map(mk => mk.label), inverse: true, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false },
         axisLabel: { interval: 0, color: PALETTE.muted, fontSize: mob() ? 11 : 12, formatter: v => (v === m.label ? `▶ ${v}` : v) } }],
@@ -205,16 +205,16 @@ function drawTemp(keepWindow = false) {
       { name: '水溫底色', type: 'bar', xAxisIndex: 0, yAxisIndex: 1, silent: true, barCategoryGap: 0, z: 0, tooltip: { show: false },
         data: rows.map(r => (r ? { value: 1, itemStyle: { color: ZONE_COLORS[r.zone], opacity: 0.22 } } : null)) },
       { name: m.label, type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => num(r, 'close')), showSymbol: false, lineStyle: { width: 1.3, color: PALETTE.text }, itemStyle: { color: PALETTE.text } },
-      { name: '10 月線（虛線）', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => num(r, 'ma10m')), showSymbol: false, lineStyle: { width: 1.2, type: 'dashed', color: '#d29922' }, itemStyle: { color: '#d29922' } },
-      { name: '離 10 月線', type: 'line', xAxisIndex: 1, yAxisIndex: 2, data: rows.map(r => num(r, 'gap', 100)), showSymbol: false, lineStyle: { width: 1.3, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
+      { name: '200 日線（虛線）', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => num(r, 'ma200')), showSymbol: false, lineStyle: { width: 1.2, type: 'dashed', color: '#d29922' }, itemStyle: { color: '#d29922' } },
+      { name: '離 200 日線', type: 'line', xAxisIndex: 1, yAxisIndex: 2, data: rows.map(r => num(r, 'gap', 100)), showSymbol: false, lineStyle: { width: 1.3, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
         markArea: { silent: true, data: [[{ yAxis: -NEAR, itemStyle: { color: ZONE_COLORS[2], opacity: 0.16 } }, { yAxis: NEAR }]] },
         markLine: { silent: true, symbol: 'none', lineStyle: { type: 'dotted', width: 1, color: PALETTE.muted },
-          data: [{ yAxis: NEAR, label: { formatter: `±${NEAR}% 盤整`, position: 'insideStartTop', color: PALETTE.muted, fontSize: 11 } }, { yAxis: -NEAR, label: { show: false } }] },
+          data: [{ yAxis: NEAR, label: { formatter: `±${NEAR}% 溫水`, position: 'insideStartTop', color: PALETTE.muted, fontSize: 11 } }, { yAxis: -NEAR, label: { show: false } }] },
         // 最新一週：圓點＋「現在」標籤，顏色＝目前水溫
         markPoint: lastR ? { silent: true, symbol: 'circle', symbolSize: 9, animation: false, data: [{ coord: [lastI, +(lastR.gap * 100).toFixed(2)], itemStyle: { color: ZONE_COLORS[lastR.zone], borderColor: PALETTE.bg, borderWidth: 1.5 },
           label: { show: true, position: 'left', formatter: `現在 ${pctTxt(lastR.gap, 1)}`, color: PALETTE.text, fontSize: 12, fontWeight: 600 } }] } : undefined },
       { name: '各市場水溫', type: 'heatmap', xAxisIndex: 2, yAxisIndex: 3, data: heat, itemStyle: { borderWidth: 0 }, emphasis: { disabled: true } },
-      // 過熱線／極冷線：該市場「當時以前」離 10 月線的歷史分位，會隨時間變動；線外側上色
+      // 過熱線／極冷線：該市場「當時以前」離 200 日線的歷史分位，會隨時間變動；線外側上色
       { name: '過熱線', type: 'line', xAxisIndex: 1, yAxisIndex: 2, data: rows.map(r => num(r, 'hot', 100)), showSymbol: false, z: 1,
         lineStyle: { width: 1.2, type: 'dashed', color: ZONE_COLORS[0] }, itemStyle: { color: ZONE_COLORS[0] }, areaStyle: { origin: 'end', color: ZONE_COLORS[0], opacity: 0.12 } },
       { name: '極冷線', type: 'line', xAxisIndex: 1, yAxisIndex: 2, data: rows.map(r => num(r, 'cold', 100)), showSymbol: false, z: 1,
@@ -238,16 +238,16 @@ export function tempNowNodes(context, date, marketId) {
   const [id, label] = N.STANCE.markets.find(([x]) => x === marketId) || N.STANCE.markets[0];
   const r = N.temperature(context.s[id], date);
   if (!r || r.stale) return [`${label}：${r?.stale ? `資料停在 ${r.date}` : '資料不足'}`];
-  const z = N.ZONES[r.zone], dirTxt = ['日', '週', '月'].map((k, i) => k + ARROW([r.dir.d, r.dir.w, r.dir.m][i])).join(' ');
-  const toHot = r.zone === 0 ? '已在過熱區' : r.gap >= r.hot ? `已站上過熱線（${pctTxt(r.hot, 0)}），但三條均線沒有都上揚` : `距過熱線（${pctTxt(r.hot, 0)}）還差 ${pp(r.hot - r.gap)}`;
-  const toCold = r.zone === 4 ? '已在極冷區' : r.gap <= r.cold ? `已跌破極冷線（${pctTxt(r.cold, 0)}），但三條均線沒有都下彎` : `距極冷線（${pctTxt(r.cold, 0)}）還有 ${pp(r.gap - r.cold)}`;
-  return [`${label} 現在（${r.date}）：`, node('span', z.label, { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc }),
-    '　離 10 月線 ', node('b', pctTxt(r.gap, 1)), `｜${toHot}｜${toCold}｜均線 ${dirTxt}`];
+  const z = N.ZONES[r.zone], dirTxt = ['短', '中', '長'].map((k, i) => k + ARROW([r.dir.s, r.dir.m, r.dir.l][i])).join(' ');
+  const toHot = r.zone === 0 ? '已在滾水區' : r.gap >= r.hot ? `已站上過熱線（${pctTxt(r.hot, 0)}），但短中長沒有都上揚` : `距過熱線（${pctTxt(r.hot, 0)}）還差 ${pp(r.hot - r.gap)}`;
+  const toCold = r.zone === 4 ? '已在冰水區' : r.gap <= r.cold ? `已跌破極冷線（${pctTxt(r.cold, 0)}），但短、中沒有都下彎` : `距極冷線（${pctTxt(r.cold, 0)}）還有 ${pp(r.gap - r.cold)}`;
+  return [`${label} 現在（${r.date}）：`, node('span', N.zoneLabel(r), { class: `nonnormal-zone nonnormal-zone--${r.iceKind === 'flash' ? 'flash' : z.id}`, title: z.desc }),
+    '　離 200 日線 ', node('b', pctTxt(r.gap, 1)), `｜${toHot}｜${toCold}｜均線 ${dirTxt}`];
 }
 const renderTempNow = () => byId('temp-now').replaceChildren(...tempNowNodes(ctx, weeks.at(-1).date, tempMarket));
 function renderTempLegend() {
   byId('temp-legend').replaceChildren(...N.ZONES.map(z => node('span', z.label, { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc })),
-    node('span', '資料不足', { class: 'nonnormal-zone nonnormal-zone--na', title: '還沒有足夠的歷史：10 月線要 10 個月，過熱線／極冷線要約 3 年（櫃買 2017-02、S&P 500（VOO）2014-06 起才有）' }));
+    node('span', '資料不足', { class: 'nonnormal-zone nonnormal-zone--na', title: '還沒有足夠的歷史：200 日線要約 10 個月，過熱線／極冷線再要 750 個交易日（櫃買 2017-03、S&P 500（VOO）2014-07 起才有）' }));
 }
 
 

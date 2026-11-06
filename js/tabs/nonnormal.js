@@ -25,7 +25,7 @@ const HELP = {
   level: '0–1 個亮：常態（單一訊號視為雜訊）｜2–3：留意｜≥4 且橫跨 ≥2 組：警戒｜≥6 且三組都亮：高度警戒。每週五評估，本週未結束時用最新資料日。',
   downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
-  stance: '大跌時用來判斷「跌多深、到第幾個極端情境」，平常大多是空的。五格＝五種大跌時的訊號，條件成立就亮（●），「亮 N 格」＝其中幾格成立。定位＝加權水溫是不是極冷；位置＝加權離 5 年線 3% 以內或跌破；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30、近 22 個交易日無觀察類股 ≥ 3 天、或近 30 日有一天跌停 ≥ 300 家（任一）；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫：10 日、10 週、10 月三條均線的方向＋價格離 10 月線多遠。兩端用各市場自己的歷史：過熱線＝當時以前離 10 月線最遠的 5%（95% 分位），三線上揚且站上＝過熱；極冷線＝低於 10 月線最深的 15%（15% 分位），三線下彎且跌破＝極冷（兩者校準成各約占 5% 的時間）。中間：±3% 內＝盤整；站上且 10 月線上揚＝偏熱；跌破或 10 月線下彎＝偏冷。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。極端情境 1～3＝指數（大盤 ETF）可以考慮進場的時機，越後面越極端（跌得更深、恐慌更重），通常一個比一個晚出現：每個情境的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
+  stance: '大跌時用來判斷「跌多深、到第幾個極端情境」，平常大多是空的。五格＝五種大跌時的訊號，條件成立就亮（●），「亮 N 格」＝其中幾格成立。定位＝加權水溫是不是冰水（含急凍）；位置＝加權離 5 年線 3% 以內或跌破；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30、近 22 個交易日無觀察類股 ≥ 3 天、或近 30 日有一天跌停 ≥ 300 家（任一）；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫（日線）：10 日、50 日、200 日三條均線的方向（各和 1、5、21 個交易日前比，變化在 ±0.10%／±0.25%／±0.5% 內算走平 →）＋價格離 200 日線多遠。依序判斷：短、中都下彎且跌破極冷線（當時以前離 200 日線最深的 15%）＝冰水，長線也下彎是灰犀牛型、長線還沒下彎是急凍；三線都上揚且站上過熱線（最遠的 5%）＝滾水；跌破 200 日線 3% 以上＝冷水；±3% 內＝溫水；站上 3% 以上且長線上揚＝熱水，長線還沒翻上＝溫水。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。極端情境 1～3＝指數（大盤 ETF）可以考慮進場的時機，越後面越極端（跌得更深、恐慌更重），通常一個比一個晚出現：每個情境的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
   cash: '現金為王（izaax，同「現金為王」頁）：4 或 8 週內黃金、比特幣、美債 TLT、QQQ 全部下跌，且恐懼貪婪低點 < 25。逃往黃金：其他都跌、只有黃金漲，且恐懼貪婪 < 25。同一期間誰漲最多＝資金往哪裡去。',
 };
 
@@ -38,7 +38,7 @@ const CARD_GROUPS = [
   { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield'], ['US_BREADTH', '美股市場廣度', null, 'ratio']] },
 ];
 // 卡片上的英文代號（實際用的標的；指標類用通用簡稱）
-const TICKERS = { SOX: 'SOXX', NDX: 'QQQ', SPX: 'VOO', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
+const TICKERS = { SOX: '^SOX', NDX: 'QQQ', SPX: 'VOO', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
   FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'TW Breadth', US_BREADTH: 'SPY', LIMIT_DOWN: 'TWSE+TPEx', NO_OBS: 'TWSE+TPEx',
   N225: 'N225', HSI: 'HSI', SSE: 'SSE', STOXX50E: 'SX5E', US2Y: 'US2Y' };
 const CARD_BY_SERIES = new Map(CARD_GROUPS.flatMap(g => g.cards.map(c => [c[0], c])));
@@ -432,16 +432,78 @@ function renderLeadLag(d) {
 }
 
 // ── stance: five boxes, water temperature, batches ───────────────────────
-const arrows = dir => { const el = node('span', null, { class: 'nonnormal-dirs' }); for (const [k, v] of [['日', dir.d], ['週', dir.w], ['月', dir.m]]) el.append(node('span', k + ARROW(v), { class: dirClass(v) })); return el; };
-const BOX_HINT = { pos: '加權的水溫是不是「極冷」', depth: '加權離 5 年線（月線 60 個月均線）3% 以內或已跌破', press: '上市、上櫃融資維持率取較低者，近 30 日最低低於 150%',
+const arrows = dir => { const el = node('span', null, { class: 'nonnormal-dirs' }); for (const [k, v] of [['短', dir.s], ['中', dir.m], ['長', dir.l]]) el.append(node('span', k + ARROW(v), { class: dirClass(v) })); return el; };
+const BOX_HINT = { pos: '加權的水溫是不是「冰水」（含急凍）', depth: '加權離 5 年線（月線 60 個月均線）3% 以內或已跌破', press: '上市、上櫃融資維持率取較低者，近 30 日最低低於 150%',
   mood: `任一成立：VIX 近 30 日盤中最高 ≥ 30；近 22 個交易日無觀察類股 ≥ ${N.NO_OBS.start} 天；近 30 日有一天跌停 ≥ ${N.NO_OBS.limitDownExtreme} 家`, ext: '費半、那斯達克、S&P 500、韓股至少 2 個轉弱，或護盤基金進場' };
-const BOXES_NOTE = '「五格總覽」＝本區最上面那一排五個格子：定位（加權水溫是否極冷）、位置（加權是否到 5 年線）、壓力（融資維持率 < 150%）、情緒（VIX ≥ 30、無觀察類股或跌停家數）、外部（國際股市轉弱或護盤基金）。每格條件成立就亮 ●，「亮 N 格」＝五格中有幾格成立。只有「定位」這一格看水溫，其他四格看別的訊號，所以亮 1 格不等於水溫已經極冷。';
+const BOXES_NOTE = '「五格總覽」＝本區最上面那一排五個格子：定位（加權水溫是否冰水）、位置（加權是否到 5 年線）、壓力（融資維持率 < 150%）、情緒（VIX ≥ 30、無觀察類股或跌停家數）、外部（國際股市轉弱或護盤基金）。每格條件成立就亮 ●，「亮 N 格」＝五格中有幾格成立。只有「定位」這一格看水溫，其他四格看別的訊號，所以亮 1 格不等於水溫已經極冷。';
 const SCENARIO_HELP = [
   `極端情境 1：大跌的第一個極端，指數（大盤 ETF）可以開始考慮的位置。條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。${BOXES_NOTE}`,
   `極端情境 2：比情境 1 跌得更深、恐慌更重（VIX 45、融資 140%、跌 40%、到 5 年線、連續多日沒有強勢股）。${BOXES_NOTE}`,
   `極端情境 3：最極端的恐慌，歷史上只有 2008、2020/3、2025/4 這類全面崩跌才到（VIX 50、融資 135%、護盤基金、到 10 年線、五格亮 4 格）。${BOXES_NOTE}`,
 ];
 const BATCH_STATE = { on: ['到位', 'nonnormal-why-state--on'], near: ['接近', 'nonnormal-why-state--near'], off: ['未到', ''] };
+const zoneBadge = t => { const z = N.ZONES[t.zone]; return node('span', N.zoneLabel(t), { class: `nonnormal-zone nonnormal-zone--${t.iceKind === 'flash' ? 'flash' : z.id}`, title: z.desc }); };
+// ── 水溫標籤與水溫圖（每日；底色＝當天所在區，冰水急凍用較淺的藍）────────────
+const WATER_GROUPS = [['台股', ['TWII', 'TWOII']], ['美股', ['SPX', 'NDX', 'SOX']], ['韓股', ['KOSPI']]];
+const WATER_COLORS = ['#ef4444', '#f0883e', '#8b949e', '#58a6ff', '#1f6feb'], FLASH_COLOR = '#6ea8fe';
+const KS11_NOTE = '2026-07-31 單日 +17.9% 已用第二個來源核對，是真實行情';
+let waterRange = '5y';
+const waterLabel = id => N.STANCE.markets.find(([x]) => x === id)[1];
+function renderWaterTags(temps) {
+  byId('water-tags').replaceChildren(...temps.map(t => {
+    const el = node('div', null, { class: 'nonnormal-water-tag' });
+    el.append(node('b', t.label));
+    if (t.missing || t.stale) { el.append(node('small', t.stale ? `資料停在 ${t.date}` : '資料不足')); return el; }
+    el.append(zoneBadge(t), node('span', `${pctTxt(t.gap, 1)}　${N.dirText(t.dir)}`), node('br'), node('small', `離 200 日線・短中長（${t.date.slice(5)}）`));
+    return el;
+  }));
+}
+function drawWater() {
+  const host = byId('water-groups');
+  if (!host.childElementCount) {
+    for (const [g, ids] of WATER_GROUPS) {
+      const sec = node('section', null, { class: 'nonnormal-water-group' }), grid = node('div', null, { class: 'nonnormal-water-grid' });
+      sec.append(node('h4', g), grid);
+      for (const id of ids) grid.append(node('div', null, { class: 'nonnormal-water-chart', id: `nonnormal-water-${id}`, role: 'img', 'aria-label': `${waterLabel(id)}水溫圖` }));
+      host.append(sec);
+    }
+    byId('water-legend').replaceChildren(...N.ZONES.map(z => node('span', z.label, { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc })),
+      node('span', '冰水（急凍）', { class: 'nonnormal-zone nonnormal-zone--flash', title: '短、中均線下彎，長線還沒下彎' }));
+  }
+  WATER_GROUPS.flatMap(([, ids]) => ids).forEach((id, k) => {
+    const s = ctx.s[id], el = byId(`water-${id}`), slot = 3 + k;
+    if (!s?.dates.length) { el.textContent = '無資料'; return; }
+    const w = N.waterDaily(s), first = w.zone.findIndex(z => z !== null);
+    const from = waterRange === 'all' ? Math.max(0, first) : Math.max(0, w.dates.findIndex(d => d >= `${+w.dates.at(-1).slice(0, 4) - 5}${w.dates.at(-1).slice(4)}`));
+    const dates = w.dates.slice(from), zone = w.zone.slice(from), ice = w.iceKind.slice(from);
+    const color = i => (zone[i] === 4 && ice[i] === 'flash' ? FLASH_COLOR : WATER_COLORS[zone[i]]);
+    const areas = [];   // 連續同色的日子併成一段底色
+    for (let i = 0; i < dates.length; i++) {
+      if (zone[i] === null) continue;
+      const c = color(i), a = areas.at(-1);
+      if (a && a.c === c && a.end === i - 1) a.end = i; else areas.push({ c, start: i, end: i });
+    }
+    if (!charts[slot]) charts[slot] = echarts.init(el, isLight() ? null : 'dark');
+    const r = v => (Number.isFinite(v) ? +v.toFixed(2) : null);
+    chartOption(slot, {
+      animation: false,
+      title: { text: waterLabel(id) + (id === 'KOSPI' ? '　*' : ''), left: 0, top: 0, textStyle: { fontSize: 13, color: PALETTE.text } },
+      legend: { top: 0, right: 0, itemWidth: 16, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['收盤', '200 日線'] },
+      tooltip: { trigger: 'axis', backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 12 },
+        formatter: p => { const i = p?.[0]?.dataIndex; if (i == null) return ''; const t = zone[i] === null ? '資料不足' : N.zoneLabel({ zone: zone[i], iceKind: ice[i] });
+          return `<b>${dates[i]}</b>｜${t}<br>收盤 ${w.close[from + i].toLocaleString('en-US', { maximumFractionDigits: 2 })}` + (Number.isFinite(w.ma200[from + i]) ? `・200 日線 ${w.ma200[from + i].toLocaleString('en-US', { maximumFractionDigits: 0 })}` : '') + (id === 'KOSPI' ? `<br><small>* ${KS11_NOTE}</small>` : ''); } },
+      grid: { left: mob() ? 44 : 54, right: 8, top: 26, bottom: 24 },
+      xAxis: { type: 'category', data: dates, boundaryGap: false, axisLabel: { color: PALETTE.muted, fontSize: 11, formatter: d => d.slice(0, 4) }, axisTick: { show: false } },
+      yAxis: { type: 'value', scale: true, axisLabel: { color: PALETTE.muted, fontSize: 11 }, splitLine: { lineStyle: { color: PALETTE.grid } } },
+      series: [
+        { name: '收盤', type: 'line', data: w.close.slice(from).map(r), showSymbol: false, lineStyle: { width: 1.2, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
+          markArea: { silent: true, data: areas.map(a => [{ xAxis: dates[a.start], itemStyle: { color: a.c, opacity: 0.25 } }, { xAxis: dates[a.end] }]) } },
+        { name: '200 日線', type: 'line', data: w.ma200.slice(from).map(r), showSymbol: false, lineStyle: { width: 1.1, type: 'dashed', color: '#d29922' }, itemStyle: { color: '#d29922' } },
+      ],
+    });
+  });
+}
+
 function renderStance(d) {
   const st = N.stance(ctx, d);
   const head = node('div', null, { class: 'nonnormal-boxes-head' });
@@ -455,11 +517,13 @@ function renderStance(d) {
     el.append(k, node('div', b.text, { class: 'nonnormal-box-v' }));
     grid.append(el);
   }
-  byId('boxes').replaceChildren(head, grid, node('p', '水溫由熱到冷：過熱 → 偏熱 → 盤整 → 偏冷 → 極冷。極冷＝大跌後進入極端情境的起點；過熱＝漲過頭。均線方向：日／週／月＝10 日、10 週、10 月線，↑ 上揚、↓ 下彎。「離…線」＝現在價格比那條線高（+）或低（−）多少，紅字＝已到或跌破。「過熱／極冷線」＝這個市場自己的歷史上離 10 月線最遠的 5%／最深的 15%，三條均線同方向且越過才算過熱／極冷。手機可左右滑動表格。', { class: 'nonnormal-temp-note' }));
+  byId('boxes').replaceChildren(head, grid, node('p', '水溫由熱到冷：滾水 → 熱水 → 溫水 → 冷水 → 冰水。冰水＝大跌後進入極端情境的起點，分兩型：長線也下彎＝灰犀牛型，長線還沒下彎＝急凍；滾水＝漲過頭。均線方向：短／中／長＝10 日、50 日、200 日線，各和 1、5、21 個交易日前比，↑ 上揚、→ 走平、↓ 下彎。「離…線」＝現在價格比那條線高（+）或低（−）多少，紅字＝已到或跌破。「過熱／極冷線」＝這個市場自己的歷史上離 200 日線最遠的 5%／最深的 15%：短中長都上揚且站上過熱線＝滾水；短、中下彎且跌破極冷線＝冰水。手機可左右滑動表格。', { class: 'nonnormal-temp-note' }));
 
-  const zone = t => { const z = N.ZONES[t.zone]; return node('span', z.label, { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc }); };
+  const zone = zoneBadge;
   const dist = l => { const el = node('span', pctTxt(l.gap)); if (l.touch) el.className = 'nonnormal-touch'; return el; };
-  table('temp', ['市場', '水溫', '均線方向', '離 10 月線', '過熱／極冷線', '離 2 年線', '離 5 年線', '離 10 年線', '離一年高點'], st.temps.map(t => {
+  renderWaterTags(st.temps);
+  if (byId('water-details').open) drawWater();
+  table('temp', ['市場', '水溫', '均線方向', '離 200 日線', '過熱／極冷線', '離 2 年線', '離 5 年線', '離 10 年線', '離一年高點'], st.temps.map(t => {
     if (t.missing || t.stale) return [t.label, t.stale ? `資料停在 ${t.date}` : '資料不足', '', '', '', '', '', '', ''];
     return [t.label, zone(t), arrows(t.dir), pctTxt(t.gap, 1), `${pctTxt(t.hot, 0)}／${pctTxt(t.cold, 0)}`, ...t.long.map(dist), pctTxt(t.dd1y, 1)];
   }));
@@ -589,6 +653,8 @@ function wire() {
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });   // 點背景關閉
   dlg.addEventListener('close', () => { detail = null; });
   const lazy = (id, fn) => byId(id).addEventListener('toggle', e => { if (e.target.open && ctx) { try { fn(); } catch (err) { byId('status').textContent = '計算失敗：' + err.message; } } });
+  lazy('water-details', drawWater);
+  chipPicker(byId('water-range'), 'nonnormal-water', key => { waterRange = key; if (ctx && byId('water-details').open) drawWater(); });
   lazy('cases-details', renderCases);
   lazy('sources-details', renderSources);
   for (const h of document.querySelectorAll('#tab-nonnormal [data-help]')) h.append(' ', infoButton(HELP[h.dataset.help], '說明：' + h.dataset.help));
@@ -614,5 +680,5 @@ export function getCharts() { return charts.filter(Boolean); }
 export function resize() { getCharts().forEach(c => c.resize()); }
 export function onThemeChange() {
   if (!ctx) return;
-  return preserveChartState(getCharts, () => { charts.forEach(c => c?.dispose()); charts = []; drawCash(); drawDetail(); });
+  return preserveChartState(getCharts, () => { charts.forEach(c => c?.dispose()); charts = []; drawCash(); drawDetail(); if (ctx && byId('water-details').open) drawWater(); });
 }

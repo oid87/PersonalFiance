@@ -34,7 +34,7 @@ export const P = Object.freeze({
 
 // 資料檔。ref:true 只顯示、不計入共振。
 export const SERIES = [
-  { id: 'SOX', file: 'SOXX.json', label: '費半（SOXX）' },
+  { id: 'SOX', file: 'SOX.json', label: '費半（^SOX）' },
   { id: 'SPX', file: 'VOO.json', label: 'S&P 500（VOO）' },
   { id: 'NDX', file: 'QQQ.json', label: '那斯達克 100（QQQ）' },
   { id: 'KOSPI', file: 'KS11.json', label: '韓國綜合指數' },
@@ -549,29 +549,47 @@ export function sellExhaustion(ctx, d) {
 }
 
 // ── 位階與極端情境（大跌時「跌多深、到第幾個極端情境」；描述性，不計入上方訊號數與等級）────────────
-// 水溫：10 日、10 週、10 月三條均線的方向＋價格相對 10 月線的位置。週／月均線用「已收完的前幾期收盤＋評估日當天收盤」，
-// 不偷看本期之後的資料。長期均線用月線 24／60／120 個月（2／5／10 年線）。門檻 gap 類為本專案定義，見 docs。
+// 水溫（日線等效）：規則原文是 10 日、10 週、10 月三條均線的方向＋價格相對長均的位置。本專案改用日線
+// 10／50／200 日線，各和 1／5／21 個交易日前的均線比，避免週初、月初切換期別時跳動。只用當天以前的資料。
+// 長期均線（2／5／10 年線）仍用月線 24／60／120 個月。門檻的出處與理由見 docs。
 export const STANCE = Object.freeze({
-  markets: [['TWII', '加權'], ['TWOII', '櫃買'], ['SOX', '費半'], ['NDX', '那斯達克'], ['SPX', 'S&P 500'], ['KOSPI', '韓股']],
-  len: 10,            // 三條均線都取 10 期
-  hotQ: 0.95,         // 過熱線＝該市場「當天以前」所有交易日離 10 月線的 95% 分位（三條上揚且站上這條線＝過熱）
-  coldQ: 0.15,        // 極冷線＝同上的 15% 分位（三條下彎且跌破這條線＝極冷）。兩個分位校準成六個市場平均過熱、極冷各約占 5% 的週
-                      // （極冷多一個「三條都下彎」的條件，所以分位要放寬到 15%；2026-10 校準：過熱 6.0%、極冷 5.2%）
+  markets: [['TWII', '加權'], ['TWOII', '櫃買'], ['SPX', 'S&P 500'], ['NDX', '那斯達克'], ['SOX', '費半'], ['KOSPI', '韓股']],
+  // 三條均線：[長度（交易日）, 和幾個交易日前的均線比, 「→」門檻]。長度與比較天數＝本專案定義（規則原文 10 日／10 週／10 月）；
+  // 「→」門檻＝本專案定義：約是加權各均線變化率絕對值的第 20 百分位（2007 起實算 0.09%／0.21%／0.56%），約兩成時間判成走平
+  lines: { s: [10, 1, 0.001], m: [50, 5, 0.0025], l: [200, 21, 0.005] },
+  hotQ: 0.95,         // 過熱線＝該市場「當天以前」所有交易日離 200 日線的 95% 分位（本專案定義）
+  coldQ: 0.15,        // 極冷線＝同上的 15% 分位（本專案定義）。這組讓冰水、滾水各約占 4–6%，最接近規則原文「兩端各約 5%」
   pctMin: 750,        // 分位至少要 750 個交易日（約 3 年）的歷史，不夠＝資料不足
-  nearGap: 0.03,      // 貼近 10 月線 ±3% ＝盤整
+  nearGap: 0.03,      // 貼近 200 日線 ±3% ＝溫水（本專案定義；規則原文只說「貼近」）
   longMas: [[24, '2 年線'], [60, '5 年線'], [120, '10 年線']],
   touch: 0.03,        // 「到位」：收盤不高於該均線 3%（含跌破）
   ddLookback: 250,    // 距一年高點：250 個交易日內的最高收盤
   recentDays: 30,     // VIX 盤中最高、融資維持率最低：看近 30 個日曆日
   fundDays: 90,       // 護盤基金進場後 90 個日曆日內算「已進場」
 });
+// index 0 最熱、4 最冷。冰水再分兩型（iceKind）：長線也下彎＝灰犀牛型；長線走平或上揚＝急凍。
 export const ZONES = [
-  { id: 'boil', label: '過熱', desc: '三條均線都上揚，且價格站上過熱線（該市場歷史上離 10 月線最遠的 5%）' },
-  { id: 'hot', label: '偏熱', desc: '價格在 10 月線之上，且 10 月線上揚' },
-  { id: 'warm', label: '盤整', desc: '價格貼近 10 月線（±3%）' },
-  { id: 'cool', label: '偏冷', desc: '價格跌破 10 月線，或 10 月線下彎' },
-  { id: 'ice', label: '極冷', desc: '三條均線都下彎，且價格跌破極冷線（該市場歷史上低於 10 月線最深的 15%）' },
+  { id: 'boil', label: '滾水', desc: '短中長三條均線都上揚，且價格站上過熱線（該市場歷史上離 200 日線最遠的 5%）' },
+  { id: 'hot', label: '熱水', desc: '價格在 200 日線 3% 以上，且 200 日線上揚' },
+  { id: 'warm', label: '溫水', desc: '價格貼近 200 日線（±3%）；或站上 3% 以上但 200 日線還沒翻上' },
+  { id: 'cool', label: '冷水', desc: '價格跌破 200 日線 3% 以上' },
+  { id: 'ice', label: '冰水', desc: '短、中均線都下彎，且價格跌破極冷線（該市場歷史上低於 200 日線最深的 15%）。長線也下彎＝灰犀牛型；長線還沒下彎＝急凍' },
 ];
+export const ICE_KINDS = { rhino: '灰犀牛型', flash: '急凍' };
+export const ARROWS = { 1: '↑', 0: '→', '-1': '↓' };
+export const dirText = dir => (dir ? ['s', 'm', 'l'].map(k => ARROWS[dir[k]]).join('') : '');
+/** 變化率 → 1（↑）／0（→）／−1（↓）。 */
+export const direction = (x, th) => (x > th ? 1 : x < -th ? -1 : 0);
+/** 依序判斷，先成立的優先。dir＝{s,m,l}（1／0／−1），gap＝收盤 ÷ 200 日線 − 1。回傳 { zone, iceKind }。 */
+export function classifyWater(dir, gap, hot, cold, near = STANCE.nearGap) {
+  if (dir.s < 0 && dir.m < 0 && gap <= cold) return { zone: 4, iceKind: dir.l < 0 ? 'rhino' : 'flash' };
+  if (dir.s > 0 && dir.m > 0 && dir.l > 0 && gap >= hot) return { zone: 0, iceKind: null };
+  if (gap < -near) return { zone: 3, iceKind: null };
+  if (Math.abs(gap) <= near) return { zone: 2, iceKind: null };
+  return { zone: dir.l > 0 ? 1 : 2, iceKind: null };
+}
+export const zoneLabel = t => (t ? ZONES[t.zone].label + (t.iceKind ? `（${ICE_KINDS[t.iceKind]}）` : '') : '');
+
 // 國家金融安定基金進場期間的第一天（宣布多在前一晚）。資料：歷次公告整理；2022、2025 兩次另以新聞核對。
 export const STABILIZATION_FUND = ['2000-03-16', '2000-10-03', '2004-05-20', '2008-09-19', '2011-12-20', '2015-08-25', '2020-03-19', '2022-07-13', '2025-04-09'];
 
@@ -599,12 +617,27 @@ function periodMa(s, kind, i, n) {
   const now = (sum + s.close[i]) / n;
   return { now, prev: (sum + close[p - n]) / n };
 }
-const sign = x => (x > 0 ? 1 : x < 0 ? -1 : 0);
-/** 每天的離 10 月線（gap），快取在序列上。 */
+const LINE_KEYS = ['s', 'm', 'l'];
+/** 三條均線（快取在序列上）。 */
+function waterMas(s) {
+  for (const k of LINE_KEYS) { const n = STANCE.lines[k][0]; s.ma[n] ??= rollingMean(s.close, n); }
+  return LINE_KEYS.map(k => s.ma[STANCE.lines[k][0]]);
+}
+/** 第 i 天三條均線的變化率；任何一條還算不出來＝null。 */
+function lineChanges(s, i) {
+  const mas = waterMas(s), out = {};
+  for (let j = 0; j < 3; j++) {
+    const [, lag] = STANCE.lines[LINE_KEYS[j]], a = mas[j][i], b = i - lag >= 0 ? mas[j][i - lag] : null;
+    if (!finite(a) || !finite(b)) return null;
+    out[LINE_KEYS[j]] = a / b - 1;
+  }
+  return out;
+}
+/** 每天的離 200 日線（gap），三條均線方向都算得出來的那天起才有值。快取在序列上。 */
 function gapSeries(s) {
   if (s._gap) return s._gap;
-  const g = new Float64Array(s.dates.length).fill(NaN);
-  for (let i = 0; i < g.length; i++) { const m = periodMa(s, 'm', i, STANCE.len); if (m) g[i] = s.close[i] / m.now - 1; }
+  const g = new Float64Array(s.dates.length).fill(NaN), ma = waterMas(s)[2];
+  for (let i = 0; i < g.length; i++) if (lineChanges(s, i)) g[i] = s.close[i] / ma[i] - 1;
   return (s._gap = g);
 }
 const quantile = (sorted, q) => { const x = (sorted.length - 1) * q, lo = Math.floor(x); return sorted[lo] + (sorted[Math.min(lo + 1, sorted.length - 1)] - sorted[lo]) * (x - lo); };
@@ -614,7 +647,7 @@ export function gapThresholds(s, hotQ = STANCE.hotQ, coldQ = STANCE.coldQ) {
   if (s._thr?.key === key) return s._thr;
   const g = gapSeries(s), n = g.length, hot = new Float64Array(n).fill(NaN), cold = new Float64Array(n).fill(NaN), sorted = [];
   for (let i = 0; i < n; i++) {
-    // 過熱線至少 +3%、極冷線至多 −3%（不會落在「貼近 10 月線」的盤整區裡）
+    // 過熱線至少 +3%、極冷線至多 −3%（不會落在「貼近 200 日線」的溫水帶裡）
     if (sorted.length >= STANCE.pctMin) { hot[i] = Math.max(quantile(sorted, hotQ), STANCE.nearGap); cold[i] = Math.min(quantile(sorted, coldQ), -STANCE.nearGap); }
     if (Number.isFinite(g[i])) {
       let lo = 0, hi = sorted.length;
@@ -624,38 +657,48 @@ export function gapThresholds(s, hotQ = STANCE.hotQ, coldQ = STANCE.coldQ) {
   }
   return (s._thr = { key, hot, cold });
 }
-/** 第 i 天的水溫核心：三條 10 期均線的方向、離 10 月線多遠、落在哪一區。null＝資料不足。
- *  兩端：三條上揚且站上過熱線＝過熱；三條下彎且跌破極冷線＝極冷（過熱線／極冷線＝該市場自己的歷史分位）。
- *  中間三區看 10 月線方向與價格位置：貼近 10 月線（±3%）＝盤整；站上且 10 月線上揚＝偏熱；跌破，或 10 月線下彎＝偏冷。 */
+/** 第 i 天的水溫核心：三條均線方向、離 200 日線多遠、落在哪一區（classifyWater）。null＝資料不足。 */
 function tempCore(s, i, q = {}) {
-  const n = STANCE.len, ma = (s.ma[n] ??= rollingMean(s.close, n));
-  const w = periodMa(s, 'w', i, n), m = periodMa(s, 'm', i, n);
-  if (!finite(ma[i]) || !finite(ma[i - 1]) || !w || !m) return null;
+  const ch = lineChanges(s, i);
+  if (!ch) return null;
   const thr = gapThresholds(s, q.hotQ, q.coldQ), hot = thr.hot[i], cold = thr.cold[i];
   if (!finite(hot) || !finite(cold)) return null;
-  const c = s.close[i], dir = { d: sign(ma[i] - ma[i - 1]), w: sign(w.now - w.prev), m: sign(m.now - m.prev) };
-  const gap = c / m.now - 1, up = dir.d > 0 && dir.w > 0 && dir.m > 0, down = dir.d < 0 && dir.w < 0 && dir.m < 0;
-  const zone = up && gap >= hot ? 0 : down && gap <= cold ? 4 : Math.abs(gap) <= STANCE.nearGap ? 2 : gap > 0 && dir.m > 0 ? 1 : 3;
-  return { close: c, dir, ma10m: m.now, gap, hot, cold, zone };
+  const c = s.close[i], ma200 = waterMas(s)[2][i], gap = c / ma200 - 1;
+  const dir = { s: direction(ch.s, STANCE.lines.s[2]), m: direction(ch.m, STANCE.lines.m[2]), l: direction(ch.l, STANCE.lines.l[2]) };
+  return { close: c, dir, change: ch, ma200, gap, hot, cold, ...classifyWater(dir, gap, hot, cold) };
 }
-/** 單一市場的水溫與長期均線位階。null＝資料不足（10 月線需要 11 個月）。 */
+/** 每日水溫（給走勢圖）：{ dates, close, ma200, zone, iceKind }，資料不足＝null。快取在序列上。 */
+export function waterDaily(s) {
+  if (s._water) return s._water;
+  const n = s.dates.length, ma = waterMas(s)[2], zone = new Array(n).fill(null), ice = new Array(n).fill(null);
+  for (let i = 0; i < n; i++) { const t = tempCore(s, i); if (t) { zone[i] = t.zone; ice[i] = t.iceKind; } }
+  return (s._water = { dates: s.dates, close: s.close, ma200: ma, zone, iceKind: ice });
+}
+/** [from, to] 之間每區的天數占比（只算有水溫的日子）。 */
+export function zoneShare(s, from = '0000', to = '9999') {
+  const w = waterDaily(s), cnt = [0, 0, 0, 0, 0];
+  let n = 0, first = null;
+  w.zone.forEach((z, i) => { if (z !== null && w.dates[i] >= from && w.dates[i] <= to) { cnt[z]++; n++; first ??= w.dates[i]; } });
+  return { from: first, days: n, share: cnt.map(c => (n ? c / n : null)) };
+}
+/** 單一市場的水溫與長期均線位階。null＝資料不足（200 日線＋21 日比較，加上 750 日的分位歷史）。 */
 export function temperature(s, d) {
   const i = s ? indexLE(s, d) : -1;
   if (i < 1) return null;
   if (days(s.dates[i], d) > P.staleDays) return { stale: true, date: s.dates[i] };
   const t = tempCore(s, i);
   if (!t) return null;
-  const { close: c, dir, ma10m, gap, hot, cold, zone } = t;
+  const { close: c } = t;
   const long = STANCE.longMas.map(([k, label]) => {
     const v = periodMa(s, 'm', i, k)?.now ?? null;
     return { months: k, label, ma: v, gap: finite(v) ? c / v - 1 : null, touch: finite(v) ? c <= v * (1 + STANCE.touch) : null };
   });
   let hi = c;
   for (let j = Math.max(0, i - STANCE.ddLookback + 1); j < i; j++) hi = Math.max(hi, s.close[j]);
-  return { date: s.dates[i], close: c, dir, ma10m, gap, hot, cold, zone, long, dd1y: c / hi - 1 };
+  return { date: s.dates[i], ...t, long, dd1y: c / hi - 1 };
 }
 /** 水溫走勢：每週一筆（各市場該週最後一個交易日的水溫），給走勢圖與五市場熱度條。
- *  dates＝每週各市場最後交易日中最晚的一天；rows[k]＝該市場第 k 週的 {date, close, ma10m, gap, zone, dir}。
+ *  dates＝每週各市場最後交易日中最晚的一天；rows[k]＝該市場第 k 週的 {date, close, ma200, gap, zone, iceKind, dir}。
  *  整週休市（例如台股農曆年）沿用上一週並標 carried: true；開始有資料之前＝null。 */
 export function temperatureHistory(ctx, q = {}) {
   const byWeek = new Map();
@@ -723,7 +766,7 @@ export function stance(ctx, d) {
   const no = noObsNow(ctx, d), ld = recentExtreme(ctx.s.LIMIT_DOWN, d, (a, b) => a > b);
   const moodLit = [v(30), no ? no.count >= NO_OBS.start : null, ld ? ld.value >= NO_OBS.limitDownExtreme : null];
   const boxes = [
-    { key: 'pos', label: '定位', what: '水溫', lit: tw ? tw.zone === 4 : null, text: tw ? ZONES[tw.zone].label : '無資料' },
+    { key: 'pos', label: '定位', what: '水溫', lit: tw ? tw.zone === 4 : null, text: tw ? zoneLabel(tw) : '無資料' },
     { key: 'depth', label: '位置', what: '跌多深', lit: y5?.touch ?? null, text: y5 && finite(y5.gap) ? `距 5 年線 ${pct(y5.gap, 0)}` : '無資料' },
     { key: 'press', label: '壓力', what: '融資', lit: mg(P.margin[1]), text: margin ? `近 30 日最低 ${margin.value.toFixed(1)}%（${margin.market}）` : '無資料' },
     { key: 'mood', label: '情緒', what: 'VIX・觀察類股・跌停', lit: moodLit.every(x => x === null) ? null : moodLit.some(Boolean),

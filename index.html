@@ -2392,9 +2392,15 @@
     <div id="nonnormal-leadlag" class="table-scroll" tabindex="0" aria-label="加權與櫃買跌破均線"></div>
     <div class="nonnormal-group-head"><h3 data-help="stance">大跌時的位階與極端情境</h3><span class="nonnormal-legend">不計入上方亮燈數</span></div>
     <div id="nonnormal-boxes" aria-label="五格總覽"></div>
+    <div id="nonnormal-water-tags" class="nonnormal-water-tags" aria-label="六個指數目前的水溫"></div>
     <div id="nonnormal-temp" class="table-scroll" tabindex="0" aria-label="各市場水溫與長期均線位階"></div>
     <p id="nonnormal-temp-now" class="nonnormal-temp-now" aria-live="polite"></p>
-    <p class="nonnormal-sub-row"><a class="nonnormal-sub-link" href="#tab=nonnormalhist">水溫走勢：六個市場的歷史、過熱線與極冷線 → 過往觀察</a></p>
+    <details id="nonnormal-water-details" class="ui-details"><summary>水溫圖：六個指數每天在哪一區</summary>
+      <div id="nonnormal-water-range" class="nonnormal-controls"><span class="chip active" data-nonnormal-water="5y">近 5 年</span><span class="chip" data-nonnormal-water="all">全部</span></div>
+      <div id="nonnormal-water-legend" class="nonnormal-temp-legend"></div>
+      <div id="nonnormal-water-groups"></div>
+    </details>
+    <p class="nonnormal-sub-row"><a class="nonnormal-sub-link" href="#tab=nonnormalhist">每週水溫走勢、過熱線與極冷線 → 過往觀察</a></p>
     <div id="nonnormal-batches" class="nonnormal-grid nonnormal-grid--batch"></div>
     <p id="nonnormal-batch-note" class="note-muted nonnormal-batch-note"></p>
     <div class="nonnormal-group-head"><h3>轉機觀察</h3><a class="nonnormal-sub-link" href="#tab=nonnormalhist">過往觀察：2013 起跌停與無觀察類股回測 →</a></div>
@@ -2420,7 +2426,7 @@
     <div class="nonnormalhist-group-head nonnormal-temp-head"><h3 id="nonnormalhist-temp-title">水溫走勢</h3><div id="nonnormalhist-temp-legend" class="nonnormal-temp-legend"></div></div>
     <p id="nonnormalhist-temp-now" class="nonnormal-temp-now" aria-live="polite"></p>
     <div class="nonnormalhist-controls nonnormal-temp-row"><div id="nonnormalhist-temp-market" class="nonnormalhist-controls nonnormal-temp-chips"><span class="chip active" data-nonnormalhist-temp-market="TWII">加權</span><span class="chip" data-nonnormalhist-temp-market="TWOII">櫃買</span><span class="chip" data-nonnormalhist-temp-market="SOX">費半</span><span class="chip" data-nonnormalhist-temp-market="NDX">那斯達克</span><span class="chip" data-nonnormalhist-temp-market="SPX">S&amp;P 500</span><span class="chip" data-nonnormalhist-temp-market="KOSPI">韓股</span></div><div id="nonnormalhist-temp-range" class="nonnormalhist-controls nonnormal-temp-chips"><span class="chip" data-nonnormalhist-temp-range="3y">3 年</span><span class="chip active" data-nonnormalhist-temp-range="5y">5 年</span><span class="chip" data-nonnormalhist-temp-range="10y">10 年</span><span class="chip" data-nonnormalhist-temp-range="all">全部</span></div></div>
-    <div id="nonnormalhist-temp-chart" class="nonnormal-chart nonnormal-temp-chart" role="img" aria-label="所選市場的價格與 10 月線（底色＝水溫）、離 10 月線百分比與過熱線／極冷線、六個市場的水溫熱度條"></div>
+    <div id="nonnormalhist-temp-chart" class="nonnormal-chart nonnormal-temp-chart" role="img" aria-label="所選市場的價格與 200 日線（底色＝水溫）、離 200 日線百分比與過熱線／極冷線、六個市場的水溫熱度條"></div>
     <div class="nonnormalhist-group-head"><h3>跌停與無觀察類股回測</h3></div>
     <div id="nonnormalhist-range" class="nonnormalhist-controls"><span class="chip active" data-nonnormalhist-range="old">2013–2019</span><span class="chip" data-nonnormalhist-range="new">2020 起</span><span class="chip" data-nonnormalhist-range="all">全部</span></div>
     <div id="nonnormalhist-chart" class="nonnormalhist-chart" role="img" aria-label="加權指數與無觀察類股日、每日跌停家數、近 22 個交易日無觀察類股天數、0050 成分股近 22 日觀察股次數"></div>
