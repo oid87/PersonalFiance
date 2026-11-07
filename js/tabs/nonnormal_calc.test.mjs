@@ -16,7 +16,7 @@ const last = DATES.at(-1);
 function rawWith(over = {}) {
   const base = {};
   for (const s of N.SERIES) base[s.id] = rows(DATES, flat(DATES.length, s.id === 'VIX' ? 14 : s.unit === '%' ? 4 : 100), s.field || 'close');
-  base.marginMm = []; base.marginDaily = rows(DATES, flat(DATES.length, 170), 'ratio'); base.breadth = [];
+  base.marginMm = []; base.marginDaily = DATES.map(date => ({ date, ratio: 178, ratio_exetf: 170 })); base.breadth = [];
   return { ...base, ...over };
 }
 const sig = (week, id) => week.signals.find(s => s.id === id);
@@ -455,13 +455,13 @@ test('data check: water zones on historical case dates', { skip: !haveData }, ()
 // ── M5 融資餘額急減、M12 現金流三檔位、三角型比重與「下一批要更極端」、緩跌提示 ─────────────
 test('marginDrop: 10-trading-day fall ≥ 15% lights the pressure box even when the maintenance ratio is fine', () => {
   const yi = flat(DATES.length, 1000); for (let i = DATES.length - 5; i < DATES.length; i++) yi[i] = 800;
-  const daily = DATES.map((date, i) => ({ date, ratio: 170, margin_yi: yi[i] }));
+  const daily = DATES.map((date, i) => ({ date, ratio: 178, ratio_exetf: 170, margin_yi: yi[i] }));
   const st = N.stance(N.buildContext(rawWith({ marginDaily: daily })), last);
   const box = st.boxes.find(b => b.key === 'press');
   assert.equal(st.marginDrop.lit, true);
   assert.equal(box.lit, true);
   assert.deepEqual(box.items.map(x => x.ok), [false, true]);
-  const calm = N.stance(N.buildContext(rawWith({ marginDaily: DATES.map((date, i) => ({ date, ratio: 170, margin_yi: 1000 - i * 0.1 })) })), last);
+  const calm = N.stance(N.buildContext(rawWith({ marginDaily: DATES.map((date, i) => ({ date, ratio: 178, ratio_exetf: 170, margin_yi: 1000 - i * 0.1 })) })), last);
   assert.equal(calm.boxes.find(b => b.key === 'press').lit, false);
 });
 
@@ -519,4 +519,11 @@ test('slowFall hint: only for the 灰犀牛 ice kind with 30-day VIX intraday hi
   const hi = JSON.parse(JSON.stringify(raw.VIX)); hi[hi.length - 1].high = 45;
   const st2 = N.stance(N.buildContext({ ...raw, VIX: hi }), d);
   assert.equal(st2.slowFall, false);
+});
+
+test('margin: 上市 uses the ex-ETF ratio, not the 含 ETF ratio', () => {
+  const raw = rawWith({ marginDaily: DATES.map(date => ({ date, ratio: 160, ratio_exetf: 145 })) });
+  const m = sig(N.evaluateWeek(N.buildContext(raw), last), 'margin');
+  assert.equal(m.state, 'on');
+  assert.match(m.text, /上市 145\.0%/);
 });

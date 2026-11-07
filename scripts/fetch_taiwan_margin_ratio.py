@@ -62,7 +62,7 @@ def get_json(url, params, tries=3):
 
 
 def fetch_day(d_iso):
-    """(ratio, collateral_yi, margin_yi, n) for a trading day, or None if no usable data."""
+    """(ratio, collateral_yi, margin_yi, n, ratio_exetf) for a trading day, or None if no usable data."""
     ymd = d_iso.replace("-", "")
     mg = get_json(MARGN, {"response": "json", "date": ymd, "selectType": "ALL"})
     if not mg or mg.get("stat") != "OK" or not mg.get("tables"):
@@ -119,8 +119,10 @@ def fetch_day(d_iso):
     if not (RATIO_MIN <= ratio <= RATIO_MAX):
         print(f"  ! {d_iso} ratio {ratio:.2f}% outside [{RATIO_MIN}, {RATIO_MAX}] — skip")
         return None
+    # 排除 ETF 口徑（分子去掉代號 00 開頭者、分母不變）：同 fetch_margin_ratio_mm.py 的 ratio_exetf
+    ex = sum(lots[c] * closes[c] * 1000.0 for c in matched if not c.startswith("00"))
     return (round(ratio, 2), round(collateral / 1e8, 1),
-            round(den / 1e8, 1), len(matched))
+            round(den / 1e8, 1), len(matched), round(ex / den * 100, 2))
 
 
 def missing_trading_days(have):
@@ -158,8 +160,9 @@ def main():
     for d in todo:
         res = fetch_day(d)
         if res:
-            ratio, coll, marg, n = res
-            by_date[d] = {"date": d, "ratio": ratio, "collateral_yi": coll, "margin_yi": marg, "n": n}
+            ratio, coll, marg, n, ratio_ex = res
+            by_date[d] = {"date": d, "ratio": ratio, "ratio_exetf": ratio_ex,
+                          "collateral_yi": coll, "margin_yi": marg, "n": n}
             done += 1
             if done % 20 == 0:
                 save(by_date)

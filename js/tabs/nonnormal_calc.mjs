@@ -153,8 +153,12 @@ export function buildContext(raw = {}, opts = {}) {
   const s = {};
   for (const def of SERIES) s[def.id] = buildSeries(raw[def.id] || [], def.field || 'close');
   const merged = mergeRatio(raw.marginMm || [], raw.marginDaily || []).rows;
-  s.MARGIN = buildSeries(merged, 'ratio');
-  s.MARGIN_EX = buildSeries((raw.marginMm || []).filter(r => finite(r?.ratio_exetf)), 'ratio_exetf');
+  // 上市維持率採「排除 ETF」口徑（分子去掉 ETF、分母不變）：規則原文的 166／150／140／130 是以排除 ETF 的數據商口徑講的。
+  // 歷史取 _mm 檔，每日增量取 taiwan_margin_ratio.json 的 ratio_exetf（2026-11 起才有），同日以每日檔為準。
+  const exRows = new Map();
+  for (const r of [...(raw.marginMm || []), ...(raw.marginDaily || [])]) if (finite(r?.ratio_exetf)) exRows.set(r.date, { date: r.date, ratio_exetf: r.ratio_exetf });
+  s.MARGIN = buildSeries([...exRows.values()].sort((a, b) => (a.date < b.date ? -1 : 1)), 'ratio_exetf');
+  s.MARGIN_ALL = buildSeries(merged, 'ratio');   // 含 ETF 口徑，只作參考
   s.MARGIN_YI = buildSeries(raw.marginDaily || [], 'margin_yi');   // 上市融資餘額（億元）
   s.MARGIN_OTC = buildSeries(raw.tpex || [], 'ratio_all');   // 上櫃（含 ETF），分母 2026-08-24 起才有
   const breadth = (raw.breadth || []).filter(r => finite(r?.bull) && finite(r?.bear)).sort((a, b) => (a.date < b.date ? -1 : 1));
@@ -355,8 +359,8 @@ export const SIGNALS = [
   },
   {
     id: 'margin', short: '融資維持率', group: 'C', label: '融資維持率承壓', series: 'MARGIN',
-    rule: '上市或上櫃融資維持率（本站計算、含 ETF）< 150%',
-    thresholds: [['150% 以下承壓', 'ref'], ['用本站計算值（含 ETF 口徑）', 'project'], ['上櫃也計入（2026-08-24 起有資料）', 'project']],
+    rule: '上市（排除 ETF）或上櫃（含 ETF）融資維持率 < 150%',
+    thresholds: [['150% 以下承壓', 'ref'], ['上市用排除 ETF 口徑（分子去掉 ETF）；上櫃只有含 ETF 資料', 'project'], ['上櫃也計入（2026-08-24 起有資料）', 'project']],
     eval(ctx, d) {
       const m = marginNow(ctx, d);
       if (!m) return na(at(ctx.s.MARGIN, d), '重建維持率 2004-02 起');
@@ -602,7 +606,7 @@ export function classifyWater(dir, gap, hot, cold, near = STANCE.nearGap) {
 export const zoneLabel = t => (t ? ZONES[t.zone].label + (t.iceKind ? `（${ICE_KINDS[t.iceKind]}）` : '') : '');
 
 // 國家金融安定基金進場期間的第一天（宣布多在前一晚）。資料：歷次公告整理；2022、2025 兩次另以新聞核對。
-export const STABILIZATION_FUND = ['2000-03-16', '2000-10-03', '2004-05-20', '2008-09-19', '2011-12-20', '2015-08-25', '2020-03-19', '2022-07-13', '2025-04-09'];
+export const STABILIZATION_FUND = ['2000-03-16', '2000-10-03', '2004-05-20', '2008-09-19', '2011-12-20', '2015-08-25', '2020-03-19', '2022-07-13', '2025-04-09', '2026-11-06'];
 
 const ymKey = d => d.slice(0, 7);
 function weekKey(d) {   // ISO 週（以週四所在日期判斷年份）

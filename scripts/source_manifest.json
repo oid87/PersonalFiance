@@ -2121,7 +2121,8 @@
             "collateral_yi",
             "margin_yi",
             "n",
-            "ratio"
+            "ratio",
+            "ratio_exetf"
           ]
         }
       }
