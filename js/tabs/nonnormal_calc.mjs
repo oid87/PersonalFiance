@@ -155,6 +155,7 @@ export function buildContext(raw = {}, opts = {}) {
   const merged = mergeRatio(raw.marginMm || [], raw.marginDaily || []).rows;
   s.MARGIN = buildSeries(merged, 'ratio');
   s.MARGIN_EX = buildSeries((raw.marginMm || []).filter(r => finite(r?.ratio_exetf)), 'ratio_exetf');
+  s.MARGIN_YI = buildSeries(raw.marginDaily || [], 'margin_yi');   // 上市融資餘額（億元）
   s.MARGIN_OTC = buildSeries(raw.tpex || [], 'ratio_all');   // 上櫃（含 ETF），分母 2026-08-24 起才有
   const breadth = (raw.breadth || []).filter(r => finite(r?.bull) && finite(r?.bear)).sort((a, b) => (a.date < b.date ? -1 : 1));
   s.BREADTH = { dates: breadth.map(r => r.date), rows: breadth };
@@ -330,12 +331,12 @@ export const SIGNALS = [
   },
   {
     id: 'vix', short: 'VIX', group: 'B', label: 'VIX 升高', series: 'VIX',
-    rule: '收盤 ≥ 20',
-    thresholds: [['20–30 開始不安；30 以上恐慌', 'ref']],
+    rule: '收盤 ≥ 30',
+    thresholds: [['規則原文速查表：VIX > 30 恐慌（20–30 只是不安，不亮）', 'ref']],
     eval(ctx, d) {
       const f = at(ctx.s.VIX, d);
       if (!usable(f)) return na(f);
-      return { state: on(f.close >= P.vix[1]), asOf: f.date, value: f.close, text: `${f.close.toFixed(1)}｜${VIX_ZONES[vixZone(f.close)].label}`, tags: [] };
+      return { state: on(f.close >= P.vix[2]), asOf: f.date, value: f.close, text: `${f.close.toFixed(1)}｜${VIX_ZONES[vixZone(f.close)].label}`, tags: [] };
     },
   },
   {
@@ -566,6 +567,16 @@ export const STANCE = Object.freeze({
   ddLookback: 250,    // 距一年高點：250 個交易日內的最高收盤
   recentDays: 30,     // VIX 盤中最高、融資維持率最低：看近 30 個日曆日
   fundDays: 90,       // 護盤基金進場後 90 個日曆日內算「已進場」
+  // 融資餘額急減（本專案定義）：融資餘額（億元）比 10 個交易日前減少 ≥ 15% 即亮；與「維持率 < 150%」任一成立，壓力格就亮。
+  // 回測核對：2025-04 最大 10 日減幅 −33.7%（2025-04-14）、2026-07 −19.8%（2026-07-30），兩段都亮（測試有鎖）。
+  marginDrop: { days: 10, th: 0.15 },
+  // 現金流三檔位（金額＝規則原文舉例，單位元：[定期定額, 儲備]）。年線＝加權 200 日線，兩年線＝月線 24 個月均線。
+  // 升檔（往第 3 檔）要連續 5 個交易日都在較低檔位的條件下、降檔（往第 1 檔）要連續 5 個交易日都站回（連續天數＝本專案定義）。
+  cash: { confirm: 5, amounts: [[5000, 10000], [7500, 7500], [10000, 5000]] },
+  // 三角型配置比重（規則原文配置）；「下一批要更極端」：前一批在 chainDays 個日曆日內曾到位，後一批才可判到位（回看天數＝本專案定義）。
+  share: [0.2, 0.3, 0.5],
+  chainDays: 180,
+  slowFallVix: 40,    // 緩跌提示：冰水灰犀牛型且近 30 日 VIX 盤中最高低於此值
 });
 // index 0 最熱、4 最冷。冰水再分兩型（iceKind）：長線也下彎＝灰犀牛型；長線走平或上揚＝急凍。
 export const ZONES = [
@@ -753,7 +764,7 @@ export const BOX_VERDICT = n => (n >= 3 ? '強烈訊號' : n >= 1 ? '提高警�
 
 /** 加權為主的位階報告：各市場水溫、五格（定位／位置／壓力／情緒／外部）與指數三個極端情境的條件。
  *  情境狀態：可判斷的條件中到位 ≥ 75%＝到位、≥ 50%＝接近（本專案定義；歷史上條件很少同時全部成立）。 */
-export function stance(ctx, d) {
+function stanceCore(ctx, d) {
   const temps = STANCE.markets.map(([id, label]) => ({ id, label, ...(temperature(ctx.s[id], d) || { missing: true }) }));
   const tw = temps[0].missing || temps[0].stale ? null : temps[0];
   const vix = recentExtreme(ctx.s.VIX, d, (a, b) => a > b, 'high');
@@ -765,10 +776,17 @@ export function stance(ctx, d) {
   const v = th => (vix ? vix.value >= th : null), mg = th => (margin ? margin.value < th : null);
   const no = noObsNow(ctx, d), ld = recentExtreme(ctx.s.LIMIT_DOWN, d, (a, b) => a > b);
   const moodLit = [v(30), no ? no.count >= NO_OBS.start : null, ld ? ld.value >= NO_OBS.limitDownExtreme : null];
+  const drop = marginDrop(ctx, d);
+  const ratioOk = mg(P.margin[1]), dropOk = drop ? drop.lit : null;
+  const pressLit = ratioOk === null && dropOk === null ? null : !!(ratioOk || dropOk);
+  const pressItems = [
+    { text: margin ? `維持率 < ${P.margin[1]}%：近 30 日最低 ${margin.value.toFixed(1)}%（${margin.market}）` : `維持率 < ${P.margin[1]}%：無資料`, ok: ratioOk },
+    { text: drop ? `融資餘額 ${STANCE.marginDrop.days} 日減幅 ≥ ${STANCE.marginDrop.th * 100}%：${pct(drop.chg)}（${drop.date.slice(5)}）` : `融資餘額 ${STANCE.marginDrop.days} 日減幅 ≥ ${STANCE.marginDrop.th * 100}%：無資料`, ok: dropOk },
+  ];
   const boxes = [
     { key: 'pos', label: '定位', what: '水溫', lit: tw ? tw.zone === 4 : null, text: tw ? zoneLabel(tw) : '無資料' },
     { key: 'depth', label: '位置', what: '跌多深', lit: y5?.touch ?? null, text: y5 && finite(y5.gap) ? `距 5 年線 ${pct(y5.gap, 0)}` : '無資料' },
-    { key: 'press', label: '壓力', what: '融資', lit: mg(P.margin[1]), text: margin ? `近 30 日最低 ${margin.value.toFixed(1)}%（${margin.market}）` : '無資料' },
+    { key: 'press', label: '壓力', what: '融資', lit: pressLit, text: margin ? `近 30 日最低 ${margin.value.toFixed(1)}%（${margin.market}）` : '無資料', items: pressItems },
     { key: 'mood', label: '情緒', what: 'VIX・觀察類股・跌停', lit: moodLit.every(x => x === null) ? null : moodLit.some(Boolean),
       text: [vix && `VIX 盤中最高 ${vix.value.toFixed(1)}`, ld && `跌停最多 ${ld.value} 家`, no && `無觀察類股 ${no.count} 天（近 22 日）`].filter(Boolean).join('・') || '無資料' },
     { key: 'ext', label: '外部', what: '國際與護盤', lit: intl >= 2 || !!fund, text: `4 個國際股市有 ${intl} 個轉弱${fund ? `；護盤基金 ${fund} 進場` : ''}` },
@@ -781,8 +799,76 @@ export function stance(ctx, d) {
     [c('VIX 盤中破 40', v(40)), c('距一年高點跌 30%', dd(0.30)), c('跌破 2 年線', y2 && finite(y2.gap) ? y2.gap < 0 : null), c('五格總覽至少亮 1 格', lit >= 1, { boxes: litNames })],
     [c('VIX 盤中破 45', v(45)), c('融資維持率 < 140%', mg(P.margin[2])), c('距一年高點跌 40%', dd(0.40)), c('到 5 年線（±3%）', y5?.touch ?? null), c(`近 22 個交易日無觀察類股 ≥ ${NO_OBS.start} 天`, no ? no.count >= NO_OBS.start : null)],
     [c('VIX 盤中 ≥ 50', v(50)), c('融資維持率 < 135%', mg(135)), c('護盤基金進場', !!fund), c('到 10 年線（±3%）', y10?.touch ?? null), c('五格總覽至少亮 4 格', lit >= 4, { boxes: litNames })],
-  ].map((conds, k) => ({ ...BATCHES[k], ...batchState(conds) }));
-  return { date: d, temps, boxes, lit, verdict: BOX_VERDICT(lit), batches, vix, margin, fund, intl, noObs: no, limitDown: ld };
+  ].map((conds, k) => ({ ...BATCHES[k], share: STANCE.share[k], ...batchState(conds) }));
+  const slowFall = !!(tw && tw.zone === 4 && tw.iceKind === 'rhino' && vix && vix.value < STANCE.slowFallVix);
+  return { date: d, temps, boxes, lit, verdict: BOX_VERDICT(lit), batches, vix, margin, fund, intl, noObs: no, limitDown: ld, marginDrop: drop, slowFall };
+}
+/** 融資餘額急減：最後一筆相對 days 個交易日前的變化；lit＝減幅達門檻。null＝無資料或過期。 */
+export function marginDrop(ctx, d) {
+  const s = ctx.s.MARGIN_YI, i = s ? indexLE(s, d) : -1;
+  if (i < STANCE.marginDrop.days || days(s.dates[i], d) > P.staleDays) return null;
+  const chg = s.close[i] / s.close[i - STANCE.marginDrop.days] - 1;
+  return { chg, date: s.dates[i], lit: chg <= -STANCE.marginDrop.th };
+}
+/** 滾動 days 個交易日內融資餘額最大 10 日減幅（回測核對用）。 */
+export function maxMarginDrop(ctx, from, to) {
+  const s = ctx.s.MARGIN_YI, n = STANCE.marginDrop.days;
+  let best = null;
+  for (let i = n; i < s.dates.length; i++) {
+    if (s.dates[i] < from || s.dates[i] > to) continue;
+    const chg = s.close[i] / s.close[i - n] - 1;
+    if (!best || chg < best.chg) best = { chg, date: s.dates[i], lit: chg <= -STANCE.marginDrop.th };
+  }
+  return best;
+}
+
+/** 現金流三檔位（加權收盤 vs 200 日線、月線 24 個月均線）。1＝都在線上、2＝跌破年線、3＝跌破兩年線。有遲滯：
+ *  升檔需連續 confirm 個交易日原始檔位都比目前高（取這幾天最低的一檔）、降檔需連續 confirm 日都比目前低（取最高的一檔）。 */
+export function cashTier(ctx, d) {
+  const s = ctx.s.TWII, i = s ? indexLE(s, d) : -1;
+  if (i < 0) return null;
+  if (days(s.dates[i], d) > P.staleDays) return { stale: true, date: s.dates[i] };
+  if (!s._cash) {
+    const n = s.dates.length, ma = waterMas(s)[2], raw = new Array(n).fill(null), tier = new Array(n).fill(null), since = new Array(n).fill(null), y2 = new Array(n).fill(null);
+    for (let k = 0; k < n; k++) {
+      const m2 = periodMa(s, 'm', k, STANCE.longMas[0][0])?.now ?? null;
+      if (!finite(ma[k]) || !finite(m2)) continue;
+      y2[k] = m2;
+      raw[k] = s.close[k] < m2 ? 3 : s.close[k] < ma[k] ? 2 : 1;
+    }
+    let cur = null, start = null;
+    for (let k = 0; k < n; k++) {
+      if (raw[k] === null) continue;
+      if (cur === null) { cur = raw[k]; start = s.dates[k]; }
+      else {
+        const w = raw.slice(k - STANCE.cash.confirm + 1, k + 1);
+        if (w.length === STANCE.cash.confirm && w.every(x => x !== null && x > cur)) { cur = Math.min(...w); start = s.dates[k]; }
+        else if (w.length === STANCE.cash.confirm && w.every(x => x !== null && x < cur)) { cur = Math.max(...w); start = s.dates[k]; }
+      }
+      tier[k] = cur; since[k] = start;
+    }
+    s._cash = { raw, tier, since, y2, ma };
+  }
+  const c = s._cash;
+  if (c.tier[i] === null) return null;
+  const close = s.close[i];
+  return { date: s.dates[i], tier: c.tier[i], raw: c.raw[i], since: c.since[i], close, ma200: c.ma[i], ma2y: c.y2[i],
+    gap200: close / c.ma[i] - 1, gap2y: close / c.y2[i] - 1, amounts: STANCE.cash.amounts[c.tier[i] - 1] };
+}
+
+/** 極端情境 1～3 加上「下一批要更極端」：後一批只在前一批於 chainDays 個日曆日內（含當天）曾到位後，才可判「到位」，否則最多「接近」。 */
+export function stance(ctx, d) {
+  const cur = stanceCore(ctx, d), s = ctx.s.TWII, from = iso(Date.parse(d) - STANCE.chainDays * DAY);
+  const reached = [false, false, false];
+  const sample = s ? s.dates.filter(x => x >= from && x < d) : [];
+  const apply = r => r.batches.map((b, k) => {
+    const gated = k > 0 && b.state === 'on' && !reached[k - 1];
+    const state = gated ? 'near' : b.state;
+    if (state === 'on') reached[k] = true;
+    return { ...b, state, gated, prevReached: k === 0 ? null : reached[k - 1] };
+  });
+  for (const x of sample) apply(stanceCore(ctx, x));
+  return { ...cur, batches: apply(cur) };
 }
 
 // ── backtest helpers ─────────────────────────────────────────────────────

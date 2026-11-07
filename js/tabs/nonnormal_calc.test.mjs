@@ -118,7 +118,9 @@ test('gold spike counts only with VIX ≥ 20 (panic type)', () => {
   const v = flat(DATES.length, 14); v[v.length - 1] = 24;
   const panic = N.evaluateWeek(N.buildContext(rawWith({ GOLD: rows(DATES, g), VIX: rows(DATES, v) })), last);
   assert.equal(sig(panic, 'gold').state, 'on');
-  assert.equal(sig(panic, 'vix').state, 'on');
+  assert.equal(sig(panic, 'vix').state, 'off', 'VIX 24 is only 不安: the resonance light now needs close ≥ 30');
+  v[v.length - 1] = 31;
+  assert.equal(sig(N.evaluateWeek(N.buildContext(rawWith({ VIX: rows(DATES, v) })), last), 'vix').state, 'on');
 });
 
 test('oil is two-sided: a 20% crash lights like a 20% spike', () => {
@@ -448,4 +450,73 @@ test('data check: water zones on historical case dates', { skip: !haveData }, ()
   assert.equal(z('TWII', '2026-07-30'), '熱水');
   const s = N.zoneShare(ctx.s.TWII, '2007-01-01', '2026-11-05').share.map(x => +(x * 100).toFixed(1));
   assert.deepEqual(s, [5.0, 45.3, 30.1, 15.4, 4.2]);
+});
+
+// ── M5 融資餘額急減、M12 現金流三檔位、三角型比重與「下一批要更極端」、緩跌提示 ─────────────
+test('marginDrop: 10-trading-day fall ≥ 15% lights the pressure box even when the maintenance ratio is fine', () => {
+  const yi = flat(DATES.length, 1000); for (let i = DATES.length - 5; i < DATES.length; i++) yi[i] = 800;
+  const daily = DATES.map((date, i) => ({ date, ratio: 170, margin_yi: yi[i] }));
+  const st = N.stance(N.buildContext(rawWith({ marginDaily: daily })), last);
+  const box = st.boxes.find(b => b.key === 'press');
+  assert.equal(st.marginDrop.lit, true);
+  assert.equal(box.lit, true);
+  assert.deepEqual(box.items.map(x => x.ok), [false, true]);
+  const calm = N.stance(N.buildContext(rawWith({ marginDaily: DATES.map((date, i) => ({ date, ratio: 170, margin_yi: 1000 - i * 0.1 })) })), last);
+  assert.equal(calm.boxes.find(b => b.key === 'press').lit, false);
+});
+
+test('data check: margin 10-day drop in 2025-04 and 2026-07 both light (≥15%)', { skip: !haveData }, () => {
+  const ctx = realContext();
+  const a = N.maxMarginDrop(ctx, '2025-03-15', '2025-05-15'), b = N.maxMarginDrop(ctx, '2026-06-15', '2026-08-31');
+  assert.equal(a.lit, true); assert.ok(a.chg < -0.30, JSON.stringify(a)); assert.equal(a.date, '2025-04-14');
+  assert.equal(b.lit, true); assert.ok(b.chg < -0.15 && b.chg > -0.25, JSON.stringify(b)); assert.equal(b.date, '2026-07-30');
+});
+
+test('cashTier: starts at tier 1 above both lines; needs 5 straight days below to step down, 5 straight above to step back', () => {
+  const dates = businessDays('2010-01-04', 1400);
+  const mk = tail => dates.map((_, i) => (i < 1300 ? 100 + i * 0.05 : tail(i)));
+  const at = (c, k) => N.cashTier(N.buildContext(rawWith({ TWII: rows(dates.slice(0, k + 1), c.slice(0, k + 1)) })), dates[k]);
+  // ctx needs TWII only; others default to DATES-based flat rows and are irrelevant here
+  const up = mk(() => 200);
+  assert.equal(at(up, 1399).tier, 1);
+  // drops below year line (but not the 2-year line) from i=1330: 200日線 ≈ 100+1230*.05=161.5
+  const dip = mk(i => (i >= 1330 && i < 1345 ? 158 : 165 + (i - 1345) * 0.01));
+  assert.equal(at(dip, 1333).raw, 2); assert.equal(at(dip, 1333).tier, 1, '4 days below → not yet');
+  assert.equal(at(dip, 1334).tier, 2, '5th straight day → tier 2');
+  assert.equal(at(dip, 1348).tier, 2, 'back above for 4 days → still tier 2');
+  assert.equal(at(dip, 1350).tier, 1, '5 straight days back above → tier 1');
+  const t = at(dip, 1334); assert.deepEqual(t.amounts, [7500, 7500]); assert.ok(t.gap200 < 0 && t.gap2y > 0);
+  const deep = mk(i => (i >= 1330 ? 60 : 165));
+  const d = at(deep, 1340); assert.equal(d.tier, 3); assert.deepEqual(d.amounts, [10000, 5000]);
+});
+
+test('batches carry the 20/30/50 share, and a later batch cannot be 到位 unless the earlier one has been', () => {
+  const st = N.stance(N.buildContext(rawWith()), last);
+  assert.deepEqual(st.batches.map(b => b.share), [0.2, 0.3, 0.5]);
+});
+
+test('data check: 2025-04-09 chain: each batch reached in order; gating caps a lone later batch at 接近', { skip: !haveData }, () => {
+  const ctx = realContext();
+  const a = N.stance(ctx, '2025-04-09');
+  assert.deepEqual(a.batches.map(b => b.state), ['on', 'on', 'on']);
+  assert.deepEqual(a.batches.map(b => b.gated), [false, false, false]);
+  // 隔離：若序列只剩當天（沒有前一批的紀錄）也不會因 gating 而報錯；gating 只會把 on 降成 near
+  for (const x of ['2022-10-25', '2020-03-19', '2026-07-30']) {
+    const r = N.stance(ctx, x);
+    r.batches.forEach(b => { if (b.gated) assert.equal(b.state, 'near'); });
+  }
+});
+
+test('slowFall hint: only for the 灰犀牛 ice kind with 30-day VIX intraday high below 40', () => {
+  const n = 1000, dates = businessDays('2012-01-02', n);
+  // 緩跌：長期下跌趨勢到底（短中長都下彎、深度夠）
+  const fall = dates.map((_, i) => (i < 800 ? 100 + i * 0.1 + 8 * Math.sin(i / 20) : 180 - (i - 800) * 0.9));
+  const raw = rawWith({ TWII: rows(dates, fall) });
+  for (const k of Object.keys(raw)) if (k !== 'TWII' && Array.isArray(raw[k]) && raw[k].length && raw[k][0].date) raw[k] = rows(dates, flat(n, k === 'VIX' ? 25 : 100), k === 'US10Y' || k === 'US2Y' ? 'value' : 'close');
+  const ctx = N.buildContext(raw), d = dates.at(-1), st = N.stance(ctx, d);
+  if (st.temps[0].zone === 4 && st.temps[0].iceKind === 'rhino') assert.equal(st.slowFall, true);
+  else assert.equal(st.slowFall, false);
+  const hi = JSON.parse(JSON.stringify(raw.VIX)); hi[hi.length - 1].high = 45;
+  const st2 = N.stance(N.buildContext({ ...raw, VIX: hi }), d);
+  assert.equal(st2.slowFall, false);
 });

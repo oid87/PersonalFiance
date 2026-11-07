@@ -433,14 +433,35 @@ function renderLeadLag(d) {
 
 // ── stance: five boxes, water temperature, batches ───────────────────────
 const arrows = dir => { const el = node('span', null, { class: 'nonnormal-dirs' }); for (const [k, v] of [['短', dir.s], ['中', dir.m], ['長', dir.l]]) el.append(node('span', k + ARROW(v), { class: dirClass(v) })); return el; };
-const BOX_HINT = { pos: '加權的水溫是不是「冰水」（含急凍）', depth: '加權離 5 年線（月線 60 個月均線）3% 以內或已跌破', press: '上市、上櫃融資維持率取較低者，近 30 日最低低於 150%',
+const BOX_HINT = { pos: '加權的水溫是不是「冰水」（含急凍）', depth: '加權離 5 年線（月線 60 個月均線）3% 以內或已跌破', press: '任一成立：上市、上櫃融資維持率取較低者，近 30 日最低低於 150%；或融資餘額 10 個交易日減幅 ≥ 15%（本專案定義）',
   mood: `任一成立：VIX 近 30 日盤中最高 ≥ 30；近 22 個交易日無觀察類股 ≥ ${N.NO_OBS.start} 天；近 30 日有一天跌停 ≥ ${N.NO_OBS.limitDownExtreme} 家`, ext: '費半、那斯達克、S&P 500、韓股至少 2 個轉弱，或護盤基金進場' };
-const BOXES_NOTE = '「五格總覽」＝本區最上面那一排五個格子：定位（加權水溫是否冰水）、位置（加權是否到 5 年線）、壓力（融資維持率 < 150%）、情緒（VIX ≥ 30、無觀察類股或跌停家數）、外部（國際股市轉弱或護盤基金）。每格條件成立就亮 ●，「亮 N 格」＝五格中有幾格成立。只有「定位」這一格看水溫，其他四格看別的訊號，所以亮 1 格不等於水溫已經極冷。';
+const BOXES_NOTE = '「五格總覽」＝本區最上面那一排五個格子：定位（加權水溫是否冰水）、位置（加權是否到 5 年線）、壓力（融資維持率 < 150%，或融資餘額 10 日減幅 ≥ 15%，任一）、情緒（VIX ≥ 30、無觀察類股或跌停家數）、外部（國際股市轉弱或護盤基金）。每格條件成立就亮 ●，「亮 N 格」＝五格中有幾格成立。只有「定位」這一格看水溫，其他四格看別的訊號，所以亮 1 格不等於水溫已經極冷。';
 const SCENARIO_HELP = [
   `極端情境 1：大跌的第一個極端，指數（大盤 ETF）可以開始考慮的位置。條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。${BOXES_NOTE}`,
   `極端情境 2：比情境 1 跌得更深、恐慌更重（VIX 45、融資 140%、跌 40%、到 5 年線、連續多日沒有強勢股）。${BOXES_NOTE}`,
   `極端情境 3：最極端的恐慌，歷史上只有 2008、2020/3、2025/4 這類全面崩跌才到（VIX 50、融資 135%、護盤基金、到 10 年線、五格亮 4 格）。${BOXES_NOTE}`,
 ];
+const BATCHES_PREV = ['', '極端情境 1', '極端情境 2'];
+const money = n => n.toLocaleString('en-US');
+/** 現金流三檔位、比重與「下一批要更極端」規則、緩跌提示（動態建立，放在極端情境說明下方）。 */
+function renderExtra(st, d) {
+  let host = byId('extra');
+  if (!host) { host = node('div', null, { id: 'nonnormal-extra' }); byId('batch-note').after(host); }
+  const t = N.cashTier(ctx, d), kids = [];
+  const card = node('article', null, { class: 'ui-card nonnormal-card' });
+  if (t && !t.stale) {
+    const ul = node('ul', null, { class: 'nonnormal-batch-list' });
+    ul.append(node('li', `加權 ${t.close.toFixed(0)}｜年線（200 日）${t.ma200.toFixed(0)}，距離 ${pctTxt(t.gap200, 1)}｜兩年線（月 24MA）${t.ma2y.toFixed(0)}，距離 ${pctTxt(t.gap2y, 1)}`));
+    ul.append(node('li', `目前第 ${t.tier} 檔（自 ${t.since} 起）：定期定額 ${money(t.amounts[0])}／儲備 ${money(t.amounts[1])}（規則原文舉例）`, { class: t.tier > 1 ? 'nonnormal-ok' : '' }));
+    if (t.raw !== t.tier) ul.append(node('li', `今天收盤在第 ${t.raw} 檔的位置，尚未連續 ${N.STANCE.cash.confirm} 個交易日，維持第 ${t.tier} 檔`, { class: 'nonnormal-na' }));
+    ul.append(node('li', `檔位：在線上＝第 1 檔（5,000／10,000）；跌破年線＝第 2 檔（7,500／7,500）；跌破兩年線＝第 3 檔（10,000／5,000）。換檔需連續 ${N.STANCE.cash.confirm} 個交易日（本專案定義）。`, { class: 'nonnormal-na' }));
+    card.append(node('h4', `現金流三檔位：目前第 ${t.tier} 檔`), ul);
+  } else card.append(node('h4', '現金流三檔位'), node('p', '加權資料不足', { class: 'nonnormal-na' }));
+  kids.push(card);
+  kids.push(node('p', `三角型配置比重 20%／30%／50%（規則原文配置）。下一批要更極端：前一批到位後，下一批的條件以更極端為準，不因時間經過而亮；極端情境 2 只在情境 1 曾到位（近 ${N.STANCE.chainDays} 天內，本專案定義）後才判「到位」，情境 3 同理，否則最多顯示「接近」。`, { class: 'note-muted' }));
+  if (st.slowFall) kids.push(node('p', 'VIX 未破 40，以長均位置為主（加權為冰水灰犀牛型，近 30 日 VIX 盤中最高 < 40）', { class: 'nonnormal-ok' }));
+  host.replaceChildren(...kids);
+}
 const BATCH_STATE = { on: ['到位', 'nonnormal-why-state--on'], near: ['接近', 'nonnormal-why-state--near'], off: ['未到', ''] };
 const zoneBadge = t => { const z = N.ZONES[t.zone]; return node('span', N.zoneLabel(t), { class: `nonnormal-zone nonnormal-zone--${t.iceKind === 'flash' ? 'flash' : z.id}`, title: z.desc }); };
 // ── 水溫標籤與水溫圖（每日；底色＝當天所在區，冰水急凍用較淺的藍）────────────
@@ -515,6 +536,7 @@ function renderStance(d) {
     const k = node('div', null, { class: 'nonnormal-box-k' });
     k.append(node('span', b.lit ? '●' : '○', { class: 'nonnormal-box-dot', 'aria-hidden': 'true' }), node('span', b.label, { class: 'nonnormal-box-name' }), node('small', b.what));
     el.append(k, node('div', b.text, { class: 'nonnormal-box-v' }));
+    for (const it of b.items || []) el.append(node('div', `${it.ok === null ? '－' : it.ok ? '✓' : '✗'} ${it.text}`, { class: 'nonnormal-box-v ' + (it.ok ? 'nonnormal-ok' : it.ok === null ? 'nonnormal-na' : '') }));
     grid.append(el);
   }
   byId('boxes').replaceChildren(head, grid, node('p', '水溫由熱到冷：滾水 → 熱水 → 溫水 → 冷水 → 冰水。冰水＝大跌後進入極端情境的起點，分兩型：長線也下彎＝灰犀牛型，長線還沒下彎＝急凍；滾水＝漲過頭。均線方向：短／中／長＝10 日、50 日、200 日線，各和 1、5、21 個交易日前比，↑ 上揚、→ 走平、↓ 下彎。「離…線」＝現在價格比那條線高（+）或低（−）多少，紅字＝已到或跌破。「過熱／極冷線」＝這個市場自己的歷史上離 200 日線最遠的 5%／最深的 15%：短中長都上揚且站上過熱線＝滾水；短、中下彎且跌破極冷線＝冰水。手機可左右滑動表格。', { class: 'nonnormal-temp-note' }));
@@ -531,7 +553,7 @@ function renderStance(d) {
   byId('batches').replaceChildren(...st.batches.map((b, i) => {
     const card = node('article', null, { class: 'ui-card nonnormal-card nonnormal-batch' + (b.state === 'on' ? ' nonnormal-batch--on' : '') });
     const h = node('h4', b.label), [txt, cls] = BATCH_STATE[b.state];
-    h.append(' ', node('span', `${txt} ${b.met}/${b.available}`, { class: 'nonnormal-why-state ' + cls }), ' ', infoButton(SCENARIO_HELP[i], `說明：${b.label}`));
+    h.append(' ', node('span', `配置 ${Math.round(b.share * 100)}%`, { class: 'nonnormal-why-state', title: '規則原文配置：三角型 20%／30%／50%' }), ' ', node('span', `${txt} ${b.met}/${b.available}`, { class: 'nonnormal-why-state ' + cls }), ' ', infoButton(SCENARIO_HELP[i], `說明：${b.label}`));
     const ul = node('ul', null, { class: 'nonnormal-batch-list' });
     for (const c of b.conds) {
       // 「五格總覽」那條附上目前亮的是哪幾格，才知道指的是本區最上面那一排
@@ -539,8 +561,10 @@ function renderStance(d) {
       ul.append(node('li', `${c.ok === null ? '－' : c.ok ? '✓' : '✗'} ${c.text}${tail}`, { class: c.ok ? 'nonnormal-ok' : c.ok === null ? 'nonnormal-na' : '' }));
     }
     card.append(h, ul);
+    if (b.gated) card.append(node('p', `條件已達，但${BATCHES_PREV[i]}尚未到位過，先只算「接近」`, { class: 'nonnormal-na' }));
     return card;
   }));
+  renderExtra(st, d);
   const parts = [st.vix && `VIX 近 30 日盤中最高 ${st.vix.value.toFixed(1)}（${st.vix.date}）`, st.margin && `融資維持率近 30 日最低 ${st.margin.market} ${st.margin.value.toFixed(1)}%（${st.margin.date}）`];
   byId('batch-note').textContent = `極端情境＝指數（大盤 ETF）可以考慮進場的時機，1 → 3 越來越極端，每一個都要比前一個跌得更深、恐慌更重。「五格總覽至少亮 N 格」＝本區最上面那排五格（定位／位置／壓力／情緒／外部）中至少有 N 格亮 ●；只有「定位」看水溫，亮 1 格不等於已經極冷。${parts.filter(Boolean).join('；')}。`;
 }

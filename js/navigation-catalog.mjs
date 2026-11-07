@@ -61,7 +61,7 @@ export const CATEGORIES = [
     { id: 'p-flows', label: '資金脈衝', views: [view('flows', '資金脈衝')] },
     { id: 'p-twinst', label: '台股法人籌碼', views: [
       view('twchips', '台股籌碼'), view('twforeign', '外資買賣超'),
-      view('taifex_foreign_oi', '外資未平倉'), view('twsectorflow', '外資板塊流向')] },
+      view('taifex_foreign_oi', '外資未平倉'), view('twforeignshort', '外資賣超與空單'), view('twsectorflow', '外資板塊流向')] },
     { id: 'p-twmargin', label: '台股融資', views: [
       view('marginmap', '融資斷頭地圖'), view('marginconc', '融資集中度')] },
     { id: 'p-usmargin', label: '美股與全球融資', views: [
@@ -110,6 +110,7 @@ const ALIASES = {
   twforeign: ['台灣', '台股', '外資', '買賣超', '三大法人'],
   twbreadthls: ['台灣', '台股', '多空', '家數', '紫線', 'breadth'],
   twcycle: ['台灣', '台股'], twcrash: ['台灣', '台股'],
+  twforeignshort: ['台灣', '台股', '外資', '空單', '期貨'],
   taifex_foreign_oi: ['台灣', '台股'], marginheat: ['融資', '台灣', '台股'],
   marginpeak: ['融資', '台灣', '台股'], marginconc: ['融資', '台灣', '台股'],
   marginmap: ['融資', '台灣', '台股'],

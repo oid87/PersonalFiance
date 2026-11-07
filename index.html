@@ -1474,6 +1474,24 @@
   </section>
 
   <!-- ── 外資買賣超 tab ────────────────────────────────────────────── -->
+  <section id="tab-twforeignshort" class="tab-section" hidden>
+    <div class="controls">
+      <div class="picker-row picker-row--end" id="twforeignshort-mode" aria-label="第二格顯示">
+        <span class="chip active" data-twforeignshort-mode="sell">賣出金額</span>
+        <span class="chip" data-twforeignshort-mode="net">淨買賣超</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:8px 0">
+      <div class="breadth-card"><div class="bc-label">最新日期</div><div class="bc-main"><span class="bc-pct" id="twforeignshort-date">—</span></div></div>
+      <div class="breadth-card"><div class="bc-label">外資當日賣出金額</div><div class="bc-main"><span class="bc-pct" id="twforeignshort-sell">—</span></div><div class="bc-count" id="twforeignshort-sell-sub">—</div></div>
+      <div class="breadth-card"><div class="bc-label">外資台指期淨部位</div><div class="bc-main"><span class="bc-pct" id="twforeignshort-fut">—</span></div><div class="bc-count" id="twforeignshort-fut-sub">—</div></div>
+      <div class="breadth-card"><div class="bc-label">加權收盤</div><div class="bc-main"><span class="bc-pct" id="twforeignshort-close">—</span></div><div class="bc-count" id="twforeignshort-close-sub">—</div></div>
+    </div>
+    <div class="text-muted-sm" style="margin:8px 0">上格是加權指數，中格是外資在現貨市場每天賣出多少錢，下格是外資在台指期的淨未平倉口數（負值＝淨空單，紅色柱）。現貨賣超代表當天已經賣掉的股票，期貨淨空單則是外資對後市的方向部位，兩者不一定同步。百分位只說明目前相對近 1 年的位置，不能直接當成買賣訊號。</div>
+    <div id="twforeignshort-chart" style="height:640px"></div>
+    <div class="status" id="twforeignshort-status">切換至此 tab 自動載入…</div>
+  </section>
+
   <section id="tab-twforeign" class="tab-section" hidden>
     <div class="controls">
       <div class="picker-row picker-row--end" id="twforeign-range">
