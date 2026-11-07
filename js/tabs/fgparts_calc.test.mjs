@@ -96,3 +96,9 @@ test('vixTerm 對齊 VIX3M 並算 20/50 均線與比值', async () => {
   assert.equal(r.ma20.at(-1), 20); assert.equal(r.ma50.at(-1), 20);
   assert.equal(r.ratio.at(-1), 0.8); assert.equal(r.vix3m[0], null);
 });
+
+test('vxnView 對齊 VIX 並算比值與差', () => {
+  const rows = Array.from({ length: 60 }, (_, i) => ({ date: `2021-0${1 + Math.floor(i / 28)}-${String(1 + (i % 28)).padStart(2, '0')}`, close: 30 }));
+  const r = F.vxnView(rows, [{ date: rows[59].date, close: 20 }], '2000-01-01');
+  assert.equal(r.ma50.at(-1), 30); assert.equal(r.ratio.at(-1), 1.5); assert.equal(r.spread.at(-1), 10); assert.equal(r.other[0], null);
+});

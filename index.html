@@ -1295,7 +1295,8 @@
     </div>
     <div id="fgparts-toggles" class="fgparts-toggles" role="group" aria-label="分項開關"></div>
     <div id="fgparts-chart" class="fgparts-chart"></div>
-    <h3 class="fgparts-sub">VIX 期限：1 個月 vs 3 個月，與 20／50 日均線</h3>
+    <h3 class="fgparts-sub">波動率：VIX／VXN 與 20／50 日均線</h3>
+    <div class="fgparts-controls"><div id="fgparts-vmode" class="chip-row"><span class="chip active" data-fg-vmode="VIX">VIX（vs VIX3M）</span><span class="chip" data-fg-vmode="VXN">VXN（vs VIX）</span></div></div>
     <p id="fgparts-vix-note" class="note-muted"></p>
     <div id="fgparts-vix-chart" class="fgparts-vix-chart"></div>
     <details class="fgparts-eli5">
@@ -1304,6 +1305,7 @@
         <p><b>VIX 是什麼</b>：市場用 S&amp;P 500 選擇權價格，反推出「接下來 30 天大概會晃多大」。像氣象預報的「未來一個月颱風機率」，不是今天的風速。</p>
         <p><b>是日波動嗎？</b>不是。VIX 是<b>年化</b>的數字，衡量的是未來 30 天。換成每天：VIX ÷ 16（≈√252 個交易日）。VIX 16 ≈ 每天正常晃 1%；VIX 32 ≈ 每天晃 2%。</p>
         <p><b>VIX3M</b>：同一套算法，但看未來 3 個月。平常遠期不確定性多，VIX3M 會比 VIX 略高（正價差，比值 &lt; 1）。</p>
+        <p><b>VXN</b>：同樣算法，但用 Nasdaq-100 選擇權，衡量科技股未來 30 天的晃動。科技股本來就晃得比大盤兇，VXN 通常比 VIX 高 15–30%（比值約 1.15–1.3）。比值或差距突然拉大 = 恐慌集中在科技股；縮小 = 恐慌擴散到整個大盤，或科技股相對平靜。VXN 沒有 3 個月版本，所以切到 VXN 時改和 VIX 比。</p>
         <p><b>20／50 日均線</b>：VIX 自己最近一個月、兩個多月的平均。VIX 衝到均線之上 = 比最近更緊張。</p>
       </div>
       <div class="fgparts-eli5-item">

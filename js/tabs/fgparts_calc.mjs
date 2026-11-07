@@ -171,3 +171,13 @@ export function vixTerm(vixRows, termRows, from = DISPLAY_FROM) {
   return { dates: v.dates, vix: v.close, ma20: v.ma, ma50: v50.ma, vix3m,
     ratio: v.close.map((x, i) => (Number.isFinite(vix3m[i]) ? x / vix3m[i] : null)) };
 }
+
+// VXN（Nasdaq-100 的 30 日預期波動）＋ 20／50 日均線，並對齊同日 VIX；ratio = VXN / VIX、spread = VXN − VIX。
+export function vxnView(vxnRows, vixRows, from = DISPLAY_FROM) {
+  const v = priceWithMA(vxnRows, 20, from), v50 = priceWithMA(vxnRows, 50, from);
+  const m = new Map(vixRows.filter(r => Number.isFinite(r?.close)).map(r => [r.date, r.close]));
+  const vix = v.dates.map(d => m.get(d) ?? null);
+  return { dates: v.dates, main: v.close, ma20: v.ma, ma50: v50.ma, other: vix,
+    ratio: v.close.map((x, i) => (Number.isFinite(vix[i]) ? x / vix[i] : null)),
+    spread: v.close.map((x, i) => (Number.isFinite(vix[i]) ? x - vix[i] : null)) };
+}
