@@ -159,7 +159,7 @@ const ZONE_COLORS = ['#ef4444', '#f0883e', '#8b949e', '#58a6ff', '#1f6feb'];
 const NO_DATA = 'rgba(128,128,128,0.22)';   // 熱度條上還沒有足夠歷史的格子（與 .nonnormal-zone--na 同色）   // 與 .nonnormal-zone--* 同色
 const TEMP_RANGES = { '3y': 156, '5y': 260, '10y': 520, all: null };
 const NEAR = N.STANCE.nearGap * 100;   // 溫水帶 ±3%
-let tempHist = null, tempMarket = 'TWII', tempRange = '5y';
+let tempHist = null, tempMarket = 'TWII', tempRange = '5y', tempCompare = '';   // tempCompare：對照市場 id，空字串＝不對照
 const tempHistory = () => (tempHist?.ctx === ctx ? tempHist : (tempHist = { ctx, ...N.temperatureHistory(ctx) }));
 const tempMarketOf = h => h.markets.find(x => x.id === tempMarket) || h.markets[0];
 function drawTemp(keepWindow = false) {
@@ -176,6 +176,37 @@ function drawTemp(keepWindow = false) {
   const zoneOf = r => (r ? N.ZONES[r.zone] : null);
   const heat = [];
   h.markets.forEach((mk, y) => mk.rows.forEach((r, x) => heat.push([x, y, r ? r.zone : -1])));
+  // 對照模式：第二個市場的價格＋200 日線（底色＝它自己的水溫）取代「離 200 日線」那格，兩個市場上下對齊同一時間軸
+  const m2 = tempCompare && tempCompare !== m.id ? h.markets.find(x => x.id === tempCompare) : null;
+  const priceSeries = (mk, xi, yi, bgYi) => [
+    { name: `${mk.label}水溫底色`, type: 'bar', xAxisIndex: xi, yAxisIndex: bgYi, silent: true, barCategoryGap: 0, z: 0, tooltip: { show: false },
+      data: mk.rows.map(r => (r ? { value: 1, itemStyle: { color: ZONE_COLORS[r.zone], opacity: 0.22 } } : null)) },
+    { name: mk.label, type: 'line', xAxisIndex: xi, yAxisIndex: yi, data: mk.rows.map(r => num(r, 'close')), showSymbol: false, lineStyle: { width: 1.3, color: PALETTE.text }, itemStyle: { color: PALETTE.text } },
+    { name: '200 日線（虛線）', type: 'line', xAxisIndex: xi, yAxisIndex: yi, data: mk.rows.map(r => num(r, 'ma200')), showSymbol: false, lineStyle: { width: 1.2, type: 'dashed', color: '#d29922' }, itemStyle: { color: '#d29922' } },
+  ];
+  const heatSeries = { name: '各市場水溫', type: 'heatmap', xAxisIndex: 2, yAxisIndex: m2 ? 4 : 3, data: heat, itemStyle: { borderWidth: 0 }, emphasis: { disabled: true } };
+  const heatAxis = { type: 'category', gridIndex: 2, data: h.markets.map(mk => mk.label), inverse: true, axisLine: { show: false }, axisTick: { show: false }, splitLine: { show: false },
+    axisLabel: { interval: 0, color: PALETTE.muted, fontSize: mob() ? 11 : 12, formatter: v => (v === m.label || v === m2?.label ? `▶ ${v}` : v) } };
+  if (m2) {
+    const tip = (mk, i) => { const r = mk.rows[i]; return r ? `${mk.label} ${r.close.toLocaleString('en-US', { maximumFractionDigits: 2 })}・離 200 日線 ${pctTxt(r.gap, 1)}・<b style="color:${ZONE_COLORS[r.zone]}">${N.zoneLabel(r)}</b>` : `${mk.label} 資料不足`; };
+    chartOption(1, {
+      animation: false,
+      legend: { top: 0, right: R, itemWidth: 22, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: [m.label, m2.label, '200 日線（虛線）'] },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'line' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 13 },
+        formatter(params) { const i = params?.[0]?.dataIndex; return i == null ? '' : [`<b>${h.dates[i]}</b>`, tip(m, i), tip(m2, i)].join('<br>'); } },
+      axisPointer: { link: [{ xAxisIndex: 'all' }] },
+      grid: [{ left: L, right: R, top: 30, height: '30%' }, { left: L, right: R, top: '42%', height: '30%' }, { left: L, right: R, top: '76%', height: '14%' }],
+      xAxis: [axis(0, false), axis(1, false), axis(2, true)],
+      yAxis: [yAxis(0, { name: m.label, nameTextStyle: { color: PALETTE.muted, fontSize: 11 } }), { type: 'value', gridIndex: 0, min: 0, max: 1, show: false },
+        yAxis(1, { name: m2.label, nameTextStyle: { color: PALETTE.muted, fontSize: 11 } }), { type: 'value', gridIndex: 1, min: 0, max: 1, show: false }, heatAxis],
+      visualMap: { show: false, type: 'piecewise', seriesIndex: 6, dimension: 2, pieces: [...ZONE_COLORS.map((color, value) => ({ value, color })), { value: -1, color: NO_DATA }] },
+      dataZoom: [{ type: 'inside', xAxisIndex: [0, 1, 2], filterMode: 'filter' }, { type: 'slider', xAxisIndex: [0, 1, 2], height: 16, bottom: 6, filterMode: 'filter' }],
+      series: [...priceSeries(m, 0, 0, 1), ...priceSeries(m2, 1, 2, 3), heatSeries],
+    });
+    if (prev && prev.startValue != null) charts[1].dispatchAction({ type: 'dataZoom', startValue: prev.startValue, endValue: prev.endValue });
+    else applyTempRange();
+    return;
+  }
   chartOption(1, {
     animation: false,
     legend: { top: 0, right: R, itemWidth: 22, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: [m.label, '200 日線（虛線）', '過熱線', '極冷線'] },
@@ -244,7 +275,10 @@ export function tempNowNodes(context, date, marketId) {
   return [`${label} 現在（${r.date}）：`, node('span', N.zoneLabel(r), { class: `nonnormal-zone nonnormal-zone--${r.iceKind === 'flash' ? 'flash' : z.id}`, title: z.desc }),
     '　離 200 日線 ', node('b', pctTxt(r.gap, 1)), `｜${toHot}｜${toCold}｜均線 ${dirTxt}`];
 }
-const renderTempNow = () => byId('temp-now').replaceChildren(...tempNowNodes(ctx, weeks.at(-1).date, tempMarket));
+const renderTempNow = () => {
+  const d = weeks.at(-1).date, two = tempCompare && tempCompare !== tempMarket;
+  byId('temp-now').replaceChildren(...tempNowNodes(ctx, d, tempMarket), ...(two ? [document.createElement('br'), ...tempNowNodes(ctx, d, tempCompare)] : []));
+};
 function renderTempLegend() {
   byId('temp-legend').replaceChildren(...N.ZONES.map(z => node('span', z.label, { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc })),
     node('span', '資料不足', { class: 'nonnormal-zone nonnormal-zone--na', title: '還沒有足夠的歷史：200 日線要約 10 個月，過熱線／極冷線再要 750 個交易日（櫃買 2017-03、S&P 500（VOO）2014-07 起才有）' }));
@@ -262,6 +296,7 @@ function wire() {
   if (!bindOnce(byId('res-range'))) return;
   chipPicker(byId('res-range'), 'nonnormalhist-res', key => { rangeKey = key; applyRange(); });
   chipPicker(byId('temp-market'), 'nonnormalhist-temp-market', key => { tempMarket = key; if (!ctx) return; renderTempNow(); if (charts[1]) drawTemp(true); });
+  chipPicker(byId('temp-compare'), 'nonnormalhist-temp-compare', key => { tempCompare = key; if (!ctx) return; renderTempNow(); if (charts[1]) drawTemp(true); });
   chipPicker(byId('temp-range'), 'nonnormalhist-temp-range', key => { tempRange = key; applyTempRange(); });
   byId('temp-title').append(' ', infoButton(TEMP_HELP, '說明：水溫走勢'));
 }
