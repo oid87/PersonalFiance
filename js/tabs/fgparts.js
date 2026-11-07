@@ -102,11 +102,13 @@ function buildOption() {
     ...PARTS.filter(p => on.has(p.id)).map(p => line(p.label, pair(m.parts[p.id].score), COLORS[p.id])),
   ];
   const twoYears = m.dates[Math.max(0, m.dates.length - 504)];
+  // 兩格共用同一 x 範圍，否則各自依資料端點縮放，十字線上下對不齊
+  const xMin = m.dates[0], xMax = [m.dates.at(-1), pr.dates.at(-1), m.fg.at(-1)?.date].filter(Boolean).sort().at(-1);
   return echartsBase({
     animation: false,
     legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: small ? 11 : 12 }, data: [maName, 'CNN 總分', '估算總分'] },
     grid: [{ left: small ? 44 : 60, right: 12, top: 34, height: '30%' }, { left: small ? 44 : 60, right: 12, top: '46%', bottom: 64 }],
-    xAxis: [0, 1].map(i => ({ type: 'time', gridIndex: i, axisLabel: { show: i === 1, color: PALETTE.muted }, axisLine: { lineStyle: { color: PALETTE.border } } })),
+    xAxis: [0, 1].map(i => ({ type: 'time', gridIndex: i, min: xMin, max: xMax, axisLabel: { show: i === 1, color: PALETTE.muted }, axisLine: { lineStyle: { color: PALETTE.border } } })),
     yAxis: [
       { type: 'value', gridIndex: 0, scale: true, name: small ? '' : pname, nameTextStyle: { color: PALETTE.muted }, axisLabel: { color: PALETTE.muted }, splitLine: { lineStyle: { color: PALETTE.grid } } },
       { type: 'value', gridIndex: 1, min: 0, max: 100, interval: 25, name: '0–100 分', nameTextStyle: { color: PALETTE.muted }, axisLabel: { color: PALETTE.muted }, splitLine: { lineStyle: { color: PALETTE.grid } } },
