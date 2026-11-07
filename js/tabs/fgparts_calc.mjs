@@ -87,3 +87,74 @@ export function zoneOf(score) {
   if (!Number.isFinite(score)) return '—';
   return score < 25 ? '極度恐懼' : score < 45 ? '恐懼' : score < 55 ? '中性' : score < 75 ? '貪婪' : '極度貪婪';
 }
+
+/** 簡單移動平均：values 依序（可含 null），不足 n 筆有效值或當日缺值回 null。n 夾在 [2, 400]。 */
+export function movingAverage(values, n) {
+  const k = Math.min(400, Math.max(2, Math.round(n) || 125));
+  const out = new Array(values.length).fill(null);
+  let sum = 0, cnt = 0;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    if (Number.isFinite(v)) { sum += v; cnt++; }
+    if (i >= k) { const o = values[i - k]; if (Number.isFinite(o)) { sum -= o; cnt--; } }
+    if (Number.isFinite(v) && cnt === k) out[i] = sum / k;
+  }
+  return out;
+}
+
+/** 價格來源：SPX 用 CNN 資料裡的 S&P 500 指數；SPY／VOO 用 data/<x>.json 收盤。 */
+export const PRICE_SOURCES = { SPX: 'S&P 500 指數', SPY: 'SPY', VOO: 'VOO' };
+
+/** 七指標 101（給完全沒概念的人）：比喻、怎麼看、例子。today(r) 給最新原始讀數的白話。 */
+export const ELI5 = {
+  momentum: { like: '看全班最近的成績，是不是比過去半年的平均好。',
+    how: 'S&P 500 高於 125 日均線越多 → 越貪婪；跌破均線越深 → 越恐懼。',
+    eg: '指數 6,000、125 日均線 5,700，高出 5% → 偏貪婪。',
+    today: r => `S&P 500 ${fmtN(r.sp500, 0)}，125 日均線 ${fmtN(r.sp125, 0)}，${pct(r.sp500 / r.sp125 - 1)}` },
+  strength: { like: '數一數有幾位同學考出「一年來最好成績」，再扣掉考出「一年來最差」的。',
+    how: '創 52 週新高的股票比新低多 → 貪婪；新低比較多 → 恐懼。',
+    eg: '今天 300 檔創新高、100 檔創新低，淨值為正 → 偏貪婪。',
+    today: r => `淨新高比例 ${fmtN(r.strength, 2)}%` },
+  breadth: { like: '是全班都在進步，還是只有幾個資優生撐場面。',
+    how: '上漲股的成交量比下跌股多（McClellan 成交量總和指標往上）→ 貪婪；反之 → 恐懼。',
+    eg: '指數漲，但多數股票的量是在下跌股 → 廣度差，指數上漲靠少數權值股。',
+    today: r => `McClellan 成交量總和 ${fmtN(r.breadth, 0)}` },
+  putcall: { like: '大家買保險的多寡。越多人買保險，代表越怕出事。',
+    how: 'Put（看跌保險）對 Call（看漲）的比例 5 日平均：越高 → 越恐懼；越低 → 越貪婪。',
+    eg: 'Put/Call 0.6 很低，大家都在賭漲 → 貪婪；1.0 以上很多人買保護 → 恐懼。',
+    today: r => `5 日平均 Put/Call ${fmtN(r.put_call, 2)}` },
+  junk: { like: '借錢給信用比較差的同學，你要多收多少利息才肯借。',
+    how: '垃圾債比好公司債多出的殖利率（利差）縮小 → 大家敢冒險 → 貪婪；利差擴大 → 恐懼。',
+    eg: '利差從 2.0 個百分點拉到 3.0 → 投資人要求更多補償 → 偏恐懼。',
+    today: r => `垃圾債減投資級殖利率差 ${fmtN(r.junk, 2)} 個百分點` },
+  vix: { like: '教室裡的緊張程度。考前大家越慌，溫度計越高。',
+    how: 'VIX（市場預期的波動）高於自己 50 日均線越多 → 越恐懼；低於均線 → 貪婪。',
+    eg: 'VIX 從平常 15 跳到 25，比 50 日均線高很多 → 恐懼。',
+    today: r => `VIX ${fmtN(r.vix, 2)}，50 日均線 ${fmtN(r.vix50, 2)}，${pct(r.vix / r.vix50 - 1)}` },
+  safehaven: { like: '大家是往遊樂場（股票）跑，還是躲進避難所（公債）。',
+    how: '近 20 個交易日股票報酬贏公債越多 → 貪婪；公債贏股票（資金躲避險）→ 恐懼。',
+    eg: '20 天股票 +3%、公債 −1%，差 +4 個百分點 → 貪婪。',
+    today: r => `股票減公債 20 日報酬差 ${fmtN(r.safe_haven, 2)} 個百分點` },
+};
+
+function fmtN(v, d) { return Number.isFinite(v) ? v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—'; }
+function pct(v) { return Number.isFinite(v) ? `${v >= 0 ? '高於' : '低於'}均線 ${Math.abs(v * 100).toFixed(1)}%` : '—'; }
+
+export const DISPLAY_FROM = '2009-01-01';
+
+/** 代理資料（CNN 首日之前）＋ CNN 原始讀數 → 一條依日期排序的列；同日以 CNN 為準。每列標 proxy。 */
+export function mergeProxy(proxyRows = [], cnnRows = []) {
+  const first = cnnRows.reduce((m, r) => (r?.date && (!m || r.date < m) ? r.date : m), null);
+  const out = proxyRows.filter(r => r?.date && (!first || r.date < first)).map(r => ({ ...r, proxy: true }));
+  for (const r of cnnRows) if (r?.date) out.push({ ...r, proxy: false });
+  return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+/** [{date, close}] → { dates, close, ma }（ma 用整段歷史計算，再截到 from 之後）。 */
+export function priceWithMA(rows, n, from = DISPLAY_FROM) {
+  const s = [...rows].filter(r => r?.date && Number.isFinite(r.close)).sort((a, b) => (a.date < b.date ? -1 : 1));
+  const ma = movingAverage(s.map(r => r.close), n);
+  const i0 = s.findIndex(r => r.date >= from);
+  if (i0 < 0) return { dates: [], close: [], ma: [] };
+  return { dates: s.slice(i0).map(r => r.date), close: s.slice(i0).map(r => r.close), ma: ma.slice(i0) };
+}

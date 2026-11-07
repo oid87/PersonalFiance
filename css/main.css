@@ -1521,4 +1521,12 @@
 #tab-fgparts table { width:100%; border-collapse:collapse; font-size:14px; }
 #tab-fgparts td, #tab-fgparts th { padding:4px 6px; border-bottom:1px solid var(--border); text-align:left; }
 #tab-fgparts td.num, #tab-fgparts th.num { text-align:right; font-variant-numeric:tabular-nums; }
+#tab-fgparts .fgparts-controls { display:flex; flex-wrap:wrap; gap:8px 20px; margin:8px 0 0; }
+#tab-fgparts .fgparts-chips { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+#tab-fgparts .fgparts-chips input { width:4.5em; padding:4px 6px; font-size:14px; background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; }
+#tab-fgparts .fgparts-eli5 { margin-top:12px; background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+#tab-fgparts .fgparts-eli5 summary { cursor:pointer; font-weight:600; min-height:32px; display:list-item; }
+#tab-fgparts .fgparts-eli5-item { border-top:1px solid var(--border); padding:10px 0; line-height:1.6; font-size:14px; }
+#tab-fgparts .fgparts-eli5-item h4 { margin:0 0 4px; font-size:15px; }
+#tab-fgparts .fgparts-eli5-item p { margin:2px 0; }
 @media (max-width:600px) { #tab-fgparts .fgparts-chart { height:560px; } }

@@ -1282,6 +1282,17 @@
   <section id="tab-fgparts" class="tab-section" hidden>
     <header class="fgparts-head"><h2 class="section-title">恐懼貪婪七分項 × S&amp;P 500</h2><span id="fgparts-asof" class="status"></span></header>
     <p id="fgparts-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <div class="fgparts-controls">
+      <div id="fgparts-src" class="fgparts-chips" role="group" aria-label="價格">
+        <span class="text-muted-13">價格</span>
+        <span class="chip active" data-fg-src="SPX">S&amp;P 500 指數</span><span class="chip" data-fg-src="SPY">SPY</span><span class="chip" data-fg-src="VOO">VOO</span>
+      </div>
+      <div id="fgparts-ma" class="fgparts-chips" role="group" aria-label="均線">
+        <span class="text-muted-13">均線</span>
+        <span class="chip" data-fg-ma="50">50MA</span><span class="chip active" data-fg-ma="125">125MA</span><span class="chip" data-fg-ma="200">200MA</span>
+        <label class="text-muted-13">自訂 <input id="fgparts-ma-input" type="number" min="5" max="400" step="1" value="125" inputmode="numeric" aria-label="自訂均線天數"> 日</label>
+      </div>
+    </div>
     <div id="fgparts-toggles" class="fgparts-toggles" role="group" aria-label="分項開關"></div>
     <div id="fgparts-chart" class="fgparts-chart"></div>
     <div class="fgparts-grid">
@@ -1296,9 +1307,16 @@
           <li><b>方向先對齊</b>：Put/Call、垃圾債利差、VIX 越高代表越恐懼，所以反過來計分；動能、強度、廣度、避險需求（股票贏公債）越高越貪婪。</li>
           <li><b>七項等權平均</b> = 總分。0–25 極度恐懼、25–45 恐懼、45–55 中性、55–75 貪婪、75–100 極度貪婪。</li>
         </ol>
-        <p class="note-muted"><b>資料限制</b>：CNN 只公開「今天」每項的分數，歷史只給七項原始讀數（2020-08 起）。圖下半部的分項曲線是本頁用「近 126 交易日 z 分數 → 常態累積機率 ×100」重建的近似值，CNN 的精確視窗沒公開；重建總分與 CNN 實際總分的對照見圖例「估算總分」與 <span id="fgparts-fit"></span>。</p>
+        <p class="note-muted"><b>資料來源與限制</b>：CNN 只公開「今天」每項的分數，歷史只給七項原始讀數，而且從 2020-08 才開始（圖上灰底以前的部分）。2009-01 到 2020-07 的七項讀數由本頁用免費資料重建：動能和 VIX 照 CNN 定義直接算；Put/Call 用 Cboe 股票 Put/Call；避險需求用 SPY 減 IEF 的 20 日報酬；垃圾債用 HYG 減 LQD 的配息殖利率差；強度和廣度用現有 S&amp;P 500 成分股計算（越早期，被剔除的公司缺得越多）。分項曲線是把讀數換成「近 126 交易日 z 分數 → 常態累積機率 ×100」的近似分數。估算總分與 CNN 實際總分：<span id="fgparts-fit"></span>。</p>
       </div>
     </div>
+ 
+    <details class="fgparts-eli5">
+      <summary>七個指標 101：用最簡單的話說（含例子）</summary>
+      <p class="note-muted">把市場想成一間教室，恐懼貪婪指數就是「全班現在是興奮還是害怕」。CNN 找了七個小觀察員，各自打 0–100 分，最後取平均。</p>
+      <div id="fgparts-eli5-list"></div>
+      <p class="note-muted">「今天」的數字取自最新一筆 CNN 資料，分數是 CNN 公布的官方分項分數。</p>
+    </details>
   </section>
 
   <section id="tab-bullbear" class="tab-section" hidden>

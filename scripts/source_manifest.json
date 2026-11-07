@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 95,
+  "source_count": 96,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -3241,6 +3241,45 @@
           "required_fields": [],
           "numeric_policy": "finite_when_present",
           "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/compute_fear_greed_proxy.py",
+      "outputs": [
+        "data/fear_greed_proxy.json"
+      ],
+      "frequency": "manual",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_fear_greed.py",
+        "scripts/fetch_stocks.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [],
+      "status": "manual_research",
+      "output_contracts": {
+        "data/fear_greed_proxy.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "breadth",
+            "junk",
+            "put_call",
+            "safe_haven",
+            "sp125",
+            "sp500",
+            "strength",
+            "vix",
+            "vix50"
+          ]
         }
       }
     }
