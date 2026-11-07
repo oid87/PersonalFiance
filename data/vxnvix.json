@@ -38916,13 +38916,19 @@
       "vix": 28.18,
       "vxn": 38.26,
       "spread": 10.08
+    },
+    {
+      "date": "2026-11-06",
+      "vix": 24.0,
+      "vxn": 33.38,
+      "spread": 9.38
     }
   ],
   "percentile_90": 11.22,
   "percentile_95": 23.85,
   "current": {
-    "date": "2026-11-05",
-    "spread": 10.08,
-    "percentile_rank": 89.18
+    "date": "2026-11-06",
+    "spread": 9.38,
+    "percentile_rank": 88.5
   }
 }
