@@ -1298,6 +1298,22 @@
     <h3 class="fgparts-sub">VIX 期限：1 個月 vs 3 個月，與 20／50 日均線</h3>
     <p id="fgparts-vix-note" class="note-muted"></p>
     <div id="fgparts-vix-chart" class="fgparts-vix-chart"></div>
+    <details class="fgparts-eli5">
+      <summary>這張圖怎麼看（白話版）</summary>
+      <div class="fgparts-eli5-item">
+        <p><b>VIX 是什麼</b>：市場用 S&amp;P 500 選擇權價格，反推出「接下來 30 天大概會晃多大」。像氣象預報的「未來一個月颱風機率」，不是今天的風速。</p>
+        <p><b>是日波動嗎？</b>不是。VIX 是<b>年化</b>的數字，衡量的是未來 30 天。換成每天：VIX ÷ 16（≈√252 個交易日）。VIX 16 ≈ 每天正常晃 1%；VIX 32 ≈ 每天晃 2%。</p>
+        <p><b>VIX3M</b>：同一套算法，但看未來 3 個月。平常遠期不確定性多，VIX3M 會比 VIX 略高（正價差，比值 &lt; 1）。</p>
+        <p><b>20／50 日均線</b>：VIX 自己最近一個月、兩個多月的平均。VIX 衝到均線之上 = 比最近更緊張。</p>
+      </div>
+      <div class="fgparts-eli5-item">
+        <p><b>例子：2025-04-08（關稅急跌）</b></p>
+        <p>VIX 52.33 → 換成每天約 ±3.3%，大家預期一個月內天天大晃。</p>
+        <p>VIX3M 41.50 比 VIX 低，比值 1.26 &gt; 1 = <b>逆價差</b>：短期比長期更怕，大家急著買「這個月」的保險。這通常是恐慌最高峰附近。</p>
+        <p>VIX 遠高於 20MA（25.27）和 50MA（21.32）：恐懼是突然爆出來的，不是慢慢累積。恐懼貪婪的「市場波動度」就是看 VIX 高出 50MA 多少，所以這天會是極度恐懼。</p>
+        <p>之後幾週 VIX 掉回 VIX3M 之下、跌破 20MA → 恐慌退潮，回到正常結構。</p>
+      </div>
+    </details>
     <div class="fgparts-grid">
       <div class="fgparts-card">
         <h3>今天 CNN 公布的分項分數</h3>
