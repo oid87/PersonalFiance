@@ -162,3 +162,12 @@ export function priceWithMA(rows, n, from = DISPLAY_FROM) {
   if (i0 < 0) return { dates: [], close: [], ma: [] };
   return { dates: s.slice(i0).map(r => r.date), close: s.slice(i0).map(r => r.close), ma: ma.slice(i0) };
 }
+
+// VIX（30 日）＋ 20／50 日均線，與 VIX3M（3 個月）對齊同一組日期；ratio = VIX / VIX3M，>1 表示近端比遠端貴（逆價差）。
+export function vixTerm(vixRows, termRows, from = DISPLAY_FROM) {
+  const v = priceWithMA(vixRows, 20, from), v50 = priceWithMA(vixRows, 50, from);
+  const m3 = new Map(termRows.filter(r => Number.isFinite(r?.vix3m)).map(r => [r.date, r.vix3m]));
+  const vix3m = v.dates.map(d => m3.get(d) ?? null);
+  return { dates: v.dates, vix: v.close, ma20: v.ma, ma50: v50.ma, vix3m,
+    ratio: v.close.map((x, i) => (Number.isFinite(vix3m[i]) ? x / vix3m[i] : null)) };
+}

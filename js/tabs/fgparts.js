@@ -5,13 +5,13 @@ import { requestJSON } from '../utils/data.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 import { tsToLocalDate } from '../utils/dates.js';
 import { preserveChartState } from '../utils/chartLifecycle.js';
-import { PARTS, ELI5, PRICE_SOURCES, DISPLAY_FROM, buildParts, compareWithCnn, mergeProxy, officialSnapshot, priceWithMA, zoneOf } from './fgparts_calc.mjs';
+import { PARTS, ELI5, PRICE_SOURCES, DISPLAY_FROM, buildParts, compareWithCnn, mergeProxy, officialSnapshot, priceWithMA, vixTerm, zoneOf } from './fgparts_calc.mjs';
 
 const PRICE_FILES = { SPX: 'data/SP500.json', SPY: 'data/SPY.json', VOO: 'data/VOO.json' };
 
 const COLORS = { momentum: '#e8590c', strength: '#2f9e44', breadth: '#1c7ed6', putcall: '#ae3ec9', junk: '#c2255c', vix: '#f08c00', safehaven: '#0c8599' };
 const on = new Set(['momentum', 'vix']);
-let chart = null, model = null, src = 'SPX', maN = 125;
+let xRange = [], chart = null, vchart = null, vt = null, model = null, src = 'SPX', maN = 125;
 const prices = {};
 
 const $ = id => document.getElementById(id);
@@ -24,6 +24,7 @@ async function loadAll(context) {
     requestJSON('data/fear_greed_proxy.json', { signal: context.signal }).catch(() => null),
     ...Object.values(PRICE_FILES).map(f => requestJSON(f, { signal: context.signal })),
   ]);
+  const [vixFile, termFile] = await Promise.all(['data/VIX.json', 'data/vix_term.json'].map(f => requestJSON(f, { signal: context.signal }).catch(() => null)));
   if (!comp?.data?.length) throw new Error('恐懼貪婪分項資料不足');
   Object.keys(PRICE_FILES).forEach((k, i) => { prices[k] = px[i]?.data ?? []; });
   const all = buildParts(mergeProxy(proxy?.data ?? [], comp.data));
@@ -35,6 +36,7 @@ async function loadAll(context) {
   const fgRows = fg?.data ?? [];
   const split = (lo, hi) => { const keep = built.dates.map(d => d >= lo && d < hi);
     return compareWithCnn(built.dates.filter((_, i) => keep[i]), built.composite.filter((_, i) => keep[i]), fgRows); };
+  vt = vixFile?.data?.length ? vixTerm(vixFile.data, termFile?.data ?? [], built.dates[0]) : null;
   model = { ...built, fg: fgRows.filter(r => r.date >= built.dates[0]), snap: officialSnapshot(comp.scores?.at(-1)),
     cnnStart, proxyUntil: proxy?.proxy_until ?? null, latest: comp.data.at(-1),
     fit: split(cnnStart, '9999'), fitProxy: proxy ? split('0000', cnnStart) : null };
@@ -56,7 +58,41 @@ function renderToggles() {
   });
 }
 
-function redraw() { preserveChartState(getCharts, () => chart?.setOption(buildOption(), { notMerge: true })); }
+function redraw() { preserveChartState(getCharts, () => { chart?.setOption(buildOption(), { notMerge: true }); drawVix(); }); }
+
+function buildVixOption() {
+  const small = mob(), p = arr => vt.dates.map((d, i) => [d, arr[i]]);
+  const ln = (name, data, color, extra = {}) => ({ name, type: 'line', data, showSymbol: false, connectNulls: false, lineStyle: { width: 1.3, color, ...(extra.lineStyle || {}) }, itemStyle: { color } });
+  const twoYears = vt.dates[Math.max(0, vt.dates.length - 504)];
+  return echartsBase({
+    animation: false,
+    legend: { top: 0, type: small ? 'scroll' : 'plain', textStyle: { color: PALETTE.muted, fontSize: small ? 11 : 12 } },
+    grid: { left: small ? 44 : 60, right: 12, top: 34, bottom: 64 },
+    xAxis: { type: 'time', min: xRange[0] ?? vt.dates[0], max: xRange[1] ?? vt.dates.at(-1), axisLabel: { color: PALETTE.muted }, axisLine: { lineStyle: { color: PALETTE.border } } },
+    yAxis: { type: 'value', scale: true, name: small ? '' : '點', nameTextStyle: { color: PALETTE.muted }, axisLabel: { color: PALETTE.muted }, splitLine: { lineStyle: { color: PALETTE.grid } } },
+    tooltip: { trigger: 'axis', confine: true, formatter: ps => {
+      const i = ps[0].dataIndex, r = vt.ratio[i];
+      return `<b>${tsToLocalDate(ps[0].axisValue)}</b><br>` + ps.filter(x => Number.isFinite(x.value?.[1])).map(x => `${x.marker}${x.seriesName}：${fmt(x.value[1], 2)}`).join('<br>')
+        + (Number.isFinite(r) ? `<br>VIX / VIX3M：${fmt(r, 2)}${r > 1 ? '（逆價差，短期恐慌）' : ''}` : '');
+    } },
+    dataZoom: [{ type: 'inside', startValue: twoYears, filterMode: 'weakFilter' }, { type: 'slider', startValue: twoYears, bottom: 8, height: 22, filterMode: 'weakFilter' }],
+    series: [
+      ln('VIX（1 個月）', p(vt.vix), PALETTE.text, { lineStyle: { width: 1.6 } }),
+      ln('VIX3M（3 個月）', p(vt.vix3m), '#1c7ed6'),
+      ln('VIX 20 日均線', p(vt.ma20), '#f08c00', { lineStyle: { type: 'dashed' } }),
+      ln('VIX 50 日均線', p(vt.ma50), '#e03131', { lineStyle: { type: 'dashed' } }),
+    ],
+  });
+}
+
+function drawVix() {
+  const host = $('fgparts-vix-chart');
+  if (!host || !vt) return;
+  if (!vchart) { vchart = echarts.init(host, isLight() ? null : 'dark'); vchart.group = 'fgparts'; chart.group = 'fgparts'; echarts.connect('fgparts'); }
+  vchart.setOption(buildVixOption(), { notMerge: true });
+  const i = vt.dates.length - 1, r = vt.ratio.findLast(Number.isFinite);
+  $('fgparts-vix-note').textContent = `${vt.dates[i]}：VIX ${fmt(vt.vix[i], 2)}、20MA ${fmt(vt.ma20[i], 2)}、50MA ${fmt(vt.ma50[i], 2)}、VIX3M ${fmt(vt.vix3m.findLast(Number.isFinite), 2)}；VIX/VIX3M ${fmt(r, 2)}${r > 1 ? '（>1 逆價差：短期比長期更怕，常見於急跌）' : '（<1 正常：遠月較貴）'}。恐懼貪婪的「市場波動度」看的就是 VIX 對 50 日均線。`;
+}
 
 function bindControls() {
   chipPicker($('fgparts-src'), 'fg-src', v => { src = v; redraw(); });
@@ -104,6 +140,7 @@ function buildOption() {
   const twoYears = m.dates[Math.max(0, m.dates.length - 504)];
   // 兩格共用同一 x 範圍，否則各自依資料端點縮放，十字線上下對不齊
   const xMin = m.dates[0], xMax = [m.dates.at(-1), pr.dates.at(-1), m.fg.at(-1)?.date].filter(Boolean).sort().at(-1);
+  xRange = [xMin, xMax];
   return echartsBase({
     animation: false,
     legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: small ? 11 : 12 }, data: [maName, 'CNN 總分', '估算總分'] },
@@ -136,12 +173,13 @@ export async function activate(context = {}) {
     bindControls();
     renderText();
     chart.setOption(buildOption(), { notMerge: true });
+    drawVix();
   } catch (e) {
     $('fgparts-status').textContent = '載入失敗：' + (e.message || e);
     throw e;
   }
 }
 
-export function onThemeChange() { if (chart && model) chart.setOption(buildOption(), { notMerge: true }); }
-export function resize() { chart?.resize(); }
-export function getCharts() { return chart ? [chart] : []; }
+export function onThemeChange() { if (chart && model) { chart.setOption(buildOption(), { notMerge: true }); drawVix(); } }
+export function resize() { chart?.resize(); vchart?.resize(); }
+export function getCharts() { return [chart, vchart].filter(Boolean); }

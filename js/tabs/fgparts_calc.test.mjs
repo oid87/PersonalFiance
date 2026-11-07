@@ -88,3 +88,11 @@ test('proxy backfill reaches 2009 and every part scores there', () => {
   const i = b.dates.findIndex(d => d >= '2009-03-01');
   for (const part of F.PARTS) assert.ok(Number.isFinite(b.parts[part.id].score[i]), part.id);
 });
+
+test('vixTerm 對齊 VIX3M 並算 20/50 均線與比值', async () => {
+  const { vixTerm } = await import('./fgparts_calc.mjs');
+  const vix = Array.from({ length: 60 }, (_, i) => ({ date: `2020-0${1 + Math.floor(i / 28)}-${String(1 + (i % 28)).padStart(2, '0')}`, close: 20 }));
+  const r = vixTerm(vix, [{ date: vix[59].date, vix3m: 25 }], '2000-01-01');
+  assert.equal(r.ma20.at(-1), 20); assert.equal(r.ma50.at(-1), 20);
+  assert.equal(r.ratio.at(-1), 0.8); assert.equal(r.vix3m[0], null);
+});
