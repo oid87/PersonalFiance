@@ -75,7 +75,7 @@ function renderText() {
   $('fgparts-fit').textContent = [f(model.fit, `${model.cnnStart} 起（CNN 原始讀數）`), f(model.fitProxy, '2011 年起到此之前（重建讀數）')].filter(Boolean).join('；') || '（重疊資料不足）';
   $('fgparts-eli5-list').innerHTML = PARTS.map(p => { const e = ELI5[p.id];
     return `<div class="fgparts-eli5-item"><h4><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${COLORS[p.id]}"></i> ${p.label}</h4>
-      <p><b>白話</b>：${e.like}</p><p><b>怎麼看</b>：${e.how}</p><p><b>例子</b>：${e.eg}</p>
+      <p><b>白話</b>：${e.like}</p><p><b>怎麼看</b>：${e.how}</p><p><b>例子</b>：${e.eg}</p>${e.more ? `<details class="fgparts-more"><summary>什麼是 Put／Call？買方、賣方差在哪？</summary>${e.more}</details>` : ''}
       <p><b>今天（${model.latest.date}）</b>：${e.today(model.latest)}${model.snap ? `，CNN 給 ${fmt(model.snap.items.find(i => i.id === p.id)?.score)} 分（${zoneOf(model.snap.items.find(i => i.id === p.id)?.score)}）` : ''}。</p></div>`; }).join('');
   $('fgparts-today').innerHTML = !s ? '<p class="note-muted">尚無分項分數快照。</p>' : `
     <table><thead><tr><th>分項</th><th class="num">分數</th><th>區間</th></tr></thead><tbody>
@@ -117,7 +117,7 @@ function buildOption() {
     tooltip: { trigger: 'axis', confine: true, axisPointer: { type: 'line' },
       formatter: ps => {
         const d = tsToLocalDate(ps[0].axisValue);
-        return `<b>${d}</b><br>` + ps.filter(p => Number.isFinite(p.value?.[1])).map(p => `${p.marker}${p.seriesName}：${fmt(p.value[1], p.seriesIndex < 2 ? (src === 'SPX' ? 0 : 2) : 1)}`).join('<br>');
+        return `<b>${d}</b><br>` + ps.filter(p => Number.isFinite(p.value?.[1])).map(p => `${p.marker}${p.seriesName}${p.seriesIndex > 3 ? ' 分數' : ''}：${fmt(p.value[1], p.seriesIndex < 2 ? (src === 'SPX' ? 0 : 2) : 1)}`).join('<br>');
       } },
     dataZoom: [{ type: 'inside', xAxisIndex: [0, 1], startValue: twoYears, filterMode: 'weakFilter' },
       { type: 'slider', xAxisIndex: [0, 1], startValue: twoYears, bottom: 8, height: 22, filterMode: 'weakFilter' }],

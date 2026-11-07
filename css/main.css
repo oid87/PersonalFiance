@@ -1530,3 +1530,5 @@
 #tab-fgparts .fgparts-eli5-item h4 { margin:0 0 4px; font-size:15px; }
 #tab-fgparts .fgparts-eli5-item p { margin:2px 0; }
 @media (max-width:600px) { #tab-fgparts .fgparts-chart { height:560px; } }
+#tab-fgparts .fgparts-more { margin:6px 0 2px; padding:6px 10px; border-left:3px solid var(--border); }
+#tab-fgparts .fgparts-more summary { cursor:pointer; min-height:32px; display:list-item; }
