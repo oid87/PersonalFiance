@@ -61,7 +61,9 @@ export const EXTRA_FILES = { marginMm: 'taiwan_margin_ratio_mm.json', marginDail
 //   trendSlope：國際股市「轉弱」＝跌破短均線「且均線下彎」（費半趨勢：跌破均線且長期向下）。
 //               false＝只看跌破。櫃買不受影響：櫃買「跌破均線」就提高警覺。
 //   breadthDivergence：廣度收窄只在「加權仍在短均線上」時成立（指數強、個股弱）。false＝偏空多於偏多即成立。
-export const DEFAULT_OPTS = Object.freeze({ trendSlope: true, breadthDivergence: true });
+//   marginBasis：上市融資維持率口徑，'ex'＝排除 ETF（預設，規則原文的分層以此口徑講）、'all'＝含 ETF。
+export const DEFAULT_OPTS = Object.freeze({ trendSlope: true, breadthDivergence: true, marginBasis: 'ex' });
+export const MARGIN_BASIS = { ex: '排除 ETF', all: '含 ETF' };
 
 // ── series features ───────────────────────────────────────────────────────
 function rollingMean(c, len) {
@@ -157,8 +159,9 @@ export function buildContext(raw = {}, opts = {}) {
   // 歷史取 _mm 檔，每日增量取 taiwan_margin_ratio.json 的 ratio_exetf（2026-11 起才有），同日以每日檔為準。
   const exRows = new Map();
   for (const r of [...(raw.marginMm || []), ...(raw.marginDaily || [])]) if (finite(r?.ratio_exetf)) exRows.set(r.date, { date: r.date, ratio_exetf: r.ratio_exetf });
-  s.MARGIN = buildSeries([...exRows.values()].sort((a, b) => (a.date < b.date ? -1 : 1)), 'ratio_exetf');
-  s.MARGIN_ALL = buildSeries(merged, 'ratio');   // 含 ETF 口徑，只作參考
+  s.MARGIN_EX = buildSeries([...exRows.values()].sort((a, b) => (a.date < b.date ? -1 : 1)), 'ratio_exetf');
+  s.MARGIN_ALL = buildSeries(merged, 'ratio');
+  s.MARGIN = opts.marginBasis === 'all' ? s.MARGIN_ALL : s.MARGIN_EX;
   s.MARGIN_YI = buildSeries(raw.marginDaily || [], 'margin_yi');   // 上市融資餘額（億元）
   s.MARGIN_OTC = buildSeries(raw.tpex || [], 'ratio_all');   // 上櫃（含 ETF），分母 2026-08-24 起才有
   const breadth = (raw.breadth || []).filter(r => finite(r?.bull) && finite(r?.bear)).sort((a, b) => (a.date < b.date ? -1 : 1));
@@ -359,8 +362,8 @@ export const SIGNALS = [
   },
   {
     id: 'margin', short: '融資維持率', group: 'C', label: '融資維持率承壓', series: 'MARGIN',
-    rule: '上市（排除 ETF）或上櫃（含 ETF）融資維持率 < 150%',
-    thresholds: [['150% 以下承壓', 'ref'], ['上市用排除 ETF 口徑（分子去掉 ETF）；上櫃只有含 ETF 資料', 'project'], ['上櫃也計入（2026-08-24 起有資料）', 'project']],
+    rule: '上市或上櫃融資維持率 < 150%',
+    thresholds: [['150% 以下承壓', 'ref'], ['上市口徑可切換：排除 ETF（預設）／含 ETF；上櫃只有含 ETF 資料', 'project'], ['上櫃也計入（2026-08-24 起有資料）', 'project']],
     eval(ctx, d) {
       const m = marginNow(ctx, d);
       if (!m) return na(at(ctx.s.MARGIN, d), '重建維持率 2004-02 起');

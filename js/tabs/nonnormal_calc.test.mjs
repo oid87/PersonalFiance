@@ -527,3 +527,10 @@ test('margin: 上市 uses the ex-ETF ratio, not the 含 ETF ratio', () => {
   assert.equal(m.state, 'on');
   assert.match(m.text, /上市 145\.0%/);
 });
+
+test('margin: marginBasis "all" switches 上市 to the 含 ETF ratio', () => {
+  const raw = rawWith({ marginDaily: DATES.map(date => ({ date, ratio: 160, ratio_exetf: 145 })) });
+  const m = sig(N.evaluateWeek(N.buildContext(raw, { marginBasis: 'all' }), last), 'margin');
+  assert.equal(m.state, 'off');
+  assert.match(m.text, /上市 160\.0%/);
+});

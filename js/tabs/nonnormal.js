@@ -34,7 +34,7 @@ const HELP = {
 const CARD_GROUPS = [
   { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['KOSPI', '韓股', 'kospi']] },
   { group: 'B', title: '金融市場', cards: [['US10Y', '美債 10Y', 'us10y', 'yield'], ['DXY', '美元指數', 'dxy'], ['GOLD', '黃金', 'gold'], ['OIL', '布蘭特原油', 'oil'], ['VIX', 'VIX', 'vix'], ['VXN', 'VXN'], ['FG', '恐懼貪婪', null, 'score'], ['BTC', '比特幣']] },
-  { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率（排除 ETF）', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '台股市場廣度', 'breadth', 'ratio'], ['LIMIT_DOWN', '跌停家數', null, 'count'], ['NO_OBS', '無觀察類股', null, 'days']] },
+  { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '台股市場廣度', 'breadth', 'ratio'], ['LIMIT_DOWN', '跌停家數', null, 'count'], ['NO_OBS', '無觀察類股', null, 'days']] },
   { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield'], ['US_BREADTH', '美股市場廣度', null, 'ratio']] },
 ];
 // 卡片上的英文代號（實際用的標的；指標類用通用簡稱）
@@ -98,6 +98,10 @@ function table(id, headers, rows) {
   byId(id).replaceChildren(t);
 }
 
+// 上市融資維持率口徑（排除 ETF／含 ETF），記在本機，讀寫失敗就用預設
+let rawData = null;
+let marginBasis = (() => { try { return localStorage.getItem('nonnormal-margin-basis') === 'all' ? 'all' : 'ex'; } catch { return 'ex'; } })();
+
 // ── data ────────────────────────────────────────────────────────────────
 async function load(context = {}) {
   const files = [...N.SERIES.map(s => [s.id, s.file]), ...Object.entries(N.EXTRA_FILES)];
@@ -109,7 +113,8 @@ async function load(context = {}) {
   }));
   const ckGot = await loadCash(context);
   if (context.signal?.aborted || context.isCurrent?.() === false) return false;
-  ctx = N.buildContext(Object.fromEntries(got));
+  rawData = Object.fromEntries(got);
+  ctx = N.buildContext(rawData, { marginBasis });
   ck = ckGot;
   if (!ctx.lastDate) throw new Error('沒有可用的加權／S&P 500 資料');
   weeks = N.history(ctx, '2007-08-03');
@@ -679,6 +684,16 @@ function wire() {
   const lazy = (id, fn) => byId(id).addEventListener('toggle', e => { if (e.target.open && ctx) { try { fn(); } catch (err) { byId('status').textContent = '計算失敗：' + err.message; } } });
   lazy('water-details', drawWater);
   chipPicker(byId('water-range'), 'nonnormal-water', key => { waterRange = key; if (ctx && byId('water-details').open) drawWater(); });
+  const basis = byId('margin-basis');
+  for (const chip of basis.querySelectorAll('.chip')) chip.classList.toggle('active', chip.dataset.nonnormalBasis === marginBasis);
+  chipPicker(basis, 'nonnormal-basis', key => {
+    marginBasis = key === 'all' ? 'all' : 'ex';
+    try { localStorage.setItem('nonnormal-margin-basis', marginBasis); } catch { /* 本機儲存不可用就只套用本次 */ }
+    if (!rawData) return;
+    ctx = N.buildContext(rawData, { marginBasis });
+    weeks = N.history(ctx, '2007-08-03');
+    renderAll();
+  });
   lazy('cases-details', renderCases);
   lazy('sources-details', renderSources);
   for (const h of document.querySelectorAll('#tab-nonnormal [data-help]')) h.append(' ', infoButton(HELP[h.dataset.help], '說明：' + h.dataset.help));
