@@ -435,6 +435,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_twse_mktcap.py
 
+      - name: Fetch TW top-100 market-cap stocks below 5-year line (權值 100 大落在 5 年線之下比例)
+        continue-on-error: true
+        run: python scripts/fetch_tw_top100_ma5y.py
+
       - name: Fetch TDCC leveraged-ETF holder counts (集保股權分散, 00631L/00675L/0050)
         continue-on-error: true
         run: python scripts/fetch_tdcc_holders.py

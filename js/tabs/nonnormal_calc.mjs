@@ -55,7 +55,7 @@ export const SERIES = [
   { id: 'TWII', file: 'TWII.json', label: '加權指數' },
   { id: 'TWOII', file: 'TWOII.json', label: '櫃買指數' },
 ];
-export const EXTRA_FILES = { marginMm: 'taiwan_margin_ratio_mm.json', marginDaily: 'taiwan_margin_ratio.json', tpex: 'tpex_margin.json', breadth: 'tw_breadth_ls.json', daily: 'tw_daily_stats.json' };
+export const EXTRA_FILES = { marginMm: 'taiwan_margin_ratio_mm.json', marginDaily: 'taiwan_margin_ratio.json', tpex: 'tpex_margin.json', breadth: 'tw_breadth_ls.json', daily: 'tw_daily_stats.json', top100: 'tw_top100_ma5y.json' };
 
 // 兩個本專案的定義選擇，預設值在看歷史案例前依原則決定；回測 CLI 會列出四種組合的敏感度。
 //   trendSlope：國際股市「轉弱」＝跌破短均線「且均線下彎」（費半趨勢：跌破均線且長期向下）。
@@ -175,6 +175,8 @@ export function buildContext(raw = {}, opts = {}) {
     .filter(r => r.date >= NO_OBS.from);
   s.NO_OBS = buildSeries(noObs);
   s.NO_OBS.flags = noObs.map(r => r.flag);
+  // 權值 100 大收盤低於 5 年線的比例（0–1；成分＝現在的市值前 100 檔，有存活者偏差，見 docs）
+  s.TOP100 = buildSeries(raw.top100 || [], 'ratio');
   const last = s.TWII.dates.at(-1) || null, lastUs = s.SPX.dates.at(-1) || null;
   return { s, opts: { ...DEFAULT_OPTS, ...opts }, lastDate: [last, lastUs].filter(Boolean).sort().at(-1) || null };
 }
@@ -577,6 +579,9 @@ export const STANCE = Object.freeze({
   // 融資餘額急減（本專案定義）：融資餘額（億元）比 10 個交易日前減少 ≥ 15% 即亮；與「維持率 < 150%」任一成立，壓力格就亮。
   // 回測核對：2025-04 最大 10 日減幅 −33.7%（2025-04-14）、2026-07 −19.8%（2026-07-30），兩段都亮（測試有鎖）。
   marginDrop: { days: 10, th: 0.15 },
+  // 權值 100 大落在 5 年線之下的比例 ≥ 30% 即亮（規則原文「3–4 成以上落入長均之下」取下緣；長均取 5 年線＝本專案定義，
+  // 和位置格本來就看的 5 年線一致）。與「加權到 5 年線」任一成立，位置格就亮。
+  top100: { th: 0.30 },
   // 現金流三檔位（金額＝規則原文舉例，單位元：[定期定額, 儲備]）。年線＝加權 200 日線，兩年線＝月線 24 個月均線。
   // 升檔（往第 3 檔）要連續 5 個交易日都在較低檔位的條件下、降檔（往第 1 檔）要連續 5 個交易日都站回（連續天數＝本專案定義）。
   cash: { confirm: 5, amounts: [[5000, 10000], [7500, 7500], [10000, 5000]] },
@@ -783,7 +788,7 @@ function stanceCore(ctx, d) {
   const v = th => (vix ? vix.value >= th : null), mg = th => (margin ? margin.value < th : null);
   const no = noObsNow(ctx, d), ld = recentExtreme(ctx.s.LIMIT_DOWN, d, (a, b) => a > b);
   const moodLit = [v(30), no ? no.count >= NO_OBS.start : null, ld ? ld.value >= NO_OBS.limitDownExtreme : null];
-  const drop = marginDrop(ctx, d);
+  const drop = marginDrop(ctx, d), top = top100Below(ctx, d);
   const ratioOk = mg(P.margin[1]), dropOk = drop ? drop.lit : null;
   const pressLit = ratioOk === null && dropOk === null ? null : !!(ratioOk || dropOk);
   const pressItems = [
@@ -792,7 +797,8 @@ function stanceCore(ctx, d) {
   ];
   const boxes = [
     { key: 'pos', label: '定位', what: '水溫', lit: tw ? tw.zone === 4 : null, text: tw ? zoneLabel(tw) : '無資料' },
-    { key: 'depth', label: '位置', what: '跌多深', lit: y5?.touch ?? null, text: y5 && finite(y5.gap) ? `距 5 年線 ${pct(y5.gap, 0)}` : '無資料' },
+    { key: 'depth', label: '位置', what: '跌多深', lit: [y5?.touch ?? null, top?.lit ?? null].every(x => x === null) ? null : !!(y5?.touch || top?.lit),
+      text: [y5 && finite(y5.gap) && `距 5 年線 ${pct(y5.gap, 0)}`, top && `權值 100 大 ${(top.ratio * 100).toFixed(0)}% 在 5 年線下`].filter(Boolean).join('・') || '無資料' },
     { key: 'press', label: '壓力', what: '融資', lit: pressLit, text: margin ? `近 30 日最低 ${margin.value.toFixed(1)}%（${margin.market}）` : '無資料', items: pressItems },
     { key: 'mood', label: '情緒', what: 'VIX・觀察類股・跌停', lit: moodLit.every(x => x === null) ? null : moodLit.some(Boolean),
       text: [vix && `VIX 盤中最高 ${vix.value.toFixed(1)}`, ld && `跌停最多 ${ld.value} 家`, no && `無觀察類股 ${no.count} 天（近 22 日）`].filter(Boolean).join('・') || '無資料' },
@@ -808,7 +814,13 @@ function stanceCore(ctx, d) {
     [c('VIX 盤中 ≥ 50', v(50)), c('融資維持率 < 135%', mg(135)), c('護盤基金進場', !!fund), c('到 10 年線（±3%）', y10?.touch ?? null), c('五格總覽至少亮 4 格', lit >= 4, { boxes: litNames })],
   ].map((conds, k) => ({ ...BATCHES[k], share: STANCE.share[k], ...batchState(conds) }));
   const slowFall = !!(tw && tw.zone === 4 && tw.iceKind === 'rhino' && vix && vix.value < STANCE.slowFallVix);
-  return { date: d, temps, boxes, lit, verdict: BOX_VERDICT(lit), batches, vix, margin, fund, intl, noObs: no, limitDown: ld, marginDrop: drop, slowFall };
+  return { date: d, temps, boxes, lit, verdict: BOX_VERDICT(lit), batches, vix, margin, fund, intl, noObs: no, limitDown: ld, marginDrop: drop, top100: top, slowFall };
+}
+/** 權值 100 大收盤低於 5 年線的比例（評估日或之前最後一筆）；lit＝達門檻。null＝無資料或過期。 */
+export function top100Below(ctx, d) {
+  const s = ctx.s.TOP100, i = s ? indexLE(s, d) : -1;
+  if (i < 0 || days(s.dates[i], d) > P.staleDays) return null;
+  return { ratio: s.close[i], date: s.dates[i], lit: s.close[i] >= STANCE.top100.th };
 }
 /** 融資餘額急減：最後一筆相對 days 個交易日前的變化；lit＝減幅達門檻。null＝無資料或過期。 */
 export function marginDrop(ctx, d) {

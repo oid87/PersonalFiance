@@ -534,3 +534,15 @@ test('margin: marginBasis "all" switches 上市 to the 含 ETF ratio', () => {
   assert.equal(m.state, 'off');
   assert.match(m.text, /上市 160\.0%/);
 });
+
+test('top100Below: ratio ≥ 30% lights the position box even when TWII is far above its 5-year line', () => {
+  const top100 = DATES.map((date, i) => ({ date, ratio: i === DATES.length - 1 ? 0.31 : 0.1 }));
+  const st = N.stance(N.buildContext(rawWith({ top100 })), last);
+  assert.deepEqual([st.top100.ratio, st.top100.lit], [0.31, true]);
+  const box = st.boxes.find(b => b.key === 'depth');
+  assert.equal(box.lit, true);
+  assert.match(box.text, /權值 100 大 31% 在 5 年線下/);
+  const off = N.stance(N.buildContext(rawWith({ top100: DATES.map(date => ({ date, ratio: 0.29 })) })), last);
+  assert.equal(off.top100.lit, false);
+  assert.equal(N.stance(N.buildContext(rawWith()), last).top100, null, 'no file → null, not off');
+});
