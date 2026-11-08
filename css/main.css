@@ -1200,6 +1200,15 @@
 #tab-nonnormal .nonnormal-water-tag b { display:block; font-size:13px; }
 #tab-nonnormal .nonnormal-water-tag .nonnormal-zone { margin-right:4px; }
 #tab-nonnormal .nonnormal-water-tag small { color:var(--muted); }
+#tab-nonnormal .nonnormal-water-pair { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:10px 0; }
+#tab-nonnormal .nonnormal-water-col { min-width:0; }
+#tab-nonnormal .nonnormal-water-col .nonnormal-water-tags { margin:6px 0 0; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); }
+#tab-nonnormal .nonnormal-water-col-h { margin:0; font-size:14px; display:flex; flex-wrap:wrap; align-items:baseline; gap:6px; }
+#tab-nonnormal .nonnormal-water-col-h small { color:var(--muted); font-weight:400; font-size:12px; }
+#tab-nonnormal :is(#nonnormal-longwater-table, #nonnormal-longwater-tri) :is(th, td) { white-space:nowrap; }
+#tab-nonnormal #nonnormal-longwater-note { font-size:13px; }
+@media (max-width:900px) { #tab-nonnormal .nonnormal-water-pair { grid-template-columns:1fr; } }
+@media (max-width:480px) { #tab-nonnormal .nonnormal-water-col .nonnormal-water-tags { grid-template-columns:1fr 1fr; } }
 #tab-nonnormal .nonnormal-water-group h4 { margin:14px 0 4px; font-size:14px; }
 #tab-nonnormal .nonnormal-water-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:10px; }
 #tab-nonnormal .nonnormal-water-chart { height:240px; min-width:0; }

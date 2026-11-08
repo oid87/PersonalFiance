@@ -950,3 +950,89 @@ export function baseRates(ctx, from, to = ctx.lastDate, minLevel = 2) {
   return { from, to, weeks: weeks.length, share, runs, hitAll: hit(fwdAll), hitAlert: hit(fwdAlert), nAll: fwdAll.length, nAlert: fwdAlert.length,
     runHit: done.length ? done.filter(r => r.fwd <= -P.ddHit).length / done.length : null, runsComplete: done.length };
 }
+
+// ── 長線水溫（1／2／3／5／10 年線位階；本專案定義，規則原文見 docs）────────────────────────────
+// 年線一律 240 日制：1Y＝240、2Y＝480、3Y＝720、5Y＝1200、10Y＝2400 日均線（日線，不用月線）。
+// 方向＝本期均線 ÷ 21 個交易日前的均線 − 1，超過 +門檻 ↑、低於 −門檻 ↓、其他 →；越長越平滑，門檻遞減。
+// 五區依序判斷（先成立的優先）：冰水（< 5Y；也 < 10Y 標冰水＋）→ 冷水（< 2Y）→ 溫水（< 1Y，或 1Y 不是 ↑）
+// → 滾水（1Y ↑ 且離 1Y ≥ 當天以前的 95 分位，至少 750 筆、下限 +15%）→ 熱水。只用當天以前的資料。
+export const LONG_WATER = Object.freeze({
+  markets: [['TWII', '加權'], ['TWOII', '櫃買'], ['NDX', 'QQQ'], ['SOX', '費半'], ['SPX', 'VOO'], ['KOSPI', '韓股']],
+  year: 240,
+  years: [1, 2, 3, 5, 10],
+  th: { 1: 0.005, 2: 0.003, 3: 0.002, 5: 0.0015, 10: 0.001 },
+  lag: 21,
+  hotQ: 0.95, hotMin: 0.15, pctMin: 750,
+  from: '2007',          // 分區從 2007 起才算（和參考回測同口徑）
+  ddDays: 480,           // 回檔＝收盤 ÷ 近 480 日最高收盤 − 1
+  drops: [0.3, 0.4],     // 三角型的跌幅點位
+});
+export const LONG_ZONES = [
+  { id: 'boil', label: '滾水', desc: '1 年線上揚，且離 1 年線達自身歷史 95 分位（下限 +15%）' },
+  { id: 'hot', label: '熱水', desc: '站上 1 年線且 1 年線上揚' },
+  { id: 'warm', label: '溫水', desc: '跌破 1 年線但守 2 年線；或站上 1 年線但 1 年線沒有上揚' },
+  { id: 'cool', label: '冷水', desc: '跌破 2 年線、守 5 年線' },
+  { id: 'ice', label: '冰水', desc: '跌破 5 年線；也跌破 10 年線標「冰水＋」' },
+];
+export const longZoneLabel = t => (t && t.zone !== null ? LONG_ZONES[t.zone].label + (t.plus ? '＋' : '') : '');
+/** 長線五區（依序判斷）。ma＝{1,2,5,10: 均線}，dir1＝1 年線方向，hq＝滾水門檻。回傳 { zone, plus } 或 null（5 年線還算不出來）。 */
+export function classifyLongWater(c, ma, dir1, hq) {
+  if (!finite(ma[5])) return null;
+  if (c < ma[5]) return { zone: 4, plus: finite(ma[10]) && c < ma[10] };
+  if (c < ma[2]) return { zone: 3, plus: false };
+  if (c < ma[1] || dir1 !== 1) return { zone: 2, plus: false };
+  return { zone: c / ma[1] - 1 >= hq ? 0 : 1, plus: false };
+}
+/** 每日長線水溫（快取在序列上）：{ dates, close, ma: {y: []}, dir: {y: []}, zone, plus, hq }。 */
+export function longWaterDaily(s) {
+  if (s._lw) return s._lw;
+  const L = LONG_WATER, n = s.dates.length, ma = {}, dir = {};
+  for (const y of L.years) {
+    ma[y] = rollingMean(s.close, y * L.year);
+    dir[y] = ma[y].map((m, i) => (finite(m) && i >= L.lag && finite(ma[y][i - L.lag]) ? direction(m / ma[y][i - L.lag] - 1, L.th[y]) : null));
+  }
+  const zone = new Array(n).fill(null), plus = new Array(n).fill(false), hq = new Array(n).fill(null), sorted = [];
+  for (let i = 0; i < n; i++) {
+    const m1 = ma[1][i];
+    if (!finite(m1)) continue;
+    const g = s.close[i] / m1 - 1;
+    if (sorted.length >= L.pctMin && s.dates[i] >= L.from) {
+      // 分位取「當天以前」排序後第 floor(0.95 × (n−1)) 筆（和參考實作一致，不內插）
+      hq[i] = Math.max(sorted[Math.floor(L.hotQ * (sorted.length - 1))], L.hotMin);
+      const z = classifyLongWater(s.close[i], { 1: m1, 2: ma[2][i], 5: ma[5][i], 10: ma[10][i] }, dir[1][i], hq[i]);
+      if (z) { zone[i] = z.zone; plus[i] = z.plus; }
+    }
+    let lo = 0, hi = sorted.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (sorted[mid] < g) lo = mid + 1; else hi = mid; }
+    sorted.splice(lo, 0, g);
+  }
+  return (s._lw = { dates: s.dates, close: s.close, ma, dir, zone, plus, hq });
+}
+/** 文字分層：跌破哪幾條、守住哪幾條年線。 */
+export function longLayer(lines) {
+  const br = lines.filter(l => finite(l.ma) && l.gap < 0).map(l => `${l.y}Y`), ok = lines.filter(l => finite(l.ma) && l.gap >= 0).map(l => `${l.y}Y`);
+  if (!br.length) return '站上全部年線';
+  return `跌破 ${br.join('/')}` + (ok.length ? `，守 ${ok.join('/')}` : '');
+}
+/** 單一市場 d 當天（≤ d 最後一筆）的長線水溫、年線位階、回檔與三角型距離。null＝無資料。 */
+export function longWater(s, d) {
+  const i = s ? indexLE(s, d) : -1;
+  if (i < 0) return null;
+  if (days(s.dates[i], d) > P.staleDays) return { stale: true, date: s.dates[i] };
+  const w = longWaterDaily(s), L = LONG_WATER, c = s.close[i];
+  const lines = L.years.map(y => { const m = w.ma[y][i]; return { y, ma: m, gap: finite(m) ? c / m - 1 : null, dir: w.dir[y][i] }; });
+  let hi = c;
+  for (let j = Math.max(0, i - L.ddDays + 1); j < i; j++) hi = Math.max(hi, s.close[j]);
+  const lv = y => lines.find(l => l.y === y).ma;
+  const pt = (label, px, kind) => ({ label, kind, px: finite(px) ? px : null, dist: finite(px) ? px / c - 1 : null });
+  const triangle = [pt('破 2 年線', lv(2), 'ma'), pt('跌 30%', hi * (1 - L.drops[0]), 'drop'), pt('破 5 年線', lv(5), 'ma'), pt('跌 40%', hi * (1 - L.drops[1]), 'drop'), pt('破 10 年線', lv(10), 'ma')];
+  return { date: s.dates[i], close: c, lines, hi, dd: c / hi - 1, zone: w.zone[i], plus: w.plus[i], hq: w.hq[i], layer: longLayer(lines), triangle };
+}
+export const longWaterAll = (ctx, d) => LONG_WATER.markets.map(([id, label]) => ({ id, label, ...(longWater(ctx.s[id], d) || { missing: true }) }));
+/** 各區天數占比（冰水＋另計）。 */
+export function longZoneShare(s, from = '0000', to = '9999') {
+  const w = longWaterDaily(s), cnt = [0, 0, 0, 0, 0];
+  let n = 0, plus = 0, first = null;
+  w.zone.forEach((z, i) => { if (z !== null && w.dates[i] >= from && w.dates[i] <= to) { cnt[z]++; n++; if (w.plus[i]) plus++; first ??= w.dates[i]; } });
+  return { from: first, days: n, share: cnt.map(x => (n ? x / n : null)), plus: n ? plus / n : null };
+}

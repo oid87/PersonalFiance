@@ -57,7 +57,9 @@ test('unknown failure is capped after one query retry', async () => {
 });
 
 test('deep links, invalid ids, favorites, and visible viewport stay bounded', () => {
-  assert.deepEqual(parseTabHash('#tab=fsi'), { id: 'fsi', valid: true, rangeKey: null, range: null });
+  assert.deepEqual(parseTabHash('#tab=fsi'), { id: 'fsi', valid: true, rangeKey: null, range: null, focus: null });
+  assert.equal(parseTabHash('#tab=nonnormal&focus=longwater').focus, 'longwater');
+  assert.equal(parseTabHash('#tab=nonnormal&focus=%3Cx%3E').focus, null);
   assert.equal(parseTabHash('#tab=%E0%A4%A').id, 'overview');
   assert.equal(parseTabHash('').id, 'overview');
   assert.equal(parseTabHash('#tab=no-such-tab').id, 'overview');

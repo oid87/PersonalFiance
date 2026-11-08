@@ -26,6 +26,7 @@ const HELP = {
   downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
   stance: '大跌時用來判斷「跌多深、到第幾個極端情境」，平常大多是空的。五格＝五種大跌時的訊號，條件成立就亮（●），「亮 N 格」＝其中幾格成立。定位＝加權水溫是不是冰水（含急凍）；位置＝加權離 5 年線 3% 以內或跌破，或權值 100 大有 30% 以上收在 5 年線下；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30、近 22 個交易日無觀察類股 ≥ 3 天、或近 30 日有一天跌停 ≥ 300 家（任一）；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫（日線）：10 日、50 日、200 日三條均線的方向（各和 1、5、21 個交易日前比，變化在 ±0.10%／±0.25%／±0.5% 內算走平 →）＋價格離 200 日線多遠。依序判斷：短、中都下彎且跌破極冷線（當時以前離 200 日線最深的 15%）＝冰水，長線也下彎是灰犀牛型、長線還沒下彎是急凍；三線都上揚且站上過熱線（最遠的 5%）＝滾水；跌破 200 日線 3% 以上＝冷水；±3% 內＝溫水；站上 3% 以上且長線上揚＝熱水，長線還沒翻上＝溫水。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。極端情境 1～3＝指數（大盤 ETF）可以考慮進場的時機，越後面越極端（跌得更深、恐慌更重），通常一個比一個晚出現：每個情境的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
+  longwater: '長線水溫（本專案定義）：年線一律 240 日制，1Y／2Y／3Y／5Y／10Y＝240／480／720／1200／2400 日均線。方向＝均線和 21 個交易日前比，超過 ±0.50%／±0.30%／±0.20%／±0.15%／±0.10%（1Y→10Y）算 ↑／↓，其他 →。依序判斷：收盤 < 5 年線＝冰水（也 < 10 年線＝冰水＋）；< 2 年線＝冷水；< 1 年線，或站上但 1 年線沒有上揚＝溫水；1 年線上揚且離 1 年線達當天以前的 95 分位（至少 750 筆、下限 +15%）＝滾水；其他＝熱水。日線水溫看短中循環的急殺，長線水溫看長循環的位階，兩者常不同。回檔＝收盤 ÷ 近 480 日最高收盤 − 1。',
   cash: '現金為王（izaax，同「現金為王」頁）：4 或 8 週內黃金、比特幣、美債 TLT、QQQ 全部下跌，且恐懼貪婪低點 < 25。逃往黃金：其他都跌、只有黃金漲，且恐懼貪婪 < 25。同一期間誰漲最多＝資金往哪裡去。',
 };
 
@@ -530,6 +531,31 @@ function drawWater() {
   });
 }
 
+// ── 長線水溫（1–10 年線位階、三角型距離）──────────────────────────────
+const longBadge = t => { const z = N.LONG_ZONES[t.zone]; return node('span', N.longZoneLabel(t), { class: `nonnormal-zone nonnormal-zone--${z.id}`, title: z.desc }); };
+const lwLabel = t => t.label + (t.id === 'KOSPI' ? ' *' : '');
+function renderLongWater(d) {
+  const all = N.longWaterAll(ctx, d), ok = t => !t.missing && !t.stale && t.zone !== null;
+  byId('longwater-tags').replaceChildren(...all.map(t => {
+    const el = node('div', null, { class: 'nonnormal-water-tag nonnormal-longwater-tag' });
+    el.append(node('b', lwLabel(t)));
+    if (!ok(t)) { el.append(node('small', t.stale ? `資料停在 ${t.date}` : '資料不足')); return el; }
+    const g1 = t.lines[0];
+    el.append(longBadge(t), node('span', pctTxt(g1.gap, 1)), node('br'), node('small', `離 1 年線・回檔 ${pctTxt(t.dd, 0)}・${t.layer.replace(/，守 .*$/, '').replace('站上全部年線', '全站上')}`));
+    return el;
+  }));
+  const gapCell = l => { if (!finite(l.ma)) return '—'; const el = node('span', `${pctTxt(l.gap, 1)}${ARROW(l.dir)}`); if (l.gap < 0) el.className = 'nonnormal-touch'; return el; };
+  table('longwater-table', ['指數', '長線水溫', '收盤', '離 1Y', '離 2Y', '離 3Y', '離 5Y', '離 10Y', '回檔', '分層'], all.map(t => {
+    if (t.missing || t.stale) return [lwLabel(t), t.stale ? `資料停在 ${t.date}` : '資料不足', '', '', '', '', '', '', '', ''];
+    return [lwLabel(t), ok(t) ? longBadge(t) : '資料不足', t.close.toLocaleString('en-US', { maximumFractionDigits: 2 }), ...t.lines.map(gapCell), pctTxt(t.dd, 1), t.layer];
+  }));
+  const fmtPx = v => v.toLocaleString('en-US', { maximumFractionDigits: v >= 1000 ? 0 : 1 });
+  const triCell = x => { if (x.px === null) return '資料不足'; if (x.dist >= 0) { const el = node('span', x.kind === 'drop' ? '已達' : `${fmtPx(x.px)}（已破）`); el.className = 'nonnormal-touch'; return el; } return `${fmtPx(x.px)}（${pctTxt(x.dist, 1)}）`; };
+  table('longwater-tri', ['指數', '破 2 年線', '跌 30%', '破 5 年線', '跌 40%', '破 10 年線'], all.filter(t => !t.missing && !t.stale).map(t => [lwLabel(t), ...t.triangle.map(triCell)]));
+  const date = all.find(ok)?.date || d;
+  byId('longwater-note').textContent = `資料日 ${date}。百分比＝收盤離該年線多少，箭頭＝年線方向，紅字＝已跌破。三角型表：括號＝離現價還要跌多少；「跌 30%／40%」以近 480 日最高收盤起算，「已達」＝回檔已超過。點位用今天的均線值，均線之後還會移動。規則原文的條件是「跌幅＋破均線」同時成立。* 韓股 ${KS11_NOTE}（已核實）。費半用 ^SOX 指數。`;
+}
+
 function renderStance(d) {
   const st = N.stance(ctx, d);
   const head = node('div', null, { class: 'nonnormal-boxes-head' });
@@ -549,6 +575,7 @@ function renderStance(d) {
   const zone = zoneBadge;
   const dist = l => { const el = node('span', pctTxt(l.gap)); if (l.touch) el.className = 'nonnormal-touch'; return el; };
   renderWaterTags(st.temps);
+  renderLongWater(d);
   if (byId('water-details').open) drawWater();
   table('temp', ['市場', '水溫', '均線方向', '離 200 日線', '過熱／極冷線', '離 2 年線', '離 5 年線', '離 10 年線', '離一年高點'], st.temps.map(t => {
     if (t.missing || t.stale) return [t.label, t.stale ? `資料停在 ${t.date}` : '資料不足', '', '', '', '', '', '', ''];
@@ -703,7 +730,7 @@ function wire() {
 export async function overviewSummary(context = {}) {
   if (!ctx && (await load(context)) === false) return null;
   const now = weeks.at(-1), prev = weeks.at(-2) || null;
-  return { now, prev, level: N.LEVELS[now.level], vix: N.turnaround(ctx, now.date).vix };
+  return { now, prev, level: N.LEVELS[now.level], vix: N.turnaround(ctx, now.date).vix, long: N.longWaterAll(ctx, now.date) };
 }
 
 export async function activate(context = {}) {

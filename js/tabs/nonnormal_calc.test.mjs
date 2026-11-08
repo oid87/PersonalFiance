@@ -546,3 +546,43 @@ test('top100Below: ratio ≥ 30% lights the position box even when TWII is far a
   assert.equal(off.top100.lit, false);
   assert.equal(N.stance(N.buildContext(rawWith()), last).top100, null, 'no file → null, not off');
 });
+
+// ── 長線水溫 ─────────────────────────────────────────────────────────────
+test('classifyLongWater: order ice → cool → warm → boil/hot', () => {
+  const ma = { 1: 100, 2: 90, 5: 80, 10: 70 };
+  assert.deepEqual(N.classifyLongWater(65, ma, 1, 0.15), { zone: 4, plus: true });
+  assert.deepEqual(N.classifyLongWater(75, ma, 1, 0.15), { zone: 4, plus: false });
+  assert.equal(N.classifyLongWater(85, ma, 1, 0.15).zone, 3);
+  assert.equal(N.classifyLongWater(95, ma, 1, 0.15).zone, 2);
+  assert.equal(N.classifyLongWater(105, ma, 0, 0.15).zone, 2);   // 站上 1Y 但 1Y 走平＝溫水
+  assert.equal(N.classifyLongWater(105, ma, 1, 0.15).zone, 1);
+  assert.equal(N.classifyLongWater(120, ma, 1, 0.15).zone, 0);
+  assert.equal(N.classifyLongWater(120, { ...ma, 5: null }, 1, 0.15), null);
+});
+
+const LW_CASES = {
+  '2008-10-28': ['冰水＋', '', '冰水', '冰水', '', '冰水'],
+  '2011-12-19': ['冰水＋', '', '溫水', '冰水＋', '', '冷水'],
+  '2015-08-24': ['冰水＋', '', '溫水', '冷水', '冷水', '冰水'],
+  '2018-12-24': ['冷水', '冰水', '冷水', '冷水', '冷水', '冰水'],
+  '2020-03-19': ['冰水＋', '冰水', '冷水', '冷水', '冰水', '冰水＋'],
+  '2022-10-25': ['冰水', '冰水', '冷水', '冷水', '冷水', '冰水＋'],
+  '2025-04-09': ['冷水', '冰水', '溫水', '冷水', '溫水', '冰水＋'],
+  '2026-11-06': ['熱水', '溫水', '溫水', '溫水', '熱水', '溫水'],
+};
+test('data check: long water zones match the 8 reference dates', { skip: !haveData }, () => {
+  const ctx = realContext();
+  for (const [d, want] of Object.entries(LW_CASES)) {
+    const got = N.LONG_WATER.markets.map(([id]) => { const w = N.longWaterDaily(ctx.s[id]), i = N.indexLE(ctx.s[id], d); return i < 0 ? '' : N.longZoneLabel({ zone: w.zone[i], plus: w.plus[i] }); });
+    assert.deepEqual(got, want, d);
+  }
+});
+test('data check: 2026-11-06 long-line gaps and drawdown match the reference', { skip: !haveData }, () => {
+  const t = N.longWaterAll(realContext(), '2026-11-06'), r = v => +(v * 100).toFixed(1);
+  assert.deepEqual(t.map(x => x.lines.map(l => r(l.gap))), [
+    [2.2, 28.0, 44.1, 73.1, 127.5], [-14.6, 1.2, 6.8, 20.5, 49.6], [-2.2, 8.4, 17.8, 41.3, 89.5],
+    [-8.3, 20.1, 37.0, 75.2, 157.4], [1.7, 10.2, 17.9, 36.0, 71.1], [-17.2, 12.3, 30.2, 51.4, 75.9]]);
+  assert.deepEqual(t.map(x => r(x.dd)), [-20.3, -33.0, -13.6, -35.8, -5.6, -44.5]);
+  assert.ok(t.every(x => x.lines.every(l => l.dir === 1)));
+  assert.equal(Math.round(t[0].triangle[0].px), 31010);
+});

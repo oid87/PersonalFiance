@@ -15,6 +15,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, c =>
 
 // 首頁底部「最近新增」：手動維護的捷徑，指向新加的視圖或區塊
 const NEW_LINKS = [
+  { tab: 'nonnormal', focus: 'longwater', title: '長線水溫', detail: '六個指數在 1／2／5／10 年線的位階（冰水～滾水），和日線水溫並列；含三角型點位距離' },
   { tab: 'twforeignshort', title: '外資賣超與空單', detail: '加權指數、外資每日賣出金額、外資台指期淨空單，三格同步對照' },
   { tab: 'nonnormal', title: '融資餘額急減', detail: '極端狀態儀表板「壓力」格：融資 10 日減幅 ≥ 15% 亮燈' },
   { tab: 'nonnormal', title: '現金流三檔位', detail: '極端狀態儀表板：加權相對年線、兩年線判斷目前第幾檔' },
@@ -39,7 +40,7 @@ function buildShell(section) {
     <div class="ov-grid" id="overview-themes"></div>
     <p class="ov-foot">燈號顏色：綠＝正常、黃＝留意、紅＝警戒，門檻沿用各明細頁。日期是該數字的資料日期，週末與假日不更新。</p>
     <h3>最近新增</h3>
-    <div class="ov-grid">${NEW_LINKS.map(link => `<a class="ov-card" href="#tab=${esc(link.tab)}">
+    <div class="ov-grid">${NEW_LINKS.map(link => `<a class="ov-card" href="#tab=${esc(link.tab)}${link.focus ? '&amp;focus=' + esc(link.focus) : ''}">
       <span class="ov-card-top"><span class="ov-card-title">${esc(link.title)}</span><span class="ov-card-go">前往 →</span></span>
       <span class="ov-detail">${esc(link.detail)}</span>
     </a>`).join('')}</div>`;

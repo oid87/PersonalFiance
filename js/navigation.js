@@ -10,9 +10,11 @@ export function parseTabHash(hash) {
     const id = VALID_IDS.has(requested) ? requested : DEFAULT_TAB;
     const rangeKey = params.get('rangeKey');
     const range = params.get('range');
-    return { id, valid: id === requested, rangeKey, range };
+    // focus＝頁內區塊（對應 section 內的 [data-nav-focus]）；只接受小寫英數與 -，其他忽略
+    const focus = /^[a-z0-9-]{1,40}$/.test(params.get('focus') || '') ? params.get('focus') : null;
+    return { id, valid: id === requested, rangeKey, range, focus };
   } catch {
-    return { id: DEFAULT_TAB, valid: false, rangeKey: null, range: null };
+    return { id: DEFAULT_TAB, valid: false, rangeKey: null, range: null, focus: null };
   }
 }
 
@@ -274,7 +276,21 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
     errorObserver.observe(section, { childList: true });
   }
 
-  async function selectTab(id, { historyMode = 'push', range = null } = {}) {
+  // 頁內深連結：載入完成後捲到 [data-nav-focus]。上方內容是非同步畫的、高度會變，
+  // 所以 2.5 秒內持續對齊；使用者自己捲動、按鍵或觸控就停止。
+  function scrollToFocus(id, focus) {
+    const target = () => document.getElementById('tab-' + id)?.querySelector('[data-nav-focus="' + focus + '"]');
+    let stop = false;
+    const quit = () => { stop = true; };
+    const opts = { once: true, passive: true };
+    for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) window.addEventListener(type, quit, opts);
+    const go = () => { if (!stop) target()?.scrollIntoView({ block: 'start' }); };
+    requestAnimationFrame(() => requestAnimationFrame(go));
+    for (const ms of [300, 700, 1200, 1800, 2500]) setTimeout(go, ms);
+    setTimeout(() => { for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown']) window.removeEventListener(type, quit); }, 2600);
+  }
+
+  async function selectTab(id, { historyMode = 'push', range = null, focus = null } = {}) {
     const categoryId = categoryByTab.get(id);
     if (!categoryId) return false;
     if (historyMode === 'push' && selection > 0 && id === currentTab) {
@@ -298,6 +314,7 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
       const chip = matchingRangeChip(section, range.key, range.value);
       if (chip && !chip.classList.contains('active')) chip.click();
     }
+    if (okay && focus) scrollToFocus(id, focus);
     if (!okay) showReloadButton();
     return okay;
   }
@@ -430,7 +447,7 @@ export function initNavigation({ switchTo, needsReload = () => false, visualView
     const range = route.range ? { key: route.rangeKey, value: route.range } : null;
     if (!route.valid) setURL(DEFAULT_TAB, null, 'replace');
     else lastURLHash = window.location.hash;
-    void selectTab(route.id, { historyMode: 'none', range });
+    void selectTab(route.id, { historyMode: 'none', range, focus: route.focus });
   }
   window.addEventListener('popstate', restoreFromURL);
   window.addEventListener('hashchange', restoreFromURL);

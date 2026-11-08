@@ -27,6 +27,12 @@ const summary = (context, file) =>
 
 // ── 警報（美股兩頁合成「美股警報」，所以是三張）───────────────────────────────
 // level：ok／watch／alert，各頁原本的分級對應過來，不重算。
+// 長線水溫一行字（台股兩個指數）：「；長線水溫 加權熱水・櫃買溫水」
+function longLine(rows) {
+  const names = { boil: '滾水', hot: '熱水', warm: '溫水', cool: '冷水', ice: '冰水' }, ids = ['boil', 'hot', 'warm', 'cool', 'ice'];
+  const tw = (rows || []).filter(t => (t.id === 'TWII' || t.id === 'TWOII') && Number.isInteger(t.zone));
+  return tw.length ? '；長線水溫 ' + tw.map(t => `${t.label}${names[ids[t.zone]]}${t.plus ? '＋' : ''}`).join('・') : '';
+}
 export const ALERT_CARDS = [
   {
     title: '極端狀態（台股為主＋國際）', tab: 'nonnormal',
@@ -37,7 +43,7 @@ export const ALERT_CARDS = [
         level: now.level === 0 ? 'ok' : now.level === 1 ? 'watch' : 'alert',
         state: s.level.label,
         detail: `${now.count}/${now.available} 個訊號亮・${now.groups} 組` +
-          (prev ? `；上週 ${prev.count} 個` : ''),
+          (prev ? `；上週 ${prev.count} 個` : '') + longLine(s.long),
         date: now.date,
       };
     },
