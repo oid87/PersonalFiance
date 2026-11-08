@@ -544,16 +544,16 @@ function renderLongWater(d) {
     el.append(longBadge(t), node('span', pctTxt(g1.gap, 1)), node('br'), node('small', `離 1 年線・回檔 ${pctTxt(t.dd, 0)}・${t.layer.replace(/，守 .*$/, '').replace('站上全部年線', '全站上')}`));
     return el;
   }));
-  const gapCell = l => { if (!finite(l.ma)) return '—'; const el = node('span', `${pctTxt(l.gap, 1)}${ARROW(l.dir)}`); if (l.gap < 0) el.className = 'nonnormal-touch'; return el; };
-  table('longwater-table', ['指數', '長線水溫', '收盤', '離 1Y', '離 2Y', '離 3Y', '離 5Y', '離 10Y', '回檔', '分層'], all.map(t => {
+  const gapCell = l => { if (!finite(l.ma)) return '—'; const el = node('span', pctTxt(l.gap, 1)); el.append(node('small', ` 線${ARROW(l.dir)}`, { class: 'nonnormal-lw-dir' })); if (l.gap < 0) el.className = 'nonnormal-touch'; return el; };
+  table('longwater-table', ['指數', '長線水溫', '收盤', '離 1Y', '離 2Y', '離 3Y', '離 5Y', '離 10Y', '回檔（480 日高點）', '分層'], all.map(t => {
     if (t.missing || t.stale) return [lwLabel(t), t.stale ? `資料停在 ${t.date}` : '資料不足', '', '', '', '', '', '', '', ''];
     return [lwLabel(t), ok(t) ? longBadge(t) : '資料不足', t.close.toLocaleString('en-US', { maximumFractionDigits: 2 }), ...t.lines.map(gapCell), pctTxt(t.dd, 1), t.layer];
   }));
   const fmtPx = v => v.toLocaleString('en-US', { maximumFractionDigits: v >= 1000 ? 0 : 1 });
   const triCell = x => { if (x.px === null) return '資料不足'; if (x.dist >= 0) { const el = node('span', x.kind === 'drop' ? '已達' : `${fmtPx(x.px)}（已破）`); el.className = 'nonnormal-touch'; return el; } return `${fmtPx(x.px)}（${pctTxt(x.dist, 1)}）`; };
-  table('longwater-tri', ['指數', '破 2 年線', '跌 30%', '破 5 年線', '跌 40%', '破 10 年線'], all.filter(t => !t.missing && !t.stale).map(t => [lwLabel(t), ...t.triangle.map(triCell)]));
+  table('longwater-tri', ['指數（點位・還要跌）', '破 2 年線', '跌 30%', '破 5 年線', '跌 40%', '破 10 年線'], all.filter(t => !t.missing && !t.stale).map(t => [lwLabel(t), ...t.triangle.map(triCell)]));
   const date = all.find(ok)?.date || d;
-  byId('longwater-note').textContent = `資料日 ${date}。百分比＝收盤離該年線多少，箭頭＝年線方向，紅字＝已跌破。三角型表：括號＝離現價還要跌多少；「跌 30%／40%」以近 480 日最高收盤起算，「已達」＝回檔已超過。點位用今天的均線值，均線之後還會移動。規則原文的條件是「跌幅＋破均線」同時成立。* 韓股 ${KS11_NOTE}（已核實）。費半用 ^SOX 指數。`;
+  byId('longwater-note').textContent = `資料日 ${date}。上表：百分比＝收盤離該年線多少（紅字＝已跌破），「線↑」＝那條年線本身的方向，不是價格方向。下表：括號＝從現價還要跌多少才到；「跌 30%／40%」以近 480 日最高收盤起算，「已達」＝回檔已超過。點位用今天的均線值，均線之後還會移動。規則原文的條件是「跌幅＋破均線」同時成立。手機可左右滑動表格。* 韓股 ${KS11_NOTE}（已核實）。費半用 ^SOX 指數。`;
 }
 
 function renderStance(d) {

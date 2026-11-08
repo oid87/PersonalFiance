@@ -1207,6 +1207,8 @@
 #tab-nonnormal .nonnormal-water-col-h small { color:var(--muted); font-weight:400; font-size:12px; }
 #tab-nonnormal :is(#nonnormal-longwater-table, #nonnormal-longwater-tri) :is(th, td) { white-space:nowrap; }
 #tab-nonnormal #nonnormal-longwater-note { font-size:13px; }
+#tab-nonnormal .nonnormal-lw-dir { color:var(--muted); font-weight:400; }
+#tab-nonnormal .nonnormal-water-pair-note { margin:-4px 0 10px; font-size:13px; }
 @media (max-width:900px) { #tab-nonnormal .nonnormal-water-pair { grid-template-columns:1fr; } }
 @media (max-width:480px) { #tab-nonnormal .nonnormal-water-col .nonnormal-water-tags { grid-template-columns:1fr 1fr; } }
 #tab-nonnormal .nonnormal-water-group h4 { margin:14px 0 4px; font-size:14px; }
