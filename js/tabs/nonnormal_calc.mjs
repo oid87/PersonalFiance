@@ -957,7 +957,7 @@ export function baseRates(ctx, from, to = ctx.lastDate, minLevel = 2) {
 // 五區依序判斷（先成立的優先）：冰水（< 5Y；也 < 10Y 標冰水＋）→ 冷水（< 2Y）→ 溫水（< 1Y，或 1Y 不是 ↑）
 // → 滾水（1Y ↑ 且離 1Y ≥ 當天以前的 95 分位，至少 750 筆、下限 +15%）→ 熱水。只用當天以前的資料。
 export const LONG_WATER = Object.freeze({
-  markets: [['TWII', '加權'], ['TWOII', '櫃買'], ['NDX', 'QQQ'], ['SOX', '費半'], ['SPX', 'VOO'], ['KOSPI', '韓股']],
+  markets: [['TWII', '加權'], ['TWOII', '櫃買'], ['SPX', 'S&P 500'], ['NDX', '那斯達克'], ['SOX', '費半'], ['KOSPI', '韓股']],
   year: 240,
   years: [1, 2, 3, 5, 10],
   th: { 1: 0.005, 2: 0.003, 3: 0.002, 5: 0.0015, 10: 0.001 },
