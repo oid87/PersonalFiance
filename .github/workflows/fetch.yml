@@ -423,6 +423,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_tw_breadth_ls.py
 
+      - name: Fetch Taiwan mainstream-group facts (TWSE MI_INDEX + TPEx dailyQuotes, 無主流日)
+        continue-on-error: true
+        run: python scripts/fetch_tw_mainstream.py
+
       - name: Build Taiwan margin cost-basis / forced-liquidation map (TWSE MI_MARGN flow, 融資斷頭地圖)
         continue-on-error: true
         run: python scripts/fetch_margin_costmap.py

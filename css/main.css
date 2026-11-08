@@ -1546,3 +1546,20 @@
 #tab-fgparts .fgparts-sub { margin:16px 0 4px; font-size:16px; }
 #tab-fgparts .fgparts-vix-chart { width:100%; height:360px; }
 @media (max-width:600px) { #tab-fgparts .fgparts-vix-chart { height:320px; } }
+
+/* 無主流日 */
+#tab-mainstream .mainstream-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; }
+#tab-mainstream .mainstream-link { margin-left:auto; font-size:13px; }
+#tab-mainstream .mainstream-note { color:var(--muted); font-size:13px; line-height:1.6; margin:4px 0 10px; }
+#tab-mainstream .mainstream-group-head h3 { margin:18px 0 8px; font-size:15px; }
+#tab-mainstream .mainstream-today { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px; }
+#tab-mainstream .mainstream-kv { border:1px solid var(--border); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:4px; }
+#tab-mainstream .mainstream-k { color:var(--muted); font-size:12px; }
+#tab-mainstream .mainstream-v { font-size:14px; line-height:1.5; }
+#tab-mainstream .mainstream-badge { display:inline-block; color:#fff; border-radius:6px; padding:2px 10px; font-weight:600; }
+#tab-mainstream .mainstream-controls { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+#tab-mainstream .mainstream-chart { width:100%; height:420px; }
+#tab-mainstream .mainstream-table { border-collapse:collapse; font-size:13px; width:100%; }
+#tab-mainstream .mainstream-table th, #tab-mainstream .mainstream-table td { padding:4px 8px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
+#tab-mainstream .mainstream-table td:last-child { white-space:normal; }
+#tab-mainstream .mainstream-steps { font-size:13px; line-height:1.7; padding-left:20px; }

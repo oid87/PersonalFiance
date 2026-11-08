@@ -2494,7 +2494,7 @@
     <p class="nonnormal-sub-row"><a class="nonnormal-sub-link" href="#tab=nonnormalhist">每週水溫走勢、過熱線與極冷線 → 過往觀察</a></p>
     <div id="nonnormal-batches" class="nonnormal-grid nonnormal-grid--batch"></div>
     <p id="nonnormal-batch-note" class="note-muted nonnormal-batch-note"></p>
-    <div class="nonnormal-group-head"><h3>轉機觀察</h3><a class="nonnormal-sub-link" href="#tab=nonnormalhist">過往觀察：2013 起跌停與無觀察類股回測 →</a></div>
+    <div class="nonnormal-group-head"><h3>轉機觀察</h3><a class="nonnormal-sub-link" href="#tab=nonnormalhist">過往觀察：2013 起跌停與無觀察類股回測 →</a><a class="nonnormal-sub-link" href="#tab=mainstream">無主流日：每天有沒有主流族群 →</a></div>
     <div id="nonnormal-turn" class="nonnormal-grid nonnormal-grid--turn"></div>
     <div class="nonnormal-group-head"><h3 data-help="breakout">右側：帶量突破</h3><span class="nonnormal-legend">不計入上方亮燈數</span></div>
     <div id="nonnormal-breakout" class="table-scroll" tabindex="0" aria-label="六個指數的帶量突破"></div>
@@ -2555,6 +2555,30 @@
     <div id="nonnormalhist-us-table" class="table-scroll" tabindex="0" aria-label="美股歷次訊號明細"></div>
     <div id="nonnormalhist-us-yearly" class="table-scroll" tabindex="0" aria-label="美股每年訊號天數"></div>
     <p class="nonnormalhist-note">限制：已下市或被併購的成分股多半抓不到資料，早年有效檔數偏少（2013 年 QQQ 約 62 檔、SOXX 14 檔），有倖存者偏差。SOXX 組只有二十檔上下，「一個月都沒有」比較常發生，訊號比另外兩組多（例如 2022 年整年半導體空頭）。</p>
+  </section>
+  <section id="tab-mainstream" class="tab-section" hidden>
+    <header class="mainstream-head"><h2 class="section-title">無主流日</h2><span id="mainstream-asof" class="status"></span><a class="mainstream-link" href="#tab=nonnormal">← 極端狀態儀表板</a></header>
+    <p id="mainstream-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <p class="mainstream-note">每天看盤面有沒有「主流族群」：一群同產業的股票同一天帶量突破。規則原文的意思是：整天找不到這類股票，代表市場暫時沒有新的主流和續航力；出現次數越多、越連續，情緒越悲觀。只描述盤面狀態，不是買賣訊號，不構成投資建議。</p>
+    <div class="mainstream-group-head"><h3>今天</h3></div>
+    <div id="mainstream-today" class="mainstream-today"></div>
+    <div class="mainstream-group-head"><h3>今天的主流族群</h3></div>
+    <div id="mainstream-groups" class="table-scroll" tabindex="0" aria-label="今天的主流族群"></div>
+    <div class="mainstream-group-head"><h3>走勢</h3></div>
+    <div id="mainstream-range" class="mainstream-controls"><span class="chip" data-mainstream-range="6M">半年</span><span class="chip active" data-mainstream-range="1Y">1 年</span><span class="chip" data-mainstream-range="3Y">3 年</span><span class="chip" data-mainstream-range="all">全部</span></div>
+    <div id="mainstream-chart" class="mainstream-chart" role="img" aria-label="加權指數、完全沒有主流的日子與轉折點、近 22 個交易日完全沒有的次數"></div>
+    <p class="mainstream-note">上：加權，紅點＝當天完全沒有，綠三角＝轉折（前一天完全沒有、今天有主流族群）。下：近 22 個交易日「完全沒有」的次數（柱），虛線＝3 次、5 次；藍線＝參考用的「沒有主流族群（含稍微有）」次數。全市場一千九百多檔，一檔候選都沒有的日子很少（2022 年起 3 天），藍線比較常有變化。</p>
+    <div class="mainstream-group-head"><h3>最近 30 個交易日</h3></div>
+    <div id="mainstream-recent" class="table-scroll" tabindex="0" aria-label="最近 30 個交易日判定"></div>
+    <div class="mainstream-group-head"><h3>怎麼算（本專案定義）</h3></div>
+    <ol class="mainstream-steps">
+      <li><b>候選股</b>：上市＋上櫃普通股，同時符合：收盤創 60 個交易日新高、成交量 ≥ 前 20 日均量 2 倍、當日漲幅 ≥ 3%。</li>
+      <li><b>主流族群</b>：同一個產業（證交所／櫃買中心產業別）當天有 ≥ 3 檔候選股。</li>
+      <li><b>判定</b>：有 ≥ 1 個主流族群＝<b>有</b>；有候選股但不成族群＝<b>稍微有</b>；一檔候選股都沒有＝<b>完全沒有</b>。</li>
+      <li><b>例外</b>：開盤就鎖漲停（開盤漲幅 ≥ 9.5%、開＝高＝收）≥ 20 檔時標成「強勢、無進場點」，不算完全沒有。規則原文提到強勢股直接漲停、沒有進場點的日子不代表市場弱。</li>
+      <li><b>次數</b>：近 22 個交易日（約一個月）「完全沒有」的次數。規則原文：1 次提高注意、2 次檢視要配置的 ETF 走勢和位階、3 次保持追蹤並可在月底開始分批、5 次（約四分之一的交易日）極度恐慌；連續 3 天對應融資 T+2 斷頭；由沒有轉成有＝情緒回溫。</li>
+    </ol>
+    <p class="mainstream-note">和儀表板「無觀察類股」的差別：儀表板那格看「創 20 日新高、量 ≥ 2 倍 10 日均量」的股票占比是否落在過去一年最低 4%（相對門檻，不看族群，2013 起有歷史）；這頁用絕對門檻並要求成族群，從 2022 年起算。限制：產業別是現在的快照，已下市的股票沒有產業、不會被算進族群；價格是原始收盤（未還原）。</p>
   </section>
   <section id="tab-qqqpanic" class="tab-section" hidden>
     <header><h2 class="section-title">QQQ 盤中急跌 × 恐慌背離</h2>
