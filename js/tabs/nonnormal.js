@@ -11,6 +11,7 @@ import { preserveChartState } from '../utils/chartLifecycle.js';
 import { infoButton, initInfoPopovers } from '../utils/info_popover.js';
 import { CK_ASSETS } from '../state.js';
 import * as N from './nonnormal_calc.mjs';
+import * as BO from './breakout_calc.mjs';
 import { computeCKWeekly, ckWeeklyCloses, ckWeekStart } from './cashking_calc.mjs';
 import { LEVEL_COLORS, ARROW, pctTxt, tempNowNodes } from './nonnormal_history.js';
 
@@ -22,6 +23,7 @@ const MAS = [50, 100];
 const DOUBLE_TAP_MS = 500;
 
 const HELP = {
+  breakout: '右側（上漲突破）訊號，只是描述，不計入上方亮燈數。突破＝收盤創 N 個交易日新高（3 個月、半年、1 年、2 年、5 年、10 年，取最長的那個）。量能＝當天成交量 ÷ 前 63 個交易日（約 3 個月）均量：≥ 2 倍關注，≥ 3／5／10 倍密切關注。費半價格用 ^SOX、成交量借用 SOXX。指數層級的 2 倍量很少見（2007 起加權只有 3 次）；ETF 在季底、指數調整日量會暴增，倍數可能被灌大。',
   level: '0–1 個亮：常態（單一訊號視為雜訊）｜2–3：留意｜≥4 且橫跨 ≥2 組：警戒｜≥6 且三組都亮：高度警戒。每週五評估，本週未結束時用最新資料日。',
   downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
@@ -100,7 +102,7 @@ function table(id, headers, rows) {
 }
 
 // 上市融資維持率口徑（排除 ETF／含 ETF），記在本機，讀寫失敗就用預設
-let rawData = null;
+let rawData = null, soxxRows = [];   // soxxRows：費半成交量（^SOX 沒有量，借 SOXX）
 let marginBasis = (() => { try { return localStorage.getItem('nonnormal-margin-basis') === 'all' ? 'all' : 'ex'; } catch { return 'ex'; } })();
 
 // ── data ────────────────────────────────────────────────────────────────
@@ -113,8 +115,10 @@ async function load(context = {}) {
     }
   }));
   const ckGot = await loadCash(context);
+  const soxx = await requestJSON('data/SOXX.json', { signal: context.signal }).then(j => j?.data || [], () => []);
   if (context.signal?.aborted || context.isCurrent?.() === false) return false;
   rawData = Object.fromEntries(got);
+  soxxRows = soxx;
   ctx = N.buildContext(rawData, { marginBasis });
   ck = ckGot;
   if (!ctx.lastDate) throw new Error('沒有可用的加權／S&P 500 資料');
@@ -634,6 +638,22 @@ function renderTurn(d) {
   byId('turn').replaceChildren(vix, mg, obs, box);
 }
 
+// ── 右側：帶量突破（breakout_calc.mjs）──────────────────────────────────
+const BO_MARKETS = [['TWII', '加權'], ['TWOII', '櫃買'], ['SPX', 'S&P 500'], ['NDX', '那斯達克'], ['SOX', '費半'], ['KOSPI', '韓股']];
+let boBars = null;
+function renderBreakout(d) {
+  if (boBars?.raw !== rawData) boBars = { raw: rawData, by: Object.fromEntries(BO_MARKETS.map(([id]) => [id, BO.buildBars(id === 'SOX' ? BO.withVolumeFrom(rawData[id] || [], soxxRows) : rawData[id] || [])])) };
+  const cell = (txt, cls) => { const el = node('span', txt); if (cls) el.className = cls; return el; };
+  table('breakout', ['指數', `近 ${BO.BREAKOUT.recentDays} 日突破`, '箱子', '量能（÷ 前 3 個月均量）', '距 3 個月高點'], BO_MARKETS.map(([id, label]) => {
+    const n = BO.breakoutNow(boBars.by[id], d);
+    if (!n) return [label, '無資料', '', '', ''];
+    const r = n.recent, tier = BO.tierLabel(r?.ratio), close = r?.ratio >= BO.BREAKOUT.close;
+    return [label, r ? md(r.date) : '無', r ? r.boxLabel + '新高' : '—',
+      r ? cell(r.ratio == null ? '量無資料' : `${r.ratio.toFixed(1)} 倍${tier ? `（${close ? '密切關注' : '關注'}）` : ''}`, tier ? 'nonnormal-touch' : '') : '—',
+      pctTxt(n.toHigh3m, 1)];
+  }));
+}
+
 // ── collapsed: cases + sources ──────────────────────────────────────────
 function dots(c) {
   const wrap = node('span', null, { class: 'nonnormal-dots' });
@@ -677,7 +697,7 @@ function renderAll() {
       const running = new Date(Date.parse(now.date)).getUTCDay() !== 5;
       const last = id => ctx.s[id]?.dates?.at(-1);
       byId('asof').textContent = `${now.date}${running ? '（本週至今）' : ''}・美股收盤 ${last('SPX')}、台股收盤 ${last('TWII')}・每日 06:00（美股收盤後）、18:00（台股收盤後）自動更新`;
-      renderSummary(now, prev); renderCards(now); renderCash(); renderLeadLag(now.date); renderStance(now.date); byId('temp-now').replaceChildren(...tempNowNodes(ctx, now.date, 'TWII')); renderTurn(now.date);
+      renderSummary(now, prev); renderCards(now); renderCash(); renderLeadLag(now.date); renderStance(now.date); byId('temp-now').replaceChildren(...tempNowNodes(ctx, now.date, 'TWII')); renderTurn(now.date); renderBreakout(now.date);
       drawDetail();
       if (byId('cases-details').open) renderCases();
       if (byId('sources-details').open) renderSources();
