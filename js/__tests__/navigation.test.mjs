@@ -13,6 +13,7 @@ const ORIGINAL_LABELS = {
   "fgparts": "恐懼貪婪七分項",
   "nonnormalhist": "過往觀察",
   "mainstream": "無主流日",
+  "noobs": "無觀察類股回測",
   "sentiment": "複合情緒",
   "aaii": "散戶情緒",
   "twsent": "台股情緒",
@@ -99,8 +100,8 @@ const ids = query => searchNavigation(query).map(item => item.id);
 
 test('all original screens occur once with unchanged labels', () => {
   assert.equal(CATEGORIES.length, 9);
-  assert.equal(NAV_ITEMS.length, 88);
-  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 88);
+  assert.equal(NAV_ITEMS.length, 89);
+  assert.equal(new Set(NAV_ITEMS.map(item => item.id)).size, 89);
   assert.deepEqual(Object.fromEntries(NAV_ITEMS.map(item => [item.id, item.label])), ORIGINAL_LABELS);
   assert.deepEqual(ids(''), NAV_ITEMS.map(item => item.id));
   for (const item of NAV_ITEMS) {
@@ -139,7 +140,7 @@ test('81 original screens plus QQQ恐慌背離 are grouped into 34 pages under t
     assert.equal(viewIds.has(page.id), false, page.id);
     assert.ok(page.views.length >= 1, page.id);
   }
-  assert.equal(pages.reduce((sum, page) => sum + page.views.length, 0), 87);
+  assert.equal(pages.reduce((sum, page) => sum + page.views.length, 0), 88);
   const stress = PAGES.find(page => page.id === 'p-stress');
   assert.deepEqual(stress.views.map(view => view.id), ['stressdash', 'fsi', 'nfci', 'emfsi', 'twstress']);
   const fsi = NAV_ITEMS.find(item => item.id === 'fsi');

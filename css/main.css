@@ -1563,3 +1563,22 @@
 #tab-mainstream .mainstream-table th, #tab-mainstream .mainstream-table td { padding:4px 8px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
 #tab-mainstream .mainstream-table td:last-child { white-space:normal; }
 #tab-mainstream .mainstream-steps { font-size:13px; line-height:1.7; padding-left:20px; }
+
+/* 無觀察類股回測 */
+#tab-noobs .noobs-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; }
+#tab-noobs .noobs-link { margin-left:auto; font-size:13px; }
+#tab-noobs .noobs-note { color:var(--muted); font-size:13px; line-height:1.6; margin:4px 0 10px; }
+#tab-noobs .noobs-conclusion { font-size:14px; line-height:1.7; margin:8px 0; padding:8px 10px; border-left:3px solid var(--border); }
+#tab-noobs .noobs-group-head h3 { margin:18px 0 8px; font-size:15px; }
+#tab-noobs .noobs-controls { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+#tab-noobs .noobs-today { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:8px; margin-bottom:8px; }
+#tab-noobs .noobs-kv { border:1px solid var(--border); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:4px; }
+#tab-noobs .noobs-k { color:var(--muted); font-size:12px; }
+#tab-noobs .noobs-v { font-size:14px; line-height:1.5; }
+#tab-noobs .noobs-badge { display:inline-block; color:#fff; border-radius:6px; padding:1px 8px; font-size:12px; font-weight:600; }
+#tab-noobs .noobs-chart { width:100%; height:440px; }
+#tab-noobs .noobs-table { border-collapse:collapse; font-size:13px; width:100%; }
+#tab-noobs .noobs-table th, #tab-noobs .noobs-table td { padding:4px 8px; border-bottom:1px solid var(--border); text-align:left; white-space:nowrap; }
+#tab-noobs .noobs-up { color:#ef4444; }
+#tab-noobs .noobs-down { color:#3fb950; }
+#tab-noobs .noobs-steps { font-size:13px; line-height:1.7; padding-left:20px; }

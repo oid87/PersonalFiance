@@ -2494,7 +2494,7 @@
     <p class="nonnormal-sub-row"><a class="nonnormal-sub-link" href="#tab=nonnormalhist">每週水溫走勢、過熱線與極冷線 → 過往觀察</a></p>
     <div id="nonnormal-batches" class="nonnormal-grid nonnormal-grid--batch"></div>
     <p id="nonnormal-batch-note" class="note-muted nonnormal-batch-note"></p>
-    <div class="nonnormal-group-head"><h3>轉機觀察</h3><a class="nonnormal-sub-link" href="#tab=nonnormalhist">過往觀察：2013 起跌停與無觀察類股回測 →</a><a class="nonnormal-sub-link" href="#tab=mainstream">無主流日：每天有沒有主流族群 →</a></div>
+    <div class="nonnormal-group-head"><h3>轉機觀察</h3><a class="nonnormal-sub-link" href="#tab=nonnormalhist">過往觀察：2013 起跌停與無觀察類股回測 →</a><a class="nonnormal-sub-link" href="#tab=mainstream">無主流日：每天有沒有主流族群 →</a><a class="nonnormal-sub-link" href="#tab=noobs">無觀察類股回測：近 10 年有沒有機會 →</a></div>
     <div id="nonnormal-turn" class="nonnormal-grid nonnormal-grid--turn"></div>
     <div class="nonnormal-group-head"><h3 data-help="breakout">右側：帶量突破</h3><span class="nonnormal-legend">不計入上方亮燈數</span></div>
     <div id="nonnormal-breakout" class="table-scroll" tabindex="0" aria-label="六個指數的帶量突破"></div>
@@ -2579,6 +2579,32 @@
       <li><b>次數</b>：近 22 個交易日（約一個月）「完全沒有」的次數。規則原文：1 次提高注意、2 次檢視要配置的 ETF 走勢和位階、3 次保持追蹤並可在月底開始分批、5 次（約四分之一的交易日）極度恐慌；連續 3 天對應融資 T+2 斷頭；由沒有轉成有＝情緒回溫。</li>
     </ol>
     <p class="mainstream-note">和儀表板「無觀察類股」的差別：儀表板那格看「創 20 日新高、量 ≥ 2 倍 10 日均量」的股票占比是否落在過去一年最低 4%（相對門檻，不看族群，2013 起有歷史）；這頁用絕對門檻並要求成族群，從 2022 年起算。限制：產業別是現在的快照，已下市的股票沒有產業、不會被算進族群；價格是原始收盤（未還原）。</p>
+  </section>
+  <section id="tab-noobs" class="tab-section" hidden>
+    <header class="noobs-head"><h2 class="section-title">無觀察類股回測</h2><span id="noobs-asof" class="status"></span><a class="noobs-link" href="#tab=nonnormal">← 極端狀態儀表板</a></header>
+    <p id="noobs-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <p class="noobs-note">指數＋無觀察類股，看近 10 年：市場一段時間幾乎沒有「帶量突破」的股票之後，買進指數持有 20／60／120 個交易日，和隨便哪一天買進比起來有沒有比較好。只是回顧歷史，不是買賣訊號，不構成投資建議。</p>
+    <div class="noobs-group-head"><h3>五個市場一覽</h3></div>
+    <div id="noobs-overview" class="table-scroll" tabindex="0" aria-label="五個市場訊號與基準比較"></div>
+    <p id="noobs-conclusion" class="noobs-conclusion"></p>
+    <div class="noobs-group-head"><h3>單一市場</h3></div>
+    <div id="noobs-market" class="noobs-controls"><span class="chip active" data-noobs-market="tw">加權</span><span class="chip" data-noobs-market="tw50">0050</span><span class="chip" data-noobs-market="qqq">QQQ</span><span class="chip" data-noobs-market="voo5">VOO</span><span class="chip" data-noobs-market="soxx">SOXX</span></div>
+    <div id="noobs-today" class="noobs-today"></div>
+    <div id="noobs-chart" class="noobs-chart" role="img" aria-label="指數走勢、無觀察類股訊號區間與指標"></div>
+    <p id="noobs-chart-note" class="noobs-note"></p>
+    <div class="noobs-group-head"><h3>訊號 vs 任意一天買進</h3></div>
+    <div id="noobs-compare" class="table-scroll" tabindex="0" aria-label="訊號與基準報酬比較"></div>
+    <div class="noobs-group-head"><h3>歷次訊號</h3></div>
+    <div id="noobs-episodes" class="table-scroll" tabindex="0" aria-label="歷次訊號明細"></div>
+    <div class="noobs-group-head"><h3>怎麼算</h3></div>
+    <ol class="noobs-steps">
+      <li><b>觀察股</b>：當天上漲、收盤創前 20 日新高、成交量 ≥ 前 10 日均量 2 倍（台股另要求量 ≥ 前一年市場日均量的萬分之 2）。</li>
+      <li><b>無觀察類股</b>：加權＝觀察股占比落在前一年最低 4% 的日子，近 22 個交易日 ≥ 3 天；0050＝成分股近 22 日觀察股合計 ≤ 2 次；美股＝成分股近 22 日觀察股次數每 100 檔 ≤ 4 次（VOO 用 S&amp;P 500 前五大板塊，SOXX 用 S&amp;P 500／那斯達克 100 裡的半導體股）。</li>
+      <li><b>一次訊號</b>：條件第一次成立那天算進場日；條件消失滿 20 個交易日後再出現才算新的一次。</li>
+      <li><b>基準</b>：同一段期間內每一天都買進、持有同樣天數的報酬中位數。<b>跌深版</b>＝只看進場日指數距一年高點 ≥ 10% 的訊號。</li>
+      <li><b>判定</b>：60 與 120 日中位數都比基準多 1 個百分點以上＝較好；都少 1 個百分點以上＝較差；其他＝差不多。樣本少於 5 次另外標註。</li>
+    </ol>
+    <p class="noobs-note">限制：美股成分股用維基百科的歷史成分股，部分已下市股票抓不到價格（倖存者偏差）；0050 成分股是依異動表回推。加權是價格指數、不含股息。訊號次數少，結果容易被 2020、2022、2025 幾次大跌主導。</p>
   </section>
   <section id="tab-qqqpanic" class="tab-section" hidden>
     <header><h2 class="section-title">QQQ 盤中急跌 × 恐慌背離</h2>
