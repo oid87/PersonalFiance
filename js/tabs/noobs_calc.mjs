@@ -1,5 +1,6 @@
-// 無觀察類股回測（指數＋無觀察類股，近 10 年）的純計算。訊號規則沿用過往觀察（nonnormalhist_calc.mjs），
-// 這裡只加：五個市場的統一介面、任意一天進場的基準、跌深版（訊號日距一年高點 ≤ DEEP）、和基準比較的結論。
+// 無觀察類股回測（指數＋無觀察類股／均線廣度，近 10 年）的純計算。
+// 無觀察類股規則沿用過往觀察（nonnormalhist_calc.mjs）；均線廣度＝臺灣50 成分股站上 20／50／100／200 日線占比（data/tw50_ma_breadth.json）。
+// 這裡只加：訊號的統一介面、任意一天進場的基準、跌深版（訊號日距一年高點 ≤ DEEP）、和基準比較的結論。
 import * as H from './nonnormalhist_calc.mjs';
 import { NO_OBS } from './nonnormal_calc.mjs';
 
@@ -8,13 +9,19 @@ export const YEARS = 10;
 export const DEEP = -0.10;
 export const HORIZONS = H.HORIZONS;
 
-// kind: tw＝全市場（近 22 日無觀察天數 ≥ 3）；tw50＝0050 成分股（近 22 日觀察股 ≤ 2 次）；us＝每 100 檔近 22 日 ≤ 4 次
-export const MARKETS = Object.freeze({
-  tw: { label: '加權（全市場）', price: 'TWII', kind: 'tw', ind: '近 22 日無觀察天數', th: NO_OBS.start, dir: '≥' },
-  tw50: { label: '0050', price: '0050.TW', kind: 'tw50', ind: '0050 成分股近 22 日觀察股次數', th: H.TW50_LOW, dir: '≤' },
-  qqq: { label: 'QQQ', price: 'QQQ', kind: 'us', ind: '每 100 檔近 22 日觀察股次數', th: H.RATE_LOW, dir: '≤' },
-  voo5: { label: 'VOO', price: 'VOO', kind: 'us', ind: '每 100 檔近 22 日觀察股次數（前五大板塊）', th: H.RATE_LOW, dir: '≤' },
-  soxx: { label: 'SOXX', price: 'SOXX', kind: 'us', ind: '每 100 檔近 22 日觀察股次數（半導體）', th: H.RATE_LOW, dir: '≤' },
+export const PRICES = Object.freeze({
+  tw: { label: '加權', file: 'TWII' },
+  tw50: { label: '0050', file: '0050.TW' },
+});
+
+// src: obs＝dailyRows()（無觀察類股），br＝tw50_ma_breadth 列；dir/th＝成立條件
+export const SIGNALS = Object.freeze({
+  obs: { label: '無觀察類股（全市場）', short: '無觀察・全市場', src: 'obs', field: 'noObs', dir: '≥', th: NO_OBS.start, unit: '天', ind: '近 22 日無觀察天數' },
+  obs50: { label: '無觀察類股（0050 成分股）', short: '無觀察・0050', src: 'obs', field: 'tw50', dir: '≤', th: H.TW50_LOW, unit: '次', ind: '0050 成分股近 22 日觀察股次數' },
+  b20: { label: '站上 20 日線 ≤ 10%', short: '廣度 20MA', src: 'br', field: 'p20', dir: '≤', th: 10, unit: '%', ind: '0050 成分股站上 20 日線 %' },
+  b50: { label: '站上 50 日線 ≤ 15%', short: '廣度 50MA', src: 'br', field: 'p50', dir: '≤', th: 15, unit: '%', ind: '0050 成分股站上 50 日線 %' },
+  b100: { label: '站上 100 日線 ≤ 20%', short: '廣度 100MA', src: 'br', field: 'p100', dir: '≤', th: 20, unit: '%', ind: '0050 成分股站上 100 日線 %' },
+  b200: { label: '站上 200 日線 ≤ 30%', short: '廣度 200MA', src: 'br', field: 'p200', dir: '≤', th: 30, unit: '%', ind: '0050 成分股站上 200 日線 %' },
 });
 
 /** 起算日：資料最後一天往前 YEARS 年。 */
@@ -24,23 +31,25 @@ export function startDate(last, years = YEARS) {
   return d.toISOString().slice(0, 10);
 }
 
-/** 指標序列 [{date, v, hit}]。tw／tw50 用 dailyRows()，us 用 usRows()。 */
-export function indicator(key, twRows, usRows) {
-  const m = MARKETS[key];
-  if (!m) throw new Error('unknown market ' + key);
-  const pick = m.kind === 'tw' ? r => r.noObs : m.kind === 'tw50' ? r => r.tw50 : r => r[`${key}_rate`];
-  const src = m.kind === 'us' ? usRows : twRows;
-  return src.map(r => {
-    const v = pick(r);
-    return { date: r.date, v: finite(v) ? v : null, hit: finite(v) && (m.dir === '≥' ? v >= m.th : v <= m.th) };
+/** 指標序列 [{date, v, hit}]；src＝{obs: dailyRows(), br: 廣度列}。 */
+export function indicator(key, src) {
+  const s = SIGNALS[key];
+  if (!s) throw new Error('unknown signal ' + key);
+  return (src[s.src] || []).map(r => {
+    const v = r[s.field];
+    return { date: r.date, v: finite(v) ? v : null, hit: finite(v) && (s.dir === '≥' ? v >= s.th : v <= s.th) };
   });
 }
 
-/** 歷次訊號（只留 from 之後開始的）。 */
-export function episodesFor(key, twRows, usRows, px, from) {
-  const m = MARKETS[key];
-  const list = m.kind === 'us' ? H.usEpisodes(usRows, px, key) : H.episodes(twRows, px, m.kind === 'tw' ? 'obs3' : 'tw50');
-  return list.filter(e => !from || e.date >= from);
+/** 歷次訊號（同 nonnormalhist：成立第一天進場，消失滿 20 日才算新的一次），只留 from 之後開始的。 */
+export function episodesFor(key, src, px, from) {
+  const ind = indicator(key, src);
+  const list = H.scan(ind, r => r.hit, () => ({ peak: null }), (cur, r) => {
+    if (!finite(r.v)) return;
+    const s = SIGNALS[key];
+    cur.peak = cur.peak == null ? r.v : s.dir === '≥' ? Math.max(cur.peak, r.v) : Math.min(cur.peak, r.v);
+  });
+  return H.withReturns(list, px).filter(e => !from || e.date >= from);
 }
 
 const median = xs => {
@@ -65,7 +74,7 @@ export function summary(list) {
   return Object.fromEntries(HORIZONS.map(h => [h, stat(list.map(e => e.ret[h]).filter(finite))]));
 }
 
-/** 訊號 vs 基準：60 與 120 日中位數都贏基準＝較好；都輸＝較差；其餘＝差不多。樣本 < 5 標註樣本少。 */
+/** 訊號 vs 基準：60 與 120 日中位數都贏基準 1 個百分點以上＝較好；都輸＝較差；其餘＝差不多。樣本 < 5 標註樣本少。 */
 export function verdict(sig, base) {
   const diffs = [60, 120].map(h => (finite(sig[h].median) && finite(base[h].median) ? sig[h].median - base[h].median : null));
   const n = sig[60].n;
@@ -73,9 +82,9 @@ export function verdict(sig, base) {
   return { level, diff60: diffs[0], diff120: diffs[1], n, few: n < 5 };
 }
 
-/** 一個市場的完整結果。 */
-export function analyze(key, twRows, usRows, px, from) {
-  const all = episodesFor(key, twRows, usRows, px, from);
+/** 一個訊號 × 一個價格的完整結果。 */
+export function analyze(key, src, px, from) {
+  const all = episodesFor(key, src, px, from);
   const deep = all.filter(e => finite(e.fromHigh) && e.fromHigh <= DEEP);
   const base = baseline(px, from);
   const sAll = summary(all), sDeep = summary(deep);

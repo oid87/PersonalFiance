@@ -465,6 +465,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_tw_daily_stats.py
 
+      - name: Fetch TW50 MA breadth (臺灣50 成分股站上 20/50/100/200MA 占比)
+        continue-on-error: true
+        run: python scripts/fetch_tw50_ma_breadth.py
+
       - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
         continue-on-error: true
         run: python scripts/fetch_taiwan_mktcap_anchor.py

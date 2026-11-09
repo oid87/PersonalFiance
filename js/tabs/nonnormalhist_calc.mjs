@@ -50,7 +50,7 @@ export function episodes(rows, tw, key) {
 }
 
 /** 找出訊號段落：條件第一次成立的那天開始，條件消失滿 GAP 列後結束；track 累計段落內的極值。 */
-function scan(rows, test, init, track) {
+export function scan(rows, test, init, track) {
   const out = [];
   let cur = null, off = 0;
   for (const r of rows) {
@@ -66,7 +66,7 @@ function scan(rows, test, init, track) {
 }
 
 /** 每一段補上訊號日的價格、距一年高點、之後 60 日最低、+20／60／120 日報酬（px＝[{date, close}] 升序）。 */
-function withReturns(list, px) {
+export function withReturns(list, px) {
   return list.map(e => {
     const i = indexOnOrAfter(px, e.date);
     if (i < 0) return { ...e, close: null, fromHigh: null, low60: null, ret: Object.fromEntries(HORIZONS.map(h => [h, null])) };
