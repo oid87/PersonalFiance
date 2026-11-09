@@ -34,6 +34,7 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "tw_mainstream.json"
 CACHE = ROOT / "data" / "tw_mainstream_bars.json"
 TWII = ROOT / "data" / "TWII.json"
+HEATMAP = ROOT / "data" / "tw_heatmap.json"
 SIGNAL = ROOT / "data" / "tw_mainstream_signal.json"   # 由 build_tw_mainstream_signal.mjs 寫
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)"}
 FLOOR = os.environ.get("TW_MS_FLOOR", "2021-09-01")
@@ -133,13 +134,45 @@ def tpex_day(d: str):
     return out if len(out) >= MIN_TPEX else None
 
 
+NAMES: dict[str, str] = {}
+
+
 def industries() -> dict[str, str]:
     m = {}
     for r in get("https://openapi.twse.com.tw/v1/opendata/t187ap03_L") or []:
-        m[str(r.get("公司代號", "")).strip()] = INDUSTRY.get(str(r.get("產業別", "")).strip(), "")
+        k = str(r.get("公司代號", "")).strip()
+        m[k] = INDUSTRY.get(str(r.get("產業別", "")).strip(), "")
+        NAMES[k] = str(r.get("公司簡稱", "")).strip()
     for r in get("https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O") or []:
-        m[str(r.get("SecuritiesCompanyCode", "")).strip()] = INDUSTRY.get(str(r.get("SecuritiesIndustryCode", "")).strip(), "")
+        k = str(r.get("SecuritiesCompanyCode", "")).strip()
+        m[k] = INDUSTRY.get(str(r.get("SecuritiesIndustryCode", "")).strip(), "")
+        NAMES[k] = str(r.get("CompanyAbbreviation", "")).strip()
     return {k: v for k, v in m.items() if k}
+
+
+def write_heatmap(d, last_q, ind) -> None:
+    """族群熱力圖：最新交易日每檔 [代號, 簡稱, 產業, 漲跌%] → data/tw_heatmap.json。當天沒新抓就補抓那一天。"""
+    if not d:
+        return
+    if last_q is None:
+        a, b = twse_day(d), tpex_day(d)
+        if a is None or b is None:
+            print(f"  heatmap {d}: 行情不完整，保留舊檔")
+            return
+        q = {**b, **a}
+    else:
+        q = last_q[1]
+    rows = []
+    for code, (o, h, c, chg, v) in sorted(q.items()):
+        prev = c - chg
+        if prev > 0 and ind.get(code):
+            rows.append([code, NAMES.get(code, ""), ind[code], round(100 * chg / prev, 2)])
+    HEATMAP.write_text(json.dumps({
+        "source": "TWSE MI_INDEX、TPEx dailyQuotes 收盤行情；產業別與簡稱 TWSE t187ap03_L、TPEx mopsfin_t187ap03_O",
+        "note": "上市＋上櫃普通股，最新交易日 [代號, 簡稱, 產業, 漲跌%]；漲跌＝漲跌價差 ÷ 前一日收盤。沒有產業別（已下市等）不列。",
+        "updated": datetime.now().strftime("%Y-%m-%d"), "date": d, "data": rows,
+    }, ensure_ascii=False, separators=(",", ":")) + "\n")
+    print(f"  heatmap {d}: {len(rows)} 檔")
 
 
 def trading_dates() -> list[str]:
@@ -182,6 +215,7 @@ def main() -> None:
     if not ind:
         raise SystemExit("產業別 OpenAPI 抓不到")
     print(f"{len(todo)} days to fetch; industry map {len(ind)}")
+    last_q = None
     for d in todo:
         cached = RAW_DIR and (Path(RAW_DIR) / f"twse_{d}.json").exists() and (Path(RAW_DIR) / f"tpex_{d}.json").exists()
         a, b = twse_day(d), tpex_day(d)
@@ -191,6 +225,7 @@ def main() -> None:
             print(f"  {d}: 資料不完整（上市 {a is not None}、上櫃 {b is not None}），停在這裡")
             break
         q = {**b, **a}
+        last_q = (d, q)
         if d >= OUT_FROM:
             rows[d] = day_facts(d, q, bars, ind)
         for code, (o, h, c, chg, v) in q.items():
@@ -215,6 +250,7 @@ def main() -> None:
         "data": data,
     }, ensure_ascii=False, separators=(",", ":")) + "\n")
     print(f"wrote {len(data)} rows")
+    write_heatmap(cdates[-1] if cdates else None, last_q if last_q and last_q[0] == (cdates[-1] if cdates else None) else None, ind)
     if shutil.which("node"):   # 判定結果（給其他分頁讀）：規則只在 mainstream_calc.mjs 一處
         subprocess.run(["node", str(ROOT / "scripts" / "build_tw_mainstream_signal.mjs")], check=True)
 

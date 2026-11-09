@@ -262,6 +262,13 @@
   </section>
 
   <!-- ── 產業輪動 tab ────────────────────────────────────────────── -->
+  <section id="tab-twheatmap" class="tab-section" hidden>
+    <header class="twhm-head"><h2 class="section-title">台股族群熱力圖</h2><span id="twhm-asof" class="status"></span></header>
+    <p id="twhm-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <nav id="twhm-nav" class="twhm-nav" aria-label="大類"></nav>
+    <div id="twhm-body"></div>
+    <p class="twhm-note">族群＝證交所／櫃買中心官方產業別，大類為本專案歸併。族群漲跌＝當天有收盤資料成分股的等權平均（每檔權重相同，不看市值）；沒有行情的股票不列入、也不當 0%。上市＋上櫃普通股，原始收盤；產業別是現在的快照。紅漲綠跌。只描述盤面，不構成投資建議。</p>
+  </section>
   <section id="tab-sector" class="tab-section" hidden>
     <div class="controls">
       <div class="picker-row" id="sector-market-picker">

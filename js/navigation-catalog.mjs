@@ -71,7 +71,7 @@ export const CATEGORIES = [
     { id: 'p-valuation', label: '估值', views: [
       view('valuation', '估值'), view('fwdpe', 'Forward P/E 自建'), view('semi_vs_spx_pe', '半導體估值'),
       view('sox_vs_tw_semi_pe', '半導體估值(全球vs台灣)'), view('trendonify_pe', 'Trendonify PE')] },
-    { id: 'p-sector', label: '產業輪動', views: [view('sector', '產業輪動')] },
+    { id: 'p-sector', label: '產業輪動', views: [view('sector', '產業輪動'), view('twheatmap', '台股族群熱力圖')] },
     { id: 'p-earnings', label: '財報日', views: [view('earnings', '財報日')] },
   ] },
   { id: 'strategy', label: '策略與工具', pages: [
@@ -95,6 +95,7 @@ const ALIASES = {
   usrisk: ["美股去槓桿", "US risk", "CFTC", "FINRA", "科技壓力"],
   nonnormal: ["極端", "極端狀態", "共振", "多重確認", "台股", "費半", "櫃買", "VIX", "水溫", "長線水溫", "年線", "兩年線", "五年線", "十年線", "三角型"],
   noobs: ["無觀察", "觀察類股", "回測", "機會", "10年"],
+  twheatmap: ["熱力圖", "族群", "產業", "漲跌", "台股", "heatmap"],
   mainstream: ["無主流", "主流族群", "族群", "觀察類股", "強勢股", "創高", "爆量"],
   nonnormalhist: ["過往觀察", "回測", "跌停", "跌停家數", "無觀察", "觀察類股", "極端狀態", "水溫走勢"],
   uscap: ["US Capitulation", "恐慌", "拋售", "Put/Call", "VIX", "VXN", "止穩", "capitulation"],
