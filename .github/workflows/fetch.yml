@@ -469,6 +469,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_tw50_ma_breadth.py
 
+      - name: Fetch Taiwan VIX (期交所臺指選擇權波動率指數，近 4 個月月檔，逐日累積)
+        continue-on-error: true
+        run: python scripts/fetch_twvix.py
+
       - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
         continue-on-error: true
         run: python scripts/fetch_taiwan_mktcap_anchor.py

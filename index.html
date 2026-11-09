@@ -2615,6 +2615,21 @@
     </ol>
     <p class="noobs-note">限制：0050 成分股依異動表回推，5 檔已下市／合併的舊成分股抓不到價格；加權是價格指數、不含股息。門檻是看完歷史才挑的整數，訊號次數少，結果容易被 2018、2020、2022、2025 幾次大跌主導。</p>
   </section>
+  <section id="tab-twzone" class="tab-section" hidden>
+    <header class="twzone-head"><h2 class="section-title">台股底部區域</h2><span id="twzone-asof" class="status"></span><a class="twzone-link" href="#tab=noobs">回測結果 →</a></header>
+    <p id="twzone-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <p class="twzone-note">加權＋無觀察類股＋0050 成分股均線廣度（20／50／200 日線）＋台指 VIX。紅色區域＝至少一個條件成立，顏色越深＝同時成立越多。只描述盤面，不是買賣訊號。</p>
+    <div id="twzone-cards" class="twzone-cards"></div>
+    <div id="twzone-range" class="twzone-controls"><span class="chip" data-twzone-range="1Y">1 年</span><span class="chip" data-twzone-range="3Y">3 年</span><span class="chip active" data-twzone-range="10Y">10 年</span></div>
+    <div id="twzone-chart" class="twzone-chart" role="img" aria-label="加權指數與底部區域、各條件成立帶、均線廣度、台指 VIX"></div>
+    <ul class="twzone-legend">
+      <li><b>上</b>：加權（對數刻度），紅色區域深淺＝同時成立 1～4 個條件。</li>
+      <li><b>色帶</b>：每一列是一個條件，有色＝當天成立。無觀察類股＝近 22 個交易日 ≥ 3 天；廣度＝0050 成分股站上 20／50／200 日線的比例 ≤ 10%／15%／30%。</li>
+      <li><b>廣度</b>：三條線是站上各均線的比例，虛線是門檻。</li>
+      <li><b>波動</b>：紅線＝台指 VIX（期交所，免費資料只有近 4 個月，本站從 2026-08 起每天累積；更早的歷史要向期交所購買）；灰線＝加權 20 日已實現波動（年化 %），當作長期替代。</li>
+    </ul>
+    <p class="twzone-note">各條件近 10 年的歷史報酬比較見「無觀察類股回測」：無觀察類股（全市場）單獨看和任意一天買進差不多；20 日線、200 日線廣度在加權和 0050 都比較好。</p>
+  </section>
   <section id="tab-qqqpanic" class="tab-section" hidden>
     <header><h2 class="section-title">QQQ 盤中急跌 × 恐慌背離</h2>
       <p class="section-subtitle">盤中跌幅（Low ÷ 前收）· VIX High／Fear &amp; Greed 恐慌分類 · 事前／事後觀察窗分開 · 2015-01-01 起</p>

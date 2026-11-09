@@ -1600,3 +1600,19 @@
 #tab-twheatmap .twhm-row.open .twhm-stocks { display:grid; }
 #tab-twheatmap .twhm-stock { display:flex; justify-content:space-between; gap:6px; font-size:12px; padding:3px 6px; border-radius:4px; font-variant-numeric:tabular-nums; }
 #tab-twheatmap .twhm-note { color:var(--muted); font-size:13px; line-height:1.6; margin:12px 0; }
+
+/* 台股底部區域 */
+#tab-twzone .twzone-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 14px; }
+#tab-twzone .twzone-link { margin-left:auto; font-size:13px; }
+#tab-twzone .twzone-note { color:var(--muted); font-size:13px; line-height:1.6; margin:4px 0 10px; }
+#tab-twzone .twzone-cards { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; margin-bottom:10px; }
+@media (max-width:900px) { #tab-twzone .twzone-cards { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+#tab-twzone .twzone-card { border:1px solid var(--border); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; gap:2px; min-width:0; }
+#tab-twzone .twzone-card.on { border-width:2px; }
+#tab-twzone .twzone-k { color:var(--muted); font-size:12px; }
+#tab-twzone .twzone-v { font-size:20px; font-weight:600; }
+#tab-twzone .twzone-sub { color:var(--muted); font-size:11px; }
+#tab-twzone .twzone-controls { display:flex; gap:6px; margin-bottom:6px; }
+#tab-twzone .twzone-chart { width:100%; height:640px; }
+@media (max-width:600px) { #tab-twzone .twzone-chart { height:560px; } }
+#tab-twzone .twzone-legend { font-size:13px; line-height:1.7; padding-left:18px; color:var(--muted); }

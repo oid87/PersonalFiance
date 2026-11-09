@@ -42,7 +42,7 @@ export const CATEGORIES = [
   ] },
   { id: 'risk', label: '波動與風險', pages: [
     { id: 'p-extreme', label: '極端狀態', views: [
-      view('nonnormal', '極端狀態儀表板'), view('nonnormalhist', '過往觀察'), view('mainstream', '無主流日'), view('noobs', '無觀察類股回測')] },
+      view('nonnormal', '極端狀態儀表板'), view('nonnormalhist', '過往觀察'), view('mainstream', '無主流日'), view('noobs', '無觀察類股回測'), view('twzone', '台股底部區域')] },
     { id: 'p-usalert', label: '美股警報', views: [
       view('usrisk', '美股風險觀察'), view('uscap', '美股恐慌拋售警報'),
       view('qqqpanic', 'QQQ恐慌背離回測'), view('tqqqflow', 'TQQQ資金流回測')] },
@@ -94,6 +94,7 @@ const ALIASES = {
   overview: ['首頁', '總覽', '今日', '警報', '燈號', 'home'],
   usrisk: ["美股去槓桿", "US risk", "CFTC", "FINRA", "科技壓力"],
   nonnormal: ["極端", "極端狀態", "共振", "多重確認", "台股", "費半", "櫃買", "VIX", "水溫", "長線水溫", "年線", "兩年線", "五年線", "十年線", "三角型"],
+  twzone: ["底部", "台指VIX", "TWVIX", "VIX", "廣度", "無觀察", "均線"],
   noobs: ["無觀察", "觀察類股", "回測", "機會", "10年"],
   twheatmap: ["熱力圖", "族群", "產業", "漲跌", "台股", "heatmap"],
   mainstream: ["無主流", "主流族群", "族群", "觀察類股", "強勢股", "創高", "爆量"],

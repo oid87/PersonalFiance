@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 99,
+  "source_count": 100,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -2624,6 +2624,39 @@
           "required_fields": [],
           "numeric_policy": "finite_when_present",
           "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_twvix.py",
+      "outputs": [
+        "data/twvix.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/twvix.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date",
+            "close"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "close",
+            "close_1m"
+          ]
         }
       }
     },
