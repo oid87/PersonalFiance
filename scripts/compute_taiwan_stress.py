@@ -65,10 +65,21 @@ def main() -> None:
     fx = pd.DataFrame(load("usdtwd"))[["date", "close"]].rename(columns={"close": "fx"})
     mar = pd.DataFrame(load("taiwan_margin_ratio"))[["date", "ratio"]].rename(columns={"ratio": "mratio"})
     fut = pd.DataFrame(load("taiwan_fut_inst"))[["date", "foreign_net"]]
+    # 扣除 ETF 口徑：mm 檔（2004～）＋ 逐日檔的 ratio_exetf，同日以逐日檔為準
+    ex_map = {}
+    for src, key in (("taiwan_margin_ratio_mm", "ratio_exetf"), ("taiwan_margin_ratio", "ratio_exetf")):
+        try:
+            for r in load(src):
+                if r.get(key) is not None:
+                    ex_map[r["date"]] = r[key]
+        except FileNotFoundError:
+            pass
+    mar = mar.merge(pd.DataFrame(sorted(ex_map.items()), columns=["date", "mratio_ex"]), on="date", how="outer") \
+        if ex_map else mar.assign(mratio_ex=np.nan)
 
     df = twii.merge(fx, on="date", how="left").merge(mar, on="date", how="left") \
              .merge(fut, on="date", how="left").sort_values("date").reset_index(drop=True)
-    for c in ("fx", "mratio", "foreign_net"):
+    for c in ("fx", "mratio", "mratio_ex", "foreign_net"):
         df[c] = pd.to_numeric(df[c], errors="coerce").ffill(limit=3)
     df["twii"] = pd.to_numeric(df["twii"], errors="coerce")
 
@@ -77,6 +88,7 @@ def main() -> None:
     df["eqvol"] = roll_pct(realized_vol(df["twii"]))             # high equity vol = stress
     df["margin"] = 100.0 - roll_pct(df["mratio"])               # low maintenance ratio = stress
     df["foreign"] = 100.0 - roll_pct(df["foreign_net"])         # low/short foreign futures = risk-off
+    df["margin_ex"] = 100.0 - roll_pct(df["mratio_ex"])         # 扣除 ETF 口徑
 
     comps = list(WEIGHTS)
     W = np.array([WEIGHTS[c] for c in comps])
@@ -86,13 +98,19 @@ def main() -> None:
     csum = np.nansum(M * W, axis=1)
     composite = np.divide(csum, wsum, out=np.full_like(csum, np.nan), where=wsum > 0)
     df["composite"] = np.round(composite, 1)
+    comps_ex = ["margin_ex" if c == "margin" else c for c in comps]
+    M2 = df[comps_ex].to_numpy(dtype=float)
+    mask2 = ~np.isnan(M2)
+    wsum2 = (mask2 * W).sum(axis=1)
+    comp2 = np.divide(np.nansum(M2 * W, axis=1), wsum2, out=np.full_like(wsum2, np.nan), where=wsum2 > 0)
+    df["composite_ex"] = np.round(comp2, 1)
 
     out = df.dropna(subset=["composite"])
     rows = [{
         "date": r["date"],
         "twii": None if pd.isna(r["twii"]) else round(float(r["twii"]), 2),
         "composite": r["composite"],
-        **{c: (None if pd.isna(r[c]) else round(float(r[c]), 1)) for c in comps},
+        **{c: (None if pd.isna(r[c]) else round(float(r[c]), 1)) for c in comps + ["composite_ex", "margin_ex"]},
     } for _, r in out.iterrows()]
 
     latest = rows[-1]
@@ -100,7 +118,7 @@ def main() -> None:
         "source": "PersonalFiance compute_taiwan_stress (匯率波動 + 股市波動 + 融資維持率 + 外資期貨)",
         "note": ("台股金融壓力綜合 0-100，越高壓力越大（非反向情緒）。各leg取2年滾動百分位後加權平均。"
                  "缺 credit spread / funding 兩維（台灣免費端無乾淨日序）。融資維持率僅 2022-12 起，"
-                 "該leg百分位歷史較短。"),
+                 "該leg百分位歷史較短。composite_ex/margin_ex＝融資維持率改用扣除 ETF 口徑（mm 檔 2004 起＋逐日檔）。"),
         "weights": WEIGHTS,
         "components": COMPONENT_LABELS,
         "updated": date.today().isoformat(),

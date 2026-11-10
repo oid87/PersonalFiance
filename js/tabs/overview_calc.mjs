@@ -73,7 +73,7 @@ export const ALERT_CARDS = [
       return {
         level,
         state: (s.zone?.label || '維持率資料不足') + (s.triggered ? `・今日融資單日 ≤ −${s.th}%` : ''),
-        detail: `融資維持率（重建）${fmt(s.ratio, 1)}%；警戒 ${s.warn}、爆炸 ${s.boom}`,
+        detail: `融資維持率（重建·${s.basis === 'ex' ? '扣除 ETF' : '含 ETF'}）${fmt(s.ratio, 1)}%；警戒 ${s.warn}、爆炸 ${s.boom}`,
         date: s.ratioDate || s.date,
       };
     },

@@ -9,6 +9,7 @@
 import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { requestJSON } from '../utils/data.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
+import { getMarginBasis, onMarginBasisChange, mountMarginBasisPicker } from '../utils/marginBasis.js';
 
 const DIMS = [
   { key: "fx",      name: "匯率波動",  color: "#e3b341" },
@@ -26,15 +27,25 @@ let tsRange = "10Y";
 let showTwii = true;
 let rows = null;   // [{date, twii, composite, fx, eqvol, margin, foreign, ma20, ma50, ma200}]
 
+let srcRows = null, rowsBasis = null, basisWired = false;
+// 融資維持率口徑：扣除 ETF 時改用 composite_ex／margin_ex（compute_taiwan_stress.py 另算）
+function buildRows() {
+  const ex = getMarginBasis() === 'ex' && srcRows.some(r => Number.isFinite(r?.composite_ex));
+  const next = srcRows.map(d => (ex ? { ...d, composite: d.composite_ex ?? d.composite, margin: d.margin_ex ?? null } : { ...d }))
+    .filter(d => Number.isFinite(d.composite));
+  computeMA(next);
+  rows = next; rowsBasis = getMarginBasis();
+}
+
 async function loadAll(context = {}) {
-  if (rows) return;
+  if (rows && rowsBasis === getMarginBasis()) return;
+  if (srcRows) { buildRows(); return; }
   const payload = await requestJSON("data/taiwan_stress.json", { signal: context.signal });
   if (!Array.isArray(payload?.data) || !payload.data.length) throw new Error("taiwan_stress.json: missing data rows");
   if (!payload.data.some(r => Number.isFinite(r?.composite))) throw new Error("taiwan_stress.json: no usable stress rows");
   if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
-  const nextRows = payload.data.map(d => ({ ...d }));
-  computeMA(nextRows);
-  rows = nextRows;
+  srcRows = payload.data;
+  buildRows();
 }
 
 // check_reuse: keep — 就地 mutate 物件陣列、一次跑一整組 period 並綁死欄位名,與 canonical math.computeMA(data, period) 是不同概念
@@ -255,6 +266,8 @@ export async function activate(context = {}) {
   if (!host) return;
   if (!tsChart) tsChart = echarts.init(host, isLight() ? null : "dark");
   buildControls();
+  mountMarginBasisPicker(document.querySelector('#tab-twstress .controls'));
+  if (!basisWired) { basisWired = true; onMarginBasisChange(() => { if (srcRows) { buildRows(); if (tsChart && !document.getElementById('tab-twstress')?.hidden) render(); } }); }
   try {
     await loadAll(context);
     if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
@@ -262,7 +275,7 @@ export async function activate(context = {}) {
     render();
   } catch (e) {
     if (context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
-    rows = null;
+    rows = null; srcRows = null;
     throw e;
   }
 }

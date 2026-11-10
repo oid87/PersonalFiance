@@ -96,14 +96,15 @@ function swingOf(rows, key, c, hiKey = key, loKey = key) {
 }
 
 /** 維持率合併：mm（ratio_all，2004～）與 recon（2022-12～）重疊區間數值一致；以 recon 為準。 */
-export function mergeRatio(mm = [], recon = []) {
+export function mergeRatio(mm = [], recon = [], basis = 'all') {
   const m = new Map();
-  for (const r of mm) if (isNum(r?.ratio_all)) m.set(r.date, { date: r.date, ratio: r.ratio_all });
+  const fm = basis === 'ex' ? 'ratio_exetf' : 'ratio_all', fr = basis === 'ex' ? 'ratio_exetf' : 'ratio';
+  for (const r of mm) if (isNum(r?.[fm])) m.set(r.date, { date: r.date, ratio: r[fm] });
   let overlap = 0, maxAbsDiff = 0;
   for (const r of recon) {
-    if (!isNum(r?.ratio)) continue;
-    if (m.has(r.date)) { overlap += 1; maxAbsDiff = Math.max(maxAbsDiff, Math.abs(m.get(r.date).ratio - r.ratio)); }
-    m.set(r.date, { date: r.date, ratio: r.ratio });
+    if (!isNum(r?.[fr])) continue;
+    if (m.has(r.date)) { overlap += 1; maxAbsDiff = Math.max(maxAbsDiff, Math.abs(m.get(r.date).ratio - r[fr])); }
+    m.set(r.date, { date: r.date, ratio: r[fr] });
   }
   return { rows: [...m.values()].sort(byDate), overlap, maxAbsDiff };
 }

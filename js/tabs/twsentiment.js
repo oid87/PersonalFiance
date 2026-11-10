@@ -4,6 +4,7 @@ import { isLight, tc, mob, PALETTE } from '../utils/theme.js';
 import { tsToLocalDate, lookupLE } from '../utils/dates.js';
 import { requestJSON, clearRequestCache } from '../utils/data.js';
 import { bindOnce } from '../utils/dom.js';
+import { getMarginBasis, onMarginBasisChange, mountMarginBasisPicker } from '../utils/marginBasis.js';
 import { forcedRangeStats, KILL_RULE, BIG_KILL_RULE } from './twforced_calc.mjs';
 
 let chart = null, gauge = null, mcChart = null, basisChart = null, chipsChart = null, forcedChart = null;
@@ -31,6 +32,14 @@ const C = {
 // daily=[[date,ratio],...](taiwan_margin_ratio.json,2022-12起、CI 逐日更新、口徑相同)。
 // 只取 mm 早於 daily 第一天的那段接在前面,重疊與之後一律用 daily(逐日檔是權威來源);
 // null/undefined 的 ratio_all 列跳過。任一來源為空陣列時回傳另一來源。
+let mrSrc = null, basisWired = false;
+// 依目前口徑（含 ETF／扣除 ETF）拼接融資維持率
+function basisRatio() {
+  const ex = getMarginBasis() === 'ex';
+  const pick = (rows, k) => rows.filter(r => typeof r?.date === 'string' && Number.isFinite(r[k])).map(r => [r.date, r[k]]);
+  return spliceMarginRatio(pick(mrSrc.mm, ex ? 'ratio_exetf' : 'ratio_all'), pick(mrSrc.daily, ex ? 'ratio_exetf' : 'ratio'));
+}
+
 export function spliceMarginRatio(mm, daily) {
   const dailyRows = daily || [];
   const mmRows = mm || [];
@@ -118,8 +127,7 @@ export async function init(context = {}) {
       optionalJSON('data/tw_daytrading.json', j => Array.isArray(j?.data) &&
         j.data.some(r => typeof r?.date === 'string' && Number.isFinite(r.shares_ratio)), context),
     ]);
-    const dailyRatio = dailyPayload?.data?.map(r => [r.date, r.ratio]) ?? [];
-    const mmRatio = mmPayload?.data?.map(r => [r.date, r.ratio_all]) ?? [];
+    mrSrc = { daily: dailyPayload?.data ?? [], mm: mmPayload?.data ?? [] };
     if (context.signal?.aborted || context.isCurrent?.() === false) return;
     sent = s;
     twii = t.data.map(r => [r.date, r.close]);
@@ -127,13 +135,18 @@ export async function init(context = {}) {
     fut = f.data;
     mar = m.data;
     marPairs = m.data.map(r => [r.date, r.margin_money]);
-    mr = spliceMarginRatio(mmRatio, dailyRatio);
+    mr = basisRatio();
     mcData = mcPayload;
     basisData = basisPayload?.data ?? null;
     tdccData = tdccPayload;
     daytradeData = daytradePayload;
 
     renderAll();
+    mountMarginBasisPicker(document.querySelector('#tab-twsent .controls'));
+    if (!basisWired) {
+      basisWired = true;
+      onMarginBasisChange(() => { if (!mrSrc) return; mr = basisRatio(); if (sent) renderAll(); });
+    }
     document.querySelectorAll("[data-twsent-range]").forEach(el => {
       if (!bindOnce(el)) return;
       el.addEventListener("click", () => {
@@ -231,7 +244,7 @@ function renderForced() {
      <span style="font-size:13px">融資餘額 ${dropSpan(mgnDrop, true)}</span>
      ${mrLat ? `<span style="color:var(--muted)">·</span><span style="font-size:13px">維持率 <b style="color:${C.maint}">${mrLat[1].toFixed(0)}%</b></span>` : ""}
      <div style="margin-top:5px;color:var(--muted);font-size:11px;line-height:1.45">
-       融資維持率＝玩股網式(融資現值 ÷ 放款金額);含/扣 ETF 幾乎相同(≈180%,因 ETF 與個股維持率此刻近乎一致)。
+       融資維持率＝融資現值 ÷ 放款金額;目前口徑:<b>${getMarginBasis() === 'ex' ? '扣除 ETF(分子去掉 ETF,分母不變,M平方/CMoney 式)' : '含 ETF(玩股網/XQ 式)'}</b>,上方可切換。
        M平方 159% 係<b>不同公式、非同口徑</b>,勿跨家比絕對值——此線非券商整戶維持率,勿貼 130% 追繳線,看<b>相對位階與有無翻頭</b>即可。</div>`;
 
   if (!forcedChart) {

@@ -8,7 +8,7 @@ import { latestTask } from '../utils/tools_contracts.mjs';
 const money = (changes = {}) => ({ updated: '2025-03-23', monthly: [{ date: '2025-02-01', freq: 'monthly',
   m1b_yoy: 7.18, m2_yoy: 6.92, spread: 0.26, ...changes }],
   annual: [{ date: '2025-12-31', freq: 'annual', m1b_yoy: 99, m2_yoy: 0, spread: 99 }] });
-const daily = value => ({ updated: '2025-03-23', data: [{ date: '2025-03-21', close: value, ratio: value, margin_money: value }] });
+const daily = value => ({ updated: '2025-03-23', data: [{ date: '2025-03-21', close: value, ratio: value, ratio_exetf: value, margin_money: value }] });
 const request = async file => file.includes('money_supply') ? money() : daily(0);
 
 test('latest source rows preserve raw zero, independent dates, save stamps and snapshot scope without mutation', () => {
@@ -63,7 +63,7 @@ test('source-local failure leaves other rows available and explicit retry forwar
     if (file.includes('money_supply')) return {};
     return request(file);
   }, onInvalid: file => invalid.push(file) });
-  assert.equal(rows.length, 6); assert.equal(rows.filter(row => row.status === 'available').length, 3);
+  assert.equal(rows.length, 7); assert.equal(rows.filter(row => row.status === 'available').length, 4);
   assert.equal(rows.filter(row => row.status === 'unavailable').length, 3);
   assert.deepEqual(invalid, ['data/taiwan_money_supply.json']);
   assert.deepEqual(calls.map(call => call.file), TAIWAN_OBSERVATION_SOURCES.map(source => source.file));
@@ -84,9 +84,9 @@ test('invalid stored spread discards validation cache but keeps its valid consti
   assert.equal(rows.find(row => row.key === 'm2').value, 6.92);
 });
 
-test('all source failures retain six explicit unavailable rows; abort does not commit partial or stale results', async () => {
+test('all source failures retain seven explicit unavailable rows; abort does not commit partial or stale results', async () => {
   const failed = await loadTaiwanObservations({ request: async () => { throw new Error('fixture unavailable'); } });
-  assert.equal(failed.length, 6); assert.ok(failed.every(row => row.value === null && row.status === 'unavailable'));
+  assert.equal(failed.length, 7); assert.ok(failed.every(row => row.value === null && row.status === 'unavailable'));
   assert.match(unavailableTaiwanRows('money', 'fixture reason')[0].reason, /fixture reason/);
   const task = latestTask(), commits = [], errors = [], pending = [];
   const old = task.run(signal => loadTaiwanObservations({ signal, request: () => new Promise(resolve => pending.push(resolve)) }),

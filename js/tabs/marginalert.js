@@ -13,6 +13,7 @@ import {
 } from './marginalert_calc.mjs';
 import { analyzeHistory, scenarioView, signalOverlap, MANUAL_BETAS, KEY_DROP_PTS, buildChartSeries, windowSlice, endForWave } from './marginstress_calc.mjs';
 import { chipPicker } from '../utils/dom.js';
+import { getMarginBasis, onMarginBasisChange, mountMarginBasisPicker, BASIS_LABEL } from '../utils/marginBasis.js';
 import { minSpanForAxis } from '../utils/zoomFloor.js';
 
 const TAB_ID = 'marginalert';
@@ -114,7 +115,7 @@ async function loadAll(context = {}) {
     });
   } catch (e) { if (context.signal?.aborted) throw e; }
   if (context.signal?.aborted || context.isCurrent?.() === false) return;
-  const merged = mergeRatio(mm, rc);
+  const merged = mergeRatio(mm, rc, getMarginBasis());
   if (!merged.rows.length && !partial) partial = '無維持率資料：規則 B 停用（不估算）';
   const lastDate = margin.reduce((m, r) => (r.date > m ? r.date : m), '');
   let sum5 = 0;
@@ -122,7 +123,7 @@ async function loadAll(context = {}) {
     sum5 += x.close; if (i >= 1250) sum5 -= twii[i - 1250].close;
     return [x.date, { ...peakDraw(twii, i, 'high', 'low'), ma5y: i >= 1249 ? sum5 / 1250 : null, dayLow: x.low }];
   }));
-  raw = { twPd, txSw, twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, earlyCount, marginUpdated: mg.updated, source: mg.source };
+  raw = { mmRaw: mm, rcRaw: rc, basis: getMarginBasis(), twPd, txSw, twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, earlyCount, marginUpdated: mg.updated, source: mg.source };
   ui.end = lastDate;
 }
 
@@ -157,6 +158,7 @@ function deriveSelection() {
 export async function overviewSummary(context = {}) {
   await loadAll(context);
   if (!raw || context.signal?.aborted || context.isCurrent?.() === false) return null;
+  if (raw.basis !== getMarginBasis()) applyBasis(getMarginBasis(), false);
   if (!res) recompute();
   const { ds } = res, days = ds.days;
   const last = [...days].reverse().find(d => isNum(d.ratio));
@@ -164,7 +166,7 @@ export async function overviewSummary(context = {}) {
   return {
     date: days.at(-1)?.date ?? null, ratio: last?.ratio ?? null, ratioDate: last?.date ?? null,
     zone: zoneOf(last?.ratio), triggered: flags.includes(days.length - 1),
-    marginDay: days.at(-1)?.m?.[1] ?? null, th: ui.th, warn: WARN_LV, boom: BOOM_LV,
+    marginDay: days.at(-1)?.m?.[1] ?? null, basis: raw.basis, th: ui.th, warn: WARN_LV, boom: BOOM_LV,
   };
 }
 
@@ -314,7 +316,7 @@ function buildOption() {
   const ratioC = '#f59e0b', marginC = '#58a6ff';
   return echartsBase({
     animation: false,
-    legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['加權指數', `警報首日(≤-${ui.th}%)`, '同波續發日', '融資餘額(億)', '融資維持率(重建)', '融資單日%', ...(showFg ? ['恐懼貪婪'] : [])] },
+    legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['加權指數', `警報首日(≤-${ui.th}%)`, '同波續發日', '融資餘額(億)', `融資維持率(重建·${BASIS_LABEL[raw?.basis || 'all']})`, '融資單日%', ...(showFg ? ['恐懼貪婪'] : [])] },
     tooltip: {
       trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 12 },
       confine: true, extraCssText: `white-space:normal;width:${mob() ? 250 : 290}px;line-height:1.45`,
@@ -365,7 +367,7 @@ function buildOption() {
       { name: '同波續發日', type: 'scatter', xAxisIndex: 0, yAxisIndex: 0, data: rest, symbol: 'circle', symbolSize: 6, itemStyle: { color: '#e3b341' }, z: 4 },
       { name: '融資餘額(億)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: days.map(d => d.margin), showSymbol: false, lineStyle: { width: 1.2, color: marginC }, itemStyle: { color: marginC },
         markArea: { silent: true, data: fearAreas } },
-      { name: '融資維持率(重建)', type: 'line', xAxisIndex: 1, yAxisIndex: 2, data: days.map(d => (isNum(d.ratio) ? d.ratio : null)), showSymbol: false, connectNulls: false,
+      { name: `融資維持率(重建·${BASIS_LABEL[raw?.basis || 'all']})`, type: 'line', xAxisIndex: 1, yAxisIndex: 2, data: days.map(d => (isNum(d.ratio) ? d.ratio : null)), showSymbol: false, connectNulls: false,
         lineStyle: { width: 1.5, color: ratioC }, itemStyle: { color: ratioC },
         markLine: { silent: true, symbol: 'none', label: { position: 'insideStartTop', fontSize: 10 }, data: [
           { yAxis: WARN_LV, lineStyle: { color: '#e3b341', type: 'dashed' }, label: { formatter: `警戒 ${WARN_LV}`, color: '#e3b341' } },
@@ -600,7 +602,7 @@ function stOption(win) {
   const yA = (gridIndex, name, extra = {}) => ({ type: 'value', gridIndex, name, scale: true, nameTextStyle: { color: PALETTE.muted, fontSize: 10 }, axisLabel: { color: PALETTE.muted, fontSize: 11 }, splitLine: { lineStyle: { color: PALETTE.grid } }, ...extra });
   return echartsBase({
     animation: false,
-    legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['加權指數', '融資維持率（重建）', '爆掉點 ≥3%', '爆掉點 2～3%', '融資餘額(億)'] },
+    legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['加權指數', `融資維持率（重建·${BASIS_LABEL[raw?.basis || 'all']}）`, '爆掉點 ≥3%', '爆掉點 2～3%', '融資餘額(億)'] },
     tooltip: {
       trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 12 },
       formatter(params) {
@@ -617,7 +619,7 @@ function stOption(win) {
     xAxis: [axis(0, false), axis(1, true)],
     yAxis: [yA(0, mob() ? '' : '維持率 %', { axisLabel: { color: ratioC, fontSize: 11 } }), yA(0, mob() ? '' : '加權指數', { position: 'right', splitLine: { show: false } }), yA(1, mob() ? '' : '融資(億)')],
     series: [
-      { name: '融資維持率（重建）', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => r.ratio), showSymbol: false, lineStyle: { width: 1.6, color: ratioC }, itemStyle: { color: ratioC }, areaStyle: { color: ratioC, opacity: 0.10 },
+      { name: `融資維持率（重建·${BASIS_LABEL[raw?.basis || 'all']}）`, type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: rows.map(r => r.ratio), showSymbol: false, lineStyle: { width: 1.6, color: ratioC }, itemStyle: { color: ratioC }, areaStyle: { color: ratioC, opacity: 0.10 },
         markLine: { silent: true, symbol: 'none', label: { formatter: '130% 個別帳戶追繳線', color: PALETTE.muted, fontSize: 10, position: 'insideStartTop' }, lineStyle: { color: PALETTE.muted, type: 'dashed' }, data: [{ yAxis: 130 }] } },
       { name: '加權指數', type: 'line', xAxisIndex: 0, yAxisIndex: 1, data: rows.map(r => r.close), showSymbol: false, lineStyle: { width: 1.4, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
         markArea: { silent: true, label: { color: PALETTE.muted, fontSize: 10 }, data: areas } },
@@ -889,7 +891,7 @@ function renderZone() {
   const hits = days.filter(d => isNum(d.ratio) && isNum(d.m[1]) && d.m[1] <= -ui.th);
   const missed = hits.filter(d => d.ratio >= WARN_LV).length;
   const rng = z => (z.key === 'ok' ? `≥ ${WARN_LV}` : z.key === 'warn' ? `${BOOM_LV}～${WARN_LV}` : `< ${BOOM_LV}`);
-  const card = `<div class="lev-card" style="min-width:240px;max-width:360px"><div class="lc-sub">最新 ${esc(last.date)}｜維持率(重建)</div>` +
+  const card = `<div class="lev-card" style="min-width:240px;max-width:360px"><div class="lc-sub">最新 ${esc(last.date)}｜維持率(重建·${BASIS_LABEL[raw?.basis || 'all']})</div>` +
     `<div class="lc-val">${f(last.ratio, 1)} ${zoneText(zoneOf(last.ratio))}</div><div class="lc-sub" style="line-height:1.6">${projLine(last)}<br>${needLine(last, WARN_LV, '警戒')}<br>${needLine(last, BOOM_LV, '爆炸')}</div></div>`;
   el.innerHTML = card +
     `<div style="flex:1;min-width:260px">` +
@@ -1000,6 +1002,8 @@ export async function activate(context = {}) {
     await loadAll(context);
     if (context.signal?.aborted || context.isCurrent?.() === false) return;
     wire();
+    wireBasis();
+    if (raw.basis !== getMarginBasis()) applyBasis(getMarginBasis(), false);
     syncChips();
     syncStressControls();
     if (!res) recompute();
@@ -1012,6 +1016,26 @@ export async function activate(context = {}) {
     throw e;
   }
 }
+// 融資維持率口徑切換（含 ETF／扣除 ETF，各頁共用設定）
+let basisWired = false;
+function applyBasis(b, redraw = true) {
+  if (!raw) return;
+  const merged = mergeRatio(raw.mmRaw, raw.rcRaw, b);
+  raw.basis = b; raw.ratio = merged.rows; raw.ratioInfo = merged;
+  res = null; stressOv = null; stressH = null; stSeries = null; stSeriesByDate = null;
+  if (redraw && chart && !$('chart')?.closest('[hidden]')) { recompute(); draw(); if (stChart) renderStressChart(); }
+}
+function wireBasis() {
+  const st = $('status');
+  if (st && !document.getElementById('marginalert-basis-host')) {
+    const h = document.createElement('div'); h.id = 'marginalert-basis-host'; h.style.cssText = 'padding:0 16px 8px';
+    st.after(h);
+  }
+  mountMarginBasisPicker(document.getElementById('marginalert-basis-host'), { label: '上市融資維持率口徑：' });
+  if (basisWired) return; basisWired = true;
+  onMarginBasisChange(b => applyBasis(b));
+}
+
 export function onThemeChange(light) {
   closeInfo();
   if (!chart) return;
