@@ -117,7 +117,11 @@ async function loadAll(context = {}) {
   const merged = mergeRatio(mm, rc);
   if (!merged.rows.length && !partial) partial = '無維持率資料：規則 B 停用（不估算）';
   const lastDate = margin.reduce((m, r) => (r.date > m ? r.date : m), '');
-  const twPd = new Map(twii.map((x, i) => [x.date, peakDraw(twii, i, 'high', 'low')]));
+  let sum5 = 0;
+  const twPd = new Map(twii.map((x, i) => {
+    sum5 += x.close; if (i >= 1250) sum5 -= twii[i - 1250].close;
+    return [x.date, { ...peakDraw(twii, i, 'high', 'low'), ma5y: i >= 1249 ? sum5 / 1250 : null, dayLow: x.low }];
+  }));
   raw = { twPd, txSw, twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, earlyCount, marginUpdated: mg.updated, source: mg.source };
   ui.end = lastDate;
 }
@@ -262,7 +266,8 @@ function drawTable(d, tx) {
   const body = row('加權', pd) + (tx ? row('台指期日盤', tx.dd.day) + row('台指期夜盤', tx.dd.night) + row('期貨合併', tx.dd.all) : '');
   if (!body) return '';
   return `<table style="border-collapse:collapse;font-size:11px;width:100%;margin-top:4px">` +
-    `<tr style="color:${PALETTE.muted}"><td>60日高→最低</td><td ${td}>高點</td><td ${td}>最低</td><td ${td}>跌幅</td></tr>` + body + '</table>';
+    `<tr style="color:${PALETTE.muted}"><td>60日高→最低</td><td ${td}>高點</td><td ${td}>最低</td><td ${td}>跌幅</td></tr>` + body + '</table>' +
+    (isNum(pd?.ma5y) ? `<div style="font-size:11px">5年線（1250日均）${f(pd.ma5y, 0)}｜當日盤中低距5年線 ${sg(pctChg(pd.dayLow, pd.ma5y), 1)}%</div>` : '');
 }
 // 指數與融資背離（只在發生時顯示一行；描述現況，回測沒有穩定的預測方向，不當訊號）：
 // ①指數距 60 日高 ≤ -8%，融資卻比指數高點那天多 → 接刀

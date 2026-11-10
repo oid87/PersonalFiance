@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 100,
+  "source_count": 101,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -1976,6 +1976,40 @@
       "status": "scheduled",
       "output_contracts": {
         "data/taiwan_basis.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "basis",
+            "basis_pct",
+            "futures",
+            "spot"
+          ]
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tx_hilo.py",
+      "outputs": [
+        "data/tx_hilo.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tx_hilo.json": {
           "profile": "dated_rows",
           "key_fields": [
             "date"
