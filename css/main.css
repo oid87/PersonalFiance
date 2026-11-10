@@ -1616,3 +1616,9 @@
 #tab-twzone .twzone-chart { width:100%; height:640px; }
 @media (max-width:600px) { #tab-twzone .twzone-chart { height:560px; } }
 #tab-twzone .twzone-legend { font-size:13px; line-height:1.7; padding-left:18px; color:var(--muted); }
+#tab-twzone .twzone-card.off { opacity:.45; }
+#tab-twzone .twzone-tg-label { color:var(--muted); font-size:13px; align-self:center; }
+#tab-twzone .twzone-controls { flex-wrap:wrap; }
+#tab-twzone .twzone-explain { border:1px solid var(--border); border-radius:8px; padding:8px 12px; margin:12px 0; font-size:13px; line-height:1.7; }
+#tab-twzone .twzone-explain summary { cursor:pointer; font-weight:600; font-size:14px; }
+#tab-twzone .twzone-explain p { margin:6px 0; }

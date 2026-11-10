@@ -1,5 +1,5 @@
 """臺灣50 成分股均線廣度：每天站上 20／50／100／200 日均線的檔數占比（point-in-time 成分股，_tw50_history）。
-輸出 data/tw50_ma_breadth.json：[{date, n, p20, p50, p100, p200}]，2014-01 起。
+輸出 data/tw50_ma_breadth.json：[{date, n, p20, p50, p100, p200}]，2010-01 起；2013-06 以前的成分股用最早一筆名單近似。
 價格用 yfinance auto_adjust（還原除權息，避免除息缺口讓股價誤跌破均線）；每次整段重算（約 120 檔，1 次下載）。
 """
 from __future__ import annotations
@@ -14,7 +14,7 @@ import _tw50_history as T
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "tw50_ma_breadth.json"
-START, DL_START = "2014-01-01", "2012-12-01"
+START, DL_START = "2010-01-01", "2008-11-01"
 MAS = (20, 50, 100, 200)
 MIN_N = 40  # 當天有效檔數不足就不寫
 

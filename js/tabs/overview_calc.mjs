@@ -25,7 +25,7 @@ function once(context, key, load) {
 const summary = (context, file) =>
   once(context, file, async () => (await import(`./${file}.js`)).overviewSummary(context));
 
-// ── 警報（美股兩頁合成「美股警報」，所以是三張）───────────────────────────────
+// ── 警報（美股兩頁合成「美股警報」；加上台股底部區域共四張）───────────────────────────────
 // level：ok／watch／alert，各頁原本的分級對應過來，不重算。
 // 長線水溫一行字（台股兩個指數）：「；長線水溫 加權熱水・櫃買溫水」
 function longLine(rows) {
@@ -75,6 +75,19 @@ export const ALERT_CARDS = [
         state: (s.zone?.label || '維持率資料不足') + (s.triggered ? `・今日融資單日 ≤ −${s.th}%` : ''),
         detail: `融資維持率（重建）${fmt(s.ratio, 1)}%；警戒 ${s.warn}、爆炸 ${s.boom}`,
         date: s.ratioDate || s.date,
+      };
+    },
+  },
+  {
+    title: '台股底部區域', tab: 'twzone',
+    async load(context) {
+      const s = need(await summary(context, 'twzone'), '底部區域');
+      const pc = v => (isNum(v) ? v.toFixed(0) + '%' : '—');
+      return {
+        level: s.count >= 2 ? 'alert' : s.count === 1 ? 'watch' : 'ok',
+        state: `${s.count}/${s.total} 個條件成立` + (s.lit.length ? `（${s.lit.join('、')}）` : ''),
+        detail: `無觀察 ${s.obs ?? '—'} 天・站上 20/50/200 日線 ${pc(s.b20)} / ${pc(s.b50)} / ${pc(s.b200)}・台指 VIX ${fmt(s.vix, 1)}`,
+        date: s.date,
       };
     },
   },

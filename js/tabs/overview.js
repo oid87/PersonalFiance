@@ -33,7 +33,7 @@ function buildShell(section) {
         <button type="button" class="chip" data-ov-market="tw" aria-pressed="false">台股</button>
       </div>
     </div>
-    <p class="ov-lead">先看警報有沒有亮，再看六個主題各自的位置；每張卡點下去就是那一頁的明細。數字由各明細頁自己的程式算出，不會和明細頁對不上。美股的「風險觀察」與「恐慌拋售」兩頁已併成「美股警報」，所以警報是三張。</p>
+    <p class="ov-lead">先看警報有沒有亮，再看六個主題各自的位置；每張卡點下去就是那一頁的明細。數字由各明細頁自己的程式算出，不會和明細頁對不上。美股的「風險觀察」與「恐慌拋售」兩頁已併成「美股警報」；「台股底部區域」看的是相反方向（跌深、市場冷到底），亮代表可能接近底部，不是危險。</p>
     <h3>警報燈號</h3>
     <div class="ov-grid" id="overview-alerts"></div>
     <h3 id="overview-themes-title">六個主題（美股）</h3>

@@ -7,7 +7,7 @@ import { ALERT_CARDS, THEME_CARDS } from '../tabs/overview_calc.mjs';
 const ids = new Set(NAV_ITEMS.map(item => item.id));
 
 test('overview cards link to existing screens and cover both markets', () => {
-  assert.equal(ALERT_CARDS.length, 3);
+  assert.equal(ALERT_CARDS.length, 4);
   for (const card of ALERT_CARDS) {
     assert.ok(ids.has(card.tab), card.title);
     assert.equal(typeof card.load, 'function', card.title);
