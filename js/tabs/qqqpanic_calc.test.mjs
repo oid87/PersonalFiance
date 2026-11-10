@@ -298,7 +298,8 @@ test('acceptance: 2026-10-22 / 10-30 values, RVOL 2.0 filter and VIX threshold 2
   assert.ok(Math.abs(e30.dropLow - -4.458) < 0.01);
   assert.ok(Math.abs(e30.volRatio - 2.32) < 0.01);
   assert.equal(e30.vixHigh, 23.93);
-  assert.equal(e30.fg, 26.24);
+  // CNN 會事後修正當日值（10/30 盤中 26.24 → 收盤後 26.32），容許 ±0.2。
+  assert.ok(Math.abs(e30.fg - 26.3) <= 0.2, `fg ${e30.fg}`);
   assert.equal(e30.panicSub, 'A0');
   assert.ok(Math.abs(e30.ma[150].dist - -1.90) < 0.01);
   assert.equal(e30.avail, 0);

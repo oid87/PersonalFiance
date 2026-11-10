@@ -94,8 +94,11 @@ test('real data reproduces the ≥$800M TQQQ inflow table', () => {
     assert.ok(Math.abs(e.flow - flow) < 1e4, `${date} flow ${e.flow}`);
     C.HORIZONS.forEach((h, k) => assert.equal(+(e.ret.TQQQ[h] * 100).toFixed(1), rets[k], `${date} ${h}D`));
   }
-  const st = r.stats.all.TQQQ;
-  assert.deepEqual(C.HORIZONS.map(h => +(st[h].mean * 100).toFixed(1)), [8.1, 6.5, 20.0, 31.6, 47.5]);
+  // 外部表格只涵蓋到 2026-03-30 的 7 筆；之後每天新資料會再新增事件（例：2026-10-30、11-05），
+  // 所以平均只對表格裡的 7 筆算，不用會隨資料增長的 r.stats.all。
+  const table = Object.keys(expected).map(d => byDate[d]);
+  const mean = h => table.reduce((a, e) => a + e.ret.TQQQ[h], 0) / table.length;
+  assert.deepEqual(C.HORIZONS.map(h => +(mean(h) * 100).toFixed(1)), [8.1, 6.5, 20.0, 31.6, 47.5]);
   // 2021 前 TQQQ 規模小，固定 8 億從未出現。
   assert.ok(r.events.every(e => e.date >= '2021-01-01'));
 });
