@@ -101,11 +101,23 @@ async function loadAll(context = {}) {
     if (context.signal?.aborted) throw e;
     partial = (partial ? partial + '；' : '') + '恐懼貪婪資料載入失敗：F&G 圖層與區間停用';
   }
+  // 台指期近月（日盤＋夜盤）60 日高／20 日低（選用；缺檔只少一行）
+  let txSw = new Map();
+  try {
+    const t = await requestJSON('data/tx_hilo.json', { signal: context.signal });
+    const r = Array.isArray(t?.data) ? t.data : [];
+    r.forEach((x, i) => {
+      let hi = -Infinity, lo = Infinity;
+      for (let j = Math.max(0, i - 59); j <= i; j++) hi = Math.max(hi, r[j].high);
+      for (let j = Math.max(0, i - 19); j <= i; j++) lo = Math.min(lo, r[j].low);
+      txSw.set(x.date, { close: x.close, hi, lo });
+    });
+  } catch (e) { if (context.signal?.aborted) throw e; }
   if (context.signal?.aborted || context.isCurrent?.() === false) return;
   const merged = mergeRatio(mm, rc);
   if (!merged.rows.length && !partial) partial = '無維持率資料：規則 B 停用（不估算）';
   const lastDate = margin.reduce((m, r) => (r.date > m ? r.date : m), '');
-  raw = { twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, earlyCount, marginUpdated: mg.updated, source: mg.source };
+  raw = { txSw, twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, earlyCount, marginUpdated: mg.updated, source: mg.source };
   ui.end = lastDate;
 }
 
@@ -206,7 +218,7 @@ function lagLine(days, i) {
   if (!p(2) || !isNum(p(2).ratio)) return '';
   return `T-2→T 維持率 ${[2, 1, 0].map(k => f(p(k).ratio, 0)).join('→')}`;
 }
-// 60 日高點→現在（跌了多少）與 20 日低點→現在（漲了多少）：指數 %、融資 億＋%；
+// 60 日高點→現在與 20 日低點→現在：加權用盤中 high／low（抓真高低點），現值用收盤；另列台指期近月含夜盤（data/tx_hilo.json）。指數 %、融資 億＋%；
 // 「融資÷指數」＝融資變動% ÷ 指數變動%（>1 融資動得比指數兇；指數變動 <3% 時分母太小、不算）。
 // 維持率約＝指數×β，另列在維持率那行（60日），不在表內重複。
 const pctChg = (now, base) => (isNum(now) && isNum(base) && base ? (now / base - 1) * 100 : null);
@@ -218,6 +230,7 @@ function swingTable(d) {
     return { xp, mp, amt: d.margin - m[ref], lev: isNum(xp) && isNum(mp) && Math.abs(xp) >= 3 ? mp / xp : null };
   };
   const H = col('hi'), L = col('lo');
+  const tx = raw?.txSw?.get(d.date);
   const td = 'style="padding:0 0 0 6px;text-align:right;white-space:nowrap"';
   const row = (name, a, b) => `<tr><td style="white-space:nowrap">${name}</td><td ${td}>${a}</td><td ${td}>${b}</td></tr>`;
   const mg = c => `${sg(c.amt, 0)}億 ${sg(c.mp, 1)}%`;
@@ -226,6 +239,7 @@ function swingTable(d) {
     `<tr style="color:${PALETTE.muted}"><td></td><td ${td}>60日高→今</td><td ${td}>20日低→今</td></tr>` +
     row('加權', `${sg(H.xp, 1)}%`, `${sg(L.xp, 1)}%`) +
     row('融資', mg(H), mg(L)) +
+    (tx ? row('台指期含夜盤', `${sg(pctChg(tx.close, tx.hi), 1)}%`, `${sg(pctChg(tx.close, tx.lo), 1)}%`) : '') +
     row('融資÷指數', isNum(H.lev) ? `${f(H.lev, 2)}×` : '—', isNum(L.lev) ? `${f(L.lev, 2)}×` : '—') + '</table>' +
     (dv ? `<div style="font-size:11px;margin-top:2px">${dv}</div>` : '');
 }

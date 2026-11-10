@@ -88,9 +88,10 @@ function rollingMax(values, L) {
 }
 const rollingMin = (values, L) => rollingMax(values.map(v => -v), L).map(r => ({ min: -r.max, idx: r.idx }));
 // 各序列在自身日曆上的 swingHigh 日高點與 swingLow 日低點（值＋日期）
-function swingOf(rows, key, c) {
-  const v = rows.map(r => r[key]);
-  const hi = rollingMax(v, c.swingHigh), lo = rollingMin(v, c.swingLow);
+// hiKey/loKey 可分開：指數用盤中 high/low（抓到真正的高點與低點），缺值時退回收盤
+function swingOf(rows, key, c, hiKey = key, loKey = key) {
+  const pick = k => rows.map(r => (isNum(r[k]) ? r[k] : r[key]));
+  const hi = rollingMax(pick(hiKey), c.swingHigh), lo = rollingMin(pick(loKey), c.swingLow);
   return rows.map((r, i) => ({ hi: hi[i].max, hiDate: rows[hi[i].idx].date, lo: lo[i].min, loDate: rows[lo[i].idx].date }));
 }
 
@@ -146,7 +147,7 @@ export function buildDataset({ twii, margin, ratio = [], fearGreed = [] }, cfg =
   const rtHi4 = rollingMax(rt.map(r => r.ratio), c.ratioWindow);
   rt.forEach((r, i) => { r.r4 = { high: rtHi4[i].max, date: rt[rtHi4[i].idx].date, diff: r.ratio - rtHi4[i].max }; });
 
-  const twSw = swingOf(tw, 'close', c), mgSw = swingOf(mg, 'margin_money', c), rtSw = swingOf(rt, 'ratio', c);
+  const twSw = swingOf(tw, 'close', c, 'high', 'low'), mgSw = swingOf(mg, 'margin_money', c), rtSw = swingOf(rt, 'ratio', c);
   // 指數高／低點那天的融資餘額（看「指數跌、融資反增」這類背離用；該日沒有融資資料時為 null）
   const mgAt = date => (mgIdx.has(date) ? mg[mgIdx.get(date)].margin_money : null);
 

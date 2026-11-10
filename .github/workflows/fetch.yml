@@ -2,8 +2,8 @@ name: Fetch market data
 
 on:
   schedule:
-    # 22:00 UTC Mon-Fri = 06:00 Tue-Sat Taipei（美股收盤後）→ us job
-    - cron: "0 22 * * 1-5"
+    # 21:00 UTC Mon-Fri = 05:00 Tue-Sat Taipei（美股收盤後）→ us job
+    - cron: "0 21 * * 1-5"
     # 10:00 UTC Mon-Fri = 18:00 Taipei（台股收盤後）→ tw job
     - cron: "0 10 * * 1-5"
     # 13:30 UTC Mon-Fri = 21:30 Taipei（晚間補更新）→ 只跑 tw job
@@ -18,9 +18,9 @@ permissions:
 # 併發時 commit 用 pull --rebase 重試化解競態。
 
 jobs:
-  # ── 美股 / 總經:只在 06:00 台北(美股收盤後)跑 ──────────────────────
+  # ── 美股 / 總經:只在 05:00 台北(美股收盤後)跑 ──────────────────────
   us:
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 22 * * 1-5'
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 21 * * 1-5'
     runs-on: ubuntu-latest
     env:
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -396,6 +396,12 @@ jobs:
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python scripts/fetch_taiwan_basis.py
+
+      - name: Fetch TX near-month day+night high/low (台指期含夜盤高低點)
+        continue-on-error: true
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+        run: python scripts/fetch_tx_hilo.py
 
       - name: Fetch Taiwan market margin balance (FinMind, 大盤融資餘額)
         continue-on-error: true
