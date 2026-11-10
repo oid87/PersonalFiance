@@ -1622,3 +1622,11 @@
 #tab-twzone .twzone-explain { border:1px solid var(--border); border-radius:8px; padding:8px 12px; margin:12px 0; font-size:13px; line-height:1.7; }
 #tab-twzone .twzone-explain summary { cursor:pointer; font-weight:600; font-size:14px; }
 #tab-twzone .twzone-explain p { margin:6px 0; }
+
+/* 槓桿／反向 ETF 熱力圖 */
+.twlev-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+.twlev-kpi{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:2px}
+.twlev-kpi span{font-size:12px;color:var(--muted)}
+.twlev-kpi b{font-size:16px;color:var(--text)}
+@media (max-width:600px){#twlev-chart{height:440px!important}}
+.ov-stale{display:inline-block;margin-top:2px;font-size:11px;font-weight:600;color:#dc2626}

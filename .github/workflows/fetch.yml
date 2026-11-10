@@ -433,6 +433,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_tw_mainstream.py
 
+      - name: Fetch Taiwan leveraged/inverse ETF quotes (TWSE STOCK_DAY_ALL, 槓桿反向熱力圖)
+        continue-on-error: true
+        run: python scripts/fetch_tw_lev_etf.py
+
       - name: Build Taiwan margin cost-basis / forced-liquidation map (TWSE MI_MARGN flow, 融資斷頭地圖)
         continue-on-error: true
         run: python scripts/fetch_margin_costmap.py

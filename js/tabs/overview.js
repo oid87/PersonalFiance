@@ -15,6 +15,7 @@ const esc = value => String(value ?? '').replace(/[&<>"']/g, c =>
 
 // 首頁底部「最近新增」：手動維護的捷徑，指向新加的視圖或區塊
 const NEW_LINKS = [
+  { tab: 'twlevetf', title: '槓桿／反向 ETF 熱力圖', detail: '00631L、00632R 等 41 檔：方塊大小＝成交值、顏色＝漲跌，加上正向÷反向成交值' },
   { tab: 'nonnormal', focus: 'longwater', title: '長線水溫', detail: '六個指數在 1／2／5／10 年線的位階（冰水～滾水），和日線水溫並列；含三角型點位距離' },
   { tab: 'twforeignshort', title: '外資賣超與空單', detail: '加權指數、外資每日賣出金額、外資台指期淨空單，三格同步對照' },
   { tab: 'nonnormal', title: '融資餘額急減', detail: '極端狀態儀表板「壓力」格：融資 10 日減幅 ≥ 15% 亮燈' },
@@ -38,7 +39,7 @@ function buildShell(section) {
     <div class="ov-grid" id="overview-alerts"></div>
     <h3 id="overview-themes-title">六個主題（美股）</h3>
     <div class="ov-grid" id="overview-themes"></div>
-    <p class="ov-foot">燈號顏色：綠＝正常、黃＝留意、紅＝警戒，門檻沿用各明細頁。日期是該數字的資料日期，週末與假日不更新。</p>
+    <p class="ov-foot">燈號顏色：綠＝正常、黃＝留意、紅＝警戒，門檻沿用各明細頁。日期是該數字的資料日期，週末與假日不更新；警報卡超過 5 天沒更新會標「資料過舊」。</p>
     <h3>最近新增</h3>
     <div class="ov-grid">${NEW_LINKS.map(link => `<a class="ov-card" href="#tab=${esc(link.tab)}${link.focus ? '&amp;focus=' + esc(link.focus) : ''}">
       <span class="ov-card-top"><span class="ov-card-title">${esc(link.title)}</span><span class="ov-card-go">前往 →</span></span>
@@ -53,6 +54,14 @@ function buildShell(section) {
   });
 }
 
+// 日資料超過 STALE_DAYS 個日曆天沒更新就標「資料過舊」（涵蓋週末＋一天假日）。
+const STALE_DAYS = 5;
+function staleNote(date) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return '';
+  const days = Math.floor((Date.now() - new Date(date + 'T00:00:00').getTime()) / 864e5);
+  return days > STALE_DAYS ? `<span class="ov-stale">資料過舊（${days} 天前）</span>` : '';
+}
+
 // result: { level: ok|watch|alert|null, state, detail, date } or { error }
 function alertCard(card, result) {
   const level = result?.error ? null : result?.level;
@@ -62,6 +71,7 @@ function alertCard(card, result) {
     <span class="ov-state">${esc(result?.error ? '暫無資料' : result?.state)}</span>
     ${result?.detail ? `<span class="ov-detail">${esc(result.detail)}</span>` : ''}
     <span class="ov-date">${esc(result?.error ? String(result.error.message || result.error) : result?.date ? '資料日 ' + result.date : '')}</span>
+    ${result?.error ? '' : staleNote(result?.date)}
   </a>`;
 }
 

@@ -269,6 +269,18 @@
     <div id="twhm-body"></div>
     <p class="twhm-note">族群＝證交所／櫃買中心官方產業別，大類為本專案歸併。族群漲跌＝當天有收盤資料成分股的等權平均（每檔權重相同，不看市值）；沒有行情的股票不列入、也不當 0%。上市＋上櫃普通股，原始收盤；產業別是現在的快照。紅漲綠跌。只描述盤面，不構成投資建議。</p>
   </section>
+  <section id="tab-twlevetf" class="tab-section" hidden>
+    <header class="twhm-head"><h2 class="section-title">台股槓桿／反向 ETF 熱力圖</h2><span id="twlev-asof" class="status"></span></header>
+    <div class="controls"><div class="picker-row" id="twlev-group">
+      <span class="chip active" data-twlev-group="all">全部</span>
+      <span class="chip" data-twlev-group="tw">台股大盤</span>
+      <span class="chip" data-twlev-group="intl">海外／原物料</span>
+    </div></div>
+    <p id="twlev-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <div id="twlev-summary" class="twlev-summary"></div>
+    <div id="twlev-chart" style="width:100%;height:520px"></div>
+    <p class="twhm-note">方塊大小＝當日成交值，顏色＝漲跌（紅漲綠跌，±5% 最深）。正2 與反1 放在一起看：正2 成交值遠大於反1 代表追多資金集中。資料為證交所收盤行情（非即時），只描述盤面，不構成投資建議。</p>
+  </section>
   <section id="tab-sector" class="tab-section" hidden>
     <div class="controls">
       <div class="picker-row" id="sector-market-picker">

@@ -62,6 +62,7 @@ run_script optional fetch_taiwan_margin_ratio.py
 run_script optional fetch_tw_foreign_net.py
 run_script optional fetch_tw_breadth_ls.py
 run_script optional fetch_tw_mainstream.py
+run_script optional fetch_tw_lev_etf.py
 run_script optional fetch_margin_costmap.py
 run_script optional fetch_tpex_margin.py
 run_script optional fetch_twse_mktcap.py
