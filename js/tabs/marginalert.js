@@ -110,15 +110,26 @@ async function loadAll(context = {}) {
       let hi = -Infinity, lo = Infinity;
       for (let j = Math.max(0, i - 59); j <= i; j++) hi = Math.max(hi, r[j].high);
       for (let j = Math.max(0, i - 19); j <= i; j++) lo = Math.min(lo, r[j].low);
-      txSw.set(x.date, { close: x.close, hi, lo });
+      txSw.set(x.date, { close: x.close, hi, lo, dd: { all: peakDraw(r, i, 'high', 'low'), day: peakDraw(r, i, 'dhigh', 'dlow'), night: peakDraw(r, i, 'nhigh', 'nlow') } });
     });
   } catch (e) { if (context.signal?.aborted) throw e; }
   if (context.signal?.aborted || context.isCurrent?.() === false) return;
   const merged = mergeRatio(mm, rc);
   if (!merged.rows.length && !partial) partial = '無維持率資料：規則 B 停用（不估算）';
   const lastDate = margin.reduce((m, r) => (r.date > m ? r.date : m), '');
-  raw = { txSw, twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, earlyCount, marginUpdated: mg.updated, source: mg.source };
+  const twPd = new Map(twii.map((x, i) => [x.date, peakDraw(twii, i, 'high', 'low')]));
+  raw = { twPd, txSw, twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, earlyCount, marginUpdated: mg.updated, source: mg.source };
   ui.end = lastDate;
+}
+
+// 60 日內盤中最高點 → 之後（含今天）盤中最低點：高點跌到最低的最大跌幅（不是跌到收盤）
+function peakDraw(rows, i, hk, lk) {
+  let hi = -Infinity, hj = -1;
+  for (let j = Math.max(0, i - 59); j <= i; j++) if (isNum(rows[j][hk]) && rows[j][hk] >= hi) { hi = rows[j][hk]; hj = j; }
+  if (hj < 0) return null;
+  let lo = Infinity, lj = hj;
+  for (let j = hj; j <= i; j++) if (isNum(rows[j][lk]) && rows[j][lk] < lo) { lo = rows[j][lk]; lj = j; }
+  return { hi, hiDate: rows[hj].date, lo, loDate: rows[lj].date, pct: (lo / hi - 1) * 100 };
 }
 
 // ── 回測 ─────────────────────────────────────────────────────────────
@@ -241,7 +252,17 @@ function swingTable(d) {
     row('融資', mg(H), mg(L)) +
     (tx ? row('台指期含夜盤', `${sg(pctChg(tx.close, tx.hi), 1)}%`, `${sg(pctChg(tx.close, tx.lo), 1)}%`) : '') +
     row('融資÷指數', isNum(H.lev) ? `${f(H.lev, 2)}×` : '—', isNum(L.lev) ? `${f(L.lev, 2)}×` : '—') + '</table>' +
-    (dv ? `<div style="font-size:11px;margin-top:2px">${dv}</div>` : '');
+    (dv ? `<div style="font-size:11px;margin-top:2px">${dv}</div>` : '') + drawTable(d, tx);
+}
+// 60 日盤中高點 → 之後最低點（加權／台指期日盤／夜盤／合併）
+function drawTable(d, tx) {
+  const pd = raw?.twPd?.get(d.date);
+  const td = 'style="padding:0 0 0 6px;text-align:right;white-space:nowrap"';
+  const row = (name, p) => p ? `<tr><td style="white-space:nowrap">${name}</td><td ${td}>${f(p.hi, 0)}<span style="color:${PALETTE.muted}">（${p.hiDate.slice(5)}）</span></td><td ${td}>${f(p.lo, 0)}<span style="color:${PALETTE.muted}">（${p.loDate.slice(5)}）</span></td><td ${td}>${hot(sg(p.pct, 1) + '%')}</td></tr>` : '';
+  const body = row('加權', pd) + (tx ? row('台指期日盤', tx.dd.day) + row('台指期夜盤', tx.dd.night) + row('期貨合併', tx.dd.all) : '');
+  if (!body) return '';
+  return `<table style="border-collapse:collapse;font-size:11px;width:100%;margin-top:4px">` +
+    `<tr style="color:${PALETTE.muted}"><td>60日高→最低</td><td ${td}>高點</td><td ${td}>最低</td><td ${td}>跌幅</td></tr>` + body + '</table>';
 }
 // 指數與融資背離（只在發生時顯示一行；描述現況，回測沒有穩定的預測方向，不當訊號）：
 // ①指數距 60 日高 ≤ -8%，融資卻比指數高點那天多 → 接刀

@@ -5,7 +5,7 @@ FinMind 的 after_market 列日期 D ＝ 前一晚開盤、D 日清晨收盤的�
 每個交易日 D：近月＝當日日盤(position) close>0 的最小 YYYYMM 合約；
 high/low ＝ 該合約 D 日夜盤與日盤的最大/最小；close ＝ 日盤收盤。
 已知簡化：換月當天直接換合約（價差通常數十～數百點）。
-Output: {source, updated, data:[{date, high, low, close, contract}]}
+Output: {source, updated, data:[{date, high, low, close, contract, dhigh, dlow, nhigh?, nlow?}]}（d=日盤、n=夜盤）
 """
 from __future__ import annotations
 
@@ -51,8 +51,13 @@ def build(rows: list[dict]) -> list[dict]:
         c = min(x["contract_date"] for x in day)
         legs = [x for x in by[d] if x["contract_date"] == c and (x.get("max") or 0) > 0 and (x.get("min") or 0) > 0]
         pos = next(x for x in day if x["contract_date"] == c)
-        out.append({"date": d, "high": max(x["max"] for x in legs), "low": min(x["min"] for x in legs),
-                    "close": pos["close"], "contract": c})
+        ngt = [x for x in legs if x["trading_session"] == "after_market"]
+        row = {"date": d, "high": max(x["max"] for x in legs), "low": min(x["min"] for x in legs),
+               "close": pos["close"], "contract": c,
+               "dhigh": pos["max"], "dlow": pos["min"]}
+        if ngt:
+            row.update(nhigh=ngt[0]["max"], nlow=ngt[0]["min"])
+        out.append(row)
     return out
 
 
@@ -62,7 +67,7 @@ def main() -> None:
     old = []
     if OUT.exists():
         old = json.loads(OUT.read_text()).get("data", [])
-    if old and (today - date.fromisoformat(old[-1]["date"])).days < 300:
+    if old and "dhigh" in old[-1] and (today - date.fromisoformat(old[-1]["date"])).days < 300:
         raw = fetch((date.fromisoformat(old[-1]["date"]) - timedelta(days=10)).isoformat(), today.isoformat(), token)
     else:
         raw, old = [], []
