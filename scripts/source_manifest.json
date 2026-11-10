@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 102,
+  "source_count": 103,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -3503,6 +3503,38 @@
           "required_fields": [],
           "numeric_policy": "finite_when_present",
           "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_dix.py",
+      "outputs": [
+        "data/dix.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/dix.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "dix",
+            "gex"
+          ]
         }
       }
     }

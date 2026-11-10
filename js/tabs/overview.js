@@ -3,6 +3,7 @@
 // 所以不會和明細頁對不上；某個來源載入失敗只讓那張卡顯示「暫無資料」，不擋整頁。
 import { bindOnce, chipPicker } from '../utils/dom.js';
 import { ALERT_CARDS, THEME_CARDS } from './overview_calc.mjs';
+import { requestJSON } from '../utils/data.js';
 
 const TAB_ID = 'overview';
 const LEVEL_CLASS = { ok: 'ov-lv-ok', watch: 'ov-lv-watch', alert: 'ov-lv-alert' };
@@ -34,7 +35,8 @@ function buildShell(section) {
         <button type="button" class="chip" data-ov-market="tw" aria-pressed="false">台股</button>
       </div>
     </div>
-    <p class="ov-lead">先看警報有沒有亮，再看六個主題各自的位置；每張卡點下去就是那一頁的明細。數字由各明細頁自己的程式算出，不會和明細頁對不上。美股的「風險觀察」與「恐慌拋售」兩頁已併成「美股警報」；「台股底部區域」看的是相反方向（跌深、市場冷到底），亮代表可能接近底部，不是危險。</p>
+    <p class="ov-lead">最上面一排是每天要看的五個數字；接著看警報有沒有亮，再看六個主題各自的位置；每張卡點下去就是那一頁的明細。數字由各明細頁自己的程式算出，不會和明細頁對不上。美股的「風險觀察」與「恐慌拋售」兩頁已併成「美股警報」；「台股底部區域」看的是相反方向（跌深、市場冷到底），亮代表可能接近底部，不是危險。</p>
+    <div class="ov-kpis" id="overview-kpis" aria-label="今日關鍵數字"></div>
     <h3>警報燈號</h3>
     <div class="ov-grid" id="overview-alerts"></div>
     <h3 id="overview-themes-title">六個主題（美股）</h3>
@@ -111,12 +113,51 @@ function renderAsOf() {
   document.getElementById('overview-asof').textContent = dates.length ? '最新資料 ' + dates.at(-1) : '';
 }
 
+// 頂部 KPI 列：五個每天看的數字，直接讀資料檔最後一筆；點下去到明細頁。
+const KPI_CARDS = [
+  { title: '台股壓力', tab: 'twstress', file: 'taiwan_stress', field: 'composite',
+    fmt: v => v.toFixed(1), unit: '/100', tone: v => (v >= 80 ? 'alert' : v >= 60 ? 'watch' : 'ok') },
+  { title: '美股複合情緒', tab: 'sentiment', file: 'sentiment', field: 'composite',
+    fmt: v => v.toFixed(1), unit: '/100', tone: () => null },
+  { title: '外資現貨買賣超', tab: 'twforeignshort', file: 'tw_foreign_net', field: 'foreign_net_yi',
+    fmt: v => (v > 0 ? '+' : '') + v.toFixed(1), unit: '億', tone: v => (v > 0 ? 'up' : 'down') },
+  { title: '美股暗池 DIX', tab: null, file: 'dix', field: 'dix',
+    fmt: v => (v * 100).toFixed(1) + '%', unit: '', tone: v => (v >= 0.45 ? 'up' : null) },
+  { title: '外資台指期淨未平倉', tab: 'taifex_foreign_oi', file: 'taifex_foreign_oi', field: 'tx_foreign_net_oi',
+    fmt: v => (v > 0 ? '+' : '') + Math.round(v).toLocaleString('en-US'), unit: '口', tone: v => (v < 0 ? 'down' : 'up') },
+];
+
+async function loadKpis(context) {
+  return Promise.all(KPI_CARDS.map(card => requestJSON(`data/${card.file}.json`, { signal: context.signal }).then(d => {
+    const rows = Array.isArray(d) ? d : d?.data;
+    const row = [...(rows || [])].reverse().find(r => typeof r?.[card.field] === 'number');
+    if (!row) throw new Error('暫無資料');
+    return { value: row[card.field], date: row.date, updated: d?.updated };
+  }).catch(error => ({ error }))));
+}
+
+function renderKpis(results) {
+  document.getElementById('overview-kpis').innerHTML = KPI_CARDS.map((card, i) => {
+    const r = results[i];
+    const tone = r.error ? '' : card.tone(r.value);
+    const tag = card.tab ? 'a' : 'div';
+    const href = card.tab ? ` href="#tab=${esc(card.tab)}"` : '';
+    return `<${tag} class="ov-kpi${tone ? ' ov-kpi-' + tone : ''}"${href}>
+      <span class="ov-kpi-title">${esc(card.title)}</span>
+      <span class="ov-kpi-value">${r.error ? '—' : esc(card.fmt(r.value))}<small>${esc(card.unit)}</small></span>
+      <span class="ov-kpi-date">${r.error ? '暫無資料' : '資料日 ' + esc(r.date) + (r.updated ? '・抓取 ' + esc(r.updated) : '')}</span>
+      ${r.error ? '' : staleNote(r.date)}
+    </${tag}>`;
+  }).join('');
+}
+
 const settle = load => Promise.resolve().then(load).then(value => value, error => ({ error }));
 
 export async function activate(context = {}) {
   const section = document.getElementById('tab-' + TAB_ID);
   if (bindOnce(section)) buildShell(section);
   const live = () => !context.signal?.aborted && context.isCurrent?.() !== false;
+  const kpiPromise = loadKpis(context);
   const [alerts, themes] = await Promise.all([
     Promise.all(ALERT_CARDS.map(card => settle(() => card.load(context)))),
     Promise.all(THEME_CARDS.map(async card => {
@@ -131,6 +172,7 @@ export async function activate(context = {}) {
   if (all.length && all.every(r => r?.error)) throw all[0].error;
   alertResults = alerts;
   themeResults = themes;
+  renderKpis(await kpiPromise);
   renderAlerts();
   renderThemes();
   renderAsOf();

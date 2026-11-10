@@ -48,6 +48,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_stocks.py
 
+      - name: Fetch SqueezeMetrics DIX (暗池指數，首頁 KPI)
+        continue-on-error: true
+        run: python scripts/fetch_dix.py
+
       - name: Prep QQQ/SPY relative-strength ratio (relstrength tab)
         continue-on-error: true
         run: python scripts/prep_relstrength.py

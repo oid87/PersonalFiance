@@ -1630,3 +1630,14 @@
 .twlev-kpi b{font-size:16px;color:var(--text)}
 @media (max-width:600px){#twlev-chart{height:440px!important}}
 .ov-stale{display:inline-block;margin-top:2px;font-size:11px;font-weight:600;color:#dc2626}
+/* 首頁 KPI 列 */
+.ov-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:10px 0 4px}
+.ov-kpi{display:flex;flex-direction:column;gap:2px;padding:10px 12px;background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--border);border-radius:8px;color:var(--text);text-decoration:none}
+.ov-kpi-title{font-size:12px;color:var(--muted)}
+.ov-kpi-value{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.ov-kpi-value small{font-size:12px;font-weight:400;color:var(--muted);margin-left:3px}
+.ov-kpi-date{font-size:11px;color:var(--muted)}
+.ov-kpi-up{border-left-color:#dc2626}.ov-kpi-up .ov-kpi-value{color:#dc2626}
+.ov-kpi-down{border-left-color:#16a34a}.ov-kpi-down .ov-kpi-value{color:#16a34a}
+.ov-kpi-alert{border-left-color:#dc2626}.ov-kpi-watch{border-left-color:#d97706}.ov-kpi-ok{border-left-color:#16a34a}
+@media (max-width:900px){.ov-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.ov-kpi-value{font-size:18px}}
