@@ -1641,3 +1641,18 @@
 .ov-kpi-down{border-left-color:#16a34a}.ov-kpi-down .ov-kpi-value{color:#16a34a}
 .ov-kpi-alert{border-left-color:#dc2626}.ov-kpi-watch{border-left-color:#d97706}.ov-kpi-ok{border-left-color:#16a34a}
 @media (max-width:900px){.ov-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.ov-kpi-value{font-size:18px}}
+/* 首頁新聞跑馬燈 */
+.ov-news{margin:8px 0;border:1px solid var(--border);border-radius:8px;background:var(--panel);padding:4px 8px;overflow:hidden}
+.ov-news-row{display:flex;align-items:center;gap:8px;min-height:26px}
+.ov-news-label{flex:none;font-size:12px;font-weight:600;color:var(--muted)}
+.ov-news-track{flex:1;overflow:hidden;white-space:nowrap;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.ov-news-move{display:inline-block;animation:ov-news-scroll 240s linear infinite}
+.ov-news-track:hover .ov-news-move{animation-play-state:paused}
+.ov-news-move a{color:var(--text);text-decoration:none;font-size:13px;margin-right:32px}
+.ov-news-move a:hover{text-decoration:underline}
+.ov-news-move b{color:var(--muted);font-weight:500}
+.ov-news-src,.ov-news-err{display:block;font-size:11px;color:var(--muted);text-align:right}
+.ov-news-src a{color:inherit}
+@keyframes ov-news-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.ov-news-track{overflow-x:auto}.ov-news-move{animation:none}}
+@media (max-width:900px){.ov-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}

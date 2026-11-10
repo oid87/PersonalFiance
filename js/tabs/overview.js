@@ -36,6 +36,7 @@ function buildShell(section) {
       </div>
     </div>
     <p class="ov-lead">最上面一排是每天要看的五個數字；接著看警報有沒有亮，再看六個主題各自的位置；每張卡點下去就是那一頁的明細。數字由各明細頁自己的程式算出，不會和明細頁對不上。美股的「風險觀察」與「恐慌拋售」兩頁已併成「美股警報」；「台股底部區域」看的是相反方向（跌深、市場冷到底），亮代表可能接近底部，不是危險。</p>
+    <div class="ov-news" id="overview-news" aria-label="新聞"></div>
     <div class="ov-kpis" id="overview-kpis" aria-label="今日關鍵數字"></div>
     <h3>警報燈號</h3>
     <div class="ov-grid" id="overview-alerts"></div>
@@ -105,34 +106,44 @@ function renderThemes() {
   host.innerHTML = THEME_CARDS.map((card, i) => themeCard(card, themeResults?.[i]?.[market] || [])).join('');
 }
 
-function renderAsOf() {
+function renderAsOf(failed = 0) {
   const dates = [
     ...(alertResults || []).map(r => r?.date),
     ...(themeResults || []).flatMap(t => [...(t?.us || []), ...(t?.tw || [])].map(r => r?.date)),
   ].filter(Boolean).sort();
-  document.getElementById('overview-asof').textContent = dates.length ? '最新資料 ' + dates.at(-1) : '';
+  document.getElementById('overview-asof').textContent = (dates.length ? '最新資料 ' + dates.at(-1) : '') +
+    `・檢查 ${new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })}・載入錯誤 ${failed}`;
 }
 
-// 頂部 KPI 列：五個每天看的數字，直接讀資料檔最後一筆；點下去到明細頁。
+// 頂部 KPI 列：五個每天看的數字，直接讀資料檔；點下去到明細頁。每張卡標資料日、抓取日、來源。
+// 美股風險分數＝OFR 金融壓力指數 FSI 在近 2 年（504 個交易日）的百分位 ×100，
+// 和「台股壓力」同一套做法（各子項 2 年滾動百分位），越高＝壓力越大。
+const lastRow = (rows, field) => [...(rows || [])].reverse().find(r => typeof r?.[field] === 'number');
+const pick = field => rows => { const r = lastRow(rows, field); return r && { value: r[field], date: r.date }; };
 const KPI_CARDS = [
-  { title: '台股壓力', tab: 'twstress', file: 'taiwan_stress', field: 'composite',
-    fmt: v => v.toFixed(1), unit: '/100', tone: v => (v >= 80 ? 'alert' : v >= 60 ? 'watch' : 'ok') },
-  { title: '美股複合情緒', tab: 'sentiment', file: 'sentiment', field: 'composite',
-    fmt: v => v.toFixed(1), unit: '/100', tone: () => null },
-  { title: '外資現貨買賣超', tab: 'twforeignshort', file: 'tw_foreign_net', field: 'foreign_net_yi',
+  { title: '台股風險分數', tab: 'twstress', file: 'taiwan_stress', src: '自建台股壓力（4 維 2 年百分位）', get: pick('composite'),
+    fmt: v => v.toFixed(1), unit: '/100', tone: v => (v >= 75 ? 'alert' : v >= 50 ? 'watch' : 'ok') },
+  { title: '美股風險分數', tab: 'fsi', file: 'fsi', src: 'OFR FSI 近 2 年百分位', get: rows => {
+      const vals = (rows || []).filter(r => typeof r?.fsi === 'number').slice(-504);
+      const last = vals.at(-1);
+      if (!last || vals.length < 250) return null;
+      const below = vals.filter(r => r.fsi <= last.fsi).length;
+      return { value: below / vals.length * 100, date: last.date, extra: `FSI ${last.fsi >= 0 ? '+' : ''}${last.fsi.toFixed(2)}` };
+    },
+    fmt: v => v.toFixed(1), unit: '/100', tone: v => (v >= 75 ? 'alert' : v >= 50 ? 'watch' : 'ok') },
+  { title: '外資現貨買賣超', tab: 'twforeignshort', file: 'tw_foreign_net', src: '證交所三大法人', get: pick('foreign_net_yi'),
     fmt: v => (v > 0 ? '+' : '') + v.toFixed(1), unit: '億', tone: v => (v > 0 ? 'up' : 'down') },
-  { title: '美股暗池 DIX', tab: null, file: 'dix', field: 'dix',
+  { title: '美股暗池 DIX', tab: null, file: 'dix', src: 'SqueezeMetrics', get: pick('dix'),
     fmt: v => (v * 100).toFixed(1) + '%', unit: '', tone: v => (v >= 0.45 ? 'up' : null) },
-  { title: '外資台指期淨未平倉', tab: 'taifex_foreign_oi', file: 'taifex_foreign_oi', field: 'tx_foreign_net_oi',
-    fmt: v => (v > 0 ? '+' : '') + Math.round(v).toLocaleString('en-US'), unit: '口', tone: v => (v < 0 ? 'down' : 'up') },
+  { title: '外資台指期淨未平倉', tab: 'taifex_foreign_oi', file: 'taifex_foreign_oi', src: '期交所三大法人', get: pick('tx_foreign_net_oi'),
+    fmt: v => (v > 0 ? '+' : '') + Math.round(v).toLocaleString('en-US'), unit: '口（負＝淨空單）', tone: v => (v < 0 ? 'down' : 'up') },
 ];
 
 async function loadKpis(context) {
   return Promise.all(KPI_CARDS.map(card => requestJSON(`data/${card.file}.json`, { signal: context.signal }).then(d => {
-    const rows = Array.isArray(d) ? d : d?.data;
-    const row = [...(rows || [])].reverse().find(r => typeof r?.[card.field] === 'number');
-    if (!row) throw new Error('暫無資料');
-    return { value: row[card.field], date: row.date, updated: d?.updated };
+    const got = card.get(Array.isArray(d) ? d : d?.data);
+    if (!got) throw new Error('暫無資料');
+    return { ...got, updated: d?.updated };
   }).catch(error => ({ error }))));
 }
 
@@ -145,10 +156,29 @@ function renderKpis(results) {
     return `<${tag} class="ov-kpi${tone ? ' ov-kpi-' + tone : ''}"${href}>
       <span class="ov-kpi-title">${esc(card.title)}</span>
       <span class="ov-kpi-value">${r.error ? '—' : esc(card.fmt(r.value))}<small>${esc(card.unit)}</small></span>
-      <span class="ov-kpi-date">${r.error ? '暫無資料' : '資料日 ' + esc(r.date) + (r.updated ? '・抓取 ' + esc(r.updated) : '')}</span>
+      ${r.extra ? `<span class="ov-kpi-date">${esc(r.extra)}</span>` : ''}
+      <span class="ov-kpi-date">${r.error ? '載入失敗' : '資料日 ' + esc(r.date) + (r.updated ? '・抓取 ' + esc(String(r.updated).slice(0, 10)) : '')}</span>
+      <span class="ov-kpi-date">來源：${esc(card.src)}</span>
       ${r.error ? '' : staleNote(r.date)}
     </${tag}>`;
   }).join('');
+}
+
+// 新聞跑馬燈：Yahoo股市 RSS 標題原樣顯示＋連回原文（Yahoo RSS 條款要求），兩行（台股／國際）。
+async function loadNews(context) {
+  try { return await requestJSON('data/news.json', { signal: context.signal }); } catch (error) { return { error }; }
+}
+const hhmm = t => { const d = new Date(t); return Number.isFinite(d.getTime()) ? `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` : ''; };
+function renderNews(news) {
+  const host = document.getElementById('overview-news');
+  if (news?.error || !news?.feeds) { host.innerHTML = '<span class="ov-news-err">新聞載入失敗</span>'; return 1; }
+  const line = (label, items) => {
+    const links = (items || []).map(n => `<a href="${esc(n.link)}" target="_blank" rel="noopener noreferrer">${n.time ? `<b>${esc(hhmm(n.time))}</b> ` : ''}${esc(n.title)}</a>`).join('');
+    return `<div class="ov-news-row"><span class="ov-news-label">${esc(label)}</span><div class="ov-news-track"><div class="ov-news-move">${links}${links}</div></div></div>`;
+  };
+  host.innerHTML = line('台股新聞', news.feeds.tw) + line('國際新聞', news.feeds.intl) +
+    `<span class="ov-news-src">來源：<a href="${esc(news.source_url)}" target="_blank" rel="noopener noreferrer">Yahoo股市</a>・更新 ${esc(hhmm(news.updated))}${news.errors?.length ? `・${news.errors.length} 個來源失敗` : ''}</span>`;
+  return news.errors?.length || 0;
 }
 
 const settle = load => Promise.resolve().then(load).then(value => value, error => ({ error }));
@@ -158,6 +188,7 @@ export async function activate(context = {}) {
   if (bindOnce(section)) buildShell(section);
   const live = () => !context.signal?.aborted && context.isCurrent?.() !== false;
   const kpiPromise = loadKpis(context);
+  const newsPromise = loadNews(context);
   const [alerts, themes] = await Promise.all([
     Promise.all(ALERT_CARDS.map(card => settle(() => card.load(context)))),
     Promise.all(THEME_CARDS.map(async card => {
@@ -172,10 +203,13 @@ export async function activate(context = {}) {
   if (all.length && all.every(r => r?.error)) throw all[0].error;
   alertResults = alerts;
   themeResults = themes;
-  renderKpis(await kpiPromise);
+  const kpis = await kpiPromise;
+  renderKpis(kpis);
+  const newsErrors = renderNews(await newsPromise);
   renderAlerts();
   renderThemes();
-  renderAsOf();
+  const failed = kpis.filter(r => r.error).length + all.filter(r => r?.error).length + newsErrors;
+  renderAsOf(failed);
 }
 
 export function getCharts() { return []; }

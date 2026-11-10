@@ -52,6 +52,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_dix.py
 
+      - name: Fetch Yahoo股市 RSS headlines (首頁新聞跑馬燈)
+        continue-on-error: true
+        run: python scripts/fetch_news.py
+
       - name: Prep QQQ/SPY relative-strength ratio (relstrength tab)
         continue-on-error: true
         run: python scripts/prep_relstrength.py
@@ -440,6 +444,10 @@ jobs:
       - name: Fetch Taiwan leveraged/inverse ETF quotes (TWSE STOCK_DAY_ALL, 槓桿反向熱力圖)
         continue-on-error: true
         run: python scripts/fetch_tw_lev_etf.py
+
+      - name: Fetch Yahoo股市 RSS headlines (首頁新聞跑馬燈)
+        continue-on-error: true
+        run: python scripts/fetch_news.py
 
       - name: Build Taiwan margin cost-basis / forced-liquidation map (TWSE MI_MARGN flow, 融資斷頭地圖)
         continue-on-error: true
