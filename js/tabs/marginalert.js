@@ -15,6 +15,7 @@ import { analyzeHistory, scenarioView, signalOverlap, MANUAL_BETAS, KEY_DROP_PTS
 import { chipPicker } from '../utils/dom.js';
 import { getMarginBasis, onMarginBasisChange, mountMarginBasisPicker, BASIS_LABEL } from '../utils/marginBasis.js';
 import { minSpanForAxis } from '../utils/zoomFloor.js';
+import { legTable, hitStats, currentState, touchInfo, nsfStatus, cycleRows, cycleSummary, signalMap, signalMax4, regimeOf, NSF_EVENTS, NSF_UPDATED, LV0, LV1, LV2, BIG_DROP } from './marginliq_calc.mjs';
 
 const TAB_ID = 'marginalert';
 // 頁面預設範圍：維持率重建資料最早的一天（引擎／CLI 報告的 DEFAULTS.start 仍是 2020-01-01，不受影響）
@@ -103,16 +104,23 @@ async function loadAll(context = {}) {
     partial = (partial ? partial + '；' : '') + '恐懼貪婪資料載入失敗：F&G 圖層與區間停用';
   }
   // 台指期近月（日盤＋夜盤）60 日高／20 日低（選用；缺檔只少一行）
-  let txSw = new Map();
+  let txSw = new Map(), txRows = [];
   try {
     const t = await requestJSON('data/tx_hilo.json', { signal: context.signal });
     const r = Array.isArray(t?.data) ? t.data : [];
+    txRows = r;
     r.forEach((x, i) => {
       let hi = -Infinity, lo = Infinity;
       for (let j = Math.max(0, i - 59); j <= i; j++) hi = Math.max(hi, r[j].high);
       for (let j = Math.max(0, i - 19); j <= i; j++) lo = Math.min(lo, r[j].low);
       txSw.set(x.date, { close: x.close, hi, lo, dd: { all: peakDraw(r, i, 'high', 'low'), day: peakDraw(r, i, 'dhigh', 'dlow'), night: peakDraw(r, i, 'nhigh', 'nlow') } });
     });
+  } catch (e) { if (context.signal?.aborted) throw e; }
+  // 景氣對策信號（選用；只用在「第一波之後」週期表）
+  let bizSignal = [];
+  try {
+    const b = await requestJSON('data/taiwan_business_signal.json', { signal: context.signal });
+    bizSignal = Array.isArray(b?.data) ? b.data : [];
   } catch (e) { if (context.signal?.aborted) throw e; }
   if (context.signal?.aborted || context.isCurrent?.() === false) return;
   const merged = mergeRatio(mm, rc, getMarginBasis());
@@ -123,7 +131,7 @@ async function loadAll(context = {}) {
     sum5 += x.close; if (i >= 1250) sum5 -= twii[i - 1250].close;
     return [x.date, { ...peakDraw(twii, i, 'high', 'low'), ma5y: i >= 1249 ? sum5 / 1250 : null, dayLow: x.low }];
   }));
-  raw = { mmRaw: mm, rcRaw: rc, basis: getMarginBasis(), twPd, txSw, twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, earlyCount, marginUpdated: mg.updated, source: mg.source };
+  raw = { tx: txRows, bizSignal, mmRaw: mm, rcRaw: rc, basis: getMarginBasis(), twPd, txSw, twii, margin, ratio: merged.rows, fearGreed, ratioInfo: merged, partial, lastDate, earlyCount, marginUpdated: mg.updated, source: mg.source };
   ui.end = lastDate;
 }
 
@@ -746,6 +754,200 @@ function wireStress() {
   for (const k of ['low', 'base', 'high']) on(`st-b-${k}`, e => { const x = Number(e.target.value); if (Number.isFinite(x) && x > 0 && x <= 5) stressUi.custom[k] = x; renderStress(); });
 }
 
+// ── 斷頭線（-14%～-16%／-24%）與國安基金 ─────────────────────────────
+// 引擎：js/tabs/marginliq_calc.mjs。參考高點＝盤中最高、是否跌破＝盤中最低；維持率為收盤重建值。
+let liqChart = null, liqT = null;
+let liqUi = { lookback: 120, leg: '' };
+const nf = x => (isNum(x) ? Math.round(x).toLocaleString('en-US') : '—');
+const md = d => (d ? esc(d.slice(5)) : '—');
+const REGIME = { hot: '偏熱（30 分以上）', mid: '中間（25～29 分）', cold: '偏冷（25 分以下）' };
+function liqData() {
+  if (!liqT) liqT = legTable({ twii: raw.twii, margin: raw.margin, ratio: raw.ratio });
+  return liqT;
+}
+// 目前選的那一波（或「現在」）：參考高點、三條線、圖的視窗、期貨口徑
+function liqView() {
+  const T = liqData(), rows = T.rows, n = rows.length;
+  const leg = liqUi.leg ? T.legs.find(l => l.peakDate === liqUi.leg) ?? null : null;
+  const end = leg ? leg.ti : n - 1;
+  const st = leg ? currentState(rows, { peakIndex: leg.pi, endIndex: end }) : currentState(rows, { lookback: liqUi.lookback });
+  const info = lv => (lv.touched ? touchInfo(rows, lv.touchIndex, st.hi, T.mg, T.rt) : null);
+  let tx = null;
+  const t = raw.tx ?? [];
+  if (t.length) {
+    if (!leg) tx = t.at(-1).date >= rows[Math.max(0, n - 6)].date ? currentState(t, { lookback: liqUi.lookback }) : null;
+    else {
+      const a = t.findIndex(r => r.date >= rows[Math.max(0, st.hiIndex - 3)].date);
+      let b = -1;
+      for (let j = t.length - 1; j >= 0; j--) if (t[j].date <= rows[end].date) { b = j; break; }
+      if (a >= 0 && b > a) { let pj = a; for (let j = a; j <= b; j++) if (t[j].high > t[pj].high) pj = j; tx = currentState(t, { peakIndex: pj, endIndex: b }); }
+    }
+  }
+  const i0 = leg ? Math.max(0, leg.pi - 60) : Math.max(0, Math.min(n - 260, st.hiIndex - 40));
+  const i1 = leg ? Math.min(n - 1, Math.max(leg.ti + 120, leg.pi + 200)) : n - 1;
+  let lastRatio = null;
+  for (let j = n - 1; j >= 0 && lastRatio === null; j--) lastRatio = T.rt.get(rows[j].date) ?? null;
+  return { T, rows, leg, st, tx, i0, i1, x0: info(st.l0), x1: info(st.l1), x2: info(st.l2), lastRatio };
+}
+function liqLevelLine(v, lv, inf) {
+  const tag = `<b>-${lv.lv}%（${nf(lv.line)}）</b>`;
+  if (lv.touched) return `${tag} ${hot('已跌破')} ${md(lv.touchDate)}｜當日維持率 ${f(inf?.ratio, 1)}｜前後 2 日最大單日融資 ${isNum(inf?.worst) ? `${sg(inf.worst, 1)}%（${md(inf.worstDate)}）` : '—'}`;
+  if (v.leg) return `${tag} 這一波沒有跌到`;
+  const est = projectAt(v.lastRatio, -lv.needPct);
+  return `${tag} 還沒到：收盤再跌 ${f(-lv.needPct, 1)}%（${nf(-lv.needPts)} 點）${isNum(est) ? `｜到時維持率推估 ≈${f(est, 0)}` : ''}`;
+}
+function liqCards(v) {
+  const { st, tx, leg } = v;
+  const card = (k, val, sub, w = 220) => `<div class="lev-card" style="min-width:${w}px;flex:1"><div class="lc-sub">${k}</div><div class="lc-val">${val}</div><div class="lc-sub" style="line-height:1.7;white-space:normal">${sub}</div></div>`;
+  const txLine = tx ? `<br>期貨（含夜盤）高 ${nf(tx.hi)}，最低 ${nf(tx.lo)}（${sg(tx.lowPct, 1)}%）` : '';
+  const out = [
+    card(leg ? `波段高點｜${esc(st.hiDate)}` : `參考高點｜${esc(st.hiDate)}（近 ${liqUi.lookback} 日盤中最高）`, nf(st.hi),
+      `${leg ? '波段低點' : '之後最低'} ${nf(st.lo)}（${md(st.loDate)}，${hot(`${sg(st.lowPct, 1)}%`)}）<br>${leg ? '低點日' : '最新'}收盤 ${nf(st.close)}（${esc(st.date)}，${sg(st.closePct, 1)}%）${txLine}`),
+    card(`第一波斷頭線｜距高點 -${LV0}%～-${LV1}%`, `${nf(st.l0.line)}～${nf(st.l1.line)}`, st.l0.touched && st.l0.touchDate === st.l1.touchDate ? `兩條線同一天跌破：<br>${liqLevelLine(v, st.l1, v.x1)}` : `${liqLevelLine(v, st.l0, v.x0)}<br>${liqLevelLine(v, st.l1, v.x1)}`, 280),
+    card(`第二波斷頭線｜距高點 -${LV2}%`, nf(st.l2.line), `${liqLevelLine(v, st.l2, v.x2)}${tx ? `<br>期貨口徑的 -${LV2}% 線：${nf(tx.l2.line)}${tx.l2.touched ? `（${md(tx.l2.touchDate)} 已跌破）` : ''}` : ''}`, 280),
+  ];
+  const s15 = v.T.legs.filter(l => l.peakDate >= '2015-01-01' && l.x2);
+  const rule = `2015 年後跌破 -${LV2}% 共 ${s15.length} 段，國安基金進場 ${s15.filter(l => l.nsf).length} 段`;
+  if (leg) {
+    out.push(card('國安基金（這一波）', leg.nsf ? `第 ${leg.nsf.n} 次進場` : '沒有進場',
+      leg.nsf ? `${esc(leg.nsf.decide)} 決議｜當時盤中最深 ${sg(leg.nsf.lowPct, 1)}%、收盤 ${sg(leg.nsf.closePct, 1)}%<br>${esc(leg.nsf.why)}` : (st.l2.touched ? `有跌破 -${LV2}% 但沒有進場` : `沒有跌到 -${LV2}%`)));
+  } else {
+    const ns = nsfStatus(st.date), e = ns.event;
+    out.push(card('國安基金', ns.active ? hot('護盤中') : '未進場',
+      (ns.active ? `第 ${e.n} 次｜${esc(e.decide)} 決議（${esc(e.why)}）` : `上一次：第 ${e.n} 次 ${esc(e.decide)}～${esc(e.end)}${st.l2.touched ? `<br>${hot(`已跌破 -${LV2}%`)}：近年都在當天到一週內決議進場` : `<br>距 -${LV2}% 線還有 ${f(-st.l2.needPct, 1)}%`}`) +
+      `<br>${rule}<br><span class="text-muted-sm">名單手動維護，更新至 ${esc(NSF_UPDATED)}</span>`));
+  }
+  return out.join('');
+}
+function liqOption(v) {
+  const { T, rows, st, i0, i1 } = v;
+  const win = rows.slice(i0, i1 + 1), dates = win.map(r => r.date);
+  const L = mob() ? 44 : 60, Rr = mob() ? 12 : 86;
+  const up = '#ef4444', dn = '#22a35a', ratioC = '#f59e0b';
+  const inWin = d => d >= dates[0] && d <= dates.at(-1);
+  const snap = d => dates.find(x => x >= d) ?? dates.at(-1);
+  const nsfAreas = NSF_EVENTS.filter(e => (e.end ?? '9999') >= dates[0] && e.decide <= dates.at(-1))
+    .map(e => [{ name: `國安基金第 ${e.n} 次`, xAxis: snap(e.decide < dates[0] ? dates[0] : e.decide), itemStyle: { color: 'rgba(59,130,246,0.10)' } }, { xAxis: e.end && inWin(e.end) ? snap(e.end) : dates.at(-1) }]);
+  const line = (y, name, color, pos, type = 'dashed') => ({ yAxis: y, name, lineStyle: { color, type, width: 1.2 }, label: { formatter: mob() ? name : `${name} ${nf(y)}`, color, fontSize: 10, position: pos } });
+  const endPos = mob() ? 'insideEndBottom' : 'end';
+  const big = win.map(r => { const c = T.mg.get(r.date)?.chg; return isNum(c) && c <= -BIG_DROP ? { value: [r.date, r.low], chg: c } : null; }).filter(Boolean);
+  const axis = (gridIndex, show) => ({ type: 'category', gridIndex, data: dates, boundaryGap: true, axisLine: { lineStyle: { color: PALETTE.muted } }, axisLabel: { color: PALETTE.muted, fontSize: 11, show }, axisTick: { show: false }, splitLine: { show: false } });
+  const yA = (gridIndex, name, extra = {}) => ({ type: 'value', gridIndex, name: mob() ? '' : name, scale: true, nameTextStyle: { color: PALETTE.muted, fontSize: 10 }, axisLabel: { color: PALETTE.muted, fontSize: 11 }, splitLine: { lineStyle: { color: PALETTE.grid } }, ...extra });
+  const basis = BASIS_LABEL[raw?.basis || 'all'];
+  return echartsBase({
+    animation: false,
+    legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['加權指數（日 K）', `單日融資減少 ≥${BIG_DROP}%`, `融資維持率（重建·${basis}）`, '單日融資變動 %'] },
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'cross' }, backgroundColor: PALETTE.bg, borderColor: PALETTE.border, textStyle: { color: PALETTE.text, fontSize: 12 },
+      formatter(params) {
+        const r = win[params?.[0]?.dataIndex];
+        if (!r) return '';
+        const c = T.mg.get(r.date)?.chg, rt = T.rt.get(r.date);
+        const one = `單日融資 ${isNum(c) ? `${sg(c, 2)}%` : '—'}`;
+        return `<b>${r.date}</b><br>高 ${nf(r.high)}｜低 ${nf(r.low)}｜收 ${nf(r.close)}<br>盤中最低距高點 ${sg((r.low / st.hi - 1) * 100, 1)}%｜收盤 ${sg((r.close / st.hi - 1) * 100, 1)}%<br>維持率 ${f(rt, 1)}｜${isNum(c) && c <= -BIG_DROP ? hot(one) : one}`;
+      },
+    },
+    axisPointer: { link: [{ xAxisIndex: 'all' }] },
+    grid: [{ left: L, right: Rr, top: mob() ? 70 : 46, height: '45%' }, { left: L, right: Rr, top: mob() ? '63%' : '60%', height: '15%' }, { left: L, right: Rr, top: mob() ? '83%' : '81%', height: '11%' }],
+    xAxis: [axis(0, false), axis(1, false), axis(2, true)],
+    yAxis: [
+      yA(0, '加權指數', { min: x => Math.floor(Math.min(x.min, st.l2.line) * 0.98 / 100) * 100, max: x => Math.ceil(Math.max(x.max, st.hi) * 1.01 / 100) * 100 }),
+      yA(1, '維持率 %', { axisLabel: { color: ratioC, fontSize: 11 }, min: x => Math.floor(Math.min(x.min, 128) / 5) * 5 }),
+      yA(2, '融資日變動 %', { splitNumber: 2 }),
+    ],
+    series: [
+      { name: '加權指數（日 K）', type: 'candlestick', xAxisIndex: 0, yAxisIndex: 0, data: win.map(r => [r.open ?? r.close, r.close, r.low, r.high]),
+        itemStyle: { color: up, color0: dn, borderColor: up, borderColor0: dn },
+        markLine: { silent: true, symbol: 'none', data: [line(st.hi, '高點', PALETTE.muted, mob() ? 'insideStartBottom' : 'insideStartTop', 'solid'), line(st.l0.line, `-${LV0}%`, '#f59e0b', 'insideStartTop'), line(st.l1.line, `-${LV1}%`, '#f97316', endPos), line(st.l2.line, `-${LV2}%`, '#dc2626', endPos)] },
+        markArea: { silent: true, label: { color: '#3b82f6', fontSize: 10, position: 'top', distance: 2 }, data: nsfAreas } },
+      { name: `單日融資減少 ≥${BIG_DROP}%`, type: 'scatter', xAxisIndex: 0, yAxisIndex: 0, data: big, symbol: 'triangle', symbolRotate: 180, symbolSize: 11, symbolOffset: [0, 10], itemStyle: { color: '#a855f7' }, z: 6,
+        label: { show: !mob() && big.length <= 8, position: 'bottom', distance: 12, fontSize: 10, color: '#a855f7', formatter: p => `${f(p.data.chg, 1)}%` } },
+      { name: `融資維持率（重建·${basis}）`, type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: win.map(r => T.rt.get(r.date) ?? null), showSymbol: false, connectNulls: false, lineStyle: { width: 1.6, color: ratioC }, itemStyle: { color: ratioC },
+        markLine: { silent: true, symbol: 'none', label: { formatter: '130% 追繳線', color: PALETTE.muted, fontSize: 10, position: 'insideStartTop' }, lineStyle: { color: PALETTE.muted, type: 'dashed' }, data: [{ yAxis: 130 }] } },
+      { name: '單日融資變動 %', type: 'bar', xAxisIndex: 2, yAxisIndex: 2, data: win.map(r => { const c = T.mg.get(r.date)?.chg; return isNum(c) ? { value: c, itemStyle: { color: c <= -BIG_DROP ? '#a855f7' : c < 0 ? '#94a3b8' : '#cbd5e1' } } : null; }), itemStyle: { color: '#a855f7' } },
+    ],
+  });
+}
+function liqStatsHtml(T) {
+  const a = hitStats(T.legs, '2020-01-01'), b = hitStats(T.legs, '2001-02-01', '2020-01-01');
+  const rng = xs => (xs.length ? `${f(Math.min(...xs), 0)}～${f(Math.max(...xs), 0)}（中位 ${f(median(xs), 0)}）` : '—');
+  const row = (name, s) => [name, `${s.h1} / ${s.n1}`, rng(s.r1), `${s.h2} / ${s.n2}`, rng(s.r2), `${s.nsf2} / ${s.n2}`];
+  return `<p class="text-muted-sm">讀法：「5 / 6」＝跌破那條線的 6 段波段中，有 5 段在跌破日前後 2 個交易日內出現單日融資減少 ≥${BIG_DROP}%（集中斷頭）。</p>` + tbl(['期間', `跌破 -${LV1}%：前後 2 日有單日融資減少 ≥${BIG_DROP}%`, `跌破 -${LV1}% 當日維持率`, `跌破 -${LV2}%：前後 2 日有單日融資減少 ≥${BIG_DROP}%`, `跌破 -${LV2}% 當日維持率`, `跌破 -${LV2}% 後國安基金進場`],
+    [row('2020 年以來', a), row('2001～2019 年', b)], 'liq-wide') +
+    `<p class="text-muted-sm">2020 年以前融資多半每天減 2% 左右慢慢流血，不集中在這兩條線；2026 年的波段起點維持率約 200，所以跌破時的維持率數字比往年高，不能直接比絕對水位。</p>`;
+}
+function liqTableHtml(T) {
+  const x = c => (c ? `${esc(c.date)}<br>維持率 ${f(c.ratio, 1)}<br>${c.hit ? hot(`融資 ${sg(c.worst, 1)}%`) : `融資 ${isNum(c.worst) ? `${sg(c.worst, 1)}%` : '—'}`}（${md(c.worstDate)}）` : '沒跌到');
+  const legs = T.legs.filter(l => l.hasMargin && l.depth <= -LV0).sort((p, q) => (p.peakDate < q.peakDate ? 1 : -1));
+  return `<p class="text-muted-sm">只列跌幅 ≥${LV0}% 的波段，新的在上（2001 年起有融資資料、2004-02 起有維持率）。「融資」是跌破日前後 2 個交易日內最大的單日減幅，${hot('紅字')}＝≥${BIG_DROP}%。</p>` +
+    tbl(['波段高點（盤中）', '最深跌幅', `跌破 -${LV1}%`, `跌破 -${LV2}%`, '國安基金'],
+    legs.map(l => [`${esc(l.peakDate)}<br>${nf(l.peak)}`, `${sg(l.depth, 1)}%${l.open ? '（未結束）' : ''}<br><span class="text-muted-sm">低點 ${esc(l.lowDate)}</span>`, x(l.x1), x(l.x2),
+      l.nsf ? `第 ${l.nsf.n} 次 ${esc(l.nsf.decide)}<br>當時盤中最深 ${sg(l.nsf.lowPct, 1)}%` : '—']), 'liq-wide');
+}
+function liqNsfHtml(T) {
+  const rows = T.rows;
+  return tbl(['次', '決議日', '退場日', '背景', '當時距波段高點（盤中最深）', '當時距一年內高點（盤中最深）'], NSF_EVENTS.map(e => {
+    const l = T.legs.find(g => g.nsf?.n === e.n), i = rows.findIndex(r => r.date >= e.decide);
+    const y = i >= 0 ? currentState(rows, { lookback: 250, endIndex: i }) : null;
+    return [e.n, esc(e.decide), e.end ? esc(e.end) : hot('護盤中'), esc(e.why), l ? `${sg(l.nsf.lowPct, 1)}%` : '—', y ? `${sg(y.lowPct, 1)}%` : '—'];
+  }), 'liq-wide') + `<p class="text-muted-sm">決議多在收盤後，實際買進最早是下一個交易日。2015 年以前進場時點差異很大（-17%～-42%），條例只規定「重大事件影響民眾信心」，沒有跌幅門檻。名單手動維護，更新至 ${esc(NSF_UPDATED)}。</p>`;
+}
+function liqCycleHtml() {
+  const sig = raw.bizSignal ?? [];
+  if (!sig.length) return '<p class="text-muted-sm">景氣對策信號資料載入失敗，這張表停用。</p>';
+  const rows = cycleRows(raw.twii, sig), sm = signalMap(sig), last = sig.at(-1);
+  const now = signalMax4(sm, last.date), sum = cycleSummary(rows);
+  const head = `<p style="line-height:1.7">最新燈號 ${esc(last.date.slice(0, 7))}：<b>${last.score} 分</b>；近 4 個月最高 ${now} 分，屬於<b>${REGIME[regimeOf(now)] ?? '—'}</b>。` +
+    sum.map(s => `${REGIME[s.regime]}的第一波共 ${s.n} 次，其中 ${s.capped} 次之後沒有超過前高 6% 就再跌一段`).join('；') + '。</p>' +
+    `<p class="text-muted-sm">這張表回答：漲上去之後殺了第一波，接下來是直接再創高，還是回到前高附近又殺第二波？歷史上看的是當時景氣熱不熱。${hot('紅字')}＝之後的高點沒有超過前高 6%（上檔有限）。</p>`;
+  const order = { hot: 0, mid: 1, cold: 2 };
+  const body = rows.filter(r => r.regime).sort((p, q) => order[p.regime] - order[q.regime] || (p.peakDate < q.peakDate ? 1 : -1)).map(r => {
+    const x = r.next;
+    return [`${REGIME[r.regime].slice(0, 2)}<br>${r.score} 分`, `${esc(r.peakDate)}<br>${nf(r.peak)}`, `${sg(r.depth, 1)}%<br>${r.days1} 天`,
+      x ? `${esc(x.peakDate)}<br>${x.capped ? hot(`${sg(x.upPct, 1)}%`) : `${sg(x.upPct, 1)}%`}｜${x.daysUp} 天` : '進行中',
+      x ? `${esc(x.lowDate)}<br>${sg(x.depth, 1)}%${x.open ? '（未結束）' : ''}｜${x.days2} 天` : '—', x ? `${x.gap} 天` : '—'];
+  });
+  return head + tbl(['景氣（高點前 4 個月最高分）', '第一波高點', '第一波跌幅／天數', '之後的高點：比前高／花幾天', '下一波低點：跌幅／天數', '低點到低點'], body, 'liq-wide') +
+    `<p class="text-muted-sm">第一波＝波段高點同時是 250 個交易日新高的下跌段（跌幅 ≥12%）。天數是日曆天。燈號分數隔月底才公布，高點當下看不到當月分數；每組只有 3～8 次，是情境不是機率。</p>`;
+}
+function fillLiqLegs(T) {
+  const sel = $('liq-leg');
+  if (!sel || sel.dataset.filled === String(T.legs.length)) return;
+  const legs = T.legs.filter(l => l.depth <= -LV0).sort((a, b) => (a.peakDate < b.peakDate ? 1 : -1));
+  sel.innerHTML = '<option value="">現在</option>' + legs.map(l => `<option value="${esc(l.peakDate)}">${esc(l.peakDate.slice(0, 7))} 高點 → ${esc(l.lowDate.slice(0, 7))}｜${sg(l.depth, 1)}%${l.nsf ? '｜國安基金' : ''}</option>`).join('');
+  sel.dataset.filled = String(T.legs.length);
+  sel.value = liqUi.leg;
+}
+function renderLiq() {
+  const set = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+  if (!$('liq-cards')) return;
+  try {
+    const v = liqView(), T = v.T;
+    fillLiqLegs(T);
+    for (const c of $('liq-lb')?.querySelectorAll('.chip') ?? []) { c.classList.toggle('active', Number(c.dataset.lb) === liqUi.lookback); c.style.opacity = v.leg ? '0.4' : ''; }
+    set('liq-cards', liqCards(v));
+    const host = $('liq-chart');
+    if (host && !host.closest('[hidden]')) {
+      if (!liqChart) liqChart = echarts.init(host, isLight() ? null : 'dark');
+      liqChart.setOption(liqOption(v), { notMerge: true });
+      liqChart.resize();
+    }
+    $('liq-note').textContent = `圖：${v.rows[v.i0].date}～${v.rows[v.i1].date}。上：加權指數日 K 與四條線（高點、-${LV0}%、-${LV1}%、-${LV2}%），紫色倒三角＝單日融資減少 ≥${BIG_DROP}%，藍底＝國安基金護盤期間；中：融資維持率；下：單日融資變動。`;
+    set('liq-stats', liqStatsHtml(T));
+    set('liq-table', liqTableHtml(T));
+    set('liq-nsf', liqNsfHtml(T));
+    set('liq-cycle', liqCycleHtml());
+  } catch (e) {
+    console.error('[marginalert] liq render failed', e);
+    set('liq-cards', `<p class="text-muted-sm">⚠ 斷頭線區塊計算失敗：${esc(e.message || e)}（不影響下方回測）</p>`);
+  }
+}
+function wireLiq() {
+  $('liq-leg')?.addEventListener('change', e => { liqUi.leg = e.target.value; renderLiq(); });
+  chipPicker($('liq-lb'), 'lb', v => { liqUi.lookback = Number(v); liqUi.leg = ''; const s = $('liq-leg'); if (s) s.value = ''; renderLiq(); });
+  $('liq')?.addEventListener('toggle', () => liqChart?.resize());
+}
+
 // ── 卡片 ─────────────────────────────────────────────────────────────
 function renderSummary() {
   const { ds } = res;
@@ -902,6 +1104,7 @@ function renderZone() {
 function draw() {
   renderSummary();
   renderStress();
+  renderLiq();
   renderZone();
   renderTables();
   return preserveChartState(() => (chart ? [chart] : []), () => { chart.setOption(buildOption(), { notMerge: true }); });
@@ -973,6 +1176,7 @@ function wire() {
   chipPicker($('range-chips'), 's', v => { ui.start = v; rerun(false); });
   wireStress();
   wireStressChart();
+  wireLiq();
   const on = (id, fn) => $(id)?.addEventListener('change', fn);
   on('fg-select', e => { ui.fg = e.target.value === 'on'; syncChips(); draw(); });
   $('fear-range')?.addEventListener('input', e => { ui.fearThr = clampFear(e.target.value); recompute(); syncChips(); draw(); });
@@ -1022,7 +1226,7 @@ function applyBasis(b, redraw = true) {
   if (!raw) return;
   const merged = mergeRatio(raw.mmRaw, raw.rcRaw, b);
   raw.basis = b; raw.ratio = merged.rows; raw.ratioInfo = merged;
-  res = null; stressOv = null; stressH = null; stSeries = null; stSeriesByDate = null;
+  res = null; stressOv = null; stressH = null; stSeries = null; stSeriesByDate = null; liqT = null;
   if (redraw && chart && !$('chart')?.closest('[hidden]')) { recompute(); draw(); if (stChart) renderStressChart(); }
 }
 function wireBasis() {
@@ -1048,6 +1252,7 @@ export function onThemeChange(light) {
     stChart = echarts.init($('st-chart'), light ? null : 'dark');
     if (stSeries?.length) { const w = stCurrentWindow(); if (w) stChart.setOption(stOption(w), { notMerge: true }); }
   }
+  if (liqChart) { liqChart.dispose(); liqChart = null; if (raw) renderLiq(); }
 }
-export function resize() { chart?.resize(); stChart?.resize(); }
-export function getCharts() { return [chart, stChart].filter(Boolean); }
+export function resize() { chart?.resize(); stChart?.resize(); liqChart?.resize(); }
+export function getCharts() { return [chart, stChart, liqChart].filter(Boolean); }

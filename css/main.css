@@ -1656,3 +1656,8 @@
 @keyframes ov-news-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.ov-news-track{overflow-x:auto}.ov-news-move{animation:none}}
 @media (max-width:900px){.ov-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* marginalert 斷頭線區塊：手機上表格橫向捲動，不把欄位壓成直條 */
+#tab-marginalert .info-table.liq-wide { min-width:640px; }
+#tab-marginalert .info-table.liq-wide td, #tab-marginalert .info-table.liq-wide th { white-space:nowrap; }
+#tab-marginalert .info-table.liq-wide th { white-space:normal; min-width:84px; }

@@ -14,6 +14,7 @@ import * as N from './nonnormal_calc.mjs';
 import * as BO from './breakout_calc.mjs';
 import { computeCKWeekly, ckWeeklyCloses, ckWeekStart } from './cashking_calc.mjs';
 import { LEVEL_COLORS, ARROW, pctTxt, tempNowNodes } from './nonnormal_history.js';
+import { currentState, nsfStatus, LV0, LV1, LV2 } from './marginliq_calc.mjs';
 
 const byId = id => document.getElementById('nonnormal-' + id);
 const finite = v => typeof v === 'number' && Number.isFinite(v);
@@ -26,6 +27,7 @@ const HELP = {
   breakout: '右側（上漲突破）訊號，只是描述，不計入上方亮燈數。突破＝收盤創 N 個交易日新高（3 個月、半年、1 年、2 年、5 年、10 年，取最長的那個）。量能＝當天成交量 ÷ 前 63 個交易日（約 3 個月）均量：≥ 2 倍關注，≥ 3／5／10 倍密切關注。費半價格用 ^SOX、成交量借用 SOXX。指數層級的 2 倍量很少見（2007 起加權只有 3 次）；ETF 在季底、指數調整日量會暴增，倍數可能被灌大。',
   level: '0–1 個亮：常態（單一訊號視為雜訊）｜2–3：留意｜≥4 且橫跨 ≥2 組：警戒｜≥6 且三組都亮：高度警戒。每週五評估，本週未結束時用最新資料日。',
   downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
+  liq: '從加權指數近 120 個交易日的盤中最高點往下算。-14%～-16%：高點買進的融資開始被追繳（第一波）；-24%：大盤融資維持率貼近 130% 追繳線（第二波），2015 年後每次跌破國安基金都進場。是否跌破看盤中最低價。歷史統計，不是預測；圖與逐波段表在「台股融資警報」頁。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
   stance: '大跌時用來判斷「跌多深、到第幾個極端情境」，平常大多是空的。五格＝五種大跌時的訊號，條件成立就亮（●），「亮 N 格」＝其中幾格成立。定位＝加權水溫是不是冰水（含急凍）；位置＝加權離 5 年線 3% 以內或跌破，或權值 100 大有 30% 以上收在 5 年線下；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30、近 22 個交易日無觀察類股 ≥ 3 天、或近 30 日有一天跌停 ≥ 300 家（任一）；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫（日線）：10 日、50 日、200 日三條均線的方向（各和 1、5、21 個交易日前比，變化在 ±0.10%／±0.25%／±0.5% 內算走平 →）＋價格離 200 日線多遠。依序判斷：短、中都下彎且跌破極冷線（當時以前離 200 日線最深的 15%）＝冰水，長線也下彎是灰犀牛型、長線還沒下彎是急凍；三線都上揚且站上過熱線（最遠的 5%）＝滾水；跌破 200 日線 3% 以上＝冷水；±3% 內＝溫水；站上 3% 以上且長線上揚＝熱水，長線還沒翻上＝溫水。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。極端情境 1～3＝指數（大盤 ETF）可以考慮進場的時機，越後面越極端（跌得更深、恐慌更重），通常一個比一個晚出現：每個情境的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
   longwater: '長線水溫（本專案定義）：年線一律 240 日制，1Y／2Y／3Y／5Y／10Y＝240／480／720／1200／2400 日均線。方向＝均線和 21 個交易日前比，超過 ±0.50%／±0.30%／±0.20%／±0.15%／±0.10%（1Y→10Y）算 ↑／↓，其他 →。依序判斷：收盤 < 5 年線＝冰水（也 < 10 年線＝冰水＋）；< 2 年線＝冷水；< 1 年線，或站上但 1 年線沒有上揚＝溫水；1 年線上揚且離 1 年線達當天以前的 95 分位（至少 750 筆、下限 +15%）＝滾水；其他＝熱水。日線水溫看短中循環的急殺，長線水溫看長循環的位階，兩者常不同。回檔＝收盤 ÷ 近 480 日最高收盤 − 1。',
@@ -157,6 +159,33 @@ function renderSummary(now, prev) {
   lv.style.color = LEVEL_COLORS[now.level];
   el.append(lv, node('span', parts.join('｜'), { class: 'nonnormal-banner-sub' }), infoButton(HELP.level, '說明：等級'));
   byId('summary').replaceChildren(el);
+}
+
+// ── 台股距斷頭線（-14%～-16%／-24%；細節在 marginalert 頁）────────────────
+function renderLiq() {
+  const host = byId('liq');
+  if (!host) return;
+  const st = currentState(rawData?.TWII ?? [], { lookback: 120 });
+  if (!st) { host.textContent = '加權指數資料無法載入'; return; }
+  const n0 = x => Math.round(x).toLocaleString('en-US'), d = s => s.slice(5).replace('-', '/'), p1 = x => `${x > 0 ? '+' : ''}${x.toFixed(1)}%`;
+  const pill = (badge, hot, text) => {
+    const el = node('div', null, { class: 'nonnormal-cash-pill' });
+    if (badge) el.append(node('span', badge, { class: 'nonnormal-cash-badge' + (hot ? ' nonnormal-cash-badge--' + hot : '') }));
+    el.append(node('span', text));
+    return el;
+  };
+  const need = lv => `${(-lv.needPct).toFixed(1)}%`;
+  const first = st.l1.touched ? ['已跌破', 'king', `-${LV0}% ${d(st.l0.touchDate)}、-${LV1}% ${d(st.l1.touchDate)} 跌破`]
+    : st.l0.touched ? ['進入區間', 'king', `-${LV0}% ${d(st.l0.touchDate)} 跌破，距 -${LV1}% 收盤再跌 ${need(st.l1)}`]
+      : ['未到', '', `收盤再跌 ${need(st.l0)}～${need(st.l1)}`];
+  const second = st.l2.touched ? ['已跌破', 'king', `${d(st.l2.touchDate)} 跌破`] : ['未到', '', `收盤再跌 ${need(st.l2)}`];
+  const ns = nsfStatus(st.date), e = ns.event;
+  host.replaceChildren(
+    pill(null, '', `高點 ${n0(st.hi)}（${d(st.hiDate)} 盤中，近 120 日）｜收盤 ${n0(st.close)}（${p1(st.closePct)}）｜之後盤中最低 ${p1(st.lowPct)}`),
+    pill(first[0], first[1], `第一波 -${LV0}%～-${LV1}%：${n0(st.l0.line)}～${n0(st.l1.line)}｜${first[2]}`),
+    pill(second[0], second[1], `第二波 -${LV2}%：${n0(st.l2.line)}｜${second[2]}`),
+    pill(ns.active ? '護盤中' : '未進場', ns.active ? 'gold' : '', `國安基金：${ns.active ? `第 ${e.n} 次，${d(e.decide)} 決議` : `上一次第 ${e.n} 次（${e.decide.slice(0, 4)}/${d(e.decide)}～${e.end.slice(0, 4)}/${d(e.end)}）`}`),
+  );
 }
 
 // ── quote cards ─────────────────────────────────────────────────────────
@@ -697,7 +726,7 @@ function renderAll() {
       const running = new Date(Date.parse(now.date)).getUTCDay() !== 5;
       const last = id => ctx.s[id]?.dates?.at(-1);
       byId('asof').textContent = `${now.date}${running ? '（本週至今）' : ''}・美股收盤 ${last('SPX')}、台股收盤 ${last('TWII')}・每日 06:00（美股收盤後）、18:00（台股收盤後）自動更新`;
-      renderSummary(now, prev); renderCards(now); renderCash(); renderLeadLag(now.date); renderStance(now.date); byId('temp-now').replaceChildren(...tempNowNodes(ctx, now.date, 'TWII')); renderTurn(now.date); renderBreakout(now.date);
+      renderSummary(now, prev); renderLiq(); renderCards(now); renderCash(); renderLeadLag(now.date); renderStance(now.date); byId('temp-now').replaceChildren(...tempNowNodes(ctx, now.date, 'TWII')); renderTurn(now.date); renderBreakout(now.date);
       drawDetail();
       if (byId('cases-details').open) renderCases();
       if (byId('sources-details').open) renderSources();
