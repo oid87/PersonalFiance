@@ -390,11 +390,21 @@ function chartOption(i, option) {
 // ── 資金流向（現金為王）──────────────────────────────────────────────────
 const CASH_WINDOWS = { 1: 'weekRets', 4: 'cum4Rets', 8: 'cum8Rets' };
 /** Returns of each cash asset over the last k weeks, on the same Monday-keyed weekly closes as the cashking page. */
+/** 期間內（基準週最後交易日起）收盤最高點 → 最新收盤的跌幅。回傳 { dd, date }；資料不足回 null。 */
+function cashHighDrop(key, base) {
+  const data = ck.raw[key] || [];
+  let from = null;
+  for (const [d] of data) if (base && ckWeekStart(d) === base.w) from = d;
+  if (!from) return null;
+  let hi = -Infinity, date = null, lastC = null;
+  for (const [d, c] of data) if (d >= from) { if (c > hi) { hi = c; date = d; } lastC = c; }
+  return lastC && hi > 0 ? { dd: lastC / hi - 1, date } : null;
+}
 function cashReturns(k) {
   const rows = ck.rows, last = rows.at(-1), base = rows.at(-1 - k);
-  const out = CK_ASSETS.map(a => ({ key: a.key, color: a.color, ret: last[CASH_WINDOWS[k]][a.key] }));
+  const out = CK_ASSETS.map(a => ({ key: a.key, color: a.color, ret: last[CASH_WINDOWS[k]][a.key], hi: cashHighDrop(a.key, base) }));
   const spy = ckWeeklyCloses(ck.raw.SPY), a = spy[last.w], b = base ? spy[base.w] : null;
-  out.push({ key: 'SPY', color: CASH_ASSETS.at(-1).color, ret: a && b ? a / b - 1 : null });
+  out.push({ key: 'SPY', color: CASH_ASSETS.at(-1).color, ret: a && b ? a / b - 1 : null, hi: cashHighDrop('SPY', base) });
   return out.sort((x, y) => (y.ret ?? -Infinity) - (x.ret ?? -Infinity));
 }
 /** 10Y 殖利率在 TLT 同一段期間（基準週最後交易日 → 最新週最後交易日）的變化（bp）。10Y 比 TLT 晚一天公布時，到 10Y 最新一天為止。 */
@@ -426,7 +436,9 @@ function renderCash() {
   }));
   const rets = cashReturns(cashWin), max = Math.max(...rets.map(r => Math.abs(r.ret ?? 0)), 1e-9);
   const y10 = tenYearBp(cashWin);
-  byId('cash-rank').replaceChildren(...rets.map(r => {
+  const head = node('div', null, { class: 'nonnormal-rank-row nonnormal-rank-head' });
+  head.append(node('span', ''), node('span', ''), node('span', `${cashWin} 週漲跌`, { class: 'nonnormal-rank-val' }), node('span', '期間高點→現在', { class: 'nonnormal-rank-val', title: '這段期間內收盤最高點到最新收盤的跌幅（0% 表示現在就是期間最高）' }));
+  byId('cash-rank').replaceChildren(head, ...rets.map(r => {
     const row = node('div', null, { class: 'nonnormal-rank-row' }), bar = node('span', null, { class: 'nonnormal-rank-bar' });
     bar.style.width = `${(Math.abs(r.ret ?? 0) / max) * 50}%`;   // 中線＝0：漲往右、跌往左
     bar.style[r.ret < 0 ? 'right' : 'left'] = '50%';
@@ -434,7 +446,9 @@ function renderCash() {
     const label = node('span', CASH_LABELS[r.key], { class: 'nonnormal-rank-label' });
     const track = node('span', null, { class: 'nonnormal-rank-track' });
     track.append(bar);
-    row.append(label, track, node('span', finite(r.ret) ? signed(r.ret * 100, 1) + '%' : '—', { class: 'nonnormal-rank-val ' + dirClass(r.ret) }));
+    row.append(label, track, node('span', finite(r.ret) ? signed(r.ret * 100, 1) + '%' : '—', { class: 'nonnormal-rank-val ' + dirClass(r.ret) }),
+      node('span', r.hi ? `${(r.hi.dd * 100).toFixed(1)}%` : '—', { class: 'nonnormal-rank-val ' + (r.hi && r.hi.dd < -0.0005 ? dirClass(-1) : ''), title: r.hi ? `期間收盤高點 ${r.hi.date}` : '' }),
+      node('small', r.hi ? r.hi.date.slice(5).replace('-', '/') : '', { class: 'nonnormal-rank-hd' }));
     if (r.key === 'TLT' && y10) row.append(node('small', `同期 10Y 殖利率 ${signed(y10.bp, 0)}bp${y10.lag ? `（10Y 資料到 ${y10.asOf.slice(5).replace('-', '/')}）` : ''}`, {
       class: 'nonnormal-rank-note', title: '1bp＝0.01 個百分點；殖利率跌＝債券漲。TLT 是 20 年以上長債，和 10Y 不會完全同步。' }));
     return row;
