@@ -304,7 +304,7 @@ function buildOption() {
   const nAx = showFg ? [0, 1, 2, 3] : [0, 1, 2];
   const yearSpan = minSpanForAxis({ type: 'category', data: dates }, 365) ?? undefined;
   const ratioC = '#f59e0b', marginC = '#58a6ff';
-  // 斷頭線：歷史每一波（跌幅 ≥14%）從高點起畫半年的 -14／-16／-22／-24% 線段；最新一波延伸到今天。國安基金護盤期間用藍底。
+  // 斷頭線：歷史每一波（跌幅 ≥14%）從高點起畫約 3 個月的 -14／-16／-22／-24% 線段；最新一波延伸到今天。國安基金護盤期間用藍底。
   const lq = liqAt(null);
   const lqLines = liqSegments(dates, liqLabelsOn(dates.length));
   const nsfAreas = NSF_EVENTS.filter(e => (e.end ?? '9999') >= dates[0] && e.decide <= dates.at(-1)).map(e => [
@@ -762,8 +762,8 @@ function liqAt(date) {
     return i === undefined ? null : currentState(T.rows, { lookback: 120, endIndex: i });
   } catch (e) { console.warn('[marginalert] liq lines failed', e); return null; }
 }
-// 主圖線段：每一波 [高點日, 高點後 LIQ_SEG_TD 個交易日]（最新參考高點延伸到最後一天）。labels＝是否在線上標點位（視窗夠窄才標，免得擠成一團）
-const LIQ_SEG_TD = 125;
+// 主圖線段：每一波 [高點日, 高點後 LIQ_SEG_TD 個交易日]（最新參考高點延伸到最後一天；還沒跌成一波時，高點滿 2 週就先畫）。labels＝是否在線上標點位（視窗夠窄才標，免得擠成一團）
+const LIQ_SEG_TD = 63, LIQ_NOW_MIN_TD = 10;   // 每波畫約 3 個月；最新高點要滿 2 週（10 個交易日）才畫預備線
 const liqLabelBars = () => (mob() ? 280 : 520);   // 視窗內交易日數不超過這個才在線上標點位
 let liqLabelState = null;
 function liqLabelsOn(total) {
@@ -779,7 +779,7 @@ function liqSegments(dates, labels) {
   waves.forEach((w, k) => { const nx = waves[k + 1]; if (nx && nx.i0 - 1 < w.i1) w.i1 = Math.max(w.i0 + 1, nx.i0 - 1); });   // 下一波開始就截斷，線不重疊
   if (now) {
     const same = waves.find(w => w.i0 === now.hiIndex);
-    if (same) same.i1 = n - 1; else waves.push({ hi: now.hi, i0: now.hiIndex, i1: n - 1 });
+    if (same) same.i1 = n - 1; else if (n - 1 - now.hiIndex >= LIQ_NOW_MIN_TD) waves.push({ hi: now.hi, i0: now.hiIndex, i1: n - 1 });
   }
   const snap = d => dates.find(x => x >= d);
   for (const w of waves) {
