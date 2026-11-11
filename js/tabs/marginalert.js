@@ -15,7 +15,7 @@ import { analyzeHistory, scenarioView, signalOverlap, MANUAL_BETAS, KEY_DROP_PTS
 import { chipPicker } from '../utils/dom.js';
 import { getMarginBasis, onMarginBasisChange, mountMarginBasisPicker, BASIS_LABEL } from '../utils/marginBasis.js';
 import { minSpanForAxis } from '../utils/zoomFloor.js';
-import { legTable, hitStats, currentState, touchInfo, nsfStatus, cycleRows, cycleSummary, signalMap, signalMax4, regimeOf, NSF_EVENTS, NSF_UPDATED, LV0, LV1, LV2, BIG_DROP } from './marginliq_calc.mjs';
+import { legTable, hitStats, currentState, touchInfo, nsfStatus, cycleRows, cycleSummary, signalMap, signalMax4, regimeOf, NSF_EVENTS, NSF_UPDATED, LV0, LV1, LV2, BIG_DROP, CHART_LEVELS } from './marginliq_calc.mjs';
 
 const TAB_ID = 'marginalert';
 // 頁面預設範圍：維持率重建資料最早的一天（引擎／CLI 報告的 DEFAULTS.start 仍是 2020-01-01，不受影響）
@@ -250,34 +250,16 @@ const pctChg = (now, base) => (isNum(now) && isNum(base) && base ? (now / base -
 function swingTable(d) {
   const { x, m } = d.sw ?? {};
   if (!x || !m) return '';
-  const col = ref => {
-    const xp = pctChg(d.close, x[ref]), mp = pctChg(d.margin, m[ref]);
-    return { xp, mp, amt: d.margin - m[ref], lev: isNum(xp) && isNum(mp) && Math.abs(xp) >= 3 ? mp / xp : null };
-  };
-  const H = col('hi'), L = col('lo');
   const tx = raw?.txSw?.get(d.date);
-  const td = 'style="padding:0 0 0 6px;text-align:right;white-space:nowrap"';
-  const row = (name, a, b) => `<tr><td style="white-space:nowrap">${name}</td><td ${td}>${a}</td><td ${td}>${b}</td></tr>`;
-  const mg = c => `${sg(c.amt, 0)}億 ${sg(c.mp, 1)}%`;
-  const dv = divergence(d);
-  return `<table style="border-collapse:collapse;font-size:11px;width:100%">` +
-    `<tr style="color:${PALETTE.muted}"><td></td><td ${td}>60日高→今</td><td ${td}>20日低→今</td></tr>` +
-    row('加權', `${sg(H.xp, 1)}%`, `${sg(L.xp, 1)}%`) +
-    row('融資', mg(H), mg(L)) +
-    (tx ? row('台指期含夜盤', `${sg(pctChg(tx.close, tx.hi), 1)}%`, `${sg(pctChg(tx.close, tx.lo), 1)}%`) : '') +
-    row('融資÷指數', isNum(H.lev) ? `${f(H.lev, 2)}×` : '—', isNum(L.lev) ? `${f(L.lev, 2)}×` : '—') + '</table>' +
-    (dv ? `<div style="font-size:11px;margin-top:2px">${dv}</div>` : '') + drawTable(d, tx);
+  const mp = pctChg(d.margin, m.hi), dv = divergence(d);
+  return drawTable(d, tx) + `<div style="font-size:11px">融資較 60 日高 ${sg(d.margin - m.hi, 0)} 億（${sg(mp, 1)}%）</div>` + (dv ? `<div style="font-size:11px">${dv}</div>` : '');
 }
 // 60 日盤中高點 → 之後最低點（加權／台指期日盤／夜盤／合併）
 function drawTable(d, tx) {
   const pd = raw?.twPd?.get(d.date);
-  const td = 'style="padding:0 0 0 6px;text-align:right;white-space:nowrap"';
-  const row = (name, p) => p ? `<tr><td style="white-space:nowrap">${name}</td><td ${td}>${f(p.hi, 0)}<span style="color:${PALETTE.muted}">（${p.hiDate.slice(5)}）</span></td><td ${td}>${f(p.lo, 0)}<span style="color:${PALETTE.muted}">（${p.loDate.slice(5)}）</span></td><td ${td}>${hot(sg(p.pct, 1) + '%')}</td></tr>` : '';
-  const body = row('加權', pd) + (tx ? row('台指期日盤', tx.dd.day) + row('台指期夜盤', tx.dd.night) + row('期貨合併', tx.dd.all) : '');
-  if (!body) return '';
-  return `<table style="border-collapse:collapse;font-size:11px;width:100%;margin-top:4px">` +
-    `<tr style="color:${PALETTE.muted}"><td>60日高→最低</td><td ${td}>高點</td><td ${td}>最低</td><td ${td}>跌幅</td></tr>` + body + '</table>' +
-    (isNum(pd?.ma5y) ? `<div style="font-size:11px">5年線（1250日均）${f(pd.ma5y, 0)}｜當日盤中低距5年線 ${sg(pctChg(pd.dayLow, pd.ma5y), 1)}%</div>` : '');
+  const one = (name, p) => (p ? `${name} ${hot(sg(p.pct, 1) + '%')}（${nf(p.hi)}→${nf(p.lo)}）` : '');
+  const parts = [one('加權', pd), tx ? one('期貨含夜盤', tx.dd.all) : ''].filter(Boolean);
+  return parts.length ? `<div style="font-size:11px">60 日盤中高→之後最低<br>${parts.join('<br>')}</div>` : '';
 }
 // 指數與融資背離（只在發生時顯示一行；描述現況，回測沒有穩定的預測方向，不當訊號）：
 // ①指數距 60 日高 ≤ -8%，融資卻比指數高點那天多 → 接刀
@@ -322,6 +304,13 @@ function buildOption() {
   const nAx = showFg ? [0, 1, 2, 3] : [0, 1, 2];
   const yearSpan = minSpanForAxis({ type: 'category', data: dates }, 365) ?? undefined;
   const ratioC = '#f59e0b', marginC = '#58a6ff';
+  // 斷頭線：近 120 日盤中高點往下 -14／-16／-22／-24%（畫在指數那一格，線上標點位）
+  const lq = liqAt(null);
+  const lqLines = lq ? [
+    { yAxis: lq.hi, lineStyle: { color: PALETTE.muted, type: 'solid', width: 1 }, label: { formatter: `高點 ${nf(lq.hi)}（${lq.hiDate.slice(5)}）`, color: PALETTE.muted, position: 'insideStartTop' } },
+    ...CHART_LEVELS.map((lv, k) => { const c = lv >= 20 ? '#dc2626' : '#f59e0b'; return { yAxis: lq.hi * (1 - lv / 100), lineStyle: { color: c, type: 'dashed', width: 1.2 }, label: { formatter: `-${lv}% ${nf(lq.hi * (1 - lv / 100))}`, color: c, position: ['insideStartTop', 'insideStartBottom', 'insideMiddleTop', 'insideMiddleBottom'][k] } }; }),
+  ] : [];
+  const lqMin = lq ? lq.hi * (1 - CHART_LEVELS.at(-1) / 100) * 0.985 : null;
   return echartsBase({
     animation: false,
     legend: { top: 0, textStyle: { color: PALETTE.muted, fontSize: 11 }, data: ['加權指數', `警報首日(≤-${ui.th}%)`, '同波續發日', '融資餘額(億)', `融資維持率(重建·${BASIS_LABEL[raw?.basis || 'all']})`, '融資單日%', ...(showFg ? ['恐懼貪婪'] : [])] },
@@ -342,8 +331,8 @@ function buildOption() {
           `<br>融資 ${f(d.margin, 0)} 億｜${fired ? hot(oneDay + ' 觸發') : oneDay}${belowGate ? `<br>（距 ${ui.lookback} 日高 -${f(d.dd)}%，未達回撤閘門 ${ui.gate}%，不算警報）` : ''}` +
           (sw ? sec(sw) : '') +
           (isNum(d.ratio) ? sec(`維持率 ${f(d.ratio, 1)}｜${zoneText(z)}` +
-            (d.r4 ? `<br>較高點：四週 ${sg(d.r4.diff, 1)}${d.sw?.r ? `｜60日 ${sg(d.ratio - d.sw.r.hi, 1)}` : ''}` : '') + `<br>${projLine(d)}` + (lagLine(days, i) ? `<br>${lagLine(days, i)}` : '')) : '') +
-          (isNum(d.fg) ? `<div>恐懼貪婪 ${f(d.fg, 1)}</div>` : '');
+            (d.r4 ? `<br>較高點：四週 ${sg(d.r4.diff, 1)}${d.sw?.r ? `｜60日 ${sg(d.ratio - d.sw.r.hi, 1)}` : ''}` : '') + (lagLine(days, i) ? `<br>${lagLine(days, i)}` : '')) : '') +
+          liqTipLine(d.date);
       },
     },
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
@@ -359,7 +348,7 @@ function buildOption() {
       { left: L, right: Rr, top: '78%', height: '12%' },
     ],
     xAxis: [...nAx.slice(0, -1).map(k => axis(k, false)), axis(nAx.at(-1), true)],
-    yAxis: [yAxis(0, mob() ? '' : '加權指數', { min: 'dataMin' }), yAxis(1, '融資(億)', { min: 'dataMin', axisLabel: { color: marginC, fontSize: 11 } }),
+    yAxis: [yAxis(0, mob() ? '' : '加權指數', { min: v => (isNum(lqMin) && v.max >= lqMin ? Math.min(v.min, lqMin) : v.min) }), yAxis(1, '融資(億)', { min: 'dataMin', axisLabel: { color: marginC, fontSize: 11 } }),
       yAxis(1, '維持率%', { position: 'right', splitLine: { show: false }, axisLabel: { color: ratioC, fontSize: 11 } }), yAxis(2, '單日%', { scale: false }),
       ...(showFg ? [yAxis(3, '恐懼貪婪', { scale: false, min: 0, max: 100 })] : [])],
     // 這頁 slider／滾輪最短一年（使用者指定；比全站 9 個月的 zoomFloor 長）
@@ -370,6 +359,7 @@ function buildOption() {
     series: [
       { name: '加權指數', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: days.map(d => d.close), showSymbol: false,
         lineStyle: { width: 1.3, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
+        markLine: { silent: true, symbol: 'none', label: { fontSize: 10 }, data: lqLines },
         markArea: { silent: true, label: { color: PALETTE.muted, fontSize: 10 }, data: [...areaData, ...fearAreas] } },
       { name: `警報首日(≤-${ui.th}%)`, type: 'scatter', xAxisIndex: 0, yAxisIndex: 0, data: first, symbol: 'triangle', symbolSize: 12, itemStyle: { color: '#ef4444' }, z: 5 },
       { name: '同波續發日', type: 'scatter', xAxisIndex: 0, yAxisIndex: 0, data: rest, symbol: 'circle', symbolSize: 6, itemStyle: { color: '#e3b341' }, z: 4 },
@@ -756,14 +746,28 @@ function wireStress() {
 
 // ── 斷頭線（-14%～-16%／-24%）與國安基金 ─────────────────────────────
 // 引擎：js/tabs/marginliq_calc.mjs。參考高點＝盤中最高、是否跌破＝盤中最低；維持率為收盤重建值。
-let liqChart = null, liqT = null;
+let liqChart = null, liqT = null, liqIdx = new Map();
 let liqUi = { lookback: 120, leg: '' };
 const nf = x => (isNum(x) ? Math.round(x).toLocaleString('en-US') : '—');
 const md = d => (d ? esc(d.slice(5)) : '—');
 const REGIME = { hot: '偏熱（30 分以上）', mid: '中間（25～29 分）', cold: '偏冷（25 分以下）' };
 function liqData() {
-  if (!liqT) liqT = legTable({ twii: raw.twii, margin: raw.margin, ratio: raw.ratio });
+  if (!liqT) { liqT = legTable({ twii: raw.twii, margin: raw.margin, ratio: raw.ratio }); liqIdx = new Map(liqT.rows.map((r, i) => [r.date, i])); }
   return liqT;
+}
+// 某一天（null＝最新）往前 120 個交易日的盤中高點與各條線
+function liqAt(date) {
+  try {
+    const T = liqData(), i = date ? liqIdx.get(date) : T.rows.length - 1;
+    return i === undefined ? null : currentState(T.rows, { lookback: 120, endIndex: i });
+  } catch (e) { console.warn('[marginalert] liq lines failed', e); return null; }
+}
+// tooltip 一行：那一天的斷頭線點位（已跌破的標紅）
+function liqTipLine(date) {
+  const st = liqAt(date);
+  if (!st) return '';
+  const one = lv => { const y = st.hi * (1 - lv / 100), t = `-${lv}% ${nf(y)}`; return st.lo <= y ? hot(t) : t; };
+  return `<div style="margin-top:3px;padding-top:3px;border-top:1px solid ${PALETTE.border};font-size:11px">斷頭線（120 日高 ${nf(st.hi)}，紅＝已跌破）<br>${CHART_LEVELS.map(one).join('｜')}</div>`;
 }
 // 目前選的那一波（或「現在」）：參考高點、三條線、圖的視窗、期貨口徑
 function liqView() {

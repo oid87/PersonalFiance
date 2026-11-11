@@ -3044,24 +3044,6 @@
   <section id="tab-marginalert" class="tab-section" hidden>
     <h2 style="margin:0;padding:12px 16px 0;font-size:16px">台股融資去槓桿警報</h2>
     <div id="marginalert-status" style="padding:8px 16px;color:var(--muted);font-size:12px"></div>
-    <details class="ui-details" id="marginalert-liq" open>
-      <summary>斷頭線與國安基金：距高點 -14%～-16%（第一波）、-24%（第二波）</summary>
-      <div class="table-pad">
-        <p class="text-muted-sm" style="margin:0 0 8px;line-height:1.7">怎麼看：從波段<b>盤中最高點</b>往下算。跌到 <b>-14%～-16%</b> 附近，高點買進的融資開始被追繳（第一波）；跌到 <b>-24%</b> 附近，大盤融資維持率貼近 130% 追繳線（第二波），2015 年後 5 次跌破 -24% 國安基金都進場。這是歷史統計，不是預測。 <button type="button" class="ma-info" data-info="融資六成時起始維持率約 166.7%，股價跌 22% 就到 130% 追繳線。指數跌 16% 時，跌得比指數多的融資股已先破線；指數跌 24% 時，連跟指數同步的持股也破線。參考高點用盤中最高價、是否跌破用盤中最低價；維持率是收盤後的重建值。國安基金條例沒有跌幅門檻，-24% 是 2015 年後 5 次的經驗。" aria-expanded="false" aria-label="說明：斷頭線">ⓘ</button></p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
-          <div class="lev-field" style="min-width:220px"><label for="marginalert-liq-leg">看哪一波 <button type="button" class="ma-info" data-info="「現在」＝用最近一段時間的盤中最高點當參考高點。也可以選歷史上的下跌波段（跌幅 ≥14%），圖與卡片會改成那一波當時的情況。" aria-expanded="false" aria-label="說明：看哪一波">ⓘ</button></label><select id="marginalert-liq-leg" aria-label="看哪一波"><option value="">現在</option></select></div>
-          <div class="lev-field"><label>參考高點取近幾個交易日 <button type="button" class="ma-info" data-info="只在「現在」有用：取最近 60／120／250 個交易日內的盤中最高點。反彈創新高後，參考高點會跟著往上移。" aria-expanded="false" aria-label="說明：參考高點窗">ⓘ</button></label><div id="marginalert-liq-lb" style="display:flex;gap:6px"><span class="chip" data-lb="60">60 日</span><span class="chip" data-lb="120">120 日</span><span class="chip" data-lb="250">250 日</span></div></div>
-        </div>
-        <div id="marginalert-liq-cards" style="display:flex;gap:10px;flex-wrap:wrap"></div>
-        <div id="marginalert-liq-chart" style="width:100%;height:600px;min-height:480px;margin-top:8px"></div>
-        <p class="text-muted-sm" id="marginalert-liq-note" style="margin:4px 0 8px"></p>
-        <h4 style="margin:12px 0 4px">歷史上跌破這兩條線時發生什麼</h4>
-        <div id="marginalert-liq-stats" style="line-height:1.7"></div>
-        <details class="ui-details"><summary>逐波段明細：每一波跌破兩條線的日期、維持率、融資減幅</summary><div id="marginalert-liq-table" class="table-pad"></div></details>
-        <details class="ui-details"><summary>國安基金歷次進場時，指數距高點多少</summary><div id="marginalert-liq-nsf" class="table-pad"></div></details>
-        <details class="ui-details"><summary>第一波之後會不會有第二波：看景氣燈號</summary><div id="marginalert-liq-cycle" class="table-pad"></div></details>
-      </div>
-    </details>
     <details class="ui-details" id="marginalert-params">
       <summary>回測參數：<span id="marginalert-params-line" class="text-muted-sm"></span></summary>
       <div class="table-pad" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px 16px">
@@ -3136,6 +3118,24 @@
       <details class="ui-details"><summary>資料來源、定義與限制</summary><div id="marginalert-sources" class="table-pad" style="line-height:1.7"></div></details>
       <p class="text-muted-sm" style="padding:8px 4px">研究／風險警示工具：融資減少不等於斷頭，警報不等於買入訊號；樣本少（獨立事件個位數到二十餘件）、事件間高度重疊，數字是描述而非預測。不影響任何正式交易條件。</p>
     </div>
+    <details class="ui-details" id="marginalert-liq" open>
+      <summary>說明與歷史：斷頭線（距高點 -14%～-16% 第一波、-24% 第二波）與國安基金</summary>
+      <div class="table-pad">
+        <p class="text-muted-sm" style="margin:0 0 8px;line-height:1.7">怎麼看：從波段<b>盤中最高點</b>往下算。跌到 <b>-14%～-16%</b> 附近，高點買進的融資開始被追繳（第一波）；跌到 <b>-24%</b> 附近，大盤融資維持率貼近 130% 追繳線（第二波），2015 年後 5 次跌破 -24% 國安基金都進場。這是歷史統計，不是預測。 <button type="button" class="ma-info" data-info="融資六成時起始維持率約 166.7%，股價跌 22% 就到 130% 追繳線。指數跌 16% 時，跌得比指數多的融資股已先破線；指數跌 24% 時，連跟指數同步的持股也破線。參考高點用盤中最高價、是否跌破用盤中最低價；維持率是收盤後的重建值。國安基金條例沒有跌幅門檻，-24% 是 2015 年後 5 次的經驗。" aria-expanded="false" aria-label="說明：斷頭線">ⓘ</button></p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+          <div class="lev-field" style="min-width:220px"><label for="marginalert-liq-leg">看哪一波 <button type="button" class="ma-info" data-info="「現在」＝用最近一段時間的盤中最高點當參考高點。也可以選歷史上的下跌波段（跌幅 ≥14%），圖與卡片會改成那一波當時的情況。" aria-expanded="false" aria-label="說明：看哪一波">ⓘ</button></label><select id="marginalert-liq-leg" aria-label="看哪一波"><option value="">現在</option></select></div>
+          <div class="lev-field"><label>參考高點取近幾個交易日 <button type="button" class="ma-info" data-info="只在「現在」有用：取最近 60／120／250 個交易日內的盤中最高點。反彈創新高後，參考高點會跟著往上移。" aria-expanded="false" aria-label="說明：參考高點窗">ⓘ</button></label><div id="marginalert-liq-lb" style="display:flex;gap:6px"><span class="chip" data-lb="60">60 日</span><span class="chip" data-lb="120">120 日</span><span class="chip" data-lb="250">250 日</span></div></div>
+        </div>
+        <div id="marginalert-liq-cards" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+        <div id="marginalert-liq-chart" style="width:100%;height:600px;min-height:480px;margin-top:8px"></div>
+        <p class="text-muted-sm" id="marginalert-liq-note" style="margin:4px 0 8px"></p>
+        <h4 style="margin:12px 0 4px">歷史上跌破這兩條線時發生什麼</h4>
+        <div id="marginalert-liq-stats" style="line-height:1.7"></div>
+        <details class="ui-details"><summary>逐波段明細：每一波跌破兩條線的日期、維持率、融資減幅</summary><div id="marginalert-liq-table" class="table-pad"></div></details>
+        <details class="ui-details"><summary>國安基金歷次進場時，指數距高點多少</summary><div id="marginalert-liq-nsf" class="table-pad"></div></details>
+        <details class="ui-details"><summary>第一波之後會不會有第二波：看景氣燈號</summary><div id="marginalert-liq-cycle" class="table-pad"></div></details>
+      </div>
+    </details>
   </section>
 
   <!-- ── 融資斷頭地圖 tab (每日融資買進/賣出/償還還原成本位階 vintage) ── -->
