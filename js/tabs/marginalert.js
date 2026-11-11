@@ -304,12 +304,12 @@ function buildOption() {
   const nAx = showFg ? [0, 1, 2, 3] : [0, 1, 2];
   const yearSpan = minSpanForAxis({ type: 'category', data: dates }, 365) ?? undefined;
   const ratioC = '#f59e0b', marginC = '#58a6ff';
-  // 斷頭線：近 120 日盤中高點往下 -14／-16／-22／-24%（畫在指數那一格，線上標點位）
+  // 斷頭線：歷史每一波（跌幅 ≥14%）從高點起畫半年的 -14／-16／-22／-24% 線段；最新一波延伸到今天。國安基金護盤期間用藍底。
   const lq = liqAt(null);
-  const lqLines = lq ? [
-    { yAxis: lq.hi, lineStyle: { color: PALETTE.muted, type: 'solid', width: 1 }, label: { formatter: `高點 ${nf(lq.hi)}（${lq.hiDate.slice(5)}）`, color: PALETTE.muted, position: 'insideStartTop' } },
-    ...CHART_LEVELS.map((lv, k) => { const c = lv >= 20 ? '#dc2626' : '#f59e0b'; return { yAxis: lq.hi * (1 - lv / 100), lineStyle: { color: c, type: 'dashed', width: 1.2 }, label: { formatter: `-${lv}% ${nf(lq.hi * (1 - lv / 100))}`, color: c, position: ['insideStartTop', 'insideStartBottom', 'insideMiddleTop', 'insideMiddleBottom'][k] } }; }),
-  ] : [];
+  const lqLines = liqSegments(dates, liqLabelsOn(dates.length));
+  const nsfAreas = NSF_EVENTS.filter(e => (e.end ?? '9999') >= dates[0] && e.decide <= dates.at(-1)).map(e => [
+    { name: `國安${e.n}`, xAxis: nearest(dates, e.decide < dates[0] ? dates[0] : e.decide), itemStyle: { color: 'rgba(59,130,246,0.13)' }, label: { color: '#3b82f6', fontSize: 10, position: 'insideBottom' } },
+    { xAxis: e.end ? nearest(dates, e.end) : dates.at(-1) }]);
   const lqMin = lq ? lq.hi * (1 - CHART_LEVELS.at(-1) / 100) * 0.985 : null;
   return echartsBase({
     animation: false,
@@ -360,7 +360,7 @@ function buildOption() {
       { name: '加權指數', type: 'line', xAxisIndex: 0, yAxisIndex: 0, data: days.map(d => d.close), showSymbol: false,
         lineStyle: { width: 1.3, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
         markLine: { silent: true, symbol: 'none', label: { fontSize: 10 }, data: lqLines },
-        markArea: { silent: true, label: { color: PALETTE.muted, fontSize: 10 }, data: [...areaData, ...fearAreas] } },
+        markArea: { silent: true, label: { color: PALETTE.muted, fontSize: 10 }, data: [...areaData, ...fearAreas, ...nsfAreas] } },
       { name: `警報首日(≤-${ui.th}%)`, type: 'scatter', xAxisIndex: 0, yAxisIndex: 0, data: first, symbol: 'triangle', symbolSize: 12, itemStyle: { color: '#ef4444' }, z: 5 },
       { name: '同波續發日', type: 'scatter', xAxisIndex: 0, yAxisIndex: 0, data: rest, symbol: 'circle', symbolSize: 6, itemStyle: { color: '#e3b341' }, z: 4 },
       { name: '融資餘額(億)', type: 'line', xAxisIndex: 1, yAxisIndex: 1, data: days.map(d => d.margin), showSymbol: false, lineStyle: { width: 1.2, color: marginC }, itemStyle: { color: marginC },
@@ -761,6 +761,51 @@ function liqAt(date) {
     const T = liqData(), i = date ? liqIdx.get(date) : T.rows.length - 1;
     return i === undefined ? null : currentState(T.rows, { lookback: 120, endIndex: i });
   } catch (e) { console.warn('[marginalert] liq lines failed', e); return null; }
+}
+// 主圖線段：每一波 [高點日, 高點後 LIQ_SEG_TD 個交易日]（最新參考高點延伸到最後一天）。labels＝是否在線上標點位（視窗夠窄才標，免得擠成一團）
+const LIQ_SEG_TD = 125;
+const liqLabelBars = () => (mob() ? 280 : 520);   // 視窗內交易日數不超過這個才在線上標點位
+let liqLabelState = null;
+function liqLabelsOn(total) {
+  const z = chart?.getOption()?.dataZoom?.[0];
+  const span = z && isNum(z.startValue) && isNum(z.endValue) ? z.endValue - z.startValue + 1 : total;
+  return (liqLabelState = span <= liqLabelBars());
+}
+function liqSegments(dates, labels) {
+  let T;
+  try { T = liqData(); } catch (e) { console.warn('[marginalert] liq segments failed', e); return []; }
+  const rows = T.rows, n = rows.length, now = liqAt(null), out = [];
+  const waves = T.legs.filter(l => l.depth <= -LV0).map(l => ({ hi: l.peak, i0: l.pi, i1: Math.min(n - 1, l.pi + LIQ_SEG_TD) }));
+  waves.forEach((w, k) => { const nx = waves[k + 1]; if (nx && nx.i0 - 1 < w.i1) w.i1 = Math.max(w.i0 + 1, nx.i0 - 1); });   // 下一波開始就截斷，線不重疊
+  if (now) {
+    const same = waves.find(w => w.i0 === now.hiIndex);
+    if (same) same.i1 = n - 1; else waves.push({ hi: now.hi, i0: now.hiIndex, i1: n - 1 });
+  }
+  const snap = d => dates.find(x => x >= d);
+  for (const w of waves) {
+    const a = snap(rows[w.i0].date), b = rows[w.i1].date <= dates.at(-1) ? snap(rows[w.i1].date) : dates.at(-1);
+    if (!a || !b || a === b) continue;
+    const seg = (y, text, color, type, pos, main = true) => out.push([
+      { coord: [a, y], lineStyle: { color, type, width: main ? 1.3 : 0.8, opacity: main ? 1 : 0.7 }, label: { show: labels && main, formatter: text, color, fontSize: 10, position: pos } }, { coord: [b, y] }]);
+    seg(w.hi, `高 ${nf(w.hi)}`, PALETTE.muted, 'solid', 'insideStartTop');
+    // 只在 -16%、-24% 兩條主線上標點位；-14%、-22% 是細線（點位在提示框）
+    CHART_LEVELS.forEach(lv => seg(w.hi * (1 - lv / 100), `-${lv}% ${nf(w.hi * (1 - lv / 100))}`, lv >= 20 ? '#dc2626' : '#f59e0b', 'dashed', lv === LV2 ? 'insideStartBottom' : 'insideStartTop', lv === LV1 || lv === LV2));
+  }
+  return out;
+}
+// 縮放跨過門檻時才重設線上的點位標籤
+function wireLiqLabels() {
+  if (!chart || chart.__liqWired) return;
+  chart.__liqWired = true;
+  let t = 0;
+  chart.on('datazoom', () => {
+    clearTimeout(t);
+    t = setTimeout(() => {
+      if (!res || !chart) return;
+      const dates = res.ds.days.map(d => d.date), was = liqLabelState;
+      if (liqLabelsOn(dates.length) !== was) chart.setOption({ series: [{ name: '加權指數', markLine: { data: liqSegments(dates, liqLabelState) } }] });
+    }, 120);
+  });
 }
 // tooltip 一行：那一天的斷頭線點位（已跌破的標紅）
 function liqTipLine(date) {
@@ -1217,6 +1262,7 @@ export async function activate(context = {}) {
     if (!res) recompute();
     await draw();
     chart.resize();
+    wireLiqLabels();
   } catch (e) {
     console.error(`[${TAB_ID}] load failed`, e);
     const s = $('status');
@@ -1251,6 +1297,7 @@ export function onThemeChange(light) {
   chart.dispose();
   chart = echarts.init(host, light ? null : 'dark');
   if (res) chart.setOption(buildOption(), { notMerge: true });
+  wireLiqLabels();
   if (stChart) {
     stChart.dispose();
     stChart = echarts.init($('st-chart'), light ? null : 'dark');
