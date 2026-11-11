@@ -763,7 +763,7 @@ function liqAt(date) {
   } catch (e) { console.warn('[marginalert] liq lines failed', e); return null; }
 }
 // 主圖線段：每一波 [高點日, 高點後 LIQ_SEG_TD 個交易日]（最新參考高點延伸到最後一天；還沒跌成一波時，高點滿 2 週就先畫）。labels＝是否在線上標點位（視窗夠窄才標，免得擠成一團）
-const LIQ_SEG_TD = 63, LIQ_NOW_MIN_TD = 10;   // 每波畫約 3 個月；最新高點要滿 2 週（10 個交易日）才畫預備線
+const LIQ_SEG_TD = 63, LIQ_NOW_MIN_TD = 10, LIQ_TAIL_TD = 10;   // 每波畫約 3 個月；最新高點要滿 2 週（10 個交易日）才畫預備線
 const liqLabelBars = () => (mob() ? 280 : 520);   // 視窗內交易日數不超過這個才在線上標點位
 let liqLabelState = null;
 function liqLabelsOn(total) {
@@ -775,7 +775,11 @@ function liqSegments(dates, labels) {
   let T;
   try { T = liqData(); } catch (e) { console.warn('[marginalert] liq segments failed', e); return []; }
   const rows = T.rows, n = rows.length, now = liqAt(null), out = [];
-  const waves = T.legs.filter(l => l.depth <= -LV0).map(l => ({ hi: l.peak, i0: l.pi, i1: Math.min(n - 1, l.pi + LIQ_SEG_TD) }));
+  // 線段終點：至少 3 個月；慢慢跌的空頭（如 2022）要畫到跌破 -24% 那天之後 2 週，沒跌到 -24% 就畫到波段低點之後 2 週
+  const waves = T.legs.filter(l => l.depth <= -LV0).map(l => {
+    const stop = l.x2 ? liqIdx.get(l.x2.date) ?? l.ti : l.ti;
+    return { hi: l.peak, i0: l.pi, i1: Math.min(n - 1, Math.max(l.pi + LIQ_SEG_TD, stop + LIQ_TAIL_TD)) };
+  });
   waves.forEach((w, k) => { const nx = waves[k + 1]; if (nx && nx.i0 - 1 < w.i1) w.i1 = Math.max(w.i0 + 1, nx.i0 - 1); });   // 下一波開始就截斷，線不重疊
   if (now) {
     const same = waves.find(w => w.i0 === now.hiIndex);
