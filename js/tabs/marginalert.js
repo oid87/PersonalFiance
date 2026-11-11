@@ -762,8 +762,8 @@ function liqAt(date) {
     return i === undefined ? null : currentState(T.rows, { lookback: 120, endIndex: i });
   } catch (e) { console.warn('[marginalert] liq lines failed', e); return null; }
 }
-// 主圖線段：每一波 [高點日, 高點後 LIQ_SEG_TD 個交易日]（最新參考高點延伸到最後一天；還沒跌成一波時，高點滿 2 週就先畫）。labels＝是否在線上標點位（視窗夠窄才標，免得擠成一團）
-const LIQ_SEG_TD = 63, LIQ_NOW_MIN_TD = 10, LIQ_TAIL_TD = 10;   // 每波畫約 3 個月；最新高點要滿 2 週（10 個交易日）才畫預備線
+// 主圖線段：每一波從高點日畫到指數突破該高點為止（還沒跌成一波時，未被突破的高點滿 2 週就先畫）。labels＝是否在線上標點位（視窗夠窄才標，免得擠成一團）
+const LIQ_NOW_MIN_TD = 10;   // 每波畫約 3 個月；最新高點要滿 2 週（10 個交易日）才畫預備線
 const liqLabelBars = () => (mob() ? 280 : 520);   // 視窗內交易日數不超過這個才在線上標點位
 let liqLabelState = null;
 function liqLabelsOn(total) {
@@ -774,16 +774,19 @@ function liqLabelsOn(total) {
 function liqSegments(dates, labels) {
   let T;
   try { T = liqData(); } catch (e) { console.warn('[marginalert] liq segments failed', e); return []; }
-  const rows = T.rows, n = rows.length, now = liqAt(null), out = [];
-  // 線段終點：至少 3 個月；慢慢跌的空頭（如 2022）要畫到跌破 -24% 那天之後 2 週，沒跌到 -24% 就畫到波段低點之後 2 週
-  const waves = T.legs.filter(l => l.depth <= -LV0).map(l => {
-    const stop = l.x2 ? liqIdx.get(l.x2.date) ?? l.ti : l.ti;
-    return { hi: l.peak, i0: l.pi, i1: Math.min(n - 1, Math.max(l.pi + LIQ_SEG_TD, stop + LIQ_TAIL_TD)) };
-  });
+  const rows = T.rows, n = rows.length, out = [];
+  // 線段終點：維持到指數突破該波高點為止（或下一波開始、或資料最後一天）。所以慢跌的空頭（2022、2018）線會一直在，直到站回高點。
+  const brokenAt = (i0, hi) => { for (let j = i0 + 1; j < n; j++) if (rows[j].high > hi) return j; return n - 1; };
+  const waves = T.legs.filter(l => l.depth <= -LV0).map(l => ({ hi: l.peak, i0: l.pi, i1: brokenAt(l.pi, l.peak) }));
   waves.forEach((w, k) => { const nx = waves[k + 1]; if (nx && nx.i0 - 1 < w.i1) w.i1 = Math.max(w.i0 + 1, nx.i0 - 1); });   // 下一波開始就截斷，線不重疊
-  if (now) {
-    const same = waves.find(w => w.i0 === now.hiIndex);
-    if (same) same.i1 = n - 1; else if (n - 1 - now.hiIndex >= LIQ_NOW_MIN_TD) waves.push({ hi: now.hi, i0: now.hiIndex, i1: n - 1 });
+  // 預備線：最後一波高點之後的最高點（還沒被突破的那個高點），滿 2 週就畫，延伸到今天
+  const lastLeg = T.legs.at(-1);
+  let ri = lastLeg ? lastLeg.pi : Math.max(0, n - 120);
+  for (let j = ri; j < n; j++) if (rows[j].high >= rows[ri].high) ri = j;
+  if (!waves.some(w => w.i0 === ri) && n - 1 - ri >= LIQ_NOW_MIN_TD) {
+    const prev = waves.at(-1);
+    if (prev && prev.i1 >= ri) prev.i1 = Math.max(prev.i0 + 1, ri - 1);
+    waves.push({ hi: rows[ri].high, i0: ri, i1: n - 1 });
   }
   const snap = d => dates.find(x => x >= d);
   for (const w of waves) {
