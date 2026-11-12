@@ -53,7 +53,7 @@ export const CATEGORIES = [
     { id: 'p-credit', label: '信用', views: [view('credit', '信用')] },
     { id: 'p-vol', label: '波動率', views: [
       view('vixskew', 'VIX-SKEW'), view('vix_term', 'VIX期限結構'),
-      view('vvixregime', 'VVIX波動象限'), view('vxnvix', 'VXN-VIX價差'), view('vixspike', 'VIX急升回測'), view('panicentry', '恐慌進場回測')] },
+      view('vvixregime', 'VVIX波動象限'), view('vxnvix', 'VXN-VIX價差'), view('vixspike', 'VIX急升回測'), view('panicentry', '恐慌進場回測'), view('breadthwarn', '市場廣度與流動性預警')] },
   ] },
   { id: 'flows', label: '籌碼與融資', pages: [
     { id: 'p-radar', label: '美股短線雷達', views: [
@@ -108,6 +108,7 @@ const ALIASES = {
   aaii: ['AAII'], naaim: ['NAAIM'], vixskew: ['VIX'],
   vix_term: ['VIX'], vvixregime: ['VIX'], vxnvix: ['VIX'],
   vixspike: ['VIX', 'VIX急升', 'VIX暴漲', '恐慌指數', '單日漲幅', '回測'],
+  breadthwarn: ['廣度', '市場廣度', '流動性', '預警', '站上均線', '跌停', '新低', '臺灣50', '上市', '上櫃', '00631L', '巨人傑', '融資'],
   panicentry: ['恐慌', '回撤', '正二', '00631L', '0050', 'TWVIX', 'VXN', 'VXSMH', '國安基金', '台積電跌停', '進場', '回測'],
   qqqmacd: ['MACD'], valuation: ['P/E', 'PE'], fwdpe: ['P/E', 'PE'],
   semi_vs_spx_pe: ['P/E', 'PE'], sox_vs_tw_semi_pe: ['P/E', 'PE', '台灣'],

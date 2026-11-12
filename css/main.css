@@ -758,7 +758,7 @@
       /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
          保留原高度、改用放大圖表 */
       .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
-        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #vixspike-main-chart, #panicentry-main-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #vixspike-main-chart, #panicentry-main-chart, #breadthwarn-main-chart, #breadthwarn-case-chart,
         #kelly-chart, #roc4-chart, #val-chart) {
         max-height: calc(100dvh - 16px);
       }
@@ -1714,3 +1714,61 @@
   #tab-panicentry .panicentry-params label { flex:1 1 150px; }
   #tab-panicentry .panicentry-params select, #tab-panicentry .panicentry-params input[type=range] { width:100%; max-width:none; }
 }
+/* ── 市場廣度與流動性預警（breadthwarn）── */
+#tab-breadthwarn .breadthwarn-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; padding:12px 0 4px; }
+#tab-breadthwarn .breadthwarn-head .section-title { font-size:19px; padding:0; border-top:0; margin:0; }
+#tab-breadthwarn .breadthwarn-head .status { border-top:0; padding:0; }
+#tab-breadthwarn .breadthwarn-now { margin:6px 0 8px; padding:8px 12px; border-left:4px solid #f0883e; background:var(--panel); border-radius:6px; font-size:15px; line-height:1.7; }
+#tab-breadthwarn .breadthwarn-now:empty { display:none; }
+#tab-breadthwarn .breadthwarn-hit { color:#ef4444; }
+#tab-breadthwarn .breadthwarn-dim { color:var(--muted); font-size:13px; font-weight:normal; }
+#tab-breadthwarn .breadthwarn-note { color:var(--muted); font-size:13px; line-height:1.6; margin:4px 0 8px; }
+#tab-breadthwarn .breadthwarn-warn { color:#d29922; font-size:13px; line-height:1.6; margin:4px 0; }
+#tab-breadthwarn .breadthwarn-warn:empty { display:none; }
+#tab-breadthwarn .breadthwarn-h { margin:18px 0 6px; font-size:17px; }
+#tab-breadthwarn .breadthwarn-params { display:flex; flex-wrap:wrap; gap:10px 16px; margin:10px 0; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--panel); }
+#tab-breadthwarn .breadthwarn-params label { display:flex; flex-direction:column; gap:3px; color:var(--muted); font-size:13px; }
+#tab-breadthwarn .breadthwarn-params b { color:var(--text); }
+#tab-breadthwarn .breadthwarn-params select { min-height:34px; max-width:260px; padding:2px 6px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:14px; }
+#tab-breadthwarn .breadthwarn-params input[type=range] { width:170px; min-height:28px; }
+#tab-breadthwarn .breadthwarn-tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin:8px 0; }
+#tab-breadthwarn .breadthwarn-tile { padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--panel); }
+#tab-breadthwarn .breadthwarn-k { color:var(--muted); font-size:13px; }
+#tab-breadthwarn .breadthwarn-v { font-size:21px; font-weight:600; font-variant-numeric:tabular-nums; }
+#tab-breadthwarn .breadthwarn-s { color:var(--muted); font-size:12px; }
+#tab-breadthwarn .breadthwarn-chart { width:100%; height:320px; margin:8px 0; }
+#tab-breadthwarn .breadthwarn-chart--main { height:620px; min-height:520px; }
+#tab-breadthwarn .breadthwarn-pair { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+#tab-breadthwarn table { border-collapse:collapse; width:100%; font-size:14px; }
+#tab-breadthwarn th, #tab-breadthwarn td { padding:5px 8px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap; font-variant-numeric:tabular-nums; }
+#tab-breadthwarn th:first-child, #tab-breadthwarn td:first-child { text-align:left; }
+#tab-breadthwarn thead th { color:var(--muted); font-weight:600; }
+#tab-breadthwarn .table-scroll { max-width:100%; overflow-x:auto; margin:4px 0 10px; }
+#tab-breadthwarn .breadthwarn-events { max-height:520px; overflow-y:auto; }
+#tab-breadthwarn .breadthwarn-base td { font-weight:600; }
+#tab-breadthwarn .breadthwarn-thin td { color:var(--muted); }
+#tab-breadthwarn .breadthwarn-up { color:#ef4444; }
+#tab-breadthwarn .breadthwarn-down { color:#3fb950; }
+#tab-breadthwarn .breadthwarn-details { margin:8px 0; font-size:14px; line-height:1.7; }
+#tab-breadthwarn .breadthwarn-details summary { cursor:pointer; font-weight:600; }
+#tab-breadthwarn .breadthwarn-details ul { margin:4px 0 4px 20px; padding:0; }
+#tab-breadthwarn .breadthwarn-swipe { display:none; }
+@media (max-width: 760px) {
+  #tab-breadthwarn { padding:0 12px 16px; }
+  #tab-breadthwarn .breadthwarn-pair { grid-template-columns:1fr; }
+  #tab-breadthwarn .breadthwarn-swipe { display:inline; }
+  #tab-breadthwarn #breadthwarn-cmp td:first-child { white-space:normal; min-width:120px; max-width:150px; }
+  #tab-breadthwarn .breadthwarn-chart--main { height:540px; min-height:480px; }
+  #tab-breadthwarn .breadthwarn-chart { height:280px; }
+  #tab-breadthwarn .breadthwarn-params label { flex:1 1 150px; }
+  #tab-breadthwarn .breadthwarn-params select, #tab-breadthwarn .breadthwarn-params input[type=range] { width:100%; max-width:none; }
+}
+#tab-breadthwarn .breadthwarn-chart--case { height:640px; min-height:560px; }
+@media (max-width: 700px) { #tab-breadthwarn #breadthwarn-events th:nth-child(2), #tab-breadthwarn #breadthwarn-events td:nth-child(2), #tab-breadthwarn #breadthwarn-events th:nth-child(3), #tab-breadthwarn #breadthwarn-events td:nth-child(3) { display:none; } #tab-breadthwarn p.breadthwarn-swipe { display:block; } }
+#tab-breadthwarn .breadthwarn-pair { align-items:start; }
+#tab-breadthwarn .breadthwarn-evpick { display:flex; flex-wrap:wrap; gap:6px; align-items:center; color:var(--muted); font-size:13px; }
+#tab-breadthwarn .breadthwarn-evpick select { min-height:34px; padding:2px 6px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:14px; }
+#tab-breadthwarn .breadthwarn-case { margin:4px 0 8px 20px; padding:0; font-size:14px; line-height:1.7; }
+#tab-breadthwarn .breadthwarn-chart--main { height:760px; min-height:640px; }
+#tab-breadthwarn #breadthwarn-cmp td:first-child, #tab-breadthwarn #breadthwarn-repair td:first-child { white-space:normal; min-width:150px; }
+

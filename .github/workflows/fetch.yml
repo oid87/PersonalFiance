@@ -501,6 +501,10 @@ jobs:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
         run: python scripts/fetch_panic_entry.py
 
+      - name: Update TW breadth warning series (臺灣50／上市／上櫃 站上均線比例、新高新低、跌停與量能代理)
+        continue-on-error: true
+        run: python scripts/fetch_tw_breadth_warn.py
+
       - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
         continue-on-error: true
         run: python scripts/fetch_taiwan_mktcap_anchor.py

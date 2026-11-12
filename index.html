@@ -3840,6 +3840,100 @@
     </details>
   </section>
 
+  <section id="tab-breadthwarn" class="tab-section" hidden>
+    <header class="breadthwarn-head"><h2 class="section-title">市場廣度與流動性預警</h2><span id="breadthwarn-asof" class="status"></span></header>
+    <p id="breadthwarn-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <p class="breadthwarn-note">「廣度」＝有多少比例的股票收盤站在自己的均線之上。這頁回答兩件事：廣度快速變差，能不能在大跌之前提早示警；大盤已經跌 20% 之後，等廣度回升再買 00631L 有沒有比較好。歷史統計，不是投資建議。</p>
+    <div id="breadthwarn-now" class="breadthwarn-now" aria-live="polite"></div>
+    <div id="breadthwarn-nowtiles" class="breadthwarn-tiles"></div>
+    <details class="breadthwarn-details" open>
+      <summary>研究結論（2004-07～2026-11）</summary>
+      <ul>
+        <li><b>當提前預警用：幾乎沒有優勢。</b>廣度快速變差之後 20 日內大盤再跌 10% 的機率約 8%–10%，隨便挑一天是 7%。大跌前「有亮燈」多半只是因為燈一年亮 3–8 次，隨機擺放也抓得到一半。</li>
+        <li><b>看「比例多低」、「掉多快」還是「越掉越快」：</b>三種都只比丟銅板好一點。用 0.5＝丟銅板、1＝完全分得出來的分數衡量，比例多低 0.62、掉多快 0.57、越掉越快 0.52；「加權指數自己最近跌多少」是 0.63–0.66，比三者都高。</li>
+        <li><b>指數還在高點、多數股票已轉弱（背離）：</b>2004 年以來出現 7–37 次（看門檻），之後 20 日內大跌的只有 0–1 次。它描述的是「漲勢集中在少數權值股」，不是崩盤前兆。</li>
+        <li><b>有一點用的地方：</b>廣度急降之後 10 日內出現跌停潮（跌停家數 ≥5%）的機率是 13%–17%，平常是 5%。廣度變差和「後面有人被迫賣」有關聯，但不強。</li>
+        <li><b>買點：等廣度回升再買，中途跌幅比較淺。</b>00631L 上市以來 8 次回撤 −20% 事件（7 次已滿 120 日），直接買的中途最深跌幅中位數 −18%，等臺灣50 站上 20 日線比例回升一天再買是 −11%，報酬沒有變少。含 2008 的長期模擬只小幅改善（−15% → −14%），最差的情況一樣差；回撤門檻改成 −25% 就看不到改善。</li>
+        <li><b>2026/10–11：</b>10/15 臺灣50 站上 60 日線的比例 5 天掉 30 點，當天大盤才離高點 6%；10/20 預警成立。10/28 反彈時上市、上櫃的廣度沒有跟著回來。詳見頁尾專題。</li>
+      </ul>
+    </details>
+
+    <h3 class="breadthwarn-h">自己調條件：這樣的預警準不準</h3>
+    <div id="breadthwarn-params" class="breadthwarn-params" role="group" aria-label="預警參數">
+      <label>市場範圍<select id="breadthwarn-uni"><option value="tw50" selected>臺灣50 成分股</option><option value="twse">上市全部</option><option value="tpex">上櫃全部</option></select></label>
+      <label>均線<select id="breadthwarn-ma"><option>5</option><option>10</option><option>20</option><option selected>60</option><option>120</option><option>200</option></select></label>
+      <label>看什麼<select id="breadthwarn-kind"><option value="speed" selected>下降速度（N 日內掉幾點）</option><option value="level">絕對值（比例低於多少）</option><option value="accel">加速度（近 5 日比前 5 日多掉）</option></select></label>
+      <label>變化期間<select id="breadthwarn-n"><option value="1">1 日</option><option value="3">3 日</option><option value="5">5 日</option><option value="10" selected>10 日</option><option value="20">20 日</option></select></label>
+      <label>門檻：<b id="breadthwarn-thrv"></b><input id="breadthwarn-thr" type="range" min="5" max="70" step="5" value="30" aria-label="預警門檻"></label>
+      <label>指數位置<select id="breadthwarn-near"><option value="">不限</option><option value="5">只看指數離高點 5% 以內</option><option value="10">只看指數離高點 10% 以內</option></select></label>
+      <label>「大跌」的定義<select id="breadthwarn-target"><option value="d5">比預警日收盤再跌 5%</option><option value="d10" selected>比預警日收盤再跌 10%</option><option value="d15">比預警日收盤再跌 15%</option><option value="dd20">跌到距高點 −20%</option></select></label>
+      <label>往後看幾個交易日<select id="breadthwarn-h"><option>5</option><option>10</option><option>15</option><option selected>20</option><option>40</option></select></label>
+      <label>同一波只算一次<select id="breadthwarn-cd"><option value="10">10 個交易日內</option><option value="20" selected>20 個交易日內</option><option value="40">40 個交易日內</option></select></label>
+    </div>
+    <p id="breadthwarn-warn" class="breadthwarn-warn" aria-live="polite"></p>
+    <p id="breadthwarn-setup" class="breadthwarn-note"></p>
+    <div id="breadthwarn-tiles" class="breadthwarn-tiles"></div>
+
+    <h3 class="breadthwarn-h">換一種看法會不會比較準</h3>
+    <p class="breadthwarn-note">同樣的「大跌」定義與天數。第一列是上面的設定，接著換市場範圍、換指標類型（門檻一律 30），最後兩列是不看廣度、只看加權指數自己跌多少。「比隨便猜準幾倍」＝命中率 ÷ 隨便挑一天，接近 1 就是沒有用。「燈亂擺也有」＝同樣多的燈放在任意日子，大跌前剛好亮過的場數。<span class="breadthwarn-swipe">表格可左右滑。</span></p>
+    <div id="breadthwarn-cmp" class="table-scroll" tabindex="0" aria-label="預警條件比較"></div>
+
+    <h3 class="breadthwarn-h">歷史時間軸（四格共用日期）</h3>
+    <p class="breadthwarn-note">由上到下：加權指數與預警日、三種範圍的廣度、所選範圍的變化速度（虛線是門檻）、融資餘額 10 日變化。預設顯示最近 3 年，底下拉桿可拉到 2004 年。</p>
+    <div id="breadthwarn-main-chart" class="breadthwarn-chart breadthwarn-chart--main" role="img" aria-label="四格共用時間軸：加權指數與預警日、廣度、廣度變化、融資餘額變化"></div>
+
+    <h3 class="breadthwarn-h">每一次預警與結果</h3>
+    <p class="breadthwarn-note">同一波連續亮燈只列第一天。命中＝之後真的發生上面定義的大跌；誤報＝沒有。<span class="breadthwarn-swipe">表格可左右滑。</span></p>
+    <div class="breadthwarn-pair">
+      <div id="breadthwarn-events" class="table-scroll breadthwarn-events" tabindex="0" aria-label="預警事件明細"></div>
+      <div>
+        <label class="breadthwarn-evpick">看單一事件前 30 日到後 60 日：<select id="breadthwarn-ev" aria-label="選擇預警事件"></select></label>
+        <div id="breadthwarn-ev-chart" class="breadthwarn-chart" role="img" aria-label="單一預警事件前後的指數與廣度"></div>
+      </div>
+    </div>
+
+    <h3 class="breadthwarn-h">00631L：大盤跌 20% 之後，等廣度修復再買有沒有比較好</h3>
+    <div id="breadthwarn-rparams" class="breadthwarn-params" role="group" aria-label="進場比較參數">
+      <label>大盤回撤門檻<select id="breadthwarn-rdd"><option value="20" selected>−20%</option><option value="23">−23%</option><option value="25">−25%</option></select></label>
+      <label>標的<select id="breadthwarn-rasset"><option value="lev" selected>00631L（2014-11 起）</option><option value="sim">模擬正二（2004 起，含 2008）</option></select></label>
+      <label>持有（交易日）<select id="breadthwarn-rh"><option>5</option><option>20</option><option>60</option><option selected>120</option><option>252</option></select></label>
+    </div>
+    <p id="breadthwarn-repairnote" class="breadthwarn-note"></p>
+    <p class="breadthwarn-note breadthwarn-swipe">表格可左右滑。</p>
+    <div id="breadthwarn-repair" class="table-scroll" tabindex="0" aria-label="00631L 進場方式比較"></div>
+    <details class="breadthwarn-details">
+      <summary>每一次事件的進場日與結果</summary>
+      <div id="breadthwarn-repairev" class="table-scroll" tabindex="0" aria-label="各事件各買法的結果"></div>
+    </details>
+
+    <h3 class="breadthwarn-h">專題：2026 年 10–11 月，11/5 公開示警之前市場已經出現什麼</h3>
+    <ul class="breadthwarn-case">
+      <li><b>10/6 指數創高時</b>，臺灣50 有 92% 站上 60 日線，上市只有 53%、上櫃 55%。漲勢集中在大型股；但這種背離過去並不代表會崩盤。</li>
+      <li><b>10/15</b> 大盤單日跌 3.4%，臺灣50 站上 60 日線的比例從 82% 掉到 64%，5 天少 30 點；這時大盤離高點才 6%。</li>
+      <li><b>10/20 預警第一次成立</b>（10 日降 ≥30 點），比大盤跌破 −10%（10/30）早 6 個交易日，比 11/5 早 10 個交易日。同樣條件過去每年出現約 3 次，之後 20 日內再跌 10% 的只有 8%。</li>
+      <li><b>10/28 反彈</b>：臺灣50 回到 70%，上市 46%、上櫃 38%，都沒回到月初水準；隔兩天 10/30 三者一起破底，上市過半數股票創 20 日新低。</li>
+      <li><b>11/3 起加速</b>：跌停家數占比 3.9%，融資餘額單日減 229 億；11/5 跌停 6.4%、11/6 融資再減 424 億。</li>
+      <li><b>誠實的限制</b>：模型在 10/20 就亮燈，但依歷史這個燈九成是誤報，事前沒有理由特別相信這一次。跌停鎖死、掛不出去，要看委託簿才能證明，這頁的跌停占比與量比只是價量代理。</li>
+    </ul>
+    <div id="breadthwarn-case-chart" class="breadthwarn-chart breadthwarn-chart--case" role="img" aria-label="2026 年 9 月中到 11 月：加權指數、三種範圍的廣度、創新低占比、跌停占比"></div>
+    <p class="breadthwarn-note">逐日數據。粗體列是 10/15、10/28、11/3、11/5、11/6。「預警」欄＝臺灣50 站上 60 日線比例 10 日降 ≥30 點。量比＝上市個股成交量 ÷ 前 20 日均量的中位數。<span class="breadthwarn-swipe">表格可左右滑。</span></p>
+    <div id="breadthwarn-casetable" class="table-scroll" tabindex="0" aria-label="2026 年 10 月起逐日數據"></div>
+
+    <details class="breadthwarn-details">
+      <summary>口徑與限制</summary>
+      <ul>
+        <li>廣度只用當天收盤前已知的資料；「之後 N 日」從隔天起算；買進一律在訊號隔天開盤。</li>
+        <li>大盤回撤＝盤中最低 ÷ 近 252 個交易日盤中最高。「大跌發生日」＝最低價比前 N 日內最高收盤低到門檻的第一天，相隔 40 日內算同一場。</li>
+        <li>臺灣50：2012-12-24 起用當時真正的成分股；更早沿用 2012 年底名單，有倖存者偏誤。</li>
+        <li>上市、上櫃：Yahoo 的現存普通股（還原價）加上 FinMind 的已下市櫃股票（原始價）。上櫃 2008-07 起才有足夠檔數。曾經從上櫃轉上市的股票，全部歷史算在上市。</li>
+        <li>跌停＝收盤跌幅達當時漲跌幅限制（2015-06 前 7%，之後 10%）。和交易所公布的家數比對，2013 年以來日相關 0.996、總數差 3% 以內。</li>
+        <li>跌停占比、量比、下跌成交值都是價量代理。未成交委賣量、買賣價差、委託簿深度沒有免費的歷史資料，這頁無法驗證「買盤枯竭」本身。</li>
+        <li>等權報酬為每日再平衡的平均，不是可直接投資的組合。</li>
+        <li>預設門檻（60 日線、10 日、30 點）沒有用 2026 年的結果挑過；但整份研究是在 11/6 之後做的，2026/10–11 不能算嚴格的樣本外。</li>
+      </ul>
+    </details>
+  </section>
+
   <section id="tab-panicentry" class="tab-section" hidden>
     <header class="panicentry-head"><h2 class="section-title">恐慌進場回測</h2><span id="panicentry-asof" class="status"></span></header>
     <p id="panicentry-status" class="status" role="status" aria-live="polite">載入中…</p>
