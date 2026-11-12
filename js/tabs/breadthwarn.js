@@ -8,6 +8,7 @@
 import { echartsBase, PALETTE, mob } from '../utils/theme.js';
 import { requestJSON } from '../utils/data.js';
 import * as Live from './breadthwarn_live.js';
+import * as Status from './breadthwarn_status.js';
 import { bindOnce } from '../utils/dom.js';
 import { preserveChartState } from '../utils/chartLifecycle.js';
 import * as P from './panicentry_calc.mjs';
@@ -317,6 +318,7 @@ export async function activate(context = {}) {
   try {
     const o = { signal: context.signal };
     const opt = u => requestJSON(u, o).catch(() => null);
+    Status.load(document.getElementById('breadthwarn-datastatus'), o).catch(() => {});   // 狀態表獨立載入，讀不到不影響主頁
     const [raw, B, mg, mg0, models] = await Promise.all([requestJSON('data/panic_entry.json', o), requestJSON('data/tw_breadth_warn.json', o), opt('data/taiwan_margin_total.json'), opt('data/taiwan_margin_total_early.json'), opt('data/tw_breadth_warn_models.json')]);
     if (context.signal?.aborted || context.isCurrent?.() === false) return;
     if (!raw?.date?.length || !B?.date?.length) throw new Error('廣度或價格資料是空的');

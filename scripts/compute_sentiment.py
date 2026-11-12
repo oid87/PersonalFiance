@@ -77,6 +77,9 @@ def main() -> None:
     df["safety_pct"] = 100 - rolling_pct_rank(df["gld_ret20"]) # gold surge = fear
 
     sub_cols = ["vix_pct", "credit_pct", "trend_pct", "safety_pct"]
+    # 任何一項缺值的日子不輸出：某個來源落後時，這份檔案就停在最後一個四項齊全的日子，
+    # 不寫出 NaN（NaN 會讓資料驗證失敗，連帶擋掉同一批其他資料的提交）。
+    df = df.dropna(subset=sub_cols)
     df["composite"] = df[sub_cols].mean(axis=1).round(1)
 
     df = df.dropna(subset=["composite"])

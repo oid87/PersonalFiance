@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 # 兩個 job 各綁一個排程,避免同一批腳本一天被抓兩次(省 FinMind 免費 quota + Actions 時間)。
 # 手動 workflow_dispatch 時兩個都跑(完整刷新)。台股/美股各自寫的 data 檔不相交,
@@ -326,11 +327,22 @@ jobs:
           fi
 
   # ── 台股:只在 18:00 台北(台股收盤後)跑 ──────────────────────────────
+
+      # 來源落後、抓取失敗或這個 job 沒過 → 開或更新一張 Issue（標籤 data-alert），恢復後自動關閉
+      - name: Data alert
+        if: failure()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/data_alert.py --monitor --job-failed us
+
+
   tw:
     if: github.event_name == 'workflow_dispatch' || (github.event.schedule == '0 10 * * 1-5' || github.event.schedule == '30 13 * * 1-5')
     runs-on: ubuntu-latest
     env:
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      STEP_LOG: /tmp/pf_steps.jsonl
     steps:
       - uses: actions/checkout@v4
 
@@ -349,7 +361,7 @@ jobs:
       # 跨市場:價格總表(0050 台股收盤後最新 + US 昨收),兩個 job 都跑
       - name: Fetch stock data
         continue-on-error: true
-        run: python scripts/fetch_stocks.py
+        run: python scripts/run_step.py -- python scripts/fetch_stocks.py
 
       - name: Fetch Taiwan OTC index (FinMind TPEx, 櫃買指數)
         continue-on-error: true
@@ -499,15 +511,15 @@ jobs:
         continue-on-error: true
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-        run: python scripts/fetch_panic_entry.py
+        run: python scripts/run_step.py -- python scripts/fetch_panic_entry.py
 
       - name: Update TW breadth warning series (臺灣50／上市／上櫃 站上均線比例、新高新低、跌停與量能代理)
         continue-on-error: true
-        run: python scripts/fetch_tw_breadth_warn.py
+        run: python scripts/run_step.py -- python scripts/fetch_tw_breadth_warn.py
 
       - name: Update TW intraday replay (證交所盤後公布的每 5 秒委託成交統計 → 每分鐘序列)
         continue-on-error: true
-        run: python scripts/fetch_tw_intraday.py
+        run: python scripts/run_step.py -- python scripts/fetch_tw_intraday.py
 
       - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
         continue-on-error: true
@@ -543,6 +555,11 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_flows.py
 
+      # 各來源最新日期與狀態（頁面狀態表與警示用）。只讀 data/，不連網。
+      - name: Build data status (各資料來源的最新日期、落後與缺漏)
+        continue-on-error: true
+        run: python scripts/build_data_status.py
+
       - name: Validate data integrity (abort commit if corrupt)
         run: python scripts/validate_data.py
 
@@ -562,3 +579,11 @@ jobs:
             done
             [ "$ok" = 1 ] || { echo "::error::git push failed after 3 attempts"; exit 1; }
           fi
+
+      # 來源落後、抓取失敗或這個 job 沒過 → 開或更新一張 Issue（標籤 data-alert），恢復後自動關閉
+      - name: Data alert
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/data_alert.py ${{ job.status == 'failure' && '--job-failed tw' || '' }}

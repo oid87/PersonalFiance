@@ -1767,6 +1767,8 @@
 #tab-breadthwarn .breadthwarn-tag { display:inline-block; padding:0 6px; border-radius:9px; font-size:11px; line-height:17px; font-weight:600; vertical-align:1px; white-space:nowrap; }
 #tab-breadthwarn .breadthwarn-tag--real { color:#58a6ff; border:1px solid #58a6ff; }
 #tab-breadthwarn .breadthwarn-tag--proxy { color:#f0883e; border:1px dashed #f0883e; }
+#tab-breadthwarn .breadthwarn-tag--bad { color:#f85149; border:1px solid #f85149; font-weight:600; }
+#tab-breadthwarn .breadthwarn-datastatus td, #tab-breadthwarn .breadthwarn-datastatus th { white-space:normal; min-width:5.5em; vertical-align:top; }
 #tab-breadthwarn .breadthwarn-tag--est { color:#a371f7; border:1px dotted #a371f7; }
 #tab-breadthwarn .breadthwarn-tag--na { color:var(--muted); border:1px dotted var(--muted); }
 #tab-breadthwarn .breadthwarn-h4 { margin:14px 0 4px; font-size:15px; }

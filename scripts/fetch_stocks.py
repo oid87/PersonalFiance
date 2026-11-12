@@ -97,6 +97,11 @@ SPLICE_FIXES: dict[str, list[str]] = {
 # overnight from price action alone.
 SPLICE_TRIGGER = 0.40
 
+# 波動率指數沒有股票分割，而且單日跳 40% 以上是真實行情（2026-11-05 VIX 16.6 → 28.2）。
+# 對它們套用上面的「價格基準」檢查會把真實行情當成資料錯誤、整檔拒寫，
+# 所以這幾檔直接合併，不做基準檢查。
+NO_BASIS_CHECK = {"^VIX", "^VXN", "^VVIX"}
+
 
 def load_existing(path: Path) -> list[dict]:
     return load_rows(path)
@@ -220,7 +225,8 @@ def update_ticker(ticker: str, stem: str, listing_start: str) -> None:
 
     new_rows = to_rows(df)
     full_start = listing_start if ticker in FULL_HISTORY else max(GLOBAL_START, listing_start)
-    if existing and basis_mismatch(existing, new_rows):
+    check = ticker not in NO_BASIS_CHECK
+    if check and existing and basis_mismatch(existing, new_rows):
         print(f"  [{ticker}] stored closes disagree with Yahoo on "
               f"{len(basis_mismatch(existing, new_rows))} dates (split?) -> full re-download from {full_start}")
         start = full_start
@@ -231,7 +237,7 @@ def update_ticker(ticker: str, stem: str, listing_start: str) -> None:
         existing, new_rows = [], to_rows(df)
     merged = merge(existing, new_rows)
     merged = apply_splice_fixes(ticker, merged)
-    jumps = basis_jumps(merged, start)
+    jumps = basis_jumps(merged, start) if check else []
     if jumps:
         raise ValueError(f"mixed price basis around {', '.join(jumps[:5])}; file not written")
 

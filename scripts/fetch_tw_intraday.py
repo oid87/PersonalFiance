@@ -1,5 +1,5 @@
 """盤中歷史回放資料（#tab=breadthwarn）。
-每天收盤後抓證交所公布的「每 5 秒委託成交統計」(MI_5MINS)，縮成每分鐘序列，寫進 data/tw_intraday.json：
+每天收盤後抓證交所公布的「每 5 秒委託成交統計」(MI_5MINS)，縮成每分鐘序列，寫進 data/tw_intraday.json（另有只增不改的前瞻紀錄 data/tw_intraday_forward.json，結案日之後的新交易日才寫）：
 days{日期: {bq, sq, tq, tv, vb, bb, cb, sum, tf}}，欄位定義見 scripts/_tw_intraday.py。
 授權（2026-11-12 查證）：只走政府資料開放平臺登錄的官方下載點（資料集 11671，政府資料開放授權條款第 1 版，
 可改作與公開傳輸，須顯名標示）。這個下載點只給最新一個交易日，漏掉的日子不回補，也不改用網站的指定日期查詢。
@@ -7,7 +7,8 @@ days{日期: {bq, sq, tq, tv, vb, bb, cb, sum, tf}}，欄位定義見 scripts/_t
 時間戳：行情時間＝每分鐘序列的位置（09:00–13:30）；取得時間＝days[日].tf（UTC）；可用時間＝交易所收盤後公布。
 doc.kind 固定是 "post_close"，頁面只能稱為盤中歷史回放。
 只保留最近 KEEP 個交易日與 pinned（歷史危機日）。已存在的日子不重抓、不覆蓋。抓不到或資料不完整就保留舊檔。
-TWII.json 只用來知道交易日順序（算前 5–20 日基準用），不拿來算盤中指數。
+交易日以官方檔名上的日期為準；TWII.json 只用來補交易日順序（算前 5–20 日基準用），不拿來算盤中指數。
+抓取失敗、格式改變或資料不完整時以非零狀態結束（保留舊檔），讓排程的狀態檔記得到錯誤種類。
 """
 from __future__ import annotations
 
@@ -31,7 +32,6 @@ UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)"}
 URL = {"m5": "https://www.twse.com.tw/exchangeReport/MI_5MINS?response=open_data"}
 ATTRIBUTION = "金融監督管理委員會證券期貨局／臺灣證券交易所 2026「盤後資訊 > 每5秒委託成交統計」，此開放資料依政府資料開放授權條款 (Open Government Data License) 進行公眾釋出，https://data.gov.tw/license"
 KEEP = 40          # 滾動保留的交易日數
-BACKFILL = 1       # 開放資料下載點只給最新一天，所以只補最新的交易日
 GAP = 3.0          # 證交所限速：單線、間隔 3 秒
 KIND = "post_close"   # 資料分類：盤後公布（不是即時、也不是延遲行情）
 CLOSE_UTC = "05:30:00"  # 13:30 臺北時間
@@ -45,27 +45,32 @@ def after_close(day: str, now: datetime) -> bool:
 SOURCE = "臺灣證券交易所盤後資訊：每 5 秒委託成交統計（收盤後公布；政府資料開放平臺資料集 11671）"
 
 
-def parse_open_data(text: str, disposition: str, day: str) -> list:
-    """開放資料 CSV → [[時間, 7 欄…]…]。檔名裡的日期（MI_5MINS_YYYYMMDD.csv）不是要的那一天就回空：
-    這個下載點只給最新一天，日期對不上代表交易所還沒換檔或那一天已經過了，不能把別天的資料寫進去。"""
-    m = re.search(r"MI_5MINS_(\d{8})", disposition or "")
-    if not m or m.group(1) != day.replace("-", ""):
+def file_day(disposition: str) -> str | None:
+    """開放資料檔名（MI_5MINS_YYYYMMDD.csv）上的交易日。"""
+    m = re.search(r"MI_5MINS_(\d{4})(\d{2})(\d{2})", disposition or "")
+    return "-".join(m.groups()) if m else None
+
+
+def parse_open_data(text: str, disposition: str, day: str | None = None) -> list:
+    """開放資料 CSV → [[時間, 7 欄…]…]。有指定 day 而檔名日期不是那一天就回空：
+    這個下載點只給最新一天，不能把別天的資料寫進去。"""
+    if not file_day(disposition) or (day and file_day(disposition) != day):
         return []
     rows = [r for r in csv.reader(io.StringIO(text.lstrip("\ufeff"))) if r and r[0].strip().isdigit()]
     return rows
 
 
-def get(kind: str, day: str) -> list:
-    if kind != "m5":
-        raise ValueError(f"不支援的資料種類：{kind}（每 5 秒指數沒有開放授權，不抓）")
-
+def get_latest() -> tuple[str | None, list]:
+    """下載一次，回傳（檔名上的交易日, 資料列）。交易日以官方檔名為準，不靠其他來源推測：
+    Yahoo 的加權指數日線常晚半天才有當天那一列，用它判斷「最新交易日」會整天漏抓。"""
     def call():
         r = requests.get(URL["m5"], headers=UA, timeout=60)
         r.raise_for_status()
-        return parse_open_data(r.content.decode("utf-8", "replace"), r.headers.get("content-disposition", ""), day)
-    rows = _common.retry_call(call, attempts=3, backoff=10)
+        disp = r.headers.get("content-disposition", "")
+        return file_day(disp), parse_open_data(r.content.decode("utf-8", "replace"), disp)
+    out = _common.retry_call(call, attempts=3, backoff=10)
     time.sleep(GAP)
-    return rows
+    return out
 
 
 def add_baselines(days: dict, order: list[str], d: str) -> None:
@@ -77,31 +82,60 @@ def add_baselines(days: dict, order: list[str], d: str) -> None:
             days[d][name] = v
 
 
-def merge(doc: dict, tw_rows: list[dict], fetch=get, limit: int = BACKFILL, now: datetime | None = None) -> list[str]:
-    """把 TWII.json 有、檔案裡沒有的最近幾個交易日補進 doc（原地修改）。回傳新增的日期。"""
+def merge(doc: dict, tw_rows: list[dict], fetch=get_latest, now: datetime | None = None) -> list[str]:
+    """把官方下載點目前那一天補進 doc（原地修改）。回傳新增的日期。
+    已存在的日子不覆蓋；還沒收盤、日期比檔案裡最新一天還舊、或資料不完整都不寫。"""
     days = doc.setdefault("days", {})
-    order = [r["date"] for r in tw_rows]
     added = []
     now = now or datetime.now(timezone.utc)
-    for d in [x for x in order[-limit:] if x not in days]:
-        if not after_close(d, now):
-            print(f"  {d}: 還沒收盤，不抓")
-            continue
-        day = ti.build_day(fetch("m5", d))
+    d, rows = fetch()
+    if not d:
+        raise ValueError("下載點沒有回傳帶日期的檔名（格式可能改了）")
+    pinned = set(doc.get("pinned", []))
+    last = max((x for x in days if x not in pinned), default="")
+    if d in days:
+        print(f"  {d}: 已經有了")
+    elif d < last:
+        print(f"  {d}: 比檔案裡最新的 {last} 還舊，不寫")
+    elif not after_close(d, now):
+        print(f"  {d}: 還沒收盤，不抓")
+    else:
+        day = ti.build_day(rows)
         if not day:
-            print(f"  {d}: 資料不完整，略過")
-            continue
+            raise ValueError(f"{d}: 資料不完整（{len(rows)} 列）")
+        order = sorted({r["date"] for r in tw_rows} | set(days) | {d})
         days[d] = day
         add_baselines(days, order, d)
         day["sum"] = ti.summary(day)
         day["tf"] = now.strftime("%Y-%m-%dT%H:%M:%SZ")
         added.append(d)
-    pinned = set(doc.get("pinned", []))
     recent = set(sorted(x for x in days if x not in pinned)[-KEEP:])
-    for d in [x for x in days if x not in pinned and x not in recent]:
-        del days[d]
+    for x in [x for x in days if x not in pinned and x not in recent]:
+        del days[x]
     doc["days"] = dict(sorted(days.items()))
     return added
+
+
+FORWARD = ROOT / "data" / "tw_intraday_forward.json"
+FROZEN = "2026-11-12"     # 研究結案日：這天之後才進來的日子是前瞻樣本，指標定義與門檻不再調整
+
+
+def log_forward(path: Path, day: str, summary: dict, recorded: str) -> bool:
+    """前瞻紀錄（只增不改）：結案之後每個新交易日，當天收盤後算出的指標原值與取得時間。
+    之後要驗證就拿這份紀錄對照後來的指數日線；已寫入的日子永遠不覆蓋，也不回頭補結案前的日子。"""
+    if day <= FROZEN:
+        return False
+    doc = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {
+        "frozen": FROZEN, "ver": ti.VERSION, "kind": KIND,
+        "note": "盤中委託統計的前瞻紀錄。指標定義固定為 ver 這一版（scripts/_tw_intraday.py），結案後不重新最佳化參數。"
+                "每一列是當天收盤後公布的資料算出來的，recorded 是實際取得時間（UTC）；這不是盤中即時訊號。"
+                "欄位：bp_min 累積委買倍數的盤中最低、cdev_max 委賣偏離的盤中最高（百分點）、vp 收盤時的成交金額倍數、missing 缺的分鐘數。",
+        "days": []}
+    if any(r["date"] == day for r in doc["days"]):
+        return False
+    doc["days"].append({"date": day, "recorded": recorded, "ver": ti.VERSION, **summary})
+    path.write_text(json.dumps(doc, ensure_ascii=False, indent=1, allow_nan=False) + "\n", encoding="utf-8")
+    return True
 
 
 def main() -> None:
@@ -109,12 +143,17 @@ def main() -> None:
         raise SystemExit("tw_intraday: 既有檔不存在（先跑一次性回補）")
     doc = json.loads(OUT.read_text(encoding="utf-8"))
     tw_rows = [r for r in _common.load_rows(TWII) if r.get("close")]
-    added = merge(doc, tw_rows)
+    try:
+        added = merge(doc, tw_rows)
+    except ValueError as e:
+        raise SystemExit(f"tw_intraday: 保留舊檔：{e}")
     if not added:
         print("tw_intraday: 沒有新的交易日")
         return
     doc.update(updated=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), ver=ti.VERSION, source=SOURCE, kind=KIND, attribution=ATTRIBUTION)
     OUT.write_text(json.dumps(doc, ensure_ascii=False, separators=(",", ":"), allow_nan=False), encoding="utf-8")
+    for d in added:
+        log_forward(FORWARD, d, doc["days"][d]["sum"], doc["days"][d]["tf"])
     print(f"tw_intraday: +{added} → {len(doc['days'])} 天")
 
 

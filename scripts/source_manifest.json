@@ -3617,7 +3617,8 @@
     {
       "script": "scripts/fetch_tw_intraday.py",
       "outputs": [
-        "data/tw_intraday.json"
+        "data/tw_intraday.json",
+        "data/tw_intraday_forward.json"
       ],
       "frequency": "tw_session",
       "required": false,
@@ -3630,6 +3631,13 @@
       "status": "scheduled",
       "output_contracts": {
         "data/tw_intraday.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        },
+        "data/tw_intraday_forward.json": {
           "profile": "heterogeneous_object",
           "key_fields": [],
           "required_fields": [],

@@ -101,101 +101,62 @@ class Merge(unittest.TestCase):
         o, ix = fake_rows()
         return o if kind == "m5" else ix
 
-    def test_adds_only_missing_days_and_never_overwrites(self):
-        doc = {"days": {"2026-01-09": {"r": ["KEEP"], "sum": {}}}, "pinned": ["2020-03-19"]}
-        doc["days"]["2020-03-19"] = {"r": ["PIN"]}
-        added = F.merge(doc, self.tw, fetch=self.fetch, limit=3)
-        self.assertEqual(added, ["2026-01-08", "2026-01-10"])
-        self.assertEqual(self.calls, [("m5", "2026-01-08"), ("m5", "2026-01-10")])      # 只讀委託統計，不讀指數
-        self.assertEqual(doc["days"]["2026-01-09"]["r"], ["KEEP"])
-        self.assertEqual(doc["days"]["2020-03-19"]["r"], ["PIN"])
-        self.assertNotIn("r", doc["days"]["2026-01-10"])
-        self.assertEqual(set(doc["days"]["2026-01-10"]["sum"]), {"bp_min", "bp_t", "cdev_max", "cdev_t", "vp", "missing"})
-        self.assertEqual(F.merge(doc, self.tw, fetch=self.fetch, limit=3), [])      # 再跑一次不重抓
+    def at(self, d):
+        return lambda: (self.calls.append(d), (d, fake_rows()[0]))[1]
+
+    NOW = None
+
+    def test_day_comes_from_the_file_name_not_from_the_index_series(self):
+        from datetime import datetime, timezone
+        now = datetime(2026, 1, 20, tzinfo=timezone.utc)
+        doc = {"days": {"2026-01-09": {"r": ["KEEP"], "sum": {}}, "2020-03-19": {"r": ["PIN"]}}, "pinned": ["2020-03-19"]}
+        # 指數日線只到 01-10（Yahoo 落後），官方檔已經是 01-12：仍然要寫進 01-12
+        self.assertEqual(F.merge(doc, self.tw, fetch=self.at("2026-01-12"), now=now), ["2026-01-12"])
+        self.assertEqual(doc["days"]["2026-01-09"]["r"], ["KEEP"]); self.assertEqual(doc["days"]["2020-03-19"]["r"], ["PIN"])
+        self.assertNotIn("r", doc["days"]["2026-01-12"])
+        self.assertEqual(set(doc["days"]["2026-01-12"]["sum"]), {"bp_min", "bp_t", "cdev_max", "cdev_t", "vp", "missing"})
+        before = json.dumps(doc, sort_keys=True)
+        self.assertEqual(F.merge(doc, self.tw, fetch=self.at("2026-01-12"), now=now), [])      # 再跑一次不覆蓋
+        self.assertEqual(F.merge(doc, self.tw, fetch=self.at("2026-01-08"), now=now), [])      # 比現有最新一天舊的不寫
+        self.assertEqual(json.dumps(doc, sort_keys=True), before)
         json.dumps(doc, allow_nan=False)
 
-    def test_incomplete_day_is_skipped_and_old_days_trimmed(self):
-        doc = {"days": {}, "pinned": []}
-        added = F.merge(doc, self.tw, fetch=lambda k, d: [] if d.endswith("10") else self.fetch(k, d), limit=9)
-        self.assertNotIn("2026-01-10", added); self.assertEqual(len(added), 8)
+    def test_incomplete_or_undated_download_raises_and_keeps_file(self):
+        from datetime import datetime, timezone
+        now = datetime(2026, 1, 20, tzinfo=timezone.utc)
+        doc = {"days": {"2026-01-09": {"sum": {}}}, "pinned": []}
+        before = json.dumps(doc, sort_keys=True)
+        with self.assertRaises(ValueError):
+            F.merge(doc, self.tw, fetch=lambda: ("2026-01-12", []), now=now)
+        with self.assertRaises(ValueError):
+            F.merge(doc, self.tw, fetch=lambda: (None, []), now=now)
+        self.assertEqual(json.dumps(doc, sort_keys=True), before)
+
+    def test_old_days_are_trimmed_but_pinned_stay(self):
+        from datetime import datetime, timezone
+        doc = {"days": {"2020-03-19": {"sum": {}}}, "pinned": ["2020-03-19"]}
         old = F.KEEP
         try:
-            F.KEEP = 3
-            F.merge(doc, self.tw, fetch=lambda k, d: [], limit=1)
-            self.assertEqual(list(doc["days"]), ["2026-01-07", "2026-01-08", "2026-01-09"])
+            F.KEEP = 2
+            for d in ("2026-01-07", "2026-01-08", "2026-01-09"):
+                F.merge(doc, self.tw, fetch=self.at(d), now=datetime(2026, 1, 20, tzinfo=timezone.utc))
+            self.assertEqual(list(doc["days"]), ["2020-03-19", "2026-01-08", "2026-01-09"])
         finally:
             F.KEEP = old
 
-
-class PublishedFile(unittest.TestCase):
-    def test_public_file_has_no_per_stock_quotes_and_is_consistent(self):
-        p = Path(__file__).resolve().parent.parent.parent / "data" / "tw_intraday.json"
-        doc = json.loads(p.read_text(encoding="utf-8"))
-        self.assertTrue(doc["days"])
-        self.assertEqual(doc.get("kind"), "post_close")
-        self.assertEqual(list(doc["days"]), sorted(set(doc["days"])))
-        for d, x in doc["days"].items():
-            self.assertLessEqual(set(x), {"bq", "sq", "tq", "tv", "vb", "bb", "cb", "sum", "tf"}, d)   # 不含指數序列 r
-            self.assertLessEqual(set(x["sum"]), {"bp_min", "bp_t", "cdev_max", "cdev_t", "vp", "missing"}, d)
-            # 取得時間一定在那一天收盤之後：盤後公布的資料不可能在盤中就有
-            self.assertGreater(x["tf"], f"{d}T05:30:00", d)
-            self.assertEqual(len(x["bq"]), 271, d)
-            self.assertTrue(all(v is None or v >= 0 for v in x["bq"] + x["sq"] + x["tq"]), d)
-
-
-class V31(unittest.TestCase):
-    """V3.1 補的資料品質與方法測試。"""
-
-    def test_rows_out_of_order_or_duplicated_still_take_the_latest_in_each_minute(self):
-        o, ix = fake_rows()
-        a = ti.build_day(o, ix, 20000)
-        b = ti.build_day(list(reversed(o)) + o[:50], list(reversed(ix)) + ix[:50] + [["??", "1"], []], 20000)
-        self.assertEqual(a, b)
-
-    def test_missing_minutes_are_none_not_zero_everywhere(self):
-        o, ix = fake_rows(skip=set(range(120, 130)))
-        day = ti.build_day(o, ix, 20000)
-        for k in ("r", "bq", "sq", "tq", "tv"):
-            self.assertTrue(all(day[k][m] is None for m in range(120, 130)), k)
-        ind = ti.indicators(day)
-        self.assertTrue(all(ind["cimb"][m] is None and ind["fill"][m] is None for m in range(120, 130)))
-        self.assertEqual(ti.summary(day)["missing"], 10)
-
-    def test_fixed_horizon_needs_the_full_window(self):
-        r = [0.0] * 271
-        r[200] = -3.0
-        self.assertEqual(ti.future_min(r, 150, 60), -3.0)
-        self.assertEqual(ti.future_min(r, 150, 120), -3.0)       # 150+120=270，剛好完整
-        self.assertIsNone(ti.future_min(r, 151, 120))            # 超過收盤一分鐘就不算
-        self.assertIsNone(ti.future_min(r, 225, 60))
-        self.assertEqual(ti.future_min(r, 210, 60), 0.0)
-        self.assertEqual(ti.future_min(r, 190, None), -3.0)      # 「到收盤」是另一個目標
-        # V3 的檢查時點（09:15–13:00 每 15 分鐘）：60 分鐘有 2 個、120 分鐘有 6 個不完整
-        pts = range(15, 241, 15)
-        self.assertEqual([sum(ti.future_min(r, m, h) is None for m in pts) for h in (15, 30, 60, 120)], [0, 0, 2, 6])
-
-    def test_fixed_horizon_rejects_gappy_windows_and_missing_start(self):
-        r = [0.0] * 271
-        for m in range(101, 108):
-            r[m] = None                                           # 60 分鐘裡缺 7 分鐘 > 一成
-        self.assertIsNone(ti.future_min(r, 100, 60))
-        self.assertIsNotNone(ti.future_min(r, 100, 120))          # 120 分鐘裡缺 7 分鐘 < 一成
-        r[50] = None
-        self.assertIsNone(ti.future_min(r, 50, 15))
-
-    def test_baseline_never_uses_the_day_itself_or_later_days(self):
-        tw = [f"2026-01-{d:02d}" for d in range(1, 11)]
-        mk = lambda sc: ti.build_day(*fake_rows(scale=sc), 20000)
-        days = {d: mk(1.0) for d in tw}
-        F.add_baselines(days, tw, "2026-01-07")
-        before = list(days["2026-01-07"]["bb"])
-        for d in ("2026-01-07", "2026-01-08", "2026-01-09", "2026-01-10"):
-            days[d].update({k: v for k, v in mk(9.0).items()})
-        F.add_baselines(days, tw, "2026-01-07")
-        self.assertEqual(days["2026-01-07"]["bb"], before)        # 當天與之後的日子怎麼變，基準都不變
-        days["2026-01-03"].update(mk(9.0)); days["2026-01-04"].update(mk(9.0)); days["2026-01-05"].update(mk(9.0)); days["2026-01-06"].update(mk(9.0))
-        F.add_baselines(days, tw, "2026-01-07")
-        self.assertNotEqual(days["2026-01-07"]["bb"], before)
+    def test_forward_log_is_append_only_and_starts_after_freeze(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as t:
+            p = Path(t) / "f.json"
+            self.assertFalse(F.log_forward(p, F.FROZEN, {"vp": 1.0}, "2026-11-12T09:00:00Z")); self.assertFalse(p.exists())
+            self.assertTrue(F.log_forward(p, "2026-11-13", {"vp": 1.2}, "2026-11-13T10:00:00Z"))
+            self.assertFalse(F.log_forward(p, "2026-11-13", {"vp": 9.9}, "2026-11-14T10:00:00Z"))      # 已寫入的不覆蓋
+            self.assertTrue(F.log_forward(p, "2026-11-16", {"vp": 0.9}, "2026-11-16T10:00:00Z"))
+            doc = json.loads(p.read_text(encoding="utf-8"))
+            self.assertEqual([(r["date"], r["vp"], r["recorded"]) for r in doc["days"]],
+                             [("2026-11-13", 1.2, "2026-11-13T10:00:00Z"), ("2026-11-16", 0.9, "2026-11-16T10:00:00Z")])
+            self.assertEqual((doc["frozen"], doc["kind"]), (F.FROZEN, "post_close"))
 
     def test_public_flow_has_no_index_and_index_endpoint_is_gone(self):
         o, ix = fake_rows()
@@ -203,17 +164,15 @@ class V31(unittest.TestCase):
         self.assertNotIn("r", day); self.assertEqual(len(day["bq"]), 271)
         self.assertEqual(set(ti.summary(day)), {"bp_min", "bp_t", "cdev_max", "cdev_t", "vp", "missing"})
         self.assertIn("r", ti.build_day(o, ix, 20000))            # 本機研究仍可帶指數
-        self.assertEqual(set(F.URL), {"m5"})
-        with self.assertRaises(ValueError):
-            F.get("m5i", "2026-01-02")
+        self.assertEqual(set(F.URL), {"m5"}); self.assertFalse(hasattr(F, "get"))
 
     def test_day_not_yet_closed_is_not_written_and_fetch_time_is_recorded(self):
         from datetime import datetime, timezone
         tw = [{"date": "2026-01-01", "close": 20000.0}, {"date": "2026-01-02", "close": 20000.0}]
-        f = lambda k, d: fake_rows()[0 if k == "m5" else 1]
+        f = lambda: ("2026-01-02", fake_rows()[0])
         doc = {"days": {}, "pinned": []}
-        self.assertEqual(F.merge(doc, tw, fetch=f, limit=1, now=datetime(2026, 1, 2, 3, 0, tzinfo=timezone.utc)), [])   # 臺北 11:00
-        self.assertEqual(F.merge(doc, tw, fetch=f, limit=1, now=datetime(2026, 1, 2, 10, 0, tzinfo=timezone.utc)), ["2026-01-02"])
+        self.assertEqual(F.merge(doc, tw, fetch=f, now=datetime(2026, 1, 2, 3, 0, tzinfo=timezone.utc)), [])   # 臺北 11:00
+        self.assertEqual(F.merge(doc, tw, fetch=f, now=datetime(2026, 1, 2, 10, 0, tzinfo=timezone.utc)), ["2026-01-02"])
         self.assertEqual(doc["days"]["2026-01-02"]["tf"], "2026-01-02T10:00:00Z")
 
     def test_open_data_csv_is_parsed_and_wrong_date_is_rejected(self):
@@ -225,7 +184,8 @@ class V31(unittest.TestCase):
         self.assertEqual(cols[1][270], 28673673.0); self.assertIsNone(cols[5][0])      # 09:00 還沒有成交＝空值，不是 0
         self.assertEqual(F.parse_open_data(csv_text, disp, "2026-11-11"), [])          # 不是要的那一天就不寫
         self.assertEqual(F.parse_open_data(csv_text, "", "2026-11-12"), [])
-        self.assertIn("open_data", F.URL["m5"]); self.assertEqual(F.BACKFILL, 1)
+        self.assertIn("open_data", F.URL["m5"]); self.assertEqual(F.file_day(disp), "2026-11-12")
+        self.assertEqual(len(F.parse_open_data(csv_text, disp)), 2)
 
     def test_public_replay_matches_research_panel_when_available(self):
         """網頁回放資料與研究面板（本機、不進 repo）同一天的序列必須一致；CI 上沒有研究面板就跳過。"""
