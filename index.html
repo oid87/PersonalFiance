@@ -3840,6 +3840,73 @@
     </details>
   </section>
 
+  <section id="tab-panicentry" class="tab-section" hidden>
+    <header class="panicentry-head"><h2 class="section-title">恐慌進場回測</h2><span id="panicentry-asof" class="status"></span></header>
+    <p id="panicentry-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <div id="panicentry-now" class="panicentry-now" aria-live="polite"></div>
+    <details class="panicentry-details" open>
+      <summary>這頁在回答什麼、目前的結論（研究日 2026-11-12）</summary>
+      <ul>
+        <li><b>問題</b>：大盤從近一年盤中高點跌到某個幅度後，隔天開盤買 0050 或 00631L，過去的結果如何？再加上波動率、台積電跌停、國安基金這些條件，有沒有比較好？</li>
+        <li><b>回撤本身有用</b>：跌 −20% 後買，2003 年以來約 19 次，持有 120 個交易日約七成上漲。−23%～−25% 結果相近，沒有哪個門檻特別神奇。</li>
+        <li><b>風險在 2008 年型態</b>：用模擬正二算，最差那幾次買進後還要再跌六到七成，兩年以上才回本。2016 年後的好成績會低估這個風險。</li>
+        <li><b>加美國波動率（VIX／VXN／半導體）沒有改善</b>：含 2008 年的樣本裡，上漲機率沒有提高，中途跌幅反而更深。2017 年後看起來變好，只是少了 2022 年的一兩次，樣本 2～3 個。</li>
+        <li><b>台積電跌停、國安基金宣布都沒有額外價值</b>：上漲機率和隨便挑日子買差不多。</li>
+        <li><b>唯一比較一致的是時機</b>：等波動率從高點回落（下面「訊號類型」）再買，中途跌幅的中位數較小，報酬沒有明顯變少；但最壞情況沒有變好。</li>
+      </ul>
+    </details>
+
+    <div id="panicentry-params" class="panicentry-params" role="group" aria-label="回測參數">
+      <label>大盤回撤 ≤ <b id="panicentry-ddv"></b><input id="panicentry-dd" type="range" min="0" max="35" step="1" value="20" aria-label="大盤回撤門檻（%）"></label>
+      <label>標的<select id="panicentry-asset"><option value="sim">模擬正二（2003 起）</option><option value="lev">00631L（2014-11 起）</option><option value="e50">0050 含息</option></select></label>
+      <label>持有（交易日）<select id="panicentry-h"><option>5</option><option>10</option><option>20</option><option>40</option><option>60</option><option selected>120</option><option>252</option></select></label>
+      <label>進場<select id="panicentry-entry"><option value="open">訊號隔天開盤</option><option value="close">訊號當天收盤</option><option value="split">先買一半，再跌 5 個百分點補另一半</option></select></label>
+      <label>同一波只算一次<select id="panicentry-cd"><option value="20">20 個交易日內</option><option value="60" selected>60 個交易日內</option><option value="120">120 個交易日內</option></select></label>
+      <label>波動率指數<select id="panicentry-vk"><option value="">不加</option><option value="vxn">VXN（那斯達克 100）</option><option value="vix">VIX（S&amp;P 500）</option><option value="vxsmh">VXSMH（半導體，2025-09 起）</option><option value="smhrv">SMH 實現波動（VXSMH 的長期替代）</option><option value="vxn+smhrv">VXN＋SMH 實現波動</option><option value="vxn+vxsmh">VXN＋VXSMH</option><option value="tw">TWVIX（2026-08 起）</option></select></label>
+      <label>門檻算法<select id="panicentry-vmode"><option value="p252" selected>過去 252 日百分位</option><option value="p504">過去 504 日百分位</option><option value="p1260">過去 1260 日百分位</option><option value="abs">絕對數值</option></select></label>
+      <label>門檻 ≥ <b id="panicentry-vthrv"></b><input id="panicentry-vthr" type="range" min="80" max="99.5" step="0.5" value="95" aria-label="波動率門檻"></label>
+      <label>訊號類型<select id="panicentry-sig"><option value="first">第一次達標就算</option><option value="down1">達標後，指數開始下降</option><option value="off10">達標後，從高點回落 10%</option><option value="down2">達標後，連續兩天下降</option><option value="ma5">達標後，大盤站回 5 日線</option></select></label>
+      <label>台積電<select id="panicentry-tsm"><option value="">不限</option><option value="5">當天跌 ≥5%</option><option value="7">當天跌 ≥7%</option><option value="9">當天跌 ≥9%</option><option value="limit">盤中碰到跌停</option><option value="reopen">碰到跌停後收盤打開</option></select></label>
+      <label>國安基金<select id="panicentry-nsf"><option value="">不限</option><option value="1">只看宣布後第一個交易日</option></select></label>
+    </div>
+    <p id="panicentry-warn" class="panicentry-warn" aria-live="polite"></p>
+    <p id="panicentry-setup" class="panicentry-note"></p>
+    <div id="panicentry-tiles" class="panicentry-tiles"></div>
+
+    <h3 class="panicentry-h">加上波動率條件，有沒有比「只看回撤」好</h3>
+    <p class="panicentry-note">沿用上面的回撤、標的、持有、進場與訊號類型。這張表一律從 2004-07 算起（百分位要先累積一年資料），所以第一列會比上面的方塊少算 2004 年上半的事件，數字略有不同。最右三欄是和第一列的差。灰字＝不到 5 個事件，不能當證據。<span class="panicentry-swipe">表格可左右滑動。</span></p>
+    <div id="panicentry-cmp" class="table-scroll" tabindex="0" aria-label="同期間策略比較"></div>
+
+    <h3 class="panicentry-h">訊號在哪裡（三格共用時間軸）</h3>
+    <p class="panicentry-note">上：加權指數，橘色直線是訊號日。中：距近一年盤中高點的回撤，虛線是門檻。下：所選的波動率指數（沒選時顯示 VXN）。底下拉桿改時間範圍。</p>
+    <div id="panicentry-main-chart" class="panicentry-chart panicentry-chart--main" role="img" aria-label="三格共用時間軸：加權指數與訊號日、回撤、波動率指數"></div>
+
+    <div class="panicentry-pair">
+      <div><h3 class="panicentry-h">每一次的報酬</h3><div id="panicentry-ret-chart" class="panicentry-chart" role="img" aria-label="各事件持有期報酬"></div></div>
+      <div><h3 class="panicentry-h">每一次買進後最深跌到多少</h3><div id="panicentry-mae-chart" class="panicentry-chart" role="img" aria-label="各事件持有期間最深跌幅"></div></div>
+    </div>
+
+    <h3 class="panicentry-h">事件明細</h3>
+    <p class="panicentry-note">紅＝上漲、綠＝下跌（台股習慣）。「未滿」是還沒滿持有期，不算進統計。VXSMH、TWVIX 資料很短，早年是空的。<span class="panicentry-swipe">表格可左右滑動。</span></p>
+    <div id="panicentry-events" class="table-scroll panicentry-events" tabindex="0" aria-label="事件明細"></div>
+
+    <details class="panicentry-details">
+      <summary>口徑與限制</summary>
+      <ul>
+        <li><b>回撤</b>：當天盤中最低 ÷ 過去 252 個交易日的盤中最高 − 1。反彈途中若離一年前高點仍超過門檻，也會被算成新事件。</li>
+        <li><b>事件</b>：符合條件、且距上一個事件起點已超過冷卻日數的第一天。持有期重疊的事件並不獨立。</li>
+        <li><b>不偷看未來</b>：美國指數用台股當天開盤前已知的最近一個美股收盤。百分位只和「之前」N 個交易日比，不含當天。「達標後…」這類訊號，買進一定在型態確認之後。</li>
+        <li><b>模擬正二</b>：每天 2×0050 含息報酬，再扣年化成本（用 2015 年後 00631L 的實際績效校準），盤中高低用 0050 的兩倍近似。和實際 00631L 分開呈現。</li>
+        <li><b>0050、00631L、台積電</b>：已還原配息與分割，除權息日不會出現假跌幅。跌停依當時制度判斷（2015-06 前 7%，2008-10-13～24 為 3.5%）。</li>
+        <li><b>國安基金</b>：盤後宣布的，隔一個交易日才算已知（2015-08-25 是盤中宣布）。名單人工維護。</li>
+        <li><b>VXSMH</b> 只有 2025-09 之後的資料，樣本太少無法評估；長期改用 SMH 21 日實現波動率替代（兩者重疊期相關約 0.83）。</li>
+        <li><b>TWVIX</b>：期交所免費只提供近 4 個月，本站從 2026-08 起逐日累積，歷史不足以回測。</li>
+        <li><b>上漲機率的 95% 信賴區間</b>用 Wilson 法；「像不像運氣」是隨機抽同樣次數的日子，平均報酬不輸本策略的比例，越小越不像運氣。</li>
+        <li>這是歷史統計，不是買賣建議。資料每天台北 18:00 後更新。來源：證交所、FinMind、Yahoo、Cboe、期交所。</li>
+      </ul>
+    </details>
+  </section>
+
   <section id="tab-vxnvix" class="tab-section" hidden>
     <div class="controls controls--wrap">
       <div class="picker-row picker-row--end" id="vxnvix-range-picker">

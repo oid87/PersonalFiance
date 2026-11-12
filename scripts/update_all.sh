@@ -118,6 +118,7 @@ run_script optional fetch_tw_sector_flow.py
 run_script optional fetch_tw_daily_stats.py
 run_script optional fetch_tw50_ma_breadth.py
 run_script optional fetch_twvix.py
+run_script optional fetch_panic_entry.py
 run_script optional fetch_banini.py
 run_script optional fetch_net_liquidity.py
 run_script optional fetch_yield_curve.py

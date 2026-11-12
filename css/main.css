@@ -758,7 +758,7 @@
       /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
          保留原高度、改用放大圖表 */
       .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
-        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #vixspike-main-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #vixspike-main-chart, #panicentry-main-chart,
         #kelly-chart, #roc4-chart, #val-chart) {
         max-height: calc(100dvh - 16px);
       }
@@ -1664,3 +1664,53 @@
 #tab-nonnormal .nonnormal-rank-head { color:var(--muted); font-size:12px; }
 #tab-nonnormal .nonnormal-rank-head .nonnormal-rank-val:last-child { grid-column:4 / -1; white-space:nowrap; }
 #tab-nonnormal .nonnormal-rank-hd { color:var(--muted); font-size:11px; white-space:nowrap; }
+
+/* ── 恐慌進場回測（panicentry）── */
+#tab-panicentry .panicentry-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; padding:12px 0 4px; }
+#tab-panicentry .panicentry-head .section-title { font-size:19px; padding:0; border-top:0; margin:0; }
+#tab-panicentry .panicentry-head .status { border-top:0; padding:0; }
+#tab-panicentry .panicentry-now { margin:6px 0 8px; padding:8px 12px; border-left:4px solid #f0883e; background:var(--panel); border-radius:6px; font-size:15px; line-height:1.7; }
+#tab-panicentry .panicentry-now:empty { display:none; }
+#tab-panicentry .panicentry-hit { color:#ef4444; }
+#tab-panicentry .panicentry-dim { color:var(--muted); font-size:13px; font-weight:normal; }
+#tab-panicentry .panicentry-note { color:var(--muted); font-size:13px; line-height:1.6; margin:4px 0 8px; }
+#tab-panicentry .panicentry-warn { color:#d29922; font-size:13px; line-height:1.6; margin:4px 0; }
+#tab-panicentry .panicentry-warn:empty { display:none; }
+#tab-panicentry .panicentry-h { margin:18px 0 6px; font-size:17px; }
+#tab-panicentry .panicentry-params { display:flex; flex-wrap:wrap; gap:10px 16px; margin:10px 0; padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--panel); }
+#tab-panicentry .panicentry-params label { display:flex; flex-direction:column; gap:3px; color:var(--muted); font-size:13px; }
+#tab-panicentry .panicentry-params b { color:var(--text); }
+#tab-panicentry .panicentry-params select { min-height:34px; max-width:260px; padding:2px 6px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:14px; }
+#tab-panicentry .panicentry-params input[type=range] { width:170px; min-height:28px; }
+#tab-panicentry .panicentry-tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; margin:8px 0; }
+#tab-panicentry .panicentry-tile { padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--panel); }
+#tab-panicentry .panicentry-k { color:var(--muted); font-size:13px; }
+#tab-panicentry .panicentry-v { font-size:21px; font-weight:600; font-variant-numeric:tabular-nums; }
+#tab-panicentry .panicentry-s { color:var(--muted); font-size:12px; }
+#tab-panicentry .panicentry-chart { width:100%; height:320px; margin:8px 0; }
+#tab-panicentry .panicentry-chart--main { height:620px; min-height:520px; }
+#tab-panicentry .panicentry-pair { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+#tab-panicentry table { border-collapse:collapse; width:100%; font-size:14px; }
+#tab-panicentry th, #tab-panicentry td { padding:5px 8px; text-align:right; border-bottom:1px solid var(--border); white-space:nowrap; font-variant-numeric:tabular-nums; }
+#tab-panicentry th:first-child, #tab-panicentry td:first-child { text-align:left; }
+#tab-panicentry thead th { color:var(--muted); font-weight:600; }
+#tab-panicentry .table-scroll { max-width:100%; overflow-x:auto; margin:4px 0 10px; }
+#tab-panicentry .panicentry-events { max-height:520px; overflow-y:auto; }
+#tab-panicentry .panicentry-base td { font-weight:600; }
+#tab-panicentry .panicentry-thin td { color:var(--muted); }
+#tab-panicentry .panicentry-up { color:#ef4444; }
+#tab-panicentry .panicentry-down { color:#3fb950; }
+#tab-panicentry .panicentry-details { margin:8px 0; font-size:14px; line-height:1.7; }
+#tab-panicentry .panicentry-details summary { cursor:pointer; font-weight:600; }
+#tab-panicentry .panicentry-details ul { margin:4px 0 4px 20px; padding:0; }
+#tab-panicentry .panicentry-swipe { display:none; }
+@media (max-width: 760px) {
+  #tab-panicentry { padding:0 12px 16px; }
+  #tab-panicentry .panicentry-pair { grid-template-columns:1fr; }
+  #tab-panicentry .panicentry-swipe { display:inline; }
+  #tab-panicentry #panicentry-cmp td:first-child { white-space:normal; min-width:120px; max-width:150px; }
+  #tab-panicentry .panicentry-chart--main { height:540px; min-height:480px; }
+  #tab-panicentry .panicentry-chart { height:280px; }
+  #tab-panicentry .panicentry-params label { flex:1 1 150px; }
+  #tab-panicentry .panicentry-params select, #tab-panicentry .panicentry-params input[type=range] { width:100%; max-width:none; }
+}
