@@ -52,7 +52,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "chore: intraday replay retry (TW) [skip ci]"
+            git commit -m "chore: data status refresh + intraday retry (TW) [skip ci]"
             ok=0
             for i in 1 2 3; do
               if git pull --rebase --autostash -X theirs origin main && git push; then ok=1; break; fi
