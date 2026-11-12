@@ -339,7 +339,7 @@ export async function activate(context = {}) {
   byId('status').textContent = '';
   wire(); syncThr(false); recompute();
   const at = new Map(D.date.map((d, i) => [d, i]));
-  await Live.init(context, { lastDate: D.date.at(-1), daily: d => { const i = at.get(d); return i == null ? null : { ddLow: dd()[i], ddClose: D.tw_l[i] > 0 ? (1 + dd()[i]) * D.tw_c[i] / D.tw_l[i] - 1 : null, ld: ldAll()[i], lock: lockAll()[i], adv50: Bx.tw50.adv[i], mg: MGx?.amt1[i] }; } });
+  await Live.init(context, { lastDate: D.date.at(-1), daily: d => { const i = at.get(d); return i == null ? null : { chg: i > 0 && D.tw_c[i - 1] > 0 ? (D.tw_c[i] / D.tw_c[i - 1] - 1) * 100 : null, lowChg: i > 0 && D.tw_c[i - 1] > 0 && D.tw_l[i] > 0 ? (D.tw_l[i] / D.tw_c[i - 1] - 1) * 100 : null, ddLow: dd()[i], ddClose: D.tw_l[i] > 0 ? (1 + dd()[i]) * D.tw_c[i] / D.tw_l[i] - 1 : null, ld: ldAll()[i], lock: lockAll()[i], adv50: Bx.tw50.adv[i], mg: MGx?.amt1[i] }; } });
 }
 export function getCharts() { return [...Object.values(charts), ...Live.getCharts()]; }
 export function resize() { for (const c of getCharts()) c.resize(); }

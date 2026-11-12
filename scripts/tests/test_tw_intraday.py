@@ -106,10 +106,11 @@ class Merge(unittest.TestCase):
         doc["days"]["2020-03-19"] = {"r": ["PIN"]}
         added = F.merge(doc, self.tw, fetch=self.fetch, limit=3)
         self.assertEqual(added, ["2026-01-08", "2026-01-10"])
-        self.assertEqual(self.calls, [("m5", "2026-01-08"), ("m5i", "2026-01-08"), ("m5", "2026-01-10"), ("m5i", "2026-01-10")])
+        self.assertEqual(self.calls, [("m5", "2026-01-08"), ("m5", "2026-01-10")])      # 只讀委託統計，不讀指數
         self.assertEqual(doc["days"]["2026-01-09"]["r"], ["KEEP"])
         self.assertEqual(doc["days"]["2020-03-19"]["r"], ["PIN"])
-        self.assertEqual(doc["days"]["2026-01-10"]["sum"]["recon"], 0.0)
+        self.assertNotIn("r", doc["days"]["2026-01-10"])
+        self.assertEqual(set(doc["days"]["2026-01-10"]["sum"]), {"bp_min", "bp_t", "cdev_max", "cdev_t", "vp", "missing"})
         self.assertEqual(F.merge(doc, self.tw, fetch=self.fetch, limit=3), [])      # 再跑一次不重抓
         json.dumps(doc, allow_nan=False)
 
@@ -134,12 +135,12 @@ class PublishedFile(unittest.TestCase):
         self.assertEqual(doc.get("kind"), "post_close")
         self.assertEqual(list(doc["days"]), sorted(set(doc["days"])))
         for d, x in doc["days"].items():
-            self.assertLessEqual(set(x), {"r", "bq", "sq", "tq", "tv", "vb", "bb", "cb", "sum", "tf"}, d)
+            self.assertLessEqual(set(x), {"bq", "sq", "tq", "tv", "vb", "bb", "cb", "sum", "tf"}, d)   # 不含指數序列 r
+            self.assertLessEqual(set(x["sum"]), {"bp_min", "bp_t", "cdev_max", "cdev_t", "vp", "missing"}, d)
             # 取得時間一定在那一天收盤之後：盤後公布的資料不可能在盤中就有
             self.assertGreater(x["tf"], f"{d}T05:30:00", d)
-            self.assertEqual(len(x["r"]), 271, d)
-            self.assertLess(abs(x["sum"].get("recon") or 0), 0.2, d)
-            self.assertTrue(all(v is None or abs(v) <= 11 for v in x["r"]), d)
+            self.assertEqual(len(x["bq"]), 271, d)
+            self.assertTrue(all(v is None or v >= 0 for v in x["bq"] + x["sq"] + x["tq"]), d)
 
 
 class V31(unittest.TestCase):
@@ -196,12 +197,15 @@ class V31(unittest.TestCase):
         F.add_baselines(days, tw, "2026-01-07")
         self.assertNotEqual(days["2026-01-07"]["bb"], before)
 
-    def test_recon_is_in_percentage_points_of_daily_change(self):
-        tw = [{"date": "2026-01-01", "close": 20000.0}, {"date": "2026-01-02", "close": 19600.0}]
-        doc = {"days": {}, "pinned": []}
-        o, ix = fake_rows(drop=-0.03)                              # 盤中最後一筆 −3%，官方收盤 −2%
-        F.merge(doc, tw, fetch=lambda k, d: o if k == "m5" else ix, limit=1)
-        self.assertAlmostEqual(doc["days"]["2026-01-02"]["sum"]["recon"], -1.0, places=2)
+    def test_public_flow_has_no_index_and_index_endpoint_is_gone(self):
+        o, ix = fake_rows()
+        day = ti.build_day(o)
+        self.assertNotIn("r", day); self.assertEqual(len(day["bq"]), 271)
+        self.assertEqual(set(ti.summary(day)), {"bp_min", "bp_t", "cdev_max", "cdev_t", "vp", "missing"})
+        self.assertIn("r", ti.build_day(o, ix, 20000))            # 本機研究仍可帶指數
+        self.assertEqual(set(F.URL), {"m5"})
+        with self.assertRaises(ValueError):
+            F.get("m5i", "2026-01-02")
 
     def test_day_not_yet_closed_is_not_written_and_fetch_time_is_recorded(self):
         from datetime import datetime, timezone
@@ -223,12 +227,6 @@ class V31(unittest.TestCase):
         self.assertEqual(F.parse_open_data(csv_text, "", "2026-11-12"), [])
         self.assertIn("open_data", F.URL["m5"]); self.assertEqual(F.BACKFILL, 1)
 
-    def test_index_is_not_requested_when_order_stats_are_unavailable(self):
-        tw = [{"date": "2026-01-01", "close": 20000.0}, {"date": "2026-01-02", "close": 20000.0}]
-        calls = []
-        F.merge({"days": {}, "pinned": []}, tw, fetch=lambda k, d: calls.append(k) or [], limit=1)
-        self.assertEqual(calls, ["m5"])
-
     def test_public_replay_matches_research_panel_when_available(self):
         """網頁回放資料與研究面板（本機、不進 repo）同一天的序列必須一致；CI 上沒有研究面板就跳過。"""
         root = Path(__file__).resolve().parent.parent.parent
@@ -241,7 +239,7 @@ class V31(unittest.TestCase):
         both = [d for d in doc["days"] if d in R]
         self.assertGreaterEqual(len(both), 50)
         for d in both:
-            for k in ("r", "bq", "sq", "tq", "tv"):
+            for k in ("bq", "sq", "tq", "tv"):
                 self.assertEqual(doc["days"][d][k], R[d][k], (d, k))
 
 

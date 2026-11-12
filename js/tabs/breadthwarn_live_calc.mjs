@@ -35,7 +35,7 @@ export const hhmm = m => `${String(9 + Math.floor(m / 60)).padStart(2, '0')}:${S
 const ratio = (a, b, k = 1) => (fin(a) && fin(b) && b !== 0 ? a / b * k : null);
 
 export function indicators(day) {
-  const n = day.r.length, cimb = new Array(n).fill(null), fill = new Array(n).fill(null), vp = new Array(n).fill(null), bp = new Array(n).fill(null);
+  const n = day.bq.length, cimb = new Array(n).fill(null), fill = new Array(n).fill(null), vp = new Array(n).fill(null), bp = new Array(n).fill(null);
   for (let i = 0; i < n; i++) {
     const b = day.bq[i], s = day.sq[i];
     if (fin(b) && fin(s) && b + s > 0) cimb[i] = (s - b) / (s + b) * 100;

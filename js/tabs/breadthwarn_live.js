@@ -18,11 +18,12 @@ const table = (head, rows) => `<table><thead><tr>${head.map(h => `<th>${h}</th>`
 
 let DOC = null, RES = null, LOCAL = null, ctx = null, charts = {}, day = null;
 
-function verdict(s) {
-  if (!fin(s.low) || s.low > -2) return '盤中最低沒有跌超過 2%，不判讀。';
-  if (fin(s.bp_min) && s.bp_min <= 0.7) return `全市場累積委買量異常偏低：${s.bp_t} 只有平常同時段的 ${Math.round(s.bp_min * 100)}%。這是全市場合計，看不出是哪些股票沒有買盤。`;
-  if (fin(s.vp) && s.vp >= 1.3) return `跌幅伴隨成交放大（全日是平常的 ${s.vp.toFixed(2)} 倍），全市場累積委買量沒有明顯偏低。個別股票仍可能鎖跌停，要看下面的收盤跌停占比。`;
-  return fin(s.bp_min) ? '指數下跌，但全市場累積委買量與成交都接近平常，從全市場合計看不出異常；這不代表個別股票有買盤。' : '這一天沒有前幾日的基準可以比較。';
+function verdict(s, q) {
+  if (!fin(s.bp_min)) return '這一天沒有前幾日的基準可以比較。';
+  if (s.bp_min <= 0.7) return `全市場累積委買量異常偏低：${s.bp_t} 只有平常同時段的 ${Math.round(s.bp_min * 100)}%。這是全市場合計，看不出是哪些股票沒有買盤。`;
+  if (fin(q.lowChg) && q.lowChg > -2) return '當天最低沒有跌超過 2%（日資料），不判讀。';
+  if (fin(s.vp) && s.vp >= 1.3) return `成交放大（全日是平常的 ${s.vp.toFixed(2)} 倍），全市場累積委買量沒有明顯偏低。個別股票仍可能鎖跌停，要看收盤跌停占比。`;
+  return '全市場累積委買量與成交都接近平常，從全市場合計看不出異常；這不代表個別股票有買盤。';
 }
 
 function renderStatus() {
@@ -36,13 +37,13 @@ function renderStatus() {
     ['當日盤中監測', LOCAL ? '只在這台電腦' : '<b>未啟用</b>', '需要有授權的即時行情', '公開網站沒有、也不會假裝有；程式寫好但沒有接上合法來源'],
     ['融資維持率情境模擬', '<b>已上線</b>', '你自己填的假設', '單一部位的試算，不是全市場真實的追繳或斷頭統計'],
   ].map(r => [...r.slice(0, 3), `<td class="breadthwarn-wrap">${r[3]}</td>`]));
-  $('live-stamp').innerHTML = `<b>時間怎麼看：</b>行情時間＝圖上的 09:00–13:30（交易所每 5 秒統計，本站取每分鐘最後一筆）；可用時間＝交易所<b>收盤後</b>公布（分類：盤後公布，不是即時也不是延遲行情）；本站取得時間＝${utc(DOC.days[last]?.tf || DOC.updated)}（檔案更新於 ${utc(DOC.updated)}，規則版本 ${esc(DOC.ver || '—')}）。`;
+  $('live-stamp').innerHTML = `<b>時間怎麼看：</b>行情時間＝圖上的 09:00–13:30（交易所每 5 秒委託成交統計，本站取每分鐘最後一筆）；可用時間＝交易所<b>收盤後</b>公布（分類：盤後公布，不是即時也不是延遲行情）；本站取得時間＝${utc(DOC.days[last]?.tf || DOC.updated)}（檔案更新於 ${utc(DOC.updated)}，規則版本 ${esc(DOC.ver || '—')}）。`;
 }
 
 function renderTiles() {
   const d = day, s = DOC.days[d].sum || {}, q = ctx.daily(d) || {};
   $('live-tiles').innerHTML = [
-    tile('指數盤中最低', sp(s.low), `${d.slice(5)} ${s.low_t || ''}；收盤 ${sp(s.close)}`, TAG.real),
+    tile('加權指數收盤漲跌', sp(q.chg), `${d.slice(5)}；當天最低 ${sp(q.lowChg)}（日資料，沒有盤中走勢）`, TAG.real),
     tile('距 252 日高點', fin(q.ddLow) ? p1(q.ddLow * 100) : '—', `以當日最低價；以收盤價是 ${fin(q.ddClose) ? p1(q.ddClose * 100) : '—'}`, TAG.real),
     tile('累積委買量最低', fin(s.bp_min) ? `${Math.round(s.bp_min * 100)}%` : '—', `${s.bp_t || ''} 全市場累積委買 ÷ 平常同時段`, TAG.real),
     tile('全日成交相對平常', fin(s.vp) ? `${s.vp.toFixed(2)} 倍` : '—', '成交金額 ÷ 前 20 日同時段中位數', TAG.real),
@@ -52,10 +53,10 @@ function renderTiles() {
 
 function fillDays() {
   const ds = Object.keys(DOC.days).reverse(), pin = new Set(DOC.pinned || []), lab = DOC.labels || {};
-  const opt = d => { const s = DOC.days[d].sum || {}; return `<option value="${d}">${d}　最低 ${sp(s.low, 1)}　收 ${sp(s.close, 1)}</option>`; };
+  const opt = d => { const s = DOC.days[d].sum || {}; const q = ctx.daily(d) || {}; return `<option value="${d}">${d}　收 ${sp(q.chg, 1)}　委買最低 ${fin(s.bp_min) ? Math.round(s.bp_min * 100) + '%' : '—'}</option>`; };
   $('live-day').innerHTML = ds.filter(d => !pin.has(d)).map(opt).join('') + `<optgroup label="歷史危機日">${ds.filter(d => pin.has(d)).map(opt).join('')}</optgroup>`;
   const groups = [...new Set(ds.filter(d => pin.has(d)).map(d => lab[d]))];
-  const worst = k => ds.filter(d => lab[d] === k).sort((a, b) => DOC.days[a].sum.low - DOC.days[b].sum.low)[0];
+  const chgOf = d => ctx.daily(d)?.lowChg ?? 0, worst = k => ds.filter(d => lab[d] === k).sort((a, b) => chgOf(a) - chgOf(b))[0];
   $('live-jump').innerHTML = '<option value="">最近的交易日</option>' + ['2026-11-03', '2026-11-05', '2026-11-06'].filter(d => DOC.days[d]).map(d => `<option value="${d}">${d}</option>`).join('') +
     groups.map(k => `<option value="${worst(k)}">${esc(k)}（${worst(k)}）</option>`).join('');
   day = ds[0]; $('live-day').value = day;
@@ -65,40 +66,38 @@ const chart = key => charts[key] || (charts[key] = echarts.init($(key + '-chart'
 function drawDay() {
   const x = DOC.days[day]; if (!x) return;
   renderTiles();
-  const ind = L.indicators(x), s = x.sum || {}, cov = L.coverage(x.r), m = mob(), Lf = m ? 44 : 60, R = m ? 14 : 28;
+  const ind = L.indicators(x), s = x.sum || {}, cov = L.coverage(x.bq), q = ctx.daily(day) || {}, m = mob(), Lf = m ? 44 : 60, R = m ? 14 : 28;
   const xs = Array.from({ length: L.MINUTES }, (_, i) => L.hhmm(i));
   const cut = a => a.map((v, i) => (i < 5 ? null : v));      // 開盤前 5 分鐘累積量太小，比值不穩，不畫
   const ax = { axisLine: { lineStyle: { color: PALETTE.muted } }, axisLabel: { color: PALETTE.muted, fontSize: 11 }, splitLine: { lineStyle: { color: PALETTE.grid } } };
-  const tops = ['2%', '36%', '69%'], ttl = (t, i) => ({ text: t, left: Lf, top: tops[i], textStyle: { color: PALETTE.muted, fontSize: 12, fontWeight: 'normal' } });
+  const tops = ['2%', '53%'], ttl = (t, i) => ({ text: t, left: Lf, top: tops[i], textStyle: { color: PALETTE.muted, fontSize: 12, fontWeight: 'normal' } });
   const ln = (name, data, gi, color, extra = {}) => ({ type: 'line', name, data, symbol: 'none', connectNulls: false, xAxisIndex: gi, yAxisIndex: gi, lineStyle: { width: 1.5, color }, itemStyle: { color }, ...extra });
   const rr = (a, d) => a.map(v => (fin(v) ? +v.toFixed(d) : null));
-  $('live-daynote').innerHTML = `<b>${day}${DOC.labels?.[day] ? `（${esc(DOC.labels[day])}）` : ''}：</b>開盤 ${sp(s.open)}，最低 ${sp(s.low)}（${s.low_t}），收盤 ${sp(s.close)}，從低點收回 ${fin(s.rebound) ? s.rebound.toFixed(2) : '—'} 個百分點。` +
-    `${s.t2 ? `第一次跌超過 2%：${s.t2}${s.t3 ? `，3%：${s.t3}` : ''}${s.t5 ? `，5%：${s.t5}` : ''}。` : ''}${verdict(s)}` +
-    ` <span class="breadthwarn-dim">有資料 ${cov.have}／${L.MINUTES} 分鐘${cov.missing ? `，最長連續缺 ${cov.maxGap} 分鐘（留空）` : ''}${fin(s.recon) ? `；和官方收盤漲跌對帳差 ${s.recon.toFixed(2)} 個百分點` : ''}。</span>`;
+  $('live-daynote').innerHTML = `<b>${day}${DOC.labels?.[day] ? `（${esc(DOC.labels[day])}）` : ''}：</b>${fin(q.chg) ? `加權指數收盤 ${sp(q.chg)}，當天最低 ${sp(q.lowChg)}（日資料）。` : '這一天的指數日資料還沒更新。'}${verdict(s, q)}` +
+    ` <span class="breadthwarn-dim">有資料 ${cov.have}／${L.MINUTES} 分鐘${cov.missing ? `，最長連續缺 ${cov.maxGap} 分鐘（留空）` : ''}。</span>`;
   chart('live').setOption(echartsBase({
-    title: [ttl('加權指數對前一日收盤（%）', 0), ttl(m ? '相對平常的倍數' : '相對平常同時段的倍數（1＝一樣）', 1), ttl(m ? '累積委賣比委買多（%）' : '累積委賣比累積委買多多少（占兩者合計 %）', 2)],
-    legend: [{ top: tops[1], right: R, data: ['累積委買', '成交金額'], textStyle: { color: PALETTE.muted, fontSize: 11 }, itemWidth: 14, itemHeight: 8 }, { top: tops[2], right: R, data: ['當天', '前 20 日中位數'], textStyle: { color: PALETTE.muted, fontSize: 11 }, itemWidth: 14, itemHeight: 8 }],
+    title: [ttl(m ? '相對平常的倍數' : '相對平常同時段的倍數（1＝一樣）', 0), ttl(m ? '累積委賣比委買多（%）' : '累積委賣比累積委買多多少（占兩者合計 %）', 1)],
+    legend: [{ top: tops[0], right: R, data: ['累積委買', '成交金額'], textStyle: { color: PALETTE.muted, fontSize: 11 }, itemWidth: 14, itemHeight: 8 }, { top: tops[1], right: R, data: ['當天', '前 20 日中位數'], textStyle: { color: PALETTE.muted, fontSize: 11 }, itemWidth: 14, itemHeight: 8 }],
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
     tooltip: { trigger: 'axis' },
-    grid: [{ left: Lf, right: R, top: '8%', height: '23%' }, { left: Lf, right: R, top: '42%', height: '22%' }, { left: Lf, right: R, top: '75%', height: '18%' }],
-    xAxis: [0, 1, 2].map(gi => ({ type: 'category', data: xs, gridIndex: gi, ...ax, splitLine: { show: false }, axisLabel: { show: gi === 2, color: PALETTE.muted, fontSize: 11, interval: m ? 59 : 29 } })),
-    yAxis: [{ type: 'value', gridIndex: 0, scale: true, ...ax }, { type: 'value', gridIndex: 1, scale: true, ...ax }, { type: 'value', gridIndex: 2, scale: true, ...ax }],
+    grid: [{ left: Lf, right: R, top: '10%', height: '36%' }, { left: Lf, right: R, top: '61%', height: '30%' }],
+    xAxis: [0, 1].map(gi => ({ type: 'category', data: xs, gridIndex: gi, ...ax, splitLine: { show: false }, axisLabel: { show: gi === 1, color: PALETTE.muted, fontSize: 11, interval: m ? 59 : 29 } })),
+    yAxis: [{ type: 'value', gridIndex: 0, scale: true, ...ax }, { type: 'value', gridIndex: 1, scale: true, ...ax }],
     dataZoom: [],
     series: [
-      ln('指數', x.r, 0, PALETTE.text, { markLine: { symbol: 'none', silent: true, lineStyle: { color: PALETTE.muted, type: 'dashed', width: 1 }, label: { show: false }, data: [{ yAxis: 0 }] }, markPoint: fin(s.low) ? { symbol: 'circle', symbolSize: 8, itemStyle: { color: PALETTE.text }, label: { show: true, position: 'bottom', color: PALETTE.muted, fontSize: 11, formatter: `最低 ${s.low_t}` }, data: [{ coord: [s.low_t, s.low] }] } : undefined }),
-      ln('累積委買', rr(cut(ind.bp), 2), 1, REAL, { markLine: { symbol: 'none', silent: true, lineStyle: { color: PALETTE.muted, type: 'dashed', width: 1 }, label: { show: false }, data: [{ yAxis: 1 }] } }),
-      ln('成交金額', rr(cut(ind.vp), 2), 1, EST, { lineStyle: { width: 1.5, color: EST, type: [6, 3] } }),
-      ln('當天', rr(cut(ind.cimb), 1), 2, REAL),
-      ln('前 20 日中位數', x.cb ? cut(x.cb) : [], 2, PALETTE.muted, { lineStyle: { width: 1, color: PALETTE.muted, type: 'dashed' } }),
+      ln('累積委買', rr(cut(ind.bp), 2), 0, REAL, { markLine: { symbol: 'none', silent: true, lineStyle: { color: PALETTE.muted, type: 'dashed', width: 1 }, label: { show: false }, data: [{ yAxis: 1 }] } }),
+      ln('成交金額', rr(cut(ind.vp), 2), 0, EST, { lineStyle: { width: 1.5, color: EST, type: [6, 3] } }),
+      ln('當天', rr(cut(ind.cimb), 1), 1, REAL),
+      ln('前 20 日中位數', x.cb ? cut(x.cb) : [], 1, PALETTE.muted, { lineStyle: { width: 1, color: PALETTE.muted, type: 'dashed' } }),
     ],
   }), true);
 }
 
 function renderDaysTable() {
   const ds = Object.keys(DOC.days).filter(d => !(DOC.pinned || []).includes(d)).reverse().slice(0, 25);
-  $('live-days').innerHTML = table(['日期', '開盤', '最低', '最低時間', '收盤', '首次 −2%', '首次 −3%', '累積委買最低', '時間', '委賣偏離最大（百分點）', '成交倍數', '收盤時鎖跌停且無買單的股票占比', '融資日增減（當晚公布）'], ds.map(d => {
+  $('live-days').innerHTML = table(['日期', '收盤漲跌（日資料）', '當天最低（日資料）', '累積委買最低', '時間', '委賣偏離最大（百分點）', '成交倍數', '收盤時鎖跌停且無買單的股票占比', '融資日增減（當晚公布）'], ds.map(d => {
     const s = DOC.days[d].sum || {}, q = ctx.daily(d) || {};
-    return [d.slice(5), `<td class="${dir(s.open)}">${sp(s.open)}</td>`, `<td class="${dir(s.low)}">${sp(s.low)}</td>`, s.low_t || '—', `<td class="${dir(s.close)}">${sp(s.close)}</td>`, s.t2 || '—', s.t3 || '—',
+    return [d.slice(5), `<td class="${dir(q.chg)}">${sp(q.chg)}</td>`, `<td class="${dir(q.lowChg)}">${sp(q.lowChg)}</td>`,
       fin(s.bp_min) ? `${Math.round(s.bp_min * 100)}%` : '—', s.bp_t || '—', fin(s.cdev_max) ? `${s.cdev_max > 0 ? '+' : ''}${s.cdev_max.toFixed(1)}` : '—', fin(s.vp) ? s.vp.toFixed(2) : '—', fin(q.lock) ? p1(q.lock) : '—', `<td class="breadthwarn-late">${fin(q.mg) ? `${q.mg > 0 ? '+' : ''}${Math.round(q.mg)} 億` : '—'}</td>`];
   }));
 }
@@ -127,10 +126,10 @@ function renderSim() {
 }
 
 function renderQuality() {
-  const ds = Object.keys(DOC.days), miss = ds.reduce((a, d) => a + (DOC.days[d].sum?.missing || 0), 0), rec = ds.map(d => Math.abs(DOC.days[d].sum?.recon)).filter(fin);
+  const ds = Object.keys(DOC.days), miss = ds.reduce((a, d) => a + (DOC.days[d].sum?.missing || 0), 0);
   const rows = [
-    ['加權指數每 5 秒', TAG.real, '收盤後', '證交所網站的盤後統計頁；每個交易日 18:00 讀一次', '有授權風險', `這項資料沒有開放資料授權，證交所網站條款未經同意禁止自動下載與轉載；和本站其他證交所盤後日資料同一種情形。這裡只公開換算後的漲跌 %。${ds.length} 天，缺漏 ${miss} 分鐘（${(miss / ds.length / L.MINUTES * 100).toFixed(2)}%）；和官方收盤漲跌對帳最大差 ${rec.length ? Math.max(...rec).toFixed(2) : '—'} 個百分點`],
-    ['每 5 秒委託成交統計（累積委買、委賣、成交）', TAG.real, '收盤後', '政府資料開放平臺登錄的官方下載點（只給最新一天，漏掉的日子不回補）', '可以（開放資料授權，須標示來源）', '全市場（上市）合計，不分個股。「累積委託」是開盤以來的累計，會因取消、改量而減少，也包含已成交的單；它不是當下委託簿上還沒成交的存量，更不是個股的買方深度'],
+    ['加權指數盤中走勢（每 5 秒）', TAG.na, '收盤後', '證交所網站的盤後統計頁', '不行', '沒有開放資料授權，網站條款未經同意禁止自動下載與轉載；2026-11-12 起不抓、不顯示。這一區的指數漲跌改用每日收盤與最低（日資料）'],
+    ['每 5 秒委託成交統計（累積委買、委賣、成交）', TAG.real, '收盤後', '政府資料開放平臺登錄的官方下載點（只給最新一天，漏掉的日子不回補）', '可以（開放資料授權，須標示來源）', `${ds.length} 天，缺漏 ${miss} 分鐘（${(miss / ds.length / L.MINUTES * 100).toFixed(2)}%）。全市場（上市）合計，不分個股。「累積委託」是開盤以來的累計，會因取消、改量而減少，也包含已成交的單；它不是當下委託簿上還沒成交的存量，更不是個股的買方深度`],
     ['相對平常同時段的倍數', TAG.est, '收盤後', '前 5–20 個交易日同一分鐘的中位數', '可以', '自己算的比值，不是交易所數字；不足 5 天就不算'],
     ['盤中跌停家數、有沒有買單、跌停委賣張數', TAG.na, '即時（交易所每 5 秒揭示）', '證交所／櫃買基本市況報導網站', '不行', '網站條款禁止自動擷取與轉載；對外展示盤中資訊（含彙總統計）要簽資訊使用契約'],
     ['臺灣50 成分股、台積電、0050、00631L 盤中', TAG.na, '即時', '同上', '不行', '同上；收盤後的日資料這頁其他區已經有'],

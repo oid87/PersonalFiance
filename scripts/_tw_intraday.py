@@ -2,7 +2,7 @@
 
 一、盤後回放：證交所收盤後公布的「每 5 秒委託成交統計」(MI_5MINS) 與「每 5 秒指數」(MI_5MINS_INDEX)
     → 每分鐘序列（09:00=第 0 分，13:30=第 270 分；只取該分鐘之前最後一筆已公布的值，不內插）。
-    r   指數對前一日收盤的漲跌（%）
+    r   指數對前一日收盤的漲跌（%）——只有本機研究才有；公開檔沒有（每 5 秒指數沒有開放授權）
     bq／sq  累積委託買進／賣出張數（千張）   tq 累積成交張數（千張）   tv 累積成交金額（億元）
     vb／bb／cb  前 5–20 個交易日同一分鐘的 tv／bq／委託失衡 中位數（基準；不足 5 天則沒有）
 二、盤中快照彙總：把一批個股即時報價（已正規化的 dict）彙總成家數與占比。來源無關，
@@ -62,17 +62,21 @@ def to_minutes(rows, ncol):
     return out
 
 
-def build_day(order_rows, index_rows, prev_close):
-    """單日每分鐘序列。資料不足（有效分鐘 < 200 或沒有前收）回 None。"""
+def build_day(order_rows, index_rows=None, prev_close=None):
+    """單日每分鐘序列。委託統計有效分鐘 < 200 回 None。
+    index_rows 不給（公開流程：每 5 秒指數沒有開放授權，2026-11-12 起不抓、不公開）就沒有 r；
+    給了（本機研究）則需要前收與至少 200 分鐘的指數，否則回 None。"""
     bn, bq, sn, sq, tn, tq, tv = to_minutes(order_rows, 7)
-    (idx,) = to_minutes(index_rows, 1)
-    if not prev_close or sum(v is not None for v in idx) < 200 or sum(v is not None for v in sq) < 200:
+    if sum(v is not None for v in sq) < 200:
         return None
     rd = lambda a, k: [None if v is None else int(round(v / k)) for v in a]
-    return {
-        "r": [None if v is None else round((v / prev_close - 1) * 100, 2) for v in idx],
-        "bq": rd(bq, 1000), "sq": rd(sq, 1000), "tq": rd(tq, 1000), "tv": rd(tv, 100),
-    }
+    day = {"bq": rd(bq, 1000), "sq": rd(sq, 1000), "tq": rd(tq, 1000), "tv": rd(tv, 100)}
+    if index_rows is not None:
+        (idx,) = to_minutes(index_rows, 1)
+        if not prev_close or sum(v is not None for v in idx) < 200:
+            return None
+        day = {"r": [None if v is None else round((v / prev_close - 1) * 100, 2) for v in idx], **day}
+    return day
 
 
 def indicators(day):
@@ -82,7 +86,7 @@ def indicators(day):
         「累積委買」是開盤以來的累計（會因取消、改量而減少，也包含已經成交的），不是當下委託簿上的買單存量，
         也看不出個別股票有沒有買盤；bp 正常時個股仍可能鎖跌停。 vp：累積成交金額的同樣比值。
     cdev：cimb 減去前幾日同一分鐘 cimb 的中位數（百分點）。沒有基準的日子 bp／vp／cdev 是 None。"""
-    n = len(day["r"])
+    n = len(day["bq"])
     cimb, fill, bp, vp, cdev = ([None] * n for _ in range(5))
     for i in range(n):
         b, s, t = day["bq"][i], day["sq"][i], day["tq"][i]
@@ -140,24 +144,30 @@ def hhmm(m):
 def summary(day):
     """單日摘要：最低點、各跌幅第一次出現的時間、買單最少與委託失衡偏離最大的時間、低點後收回多少。
     09:05 以前與 13:25 以後（集合競價）不列入極值。"""
-    r, ind = day["r"], indicators(day)
+    ind = indicators(day)
+    best = lambda a, f: (lambda c: f(c, key=lambda i: a[i]) if c else None)([i for i in range(5, 265) if a[i] is not None])
+    bm, cm = best(ind["bp"], min), best(ind["cdev"], max)
+    last = lambda a: next((a[i] for i in range(len(a) - 1, -1, -1) if a[i] is not None), None)
+    flow = {
+        "bp_min": None if bm is None else ind["bp"][bm], "bp_t": hhmm(bm),
+        "cdev_max": None if cm is None else ind["cdev"][cm], "cdev_t": hhmm(cm),
+        "vp": last(ind["vp"]), "missing": sum(v is None for v in day["bq"]),
+    }
+    if "r" not in day:          # 公開流程：沒有指數，只有委託與成交的摘要
+        return flow
+    r = day["r"]
     ok = [i for i, v in enumerate(r) if v is not None]
     if not ok:
         return {}
     lo = min(ok, key=lambda i: r[i])
     first = lambda thr: next((i for i in ok if r[i] <= thr), None)
-    best = lambda a, f: (lambda c: f(c, key=lambda i: a[i]) if c else None)([i for i in range(5, 265) if a[i] is not None])
-    bm, cm = best(ind["bp"], min), best(ind["cdev"], max)
     d15 = [None if i < WIN or r[i] is None or r[i - WIN] is None else round(r[i] - r[i - WIN], 2) for i in range(len(r))]
     dm = best(d15, min)
-    last = lambda a: next((a[i] for i in range(len(a) - 1, -1, -1) if a[i] is not None), None)
     return {
         "open": r[1] if len(r) > 1 else None, "low": r[lo], "low_t": hhmm(lo), "close": r[ok[-1]],
         "rebound": round(r[ok[-1]] - r[lo], 2),
         "t1": hhmm(first(-1)), "t2": hhmm(first(-2)), "t3": hhmm(first(-3)), "t5": hhmm(first(-5)),
-        "bp_min": None if bm is None else ind["bp"][bm], "bp_t": hhmm(bm),
-        "cdev_max": None if cm is None else ind["cdev"][cm], "cdev_t": hhmm(cm),
-        "vp": last(ind["vp"]), "drop15": None if dm is None else d15[dm], "drop15_t": hhmm(dm),
+        **flow, "drop15": None if dm is None else d15[dm], "drop15_t": hhmm(dm),
         "missing": MINUTES - len(ok),
     }
 
