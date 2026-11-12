@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-12T09:31:42Z",
+ "generated": "2026-11-12T17:58:07Z",
  "expected": "2026-11-12",
  "rows": [
   {
@@ -100,15 +100,15 @@
    "backfill": true,
    "latest": "2026-11-11",
    "expected": "2026-11-12",
-   "lag": 0,
+   "lag": 1,
    "pending": [],
-   "state": "ok",
-   "cause": null,
+   "state": "behind",
+   "cause": "source",
    "seen": null,
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": false
+   "alert": true
   },
   {
    "key": "ld",
@@ -149,11 +149,23 @@
    "alert": false
   }
  ],
- "alerts": [],
+ "alerts": [
+  {
+   "key": "margin",
+   "name": "融資餘額與買賣",
+   "state": "behind",
+   "cause": "source",
+   "latest": "2026-11-11",
+   "expected": "2026-11-12",
+   "lag": 1,
+   "backfill": true,
+   "msg": null
+  }
+ ],
  "run": {
-  "id": "43192137754",
-  "url": "https://github.com/oid87/PersonalFiance/actions/runs/43192137754",
-  "job": "monitor"
+  "id": "43273056409",
+  "url": "https://github.com/oid87/PersonalFiance/actions/runs/43273056409",
+  "job": "tw"
  },
  "note": "各來源狀態是排程執行當下判斷的；頁面會另外用現在時間檢查這份檔案本身是不是太久沒更新。"
 }
