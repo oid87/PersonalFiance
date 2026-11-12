@@ -52,3 +52,6 @@ export function coverage(a) {
   for (const v of a) { if (fin(v)) { have++; run = 0; } else { run++; if (run > gap) gap = run; } }
   return { have, missing: a.length - have, maxGap: gap };
 }
+
+// 回放資料是不是過期：最後一個回放日比日線資料的最新日期舊，就是排程沒跑成功。任一個日期缺就不判斷。
+export const staleness = (lastIntraday, lastDaily) => ({ stale: !!(lastIntraday && lastDaily && lastIntraday < lastDaily), lastIntraday: lastIntraday || null, lastDaily: lastDaily || null });

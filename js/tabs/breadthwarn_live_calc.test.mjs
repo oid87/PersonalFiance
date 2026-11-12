@@ -43,3 +43,22 @@ test('回放指標：缺值不補、不產生無限大', () => {
   assert.deepEqual(L.coverage([1, null, null, 2, null]), { have: 2, missing: 3, maxGap: 2 });
   assert.equal(L.hhmm(0), '09:00'); assert.equal(L.hhmm(270), '13:30');
 });
+
+test('不同融資成數、跌幅、門檻下公式一致：維持率＝(1+跌幅)÷成數', () => {
+  for (const ratio of [0.6, 0.5, 0.4]) for (const drop of [0, -0.03, -0.1, -0.22, -0.4]) for (const thr of [1.3, 1.4, 1.5]) {
+    const s = L.marginSim({ m0: L.initialMaint(ratio), drop, thr });
+    assert.ok(Math.abs(s.m1 - (1 + drop) / ratio) < 1e-9);
+    assert.equal(s.called, s.m1 < thr);
+    assert.ok(Math.abs(s.equity - 100 * (1 + drop - ratio)) < 1e-9);
+    assert.ok(Math.abs(s.room - (thr * ratio - 1)) < 1e-9);
+    if (s.called) assert.ok(Math.abs(s.value / (s.loan - s.payCall) - thr) < 1e-9);   // 還掉 payCall 剛好回到門檻
+    else assert.equal(s.payCall, 0);
+  }
+});
+
+test('停更會被判成過期；日期缺就不亂判', () => {
+  assert.equal(L.staleness('2026-11-10', '2026-11-12').stale, true);
+  assert.equal(L.staleness('2026-11-12', '2026-11-12').stale, false);
+  assert.equal(L.staleness('2026-11-12', null).stale, false);
+  assert.equal(L.staleness(undefined, '2026-11-12').stale, false);
+});

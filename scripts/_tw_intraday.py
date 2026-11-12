@@ -23,7 +23,7 @@ LIVE_RULES = {
     "ld3": ("跌停家數占比 ≥ 3%", "ld_pct", ">=", 3.0),
     "lock2": ("跌停且沒有買單的占比 ≥ 2%", "lock_pct", ">=", 2.0),
     "mw5": ("融資餘額加權跌幅 ≤ −5%", "mw_ret", "<=", -5.0),
-    "bp70": ("買單只有平常同時段的七成以下", "bp", "<=", 0.7),
+    "bp70": ("全市場累積委買量 ≤ 平常同時段的七成", "bp", "<=", 0.7),   # 2026-11-12 只改說明文字，定義與門檻不變
 }
 
 
@@ -50,7 +50,8 @@ def minute_of(t: str):
 def to_minutes(rows, ncol):
     """[[時間, v1, v2…]…] → ncol 條長度 271 的序列；該分鐘沒有任何一筆就是 None（不補值）。"""
     out = [[None] * MINUTES for _ in range(ncol)]
-    for r in rows or []:
+    # 依時間排序後再取每分鐘最後一筆，來源順序亂掉或同一時間重複也不會取錯；解析不了的時間丟掉
+    for r in sorted((r for r in rows or [] if r and minute_of(r[0]) is not None), key=lambda r: str(r[0]).strip()):
         m = minute_of(r[0])
         if m is None or not 0 <= m < MINUTES:
             continue
@@ -77,7 +78,9 @@ def build_day(order_rows, index_rows, prev_close):
 def indicators(day):
     """cimb：開盤至今（累積委賣 − 累積委買）÷ 兩者合計（%）；平常是負的（掛買比掛賣多），越往正的方向＝賣單相對變多。
     fill：累積成交張數 ÷ 累積委賣張數（%）。
-    bp：累積委買張數 ÷ 前幾日同一分鐘的中位數；小於 1＝買單比平常少。 vp：累積成交金額的同樣比值。
+    bp：累積委買張數 ÷ 前幾日同一分鐘的中位數；小於 1＝全市場累積委買量比平常少。
+        「累積委買」是開盤以來的累計（會因取消、改量而減少，也包含已經成交的），不是當下委託簿上的買單存量，
+        也看不出個別股票有沒有買盤；bp 正常時個股仍可能鎖跌停。 vp：累積成交金額的同樣比值。
     cdev：cimb 減去前幾日同一分鐘 cimb 的中位數（百分點）。沒有基準的日子 bp／vp／cdev 是 None。"""
     n = len(day["r"])
     cimb, fill, bp, vp, cdev = ([None] * n for _ in range(5))
@@ -112,6 +115,22 @@ def baseline(prior_days, key, min_days=5, max_days=20):
         md = None if len(v) < min_days else v[len(v) // 2] if len(v) % 2 else (v[len(v) // 2 - 1] + v[len(v) // 2]) / 2
         out.append(md if md is None else round(md, 1) if key == "cimb" else int(round(md)))
     return out
+
+
+def future_min(r, m, h, last=MINUTES - 1, max_missing=0.10):
+    """第 m 分鐘之後 h 分鐘內（m+1…m+h）的最低值減去第 m 分鐘的值（百分點）。
+    固定分鐘數的目標必須有完整視窗：m+h 超過收盤、第 m 分鐘沒有值、或視窗內缺漏超過 max_missing，一律回 None，
+    不可以用「到收盤為止」頂替。要看到收盤的結果請用 h=None（另一個目標，不和固定分鐘數混用）。"""
+    if r[m] is None:
+        return None
+    end = last if h is None else m + h
+    if end > last or end <= m:
+        return None
+    w = r[m + 1:end + 1]
+    have = [v for v in w if v is not None]
+    if not have or 1 - len(have) / len(w) > max_missing:
+        return None
+    return round(min(have) - r[m], 2)
 
 
 def hhmm(m):

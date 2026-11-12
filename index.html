@@ -3863,9 +3863,11 @@
       </ul>
     </details>
 
-    <h3 class="breadthwarn-h" id="breadthwarn-live">盤中去槓桿壓力監測</h3>
+    <h3 class="breadthwarn-h" id="breadthwarn-live">盤中歷史回放與融資情境（不是即時監測）</h3>
     <div id="breadthwarn-live-status" class="breadthwarn-now" aria-live="polite"></div>
-    <p class="breadthwarn-note">想看的事：一天之內，市場是不是從「一般下跌」變成「有人被迫賣、沒有人接」。這一區是觀察工具，不是預測最低點的訊號，也沒有「爆倉機率」：追繳與斷頭沒有公開資料可以對答案。<b>公開網站上沒有即時行情</b>（交易所的盤中資訊要簽約才能對外展示），下面的盤中紀錄是證交所<b>收盤後</b>公布的每 5 秒統計，當天傍晚更新。</p>
+    <div id="breadthwarn-live-modes" class="table-scroll" tabindex="0" aria-label="這一區三種功能的狀態"></div>
+    <p class="breadthwarn-note">想看的事：一天之內，市場是不是從「一般下跌」變成「有人被迫賣、沒有人接」。這一區是觀察工具，不是預測最低點的訊號，也沒有「爆倉機率」：追繳與斷頭沒有公開資料可以對答案。<b>公開網站上沒有即時行情</b>（交易所的盤中資訊要簽約才能對外展示），下面的盤中紀錄是證交所<b>收盤後</b>公布的每 5 秒統計，當天傍晚更新。這一區沒有任何數字是「發生機率」：倍數與偏離只是和平常比，數字再極端也不等於追繳或斷頭的機率。</p>
+    <p id="breadthwarn-live-stamp" class="breadthwarn-note"></p>
     <h4 class="breadthwarn-h4">一天之內的變化（09:00–13:30，可選日期回放）</h4>
     <div class="breadthwarn-params">
       <label>看哪一天<select id="breadthwarn-live-day"></select></label>
@@ -3873,10 +3875,11 @@
     </div>
     <div id="breadthwarn-live-tiles" class="breadthwarn-tiles"></div>
     <p id="breadthwarn-live-daynote" class="breadthwarn-note"></p>
-    <div id="breadthwarn-live-chart" class="breadthwarn-chart breadthwarn-chart--live" role="img" aria-label="所選交易日 09:00 到 13:30：加權指數漲跌、買單與成交相對平常同時段的倍數、掛賣比掛買多多少"></div>
-    <p class="breadthwarn-note">三格共用時間。第二格：1＝和前 20 個交易日同一分鐘一樣多；<b>買單倍數掉到 1 以下＝買單比平常少</b>，成交倍數高於 1＝成交比平常多。第三格：掛賣減掛買占兩者合計的比例，平常是負的（掛買比較多），灰色虛線是前 20 日同一分鐘的中位數，藍線高出虛線越多＝賣單相對變多。全部是全市場（上市）合計，大型股影響最大；<b>看不到個別股票有沒有鎖跌停</b>。每一點都是交易所公布的值，沒有的分鐘留空、不補。</p>
-    <p class="breadthwarn-note"><b>兩種狀態怎麼分：</b>「賣壓大但有人接」＝指數跌、成交倍數明顯高於 1、買單倍數正常；「買方消失」＝指數跌、買單倍數明顯低於 1。成交量大只代表買賣雙方都多，不能解讀成有人在抄底。</p>
-    <p class="breadthwarn-note">最近 25 個交易日的盤中摘要。「買單最少」＝當天累積買單相對平常同時段最低的時候。<span class="breadthwarn-swipe">表格可左右滑。</span></p>
+    <div id="breadthwarn-live-chart" class="breadthwarn-chart breadthwarn-chart--live" role="img" aria-label="所選交易日 09:00 到 13:30：加權指數漲跌、全市場累積委買與成交相對平常同時段的倍數、累積委賣比累積委買多多少"></div>
+    <p class="breadthwarn-note">三格共用時間。第二格：1＝和前 20 個交易日同一分鐘一樣多；<b>累積委買倍數掉到 1 以下＝全市場開盤以來的委買張數比平常少</b>，成交倍數高於 1＝成交比平常多。第三格：累積委賣減累積委買占兩者合計的比例（%），平常是負的（委買比較多），灰色虛線是前 20 日同一分鐘的中位數，藍線高出虛線越多＝委賣相對變多（差距的單位是百分點）。全部是全市場（上市）合計，大型股影響最大；<b>看不到個別股票有沒有鎖跌停</b>。每一點都是交易所公布的值，沒有的分鐘留空、不補。</p>
+    <p class="breadthwarn-note"><b>這幾個數字不是同一件事：</b>「累積委買／委賣」是開盤以來全市場的委託累計（取消或改量會扣掉，已成交的也算在裡面），不是當下還掛在委託簿上的單；「委賣偏離」是委賣相對委買比平常多多少；「成交」是真正撮合的量，成交大只代表買賣雙方都多，不能解讀成有人在抄底。這三個都看不到<b>個別股票跌停價上有沒有買單</b>、<b>個股委託簿的買方深度</b>，也不是<b>融資被迫賣出</b>的量，那些要有個股即時報價或券商資料才知道。</p>
+    <p class="breadthwarn-note"><b>限制：全市場委買量正常，個別股票仍然可能鎖死跌停。</b>171 個研究日裡，收盤時上市股票有 3% 以上跌停的有 45 天，其中 34 天全市場累積委買量整天都沒有低於平常七成，17 天到收盤前還不低於平常；2026/11/3、11/5 就是這種情形。所以「累積委買量偏低」只能說是全市場委買異常偏低，不能反過來說「沒偏低＝有人接」。</p>
+    <p class="breadthwarn-note">最近 25 個交易日的盤中摘要。「累積委買最低」＝當天全市場累積委買量相對平常同時段最低的時候。<span class="breadthwarn-swipe">表格可左右滑。</span></p>
     <div id="breadthwarn-live-days" class="table-scroll" tabindex="0" aria-label="最近交易日的盤中摘要"></div>
 
     <details class="breadthwarn-details" open>
@@ -3893,6 +3896,7 @@
       <label>追繳門檻<select id="breadthwarn-sim-thr"><option value="1.3" selected>130%（法規）</option><option value="1.4">140%（假設券商另有約定）</option><option value="1.5">150%（假設）</option></select></label>
     </div>
     <div id="breadthwarn-sim-out" class="breadthwarn-tiles"></div>
+    <p class="breadthwarn-note"><b>三個時間點不要混在一起：</b>①維持率低於門檻＝券商發出補繳通知（法規門檻 130%，券商可以約定更高）；②通知送達後 2 個營業日內補繳；③期滿仍不足，下一個營業日起券商才處分（俗稱斷頭）。所以「跌破門檻」不等於當天被賣出，這裡算的是①。</p>
     <p class="breadthwarn-note">金額以目前股票市值＝100 表示。<span class="breadthwarn-swipe">表格可左右滑。</span></p>
     <div id="breadthwarn-sim-table" class="table-scroll" tabindex="0" aria-label="不同跌幅下的假設維持率"></div>
     <details class="breadthwarn-details">
@@ -3919,6 +3923,7 @@
     <h4 class="breadthwarn-h4">這一區的資料可靠性</h4>
     <p class="breadthwarn-note"><span class="breadthwarn-swipe">表格可左右滑。</span></p>
     <div id="breadthwarn-live-quality" class="table-scroll" tabindex="0" aria-label="盤中監測各項資料的來源、延遲與能否公開"></div>
+    <p id="breadthwarn-live-attr" class="breadthwarn-note"></p>
 
     <h3 class="breadthwarn-h">自己調條件：這樣的預警準不準</h3>
     <div id="breadthwarn-params" class="breadthwarn-params" role="group" aria-label="預警參數">
