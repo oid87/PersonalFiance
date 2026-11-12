@@ -38,7 +38,7 @@ def universe() -> dict[str, list[str]]:
     """現存上市／上櫃公司代號（交易所 OpenAPI，免 token）。只留 4 碼普通股，排除 91xx 存託憑證。"""
     out = {}
     for typ, url, key in (("twse", TWSE_LIST, "公司代號"), ("tpex", TPEX_LIST, "SecuritiesCompanyCode")):
-        rows = _common.retry_call(lambda u=url: requests.get(u, headers=UA, timeout=40).json(), attempts=3, backoff=5)
+        rows = _common.retry_call(lambda u=url: requests.get(u, headers=UA, timeout=40).json(), attempts=3, backoff=5, on_final=_common.reraise)
         out[typ] = sorted({str(r.get(key, "")).strip() for r in rows if re.fullmatch(r"[1-8]\d{3}|9[02-9]\d{2}", str(r.get(key, "")).strip())})
     if len(out["twse"]) < 800 or len(out["tpex"]) < 600:
         raise SystemExit(f"tw_breadth_warn: universe too small {len(out['twse'])}/{len(out['tpex'])}")

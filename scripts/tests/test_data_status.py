@@ -137,6 +137,26 @@ class Build(unittest.TestCase):
             self.assertEqual((rec["exit"], rec["cause"]), (1, "incomplete"))
 
 
+class Retry(unittest.TestCase):
+    """retry_call 傳固定秒數時不能在第一次失敗就炸掉（2026-11-12 CI：廣度腳本因此中止，還被誤判成格式錯誤）。"""
+
+    def test_numeric_backoff_and_reraise(self):
+        import _common
+        from unittest import mock
+        calls = []
+
+        def flaky():
+            calls.append(1)
+            if len(calls) < 3:
+                raise OSError("down")
+            return "ok"
+        with mock.patch("time.sleep") as sl:
+            self.assertEqual(_common.retry_call(flaky, attempts=3, backoff=5), "ok")
+            self.assertEqual([c.args[0] for c in sl.call_args_list], [5, 5])
+            with self.assertRaises(OSError):
+                _common.retry_call(lambda: (_ for _ in ()).throw(OSError("x")), attempts=2, backoff=1, on_final=_common.reraise)
+
+
 class StocksGuard(unittest.TestCase):
     """波動率指數單日跳 40% 以上是真實行情，不能被「價格基準」檢查擋掉（2026-11-05 起 VIX 停更、連帶擋掉整批美股資料）。"""
 

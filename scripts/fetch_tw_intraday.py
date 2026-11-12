@@ -68,7 +68,7 @@ def get_latest() -> tuple[str | None, list]:
         r.raise_for_status()
         disp = r.headers.get("content-disposition", "")
         return file_day(disp), parse_open_data(r.content.decode("utf-8", "replace"), disp)
-    out = _common.retry_call(call, attempts=3, backoff=10)
+    out = _common.retry_call(call, attempts=3, backoff=10, on_final=_common.reraise)
     time.sleep(GAP)
     return out
 
@@ -147,6 +147,8 @@ def main() -> None:
         added = merge(doc, tw_rows)
     except ValueError as e:
         raise SystemExit(f"tw_intraday: 保留舊檔：{e}")
+    except requests.RequestException as e:
+        raise SystemExit(f"tw_intraday: 保留舊檔：請求失敗 {type(e).__name__}: HTTPError/ConnectionError {str(e)[:120]}")
     if not added:
         print("tw_intraday: 沒有新的交易日")
         return

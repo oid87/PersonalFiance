@@ -226,6 +226,11 @@ def idempotent_merge(existing_path: Path, new_rows: list[dict], key_field: str =
     return sorted(existing.values(), key=lambda r: r[key_field])
 
 
+def reraise(exc, result):
+    """retry_call 的 on_final：最後一次仍失敗就把例外丟出去（預設行為是回傳 None）。"""
+    raise exc if exc is not None else RuntimeError("retry_call: no usable result")
+
+
 def retry_call(fn, *, attempts, backoff, retry_on=(Exception,), retry_if=None,
                 on_retry=None, on_final=None):
     """Call fn() up to `attempts` times.
@@ -238,6 +243,7 @@ def retry_call(fn, *, attempts, backoff, retry_on=(Exception,), retry_if=None,
     After the last failed attempt: return on_final(last_exc, last_result) if given,
     else last_result (None when the last attempt raised).
     Exceptions not in retry_on propagate immediately.
+    backoff may be a callable(attempt) or a plain number of seconds.
     """
     last_exc = None
     last_result = None
@@ -255,7 +261,7 @@ def retry_call(fn, *, attempts, backoff, retry_on=(Exception,), retry_if=None,
         if attempt < attempts - 1:
             if on_retry is not None:
                 on_retry(attempt, last_exc, last_result)
-            time.sleep(backoff(attempt))
+            time.sleep(backoff(attempt) if callable(backoff) else backoff)   # 也接受固定秒數
     if on_final is not None:
         return on_final(last_exc, last_result)
     return last_result

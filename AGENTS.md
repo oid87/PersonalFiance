@@ -17,6 +17,7 @@ GitHub Actions `.github/workflows/fetch.yml` 每天自動跑、跑完 `git add d
 - **06:00 台北（週二–週六）** — cron `0 22 * * 1-5`（美股收盤後）
 - **18:00 台北（週一–週五）** — cron `0 10 * * 1-5`（台股收盤後）
 - 另有 `.github/workflows/forward_pe.yml`：**13:00 台北（週一–週五）** cron `0 5 * * 1-5`，只跑 `fetch_forward_pe.py`（VOO / QQQ），不在 `fetch.yml` 裡。
+- 另有 `.github/workflows/data_monitor.yml`：**07:00 台北（週二–週六）** cron `0 23 * * 1-5`，補抓一次不可回補的 `fetch_tw_intraday.py`（開放資料下載點只給最新一個交易日）、重建 `data/data_status.json`，並用 `scripts/data_alert.py --monitor` 檢查各來源、狀態檔與正式站；有問題開／更新一張標籤 `data-alert` 的 Issue，恢復後自動關閉。`fetch.yml` 的 tw job 結束時也會跑同一支警示。狀態邏輯在 `scripts/_data_status.py`（看資料日期，不看排程有沒有跑完）。
 - 也可手動 `workflow_dispatch`。本地 `scripts/update_all.sh` = 所有 fetch（`fetch_forward_pe.py` 除外，只由 `forward_pe.yml` 跑）→ `validate_data.py`，**不 commit / 不 push、不切分支、不丟棄本地 data、不自動 pull**。`--dry-run` 只列步驟；明確指定 `--sync-data` 才在 main 且 data 無已追蹤／未追蹤變動時執行 `git pull --ff-only origin main`。本地資料只供 preview，仍由 Action 發佈。
 
 每個 fetch 腳本：讀現有 `data/<x>.json` → 抓最新 → **idempotent 合併**（依日期，新蓋舊）→ 寫回。**新增資料來源時同步登錄** `scripts/source_manifest.json`（輸出、profile、路由、依賴）與實際 workflow／本地入口；生產來源加進 `fetch.yml` 及 `update_all.sh`，獨立排程／手動來源明確列例外。`scripts/check_pipeline.py` 驗路由與依賴，`scripts/validate_data.py` 驗資料契約；詳見 `docs/source-contracts.md`。
