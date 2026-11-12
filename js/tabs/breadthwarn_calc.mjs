@@ -129,61 +129,129 @@ export function auc(s, y, keep = () => true) {
   return 1 - (rs - P * (P + 1) / 2) / (P * Nn);
 }
 
-// ── 00631L：回撤事件後等廣度修復再買 ──
+// ── 融資：對齊到價格檔日期 ──
+/** M＝[{date, margin_money（億）, margin_lots}]。回傳 { bal, lots, chg1（單日變化 %）, amt1（單日變化 億） }，缺值為 null。
+ *  融資餘額當晚才公布：t 日的數字最早只能用在 t+1 日開盤。融資金額是借款餘額（不隨股價變動），減少＝賣出或現金償還，無法區分自願或被迫。 */
+export function attachMargin(D, M) {
+  const m = new Map(M.map(r => [r.date, r])), bal = D.date.map(d => m.get(d)?.margin_money ?? null), lots = D.date.map(d => m.get(d)?.margin_lots ?? null);
+  const chg = (a, i, N) => (i >= N && a[i] != null && a[i - N] != null && a[i - N] > 0 ? (a[i] / a[i - N] - 1) * 100 : null);
+  return { bal, lots, chg1: bal.map((_, i) => chg(bal, i, 1)), chg5: bal.map((_, i) => chg(bal, i, 5)), chg10: bal.map((_, i) => chg(bal, i, 10)),
+    amt1: bal.map((x, i) => (i && x != null && bal[i - 1] != null ? x - bal[i - 1] : null)), lots1: lots.map((_, i) => chg(lots, i, 1)) };
+}
+/** 滾動百分位（只用當天以前 win 日；值越大百分位越高）。 */
+export function rollPct(a, win = 1260, minN = 250) {
+  return a.map((x, i) => { if (x == null) return null; let n = 0, le = 0; for (let j = Math.max(0, i - win + 1); j <= i; j++) if (a[j] != null) { n++; if (a[j] <= x) le++; } return n >= minN ? le / n : null; });
+}
+const rsum = (a, N) => a.map((_, i) => { if (i < N - 1) return null; let s = 0; for (let j = i - N + 1; j <= i; j++) { if (a[j] == null) return null; s += a[j]; } return s; });
+/** 等權流動性壓力分數（0–1）：五個分項各取過去 1260 日百分位後直接平均，不估權重。
+ *  分項：近 5 日曾跌停占比、低量跌停 3 日累計、融資 5 日減幅、臺灣50 站上 60 日線比例 10 日降幅、下跌成交值占比 5 日均。 */
+export function stressScore(Bx, MGx, cache = {}) {
+  if (cache.stress) return cache.stress;
+  const t = Bx.twse, neg = a => a.map(x => (x == null ? null : -x));
+  const parts = { ld5u: t.ld5u, ldq3: rsum(t.ldq, 3), mg5: neg(MGx.chg5), db10: neg(delta(Bx.tw50.a60, 10)), dnv5: rsum(t.dnv, 5) };
+  const pr = Object.fromEntries(Object.entries(parts).map(([k, v]) => [k, rollPct(v)]));
+  const keys = Object.keys(pr), score = t.ld.map((_, i) => { let s = 0; for (const k of keys) { if (pr[k][i] == null) return null; s += pr[k][i]; } return s / keys.length; });
+  return (cache.stress = { score, pr, parts });
+}
+
+// ── 00631L：回撤事件後等「修復」再買 ──
 const PX = { lev: 'lev', sim: 'sim', e50: 'e50' };
 export const REPAIRS = {
-  A: '直接買', B: '廣度回升 1 日', C: '廣度連 2 日回升', D: '廣度 5 日回升 ≥ 10 點', E: '站上 20 日線比例 ≥ 30%',
-  F: '先買一半，修復（D）再買一半', T: '0050 站回 150 日線',
+  A: '直接買',
+  B: '廣度回升 1 日', C: '廣度連 2 日回升', D: '廣度 5 日回升 ≥ 10 點',
+  L1: '跌停占比連 2 日下降', L2: '跌停占比比高峰少一半', L3: '跌停占比回到 2% 以下',
+  G1: '融資單日減幅縮到高峰的一半', G2: '融資連 2 日沒有大減（單日減 < 0.5%）', G3: '融資張數回升',
+  X1: '跌停降溫（L2）＋廣度回升（B）', X2: '融資放緩（G2）＋廣度回升（B）', X3: '跌停降溫（L2）＋融資放緩（G2）',
+  FB: '先買一半，廣度回升（B）再買一半', FL: '先買一半，跌停降溫（L2）再買一半', FG: '先買一半，融資放緩（G2）再買一半',
+  T: '0050 站回 150 日線',
 };
-/** 事件日 i 之後第一個符合修復條件的日子（條件用當天收盤已知的資料；找不到回 null）。 */
-export function confirmDay(D, a, i, rule, win = 60, cache = {}) {
-  const n = D.date.length;
+export const REPAIR_GROUPS = { direct: ['A'], breadth: ['B', 'C', 'D'], limit: ['L1', 'L2', 'L3'], margin: ['G1', 'G2', 'G3'], combo: ['X1', 'X2', 'X3'], split: ['FB', 'FL', 'FG'], trend: ['T'] };
+const HALF = { FB: 'B', FL: 'L2', FG: 'G2' }, COMBO = { X1: ['L2', 'B'], X2: ['G2', 'B'], X3: ['L2', 'G2'] };
+/** 事件日 i 之後第一個符合修復條件的日子（條件只用當天收盤／當晚已知的資料；找不到回 null）。
+ *  ctx＝{ a（站上 20 日線比例）, ld（跌停占比 %）, chg1（融資單日變化 %）, lots（融資張數） }。
+ *  「降溫」類規則若事件前 10 日到當天根本沒有跌停潮（高峰 < 1%）或融資沒有明顯減少（高峰 < 0.5%），視為當天就成立。 */
+export function confirmDay(D, ctx, i, rule, win = 60, cache = {}) {
+  if (Array.isArray(ctx)) ctx = { a: ctx };
+  const n = D.date.length, { a, ld, chg1, lots } = ctx;
   if (rule === 'A') return i;
+  if (COMBO[rule]) { const x = confirmDay(D, ctx, i, COMBO[rule][0], win, cache), y = confirmDay(D, ctx, i, COMBO[rule][1], win, cache); return x == null || y == null ? null : Math.max(x, y); }
   if (rule === 'T') {
     const ma = cache.ma150 || (cache.ma150 = D.e50_c.map((_, k) => { if (k < 149) return null; let s = 0; for (let j = k - 149; j <= k; j++) s += D.e50_c[j]; return s / 150; }));
     for (let j = i + 1; j <= Math.min(n - 1, i + 252); j++) if (ma[j] != null && D.e50_c[j] > ma[j]) return j;
     return null;
   }
-  for (let j = i + (rule === 'E' ? 0 : 1); j <= Math.min(n - 1, i + win); j++) {
+  const end = Math.min(n - 1, i + win);
+  if (rule === 'L1' || rule === 'L2' || rule === 'L3') {
+    if (!ld) return null;
+    let peak = 0; for (let j = Math.max(0, i - 10); j <= i; j++) if (ld[j] != null && ld[j] > peak) peak = ld[j];
+    if (rule === 'L3' ? ld[i] != null && ld[i] < 2 : peak < 1) return i;
+    for (let j = i + 1; j <= end; j++) {
+      if (ld[j] == null) continue;
+      if (ld[j] > peak) peak = ld[j];
+      if (rule === 'L1' && j - 2 >= i && ld[j - 1] != null && ld[j - 2] != null && ld[j] < ld[j - 1] && ld[j - 1] < ld[j - 2]) return j;
+      if (rule === 'L2' && ld[j] <= peak / 2) return j;
+      if (rule === 'L3' && ld[j] < 2) return j;
+    }
+    return null;
+  }
+  if (rule === 'G1' || rule === 'G2') {
+    if (!chg1) return null;
+    let peak = 0; for (let j = Math.max(0, i - 10); j <= i; j++) if (chg1[j] != null && -chg1[j] > peak) peak = -chg1[j];
+    if (peak < 0.5) return i;
+    for (let j = i + 1; j <= end; j++) {
+      if (chg1[j] == null) continue;
+      if (-chg1[j] > peak) peak = -chg1[j];
+      if (rule === 'G1' && -chg1[j] <= peak / 2) return j;
+      if (rule === 'G2' && j - 1 >= i && chg1[j - 1] != null && chg1[j] > -0.5 && chg1[j - 1] > -0.5) return j;
+    }
+    return null;
+  }
+  if (rule === 'G3') { if (!lots) return null; for (let j = i + 1; j <= end; j++) if (lots[j] != null && lots[j - 1] != null && lots[j] > lots[j - 1]) return j; return null; }
+  for (let j = i + (rule === 'E' ? 0 : 1); j <= end; j++) {
     if (a[j] == null) continue;
     if (rule === 'B' && a[j - 1] != null && a[j] > a[j - 1]) return j;
     if (rule === 'C' && a[j - 1] != null && a[j - 2] != null && a[j] > a[j - 1] && a[j - 1] > a[j - 2] && j - 2 >= i) return j;
-    if ((rule === 'D' || rule === 'F') && a[j - 5] != null && a[j] - a[j - 5] >= 10 && j - 5 >= i - 4) return j;
+    if (rule === 'D' && a[j - 5] != null && a[j] - a[j - 5] >= 10 && j - 5 >= i - 4) return j;
     if (rule === 'E' && a[j] >= 30) return j;
   }
   return null;
 }
-/** 多批進場的損益：legs=[{day（訊號日，隔天開盤買）, w}]；持有期從第一批進場日起算 H 日，未投入部分為現金。 */
-export function tradeLegs(D, legs, H, asset = 'lev') {
+/** 多批進場的損益：legs=[{day（訊號日，隔天開盤買）, w}]；未投入部分為現金（報酬 0）。
+ *  預設持有期從第一批進場日起算 H 日；給 anchor（事件日）時改成「事件隔天起固定 H 日」，等待期間算現金，沒進場＝整段現金。 */
+export function tradeLegs(D, legs, H, asset = 'lev', anchor = null) {
   const p = PX[asset], O = D[p + '_o'], Hi = D[p + '_h'], L = D[p + '_l'], C = D[p + '_c'], n = D.date.length;
   const g = legs.filter(x => x.day != null && x.day + 1 < n && O[x.day + 1] > 0).map(x => ({ idx: x.day + 1, px: O[x.day + 1], w: x.w }));
-  if (!g.length) return null;
-  const e0 = Math.min(...g.map(x => x.idx)), x = e0 + H - 1, end = Math.min(x, n - 1);
-  let mae = 0, ret = 0, rec = null, below = false;
+  if (!g.length && anchor == null) return null;
+  const e0 = anchor != null ? anchor + 1 : Math.min(...g.map(x => x.idx)), x = e0 + H - 1, end = Math.min(x, n - 1);
+  let mae = 0, mfe = 0, ret = 0, rec = null, below = false;
   for (let j = e0; j <= end; j++) {
     if (C[j] == null) continue;
     const val = px => g.reduce((s, k) => s + (j >= k.idx ? k.w * (px / k.px - 1) : 0), 0);
-    const lo = val(L[j] ?? C[j]), cl = val(C[j]);
+    const lo = val(L[j] ?? C[j]), hi = val(Hi[j] ?? C[j]), cl = val(C[j]);
     if (lo < mae) mae = lo;
+    if (hi > mfe) mfe = hi;
     if (cl < 0) below = true;
     if (rec == null && j > e0 && cl >= 0 && below) rec = j - e0;
     ret = cl;
   }
   if (!below) rec = 0;
-  return { entryDate: D.date[e0], entryPx: g[0].px, ret, mae, rec, complete: x <= n - 1, invested: g.reduce((s, k) => s + k.w, 0) };
+  return { entryDate: g.length ? D.date[Math.min(...g.map(k => k.idx))] : null, entryPx: g.length ? g[0].px : null, ret, mae, mfe, rec, complete: x <= n - 1, invested: g.reduce((s, k) => s + (k.idx <= end ? k.w : 0), 0) };
 }
-/** 同一批回撤事件，各修復規則的結果。missed＝修復進場價相對「直接買」進場價（正＝買貴了）。 */
-export function repairCompare(D, Bx, { ddThr = -0.20, uni = 'tw50', H = 120, asset = 'lev', cooldown = 60, from = 0, win = 60 } = {}, cache = {}) {
+/** 同一批回撤事件，各修復規則的結果（配對比較）。t＝進場後持有 H 日；cap＝事件隔天起固定 H 日、含等待期與沒進場的現金。
+ *  missed＝修復進場價相對「直接買」進場價（正＝買貴了）。 */
+export function repairCompare(D, Bx, { ddThr = -0.20, uni = 'tw50', H = 120, asset = 'lev', cooldown = 60, from = 0, win = 60, MGx = null, rules = Object.keys(REPAIRS) } = {}, cache = {}) {
   const dd = cache.dd || (cache.dd = drawdown(D, 'i252')), a = Bx[uni].a20, p = PX[asset], O = D[p + '_o'];
+  const ctx = { a, ld: Bx.twse.ld, chg1: MGx?.chg1, lots: MGx?.lots };
   const ev = events(dd.map((x, i) => x <= ddThr && i >= from && D[p + '_c'][i] != null && a[i] != null), cooldown);
   const rows = {};
-  for (const rule of Object.keys(REPAIRS)) {
+  for (const rule of rules) {
     rows[rule] = ev.map(i => {
-      const c = confirmDay(D, a, i, rule, win, cache);
-      const legs = rule === 'F' ? [{ day: i, w: 0.5 }, { day: c, w: 0.5 }] : [{ day: c, w: 1 }];
-      const t = c == null && rule !== 'F' ? null : tradeLegs(D, legs, H, asset);
+      const half = HALF[rule], c = confirmDay(D, ctx, i, half || rule, win, cache);
+      const legs = half ? [{ day: i, w: 0.5 }, { day: c, w: 0.5 }] : [{ day: c, w: 1 }];
+      const t = c == null && !half ? null : tradeLegs(D, legs, H, asset);
+      const cap = tradeLegs(D, legs, H, asset, i);
       const direct = i + 1 < D.date.length ? O[i + 1] : null;
-      return { i, date: D.date[i], confirm: c, wait: c == null ? null : c - i, t, missed: t && direct && rule !== 'F' ? t.entryPx / direct - 1 : null };
+      return { i, date: D.date[i], confirm: c, wait: c == null ? null : c - i, t, cap, missed: t && direct && !half ? t.entryPx / direct - 1 : null };
     });
   }
   return { ev, rows };
@@ -191,10 +259,13 @@ export function repairCompare(D, Bx, { ddThr = -0.20, uni = 'tw50', H = 120, ass
 export function repairSummary(list) {
   const done = list.filter(r => r.t && r.t.complete), r = done.map(x => x.t.ret), m = done.map(x => x.t.mae), wins = r.filter(x => x > 0).length;
   const recs = done.map(x => x.t.rec).filter(x => x != null);
+  const cd = list.filter(x => x.cap && x.cap.complete), cr = cd.map(x => x.cap.ret), cm = cd.map(x => x.cap.mae);
   return {
     nEv: list.length, noConfirm: list.filter(x => x.confirm == null).length, pending: list.filter(x => x.t && !x.t.complete).length, n: done.length,
     win: done.length ? wins / done.length : null, mean: mean(r), median: q(r, .5), worst: r.length ? Math.min(...r) : null,
-    maeMed: q(m, .5), maeP90: q(m, .1), maeWorst: m.length ? Math.min(...m) : null, recMed: q(recs, .5),
+    maeMed: q(m, .5), maeP90: q(m, .1), maeWorst: m.length ? Math.min(...m) : null, mfeMed: q(done.map(x => x.t.mfe), .5), recMed: q(recs, .5),
     waitMed: q(list.map(x => x.wait).filter(x => x != null), .5), missedMed: q(done.map(x => x.missed).filter(x => x != null), .5),
+    capN: cd.length, capWin: cd.length ? cr.filter(x => x > 0).length / cd.length : null, capMean: mean(cr), capMedian: q(cr, .5), capWorst: cr.length ? Math.min(...cr) : null,
+    capMaeMed: q(cm, .5), capMaeP90: q(cm, .1), capMaeWorst: cm.length ? Math.min(...cm) : null,
   };
 }

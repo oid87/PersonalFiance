@@ -113,7 +113,7 @@ class ObserveTests(unittest.TestCase):
 class Tw50HistoryTests(unittest.TestCase):
     def test_point_in_time_membership(self):
         import _tw50_history as T
-        self.assertTrue(all(len(s) == 50 for _, s in T.TIMELINE))
+        self.assertTrue(all(len(s) == (51 if e == "2010-06-24" else 50) for e, s in T.TIMELINE))   # 2010-06-24～28 官方就是 51 檔（和碩納入、力成尚未刪除）
         self.assertIn("3661", T.members_on("2026-09-18"))        # 世芯-KY 2026-09-21 起剔除
         self.assertNotIn("3661", T.members_on("2026-09-21"))
         self.assertIn("6446", T.members_on("2026-09-21"))

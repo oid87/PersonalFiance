@@ -53,3 +53,59 @@ test('confirmDay／tradeLegs：修復訊號在事件之後才成立，隔天開�
   const t = W.tradeLegs(D, [{ day: 10, w: 0.5 }, { day: null, w: 0.5 }], 5, 'lev');
   assert.equal(t.entryDate, 'd0011'); assert.ok(Math.abs(t.ret - 0.05) < 1e-9); assert.ok(Math.abs(t.mae + 0.05) < 1e-9); assert.equal(t.invested, 0.5);
 });
+
+test('attachMargin：依日期對齊，變化率只用當天與之前', () => {
+  const D = mk(6), M = D.date.map((d, i) => ({ date: d, margin_money: [100, 100, 90, 90, 81, 82][i], margin_lots: 10 + i }));
+  M.splice(3, 1);                                   // 缺一天 → 那天與隔天的單日變化都是缺值，不是 0
+  const g = W.attachMargin(D, M);
+  assert.equal(g.bal[3], null); assert.equal(g.chg1[3], null); assert.equal(g.chg1[4], null);
+  assert.ok(Math.abs(g.chg1[2] + 10) < 1e-9); assert.equal(g.amt1[2], -10); assert.ok(Math.abs(g.chg1[5] - (82 / 81 - 1) * 100) < 1e-9);
+});
+
+test('跌停降溫（L1／L2／L3）：高峰只看事件前 10 日到當天，之後才能確認', () => {
+  const D = mk(40), ld = new Array(40).fill(0), a = new Array(40).fill(10);
+  ld[9] = 3; ld[10] = 8; ld[11] = 9; ld[12] = 6; ld[13] = 5; ld[14] = 4; ld[15] = 1;
+  const ctx = { a, ld };
+  assert.equal(W.confirmDay(D, ctx, 10, 'L2'), 14);          // 高峰 9（第 11 天創新高）→ ≤ 4.5 的第一天
+  assert.equal(W.confirmDay(D, ctx, 10, 'L1'), 13);          // 6 → 5，連兩天下降（都在事件之後）
+  assert.equal(W.confirmDay(D, ctx, 10, 'L3'), 15);          // 回到 2% 以下
+  const calm = { a, ld: new Array(40).fill(0.2) };
+  assert.equal(W.confirmDay(D, calm, 10, 'L2'), 10);         // 沒有跌停潮 → 當天就成立
+  assert.equal(W.confirmDay(D, calm, 10, 'L3'), 10);
+  assert.equal(W.confirmDay(D, { a }, 10, 'L2'), null);      // 沒有資料 → 不成立，不是當成 0
+});
+
+test('融資放緩（G1／G2／G3）與組合、分批', () => {
+  const D = mk(40), a = new Array(40).fill(10), chg1 = new Array(40).fill(0), lots = D.date.map((_, i) => 100 - i);
+  chg1[10] = -4; chg1[11] = -6; chg1[12] = -2.9; chg1[13] = -0.4; chg1[14] = -0.3; lots[20] = 200;
+  a[16] = 12;
+  const ctx = { a, ld: new Array(40).fill(0), chg1, lots };
+  assert.equal(W.confirmDay(D, ctx, 10, 'G1'), 12);          // 高峰 6% → ≤ 3% 的第一天
+  assert.equal(W.confirmDay(D, ctx, 10, 'G2'), 14);          // 連兩天減幅 < 0.5%
+  assert.equal(W.confirmDay(D, ctx, 10, 'G3'), 20);
+  assert.equal(W.confirmDay(D, ctx, 10, 'X2'), 16);          // G2（14）與廣度回升（16）都成立的那天
+  assert.equal(W.confirmDay(D, { a, ld: ctx.ld }, 10, 'X2'), null);
+  for (const k of Object.values(W.REPAIR_GROUPS).flat()) assert.ok(W.REPAIRS[k], k);
+});
+
+test('tradeLegs（anchor）：等待期間算現金，沒進場＝整段 0', () => {
+  const D = mk(40);
+  for (let i = 11; i < 40; i++) { D.lev_o[i] = 100 - (i - 10) * 2; D.lev_c[i] = D.lev_o[i]; D.lev_l[i] = D.lev_o[i] - 1; D.lev_h[i] = D.lev_o[i] + 1; }
+  const wait = W.tradeLegs(D, [{ day: 14, w: 1 }], 10, 'lev', 10), none = W.tradeLegs(D, [{ day: null, w: 1 }], 10, 'lev', 10), direct = W.tradeLegs(D, [{ day: 10, w: 1 }], 10, 'lev', 10);
+  assert.equal(none.ret, 0); assert.equal(none.mae, 0); assert.equal(none.invested, 0); assert.equal(none.complete, true);
+  assert.ok(Math.abs(direct.ret - (80 / 98 - 1)) < 1e-9);    // 第 11 天開盤 98 → 第 20 天收 80
+  assert.ok(Math.abs(wait.ret - (80 / 90 - 1)) < 1e-9);      // 第 15 天開盤 90 才買，同一天結束
+  assert.ok(wait.mae > direct.mae);
+});
+
+test('rollPct／stressScore：只用過去資料，分項缺值時分數也是缺值', () => {
+  const a = Array.from({ length: 300 }, (_, i) => i % 50);
+  const r = W.rollPct(a, 1260, 250);
+  assert.equal(r[100], null); assert.equal(r[299], 1);
+  const b = [...a]; b[299] = -1; assert.equal(W.rollPct(b, 1260, 250)[298], r[298]);     // 改未來的值不影響過去
+  const n = 300, z = () => new Array(n).fill(1), Bx = { twse: { ld: z(), ld5u: a, ldq: z(), dnv: z() }, tw50: { a60: a } };
+  const S = W.stressScore(Bx, { chg5: new Array(n).fill(null) }, {});
+  assert.ok(S.score.every(x => x == null));
+  const S2 = W.stressScore(Bx, { chg5: a.map(x => -x) }, {});
+  assert.ok(S2.score[299] > 0 && S2.score[299] <= 1);
+});

@@ -2,6 +2,8 @@
 輸出 data/tw_breadth_warn.json（欄位式）：date[]、tw50{…}、twse{…}、tpex{…}，欄位定義見 scripts/_tw_breadth_warn.py。
 來源：TWSE／TPEx OpenAPI t187ap03（現存上市／上櫃公司清單，免 token）、Yahoo Finance 逐檔日線（最近約兩年，還原收盤＋原始收盤＋成交量）、
       scripts/_tw50_history.py（臺灣50 當時成分股）。
+另外向證交所／櫃買抓最近幾天的官方收盤行情（算「收盤沒有委買的跌停」lock）與信用交易統計（mg：融資餘額、買進、賣出、現金償還），
+這兩項抓不到只留空、不中止。
 每日只重算最近 TAIL 個交易日並依日期覆蓋；更早的歷史（2004 起，含已下市櫃股票）由一次性回補產生，不在這裡重抓。
 既有檔不存在、清單或價格抓不到、最新一天檔數明顯不足時中止並保留舊檔。
 """
@@ -26,6 +28,7 @@ TWSE_LIST = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L"
 TPEX_LIST = "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O"
 UA = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)"}
 TAIL = 15          # 每次覆蓋最近幾個交易日
+OFFICIAL_DAYS = 6   # 官方行情／融資統計每次最多回頭補幾天
 LOOKBACK = 520     # 下載的日曆天數（200 日均線＋緩衝）
 CHUNK = 150
 SKIP_INDUSTRY = {"ETF", "ETN", "Index", "存託憑證", "受益證券", "大盤", "所有證券"}
@@ -72,6 +75,59 @@ def download(ids: list[str], suffix: str, start: str) -> dict[str, pd.DataFrame]
     return res
 
 
+def drop_unclosed(days: list, now: datetime) -> list:
+    """台北時間 15:00 前執行時，Yahoo 會給還沒收盤的當天；那一天不算完整交易日，不寫。"""
+    if now.hour >= 15:
+        return list(days)
+    today = now.strftime("%Y-%m-%d")
+    return [d for d in days if d.strftime("%Y-%m-%d") < today]
+
+
+def fill_official(old: dict, days: list[str]) -> None:
+    """補最近幾天的 lock（收盤沒有委買的跌停占比）與 mg（融資統計）。已有值的日子不重抓；任何一步失敗就留空。"""
+    n = len(old["date"])
+    pos = {d: i for i, d in enumerate(old["date"])}
+    for u in ("twse", "tpex"):
+        old[u].setdefault("lock", [None] * n)
+    mg = old.setdefault("mg", {})
+    for f in bw.MG_FIELDS:
+        mg.setdefault(f, [None] * n)
+    s = requests.Session(); s.headers.update(UA)
+
+    def get(kind: str, d: str) -> dict | None:
+        url, params = bw.official_url(kind, d)
+        try:
+            j = s.get(url, params=params, timeout=40).json()
+        except Exception as e:  # noqa: BLE001
+            print(f"  official {kind} {d}: {type(e).__name__}"); j = None
+        time.sleep(3 if kind.startswith("twse") else 1.5)
+        if isinstance(j, dict) and str(j.get("date", "")).replace("-", "").replace("/", "") not in ("", d.replace("-", "")):
+            return None                                  # 交易所回的不是要的那一天（還沒出檔時可能給最近一天）
+        return j
+
+    for d in days:
+        i = pos.get(d)
+        if i is None:
+            continue
+        for u in ("twse", "tpex"):
+            if old[u]["lock"][i] is None:
+                j = get(u + "_px", d)
+                try:
+                    if u == "twse":
+                        t = next(x for x in j.get("tables", []) if "證券代號" in (x.get("fields") or []) and "收盤價" in x["fields"])
+                    else:
+                        t = j["tables"][0]
+                    old[u]["lock"][i] = bw.lock_pct(bw.parse_quotes(u, t["fields"], t["data"]), d)
+                except Exception:  # noqa: BLE001  （當天官方檔還沒出、欄位變動）
+                    pass
+            key = "bal" if u == "twse" else "o_bal"
+            if mg[key][i] is None:
+                r = bw.parse_margin(u, get(u + "_mg", d) or {})
+                if r:
+                    for f, v in r.items():
+                        mg[f if u == "twse" else "o_" + f][i] = v
+
+
 def main() -> None:
     if not OUT.exists():
         raise SystemExit("tw_breadth_warn: data/tw_breadth_warn.json 不存在；先跑一次性回補")
@@ -93,9 +149,7 @@ def main() -> None:
     ok = (res["twse"]["n"] >= 0.9 * res["twse"]["n"].rolling(20, min_periods=5).median().shift(1)) & (res["tw50"]["n"].reindex(idx) >= 45)
     days = [d for d in idx[ok.fillna(False)] if res["twse"]["a200"].notna().get(d, False)][-TAIL:]
     # 盤中執行時 Yahoo 會給未收盤的當天，一律不寫
-    now = datetime.now(timezone(timedelta(hours=8)))
-    if now.hour < 15:
-        days = [d for d in days if d.strftime("%Y-%m-%d") < now.strftime("%Y-%m-%d")]
+    days = drop_unclosed(days, datetime.now(timezone(timedelta(hours=8))))
     if not days:
         raise SystemExit("tw_breadth_warn: no complete recent day; keep existing file")
     pos = {d: i for i, d in enumerate(old["date"])}
@@ -106,8 +160,10 @@ def main() -> None:
         if ds not in pos:
             pos[ds] = len(old["date"]); old["date"].append(ds)
             for u in ("tw50", "twse", "tpex"):
-                for f in bw.FIELDS:
+                for f in list(old[u]):
                     old[u][f].append(None)
+            for f in old.get("mg", {}):
+                old["mg"][f].append(None)
         i = pos[ds]
         for u in ("tw50", "twse", "tpex"):
             if d not in res[u].index:
@@ -116,7 +172,9 @@ def main() -> None:
             for f in bw.FIELDS:
                 old[u][f][i] = row[f][0]
     n = len(old["date"])
-    if old["date"] != sorted(old["date"]) or any(len(old[u][f]) != n for u in ("tw50", "twse", "tpex") for f in bw.FIELDS):
+    fill_official(old, [d.strftime("%Y-%m-%d") for d in days][-OFFICIAL_DAYS:])
+    if (old["date"] != sorted(old["date"]) or len(set(old["date"])) != n or any(len(old[u][f]) != n for u in ("tw50", "twse", "tpex") for f in bw.FIELDS)
+            or any(len(old[u]["lock"]) != n for u in ("twse", "tpex")) or any(len(old["mg"][f]) != n for f in bw.MG_FIELDS)):
         raise SystemExit("tw_breadth_warn: output failed sanity checks; keep existing file")
     old["updated"] = date.today().isoformat()
     OUT.write_text(json.dumps(old, ensure_ascii=False, separators=(",", ":")))

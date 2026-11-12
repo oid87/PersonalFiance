@@ -758,7 +758,7 @@
       /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
          保留原高度、改用放大圖表 */
       .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
-        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #vixspike-main-chart, #panicentry-main-chart, #breadthwarn-main-chart, #breadthwarn-case-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #vixspike-main-chart, #panicentry-main-chart, #breadthwarn-main-chart, #breadthwarn-case-chart, #breadthwarn-caseliq-chart,
         #kelly-chart, #roc4-chart, #val-chart) {
         max-height: calc(100dvh - 16px);
       }
@@ -1764,6 +1764,16 @@
   #tab-breadthwarn .breadthwarn-params select, #tab-breadthwarn .breadthwarn-params input[type=range] { width:100%; max-width:none; }
 }
 #tab-breadthwarn .breadthwarn-chart--case { height:640px; min-height:560px; }
+#tab-breadthwarn .breadthwarn-tag { display:inline-block; padding:0 6px; border-radius:9px; font-size:11px; line-height:17px; font-weight:600; vertical-align:1px; white-space:nowrap; }
+#tab-breadthwarn .breadthwarn-tag--real { color:#58a6ff; border:1px solid #58a6ff; }
+#tab-breadthwarn .breadthwarn-tag--proxy { color:#f0883e; border:1px dashed #f0883e; }
+#tab-breadthwarn .breadthwarn-tag--est { color:#a371f7; border:1px dotted #a371f7; }
+#tab-breadthwarn .breadthwarn-tag--na { color:var(--muted); border:1px dotted var(--muted); }
+#tab-breadthwarn .breadthwarn-h4 { margin:14px 0 4px; font-size:15px; }
+#tab-breadthwarn .breadthwarn-late { background:color-mix(in srgb, #58a6ff 9%, transparent); }
+#tab-breadthwarn td.breadthwarn-wrap { white-space:normal; text-align:left; min-width:240px; }
+#tab-breadthwarn #breadthwarn-quality td, #tab-breadthwarn #breadthwarn-quality th { text-align:left; }
+#tab-breadthwarn #breadthwarn-quality td:nth-child(3) { white-space:normal; min-width:150px; }
 @media (max-width: 700px) { #tab-breadthwarn #breadthwarn-events th:nth-child(2), #tab-breadthwarn #breadthwarn-events td:nth-child(2), #tab-breadthwarn #breadthwarn-events th:nth-child(3), #tab-breadthwarn #breadthwarn-events td:nth-child(3) { display:none; } #tab-breadthwarn p.breadthwarn-swipe { display:block; } }
 #tab-breadthwarn .breadthwarn-pair { align-items:start; }
 #tab-breadthwarn .breadthwarn-evpick { display:flex; flex-wrap:wrap; gap:6px; align-items:center; color:var(--muted); font-size:13px; }

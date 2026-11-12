@@ -16,6 +16,11 @@
   ew                        等權平均日報酬 %（每日再平衡；單日報酬以漲跌幅限制截斷，避免資料錯誤）
   dnv                       下跌股票成交值 ÷（上漲＋下跌股票成交值）%
   top10                     成交值前 10 大占全部成交值 %
+  ld2                       連續兩天跌停
+  ld3u ld5u                 近 3／5 日內曾經跌停（同一檔只算一次）
+  ldvr                      當天跌停股票的「成交量 ÷ 前 20 日均量」中位數（沒有跌停股＝缺值）
+  ldcont                    昨天跌停的股票裡，今天又跌停的 %（其餘＝打開跌停；昨天跌停不到 5 檔＝缺值）
+  tv                        成交值合計（億元）
 這些都是價格與成交量算出的代理指標，不是委託簿資料。
 """
 from __future__ import annotations
@@ -25,8 +30,9 @@ import pandas as pd
 
 MAS = (5, 10, 20, 60, 120, 200)
 FIELDS = ["a5", "a10", "a20", "a60", "a120", "a200", "nh20", "nl20", "nh60", "nl60",
-          "adv", "dec", "n", "ld", "ldq", "volr", "ew", "dnv", "top10"]
-DECIMALS = {"n": 0, "ld": 2, "ldq": 2, "volr": 2, "ew": 3}
+          "adv", "dec", "n", "ld", "ldq", "volr", "ew", "dnv", "top10",
+          "ld2", "ld3u", "ld5u", "ldvr", "ldcont", "tv"]
+DECIMALS = {"n": 0, "ld": 2, "ldq": 2, "volr": 2, "ew": 3, "ld2": 2, "ld3u": 2, "ld5u": 2, "ldvr": 2}
 
 
 def limit_series(index: pd.DatetimeIndex) -> pd.Series:
@@ -86,6 +92,15 @@ def compute(adj: pd.DataFrame, close: pd.DataFrame, vol: pd.DataFrame, mask: pd.
     v = np.nan_to_num(val.to_numpy(dtype="float64"), nan=0.0)
     k = min(10, v.shape[1])
     out["top10"] = np.sort(v, axis=1)[:, -k:].sum(axis=1) / tot.to_numpy() * 100
+    ldm = (is_ld & member).astype("float32")
+    prev = ldm.shift(1).fillna(0) > 0
+    out["ld2"] = pct((ldm > 0) & prev)
+    for w in (3, 5):
+        out[f"ld{w}u"] = (ldm.rolling(w, min_periods=1).max() > 0).sum(axis=1) / n.replace(0, np.nan) * 100
+    out["ldvr"] = vr.where(ldm > 0).median(axis=1)
+    den = (prev & traded).sum(axis=1)
+    out["ldcont"] = ((prev & traded & is_ld).sum(axis=1) / den.where(den >= 5) * 100)
+    out["tv"] = val.sum(axis=1) / 1e8
     return out
 
 
@@ -96,3 +111,79 @@ def to_columns(df: pd.DataFrame) -> dict:
         nd = DECIMALS.get(f, 1)
         res[f] = [None if pd.isna(x) else (int(x) if nd == 0 else round(float(x), nd)) for x in df[f]]
     return res
+
+
+# ── 官方每日行情（收盤委買）與信用交易統計：每日增量與研究回補共用 ──
+import re as _re
+
+MG_FIELDS = ["bal", "lots", "buy", "sell", "repay", "o_bal", "o_lots", "o_buy", "o_sell", "o_repay"]
+_COMMON = _re.compile(r"[1-8]\d{3}|9[02-9]\d{2}")   # 4 碼普通股，排除 91xx 存託憑證
+
+
+def _num(x) -> float:
+    try:
+        return float(_re.sub(r"[,\s]", "", str(x)))
+    except ValueError:
+        return float("nan")
+
+
+def official_url(kind: str, d: str) -> tuple[str, dict]:
+    """kind：twse_px／tpex_px／twse_mg／tpex_mg；d：YYYY-MM-DD。"""
+    ymd, sl = d.replace("-", ""), d.replace("-", "/")
+    return {
+        "twse_px": ("https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX", {"date": ymd, "type": "ALLBUT0999", "response": "json"}),
+        "tpex_px": ("https://www.tpex.org.tw/www/zh-tw/afterTrading/otc", {"date": sl, "type": "EW", "response": "json"}),
+        "twse_mg": ("https://www.twse.com.tw/rwd/zh/marginTrading/MI_MARGN", {"date": ymd, "selectType": "MS", "response": "json"}),
+        "tpex_mg": ("https://www.tpex.org.tw/www/zh-tw/margin/balance", {"date": sl, "response": "json"}),
+    }[kind]
+
+
+def parse_quotes(kind: str, fields: list, data: list) -> pd.DataFrame:
+    """官方行情表 → 每檔一列：id、close、ret（漲跌價差 ÷ 參考價；除權息日＝0）、vol、val、nobid（收盤沒有委買）。只留普通股。"""
+    F = [str(f).strip() for f in fields]
+    if kind == "twse":
+        ic, inm, icl, isg, idf, iv, ia, ib = (F.index(k) for k in ("證券代號", "證券名稱", "收盤價", "漲跌(+/-)", "漲跌價差", "成交股數", "成交金額", "最後揭示買價"))
+    else:
+        ic, inm, icl, idf, iv, ia, ib = (F.index(k) for k in ("代號", "名稱", "收盤", "漲跌", "成交股數", "成交金額(元)", "最後買價"))
+    rec = []
+    for r in data:
+        c = str(r[ic]).strip()
+        if not _COMMON.fullmatch(c) or "DR" in str(r[inm]):
+            continue
+        cl = _num(r[icl])
+        if kind == "twse":
+            sg, df = str(r[isg]), _num(r[idf])
+            chg = 0.0 if ("X" in sg or df != df) else (-df if ("-" in sg or "green" in sg) else df)
+        else:
+            t = _re.sub(r"\s", "", str(r[idf]))
+            chg = _num(t) if _re.fullmatch(r"[+-]?\d+(\.\d+)?", t) else 0.0
+        ret = chg / (cl - chg) if cl == cl and cl - chg > 0 else float("nan")
+        rec.append((c, cl, ret, _num(r[iv]), _num(r[ia]), not (_num(r[ib]) > 0)))
+    return pd.DataFrame(rec, columns=["id", "close", "ret", "vol", "val", "nobid"])
+
+
+def lock_pct(q: pd.DataFrame, d: str) -> float | None:
+    """鎖死跌停占比 %：跌停（與 ld 同一套報酬門檻）且收盤沒有委買 ÷ 當天有成交的檔數。"""
+    tr = q[q.vol > 0]
+    if len(tr) < 200:
+        return None
+    lim = float(limit_series(pd.DatetimeIndex([d])).iloc[0])
+    return round(float(((tr.ret <= -(lim - 0.003)) & tr.nobid).sum() / len(tr) * 100), 2)
+
+
+def parse_margin(kind: str, payload: dict) -> dict | None:
+    """信用交易統計 → {bal, buy, sell, repay（億元）, lots（張）}；抓不到回 None。"""
+    try:
+        if kind == "twse":
+            rows = {str(r[0]).strip(): r for r in payload["tables"][0]["data"]}
+            m, l = rows["融資金額(仟元)"], rows["融資(交易單位)"]
+            buy, sell, rep, bal, lots = _num(m[1]), _num(m[2]), _num(m[3]), _num(m[5]), _num(l[5])
+        else:
+            rows = {str(r[1]).strip(): r for r in payload["tables"][0]["summary"]}
+            m, l = rows["融資金(仟元)"], rows["合計(張)"]
+            buy, sell, rep, bal, lots = _num(m[3]), _num(m[4]), _num(m[5]), _num(m[6]), _num(l[6])
+        if not bal > 0:
+            return None
+        return {"bal": round(bal / 1e5, 1), "buy": round(buy / 1e5, 2), "sell": round(sell / 1e5, 2), "repay": round(rep / 1e5, 2), "lots": int(lots)}
+    except (KeyError, IndexError, TypeError, ValueError):
+        return None
