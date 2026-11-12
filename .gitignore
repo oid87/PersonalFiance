@@ -12,3 +12,4 @@ node_modules/
 
 # Independent upstream chart/UI reference repository
 /references/vela/
+data/local/

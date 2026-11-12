@@ -7,6 +7,7 @@
 //       data/taiwan_margin_total{,_early}.json（上市融資餘額）、data/tw_breadth_warn_models.json（離線研究的模型比較結果）。
 import { echartsBase, PALETTE, mob } from '../utils/theme.js';
 import { requestJSON } from '../utils/data.js';
+import * as Live from './breadthwarn_live.js';
 import { bindOnce } from '../utils/dom.js';
 import { preserveChartState } from '../utils/chartLifecycle.js';
 import * as P from './panicentry_calc.mjs';
@@ -223,9 +224,9 @@ function drawCase() {
   const S = stress().score, lk = lockAll(), t = Bx.twse, x1 = v => (finite(v) ? v.toFixed(1) : '—'), x2 = v => (finite(v) ? v.toFixed(2) : '—');
   const rows = []; for (let i = D.date.findIndex(d => d >= '2026-10-01'); i >= 0 && i <= b; i++) {
     const g = MGx?.bal[i], ga = MGx?.amt1[i];
-    rows.push(`<tr class="${key.has(D.date[i]) ? 'breadthwarn-base' : ''}"><td>${D.date[i].slice(5)}</td><td>${Math.round(D.tw_c[i]).toLocaleString()}</td><td>${pct(dd()[i])}</td><td>${f1(Bx.tw50.a20[i])}</td><td>${f1(Bx.tw50.a60[i])}</td><td class="${dir(d5[i])}">${sf1(d5[i])}</td><td class="${dir(d10[i])}">${sf1(d10[i])}</td><td>${f1(t.a60[i])}</td><td>${f1(Bx.tpex.a60[i])}</td><td>${f1(t.nl20[i])}</td><td>${x1(ld[i])}</td><td>${x1(t.ld5u[i])}</td><td>${x1(lk[i])}</td><td>${x2(t.ldvr[i])}</td><td>${x2(t.volr[i])}</td><td>${x1(t.dnv[i])}</td><td>${x1(t.top10[i])}</td><td>${finite(S[i]) ? Math.round(S[i] * 100) : '—'}</td><td>${sig[i] ? '●' : ''}</td><td class="breadthwarn-late">${finite(g) ? Math.round(g).toLocaleString() : '—'}</td><td class="breadthwarn-late ${dir(ga)}">${finite(ga) ? sf1(ga).replace(/\.\d/, '') : '—'}</td><td class="breadthwarn-late ${dir(MGx?.chg5[i])}">${sf1(MGx?.chg5[i])}</td><td class="breadthwarn-late">${FLOW && finite(FLOW.sell[i]) ? Math.round(FLOW.sell[i] + FLOW.repay[i]).toLocaleString() : '—'}</td><td class="breadthwarn-late">${FLOW && finite(FLOW.buy[i]) ? Math.round(FLOW.buy[i]).toLocaleString() : '—'}</td></tr>`);
+    rows.push(`<tr class="${key.has(D.date[i]) ? 'breadthwarn-base' : ''}"><td>${D.date[i].slice(5)}</td><td>${Math.round(D.tw_c[i]).toLocaleString()}</td><td class="${dir(D.tw_c[i] / D.tw_c[i - 1] - 1)}">${spct(D.tw_c[i] / D.tw_c[i - 1] - 1)}</td><td>${pct(dd()[i])}</td><td>${pct(D.tw_l[i] > 0 ? (1 + dd()[i]) * D.tw_c[i] / D.tw_l[i] - 1 : null)}</td><td>${f1(Bx.tw50.a20[i])}</td><td>${f1(Bx.tw50.a60[i])}</td><td class="${dir(d5[i])}">${sf1(d5[i])}</td><td class="${dir(d10[i])}">${sf1(d10[i])}</td><td>${f1(t.a60[i])}</td><td>${f1(Bx.tpex.a60[i])}</td><td>${f1(t.nl20[i])}</td><td>${x1(ld[i])}</td><td>${x1(t.ld5u[i])}</td><td>${x1(lk[i])}</td><td>${x2(t.ldvr[i])}</td><td>${x2(t.volr[i])}</td><td>${x1(t.dnv[i])}</td><td>${x1(t.top10[i])}</td><td>${finite(S[i]) ? Math.round(S[i] * 100) : '—'}</td><td>${sig[i] ? '●' : ''}</td><td class="breadthwarn-late">${finite(g) ? Math.round(g).toLocaleString() : '—'}</td><td class="breadthwarn-late ${dir(ga)}">${finite(ga) ? sf1(ga).replace(/\.\d/, '') : '—'}</td><td class="breadthwarn-late ${dir(MGx?.chg5[i])}">${sf1(MGx?.chg5[i])}</td><td class="breadthwarn-late">${FLOW && finite(FLOW.sell[i]) ? Math.round(FLOW.sell[i] + FLOW.repay[i]).toLocaleString() : '—'}</td><td class="breadthwarn-late">${FLOW && finite(FLOW.buy[i]) ? Math.round(FLOW.buy[i]).toLocaleString() : '—'}</td></tr>`);
   }
-  byId('casetable').innerHTML = `<table><thead><tr><th></th><th colspan="18">當天收盤後就知道</th><th colspan="5" class="breadthwarn-late">當晚公布，隔天才能用</th></tr><tr><th>日期</th><th>加權收盤</th><th>距高點</th><th>臺灣50 20日線</th><th>臺灣50 60日線</th><th>5 日變化</th><th>10 日變化</th><th>上市 60日線</th><th>上櫃 60日線</th><th>上市新低</th><th>跌停占比</th><th>近5日曾跌停</th><th>無買單跌停</th><th>跌停股量比</th><th>全體量比</th><th>下跌成交值占比</th><th>前10大成交占比</th><th>壓力分數</th><th>廣度預警</th><th class="breadthwarn-late">融資餘額（億）</th><th class="breadthwarn-late">日增減</th><th class="breadthwarn-late">5 日 %</th><th class="breadthwarn-late">融資賣出＋現償（億）</th><th class="breadthwarn-late">融資買進（億）</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  byId('casetable').innerHTML = `<table><thead><tr><th></th><th colspan="20">當天收盤後就知道</th><th colspan="5" class="breadthwarn-late">當晚公布，隔天才能用</th></tr><tr><th>日期</th><th>加權收盤</th><th>收盤漲跌</th><th>最低價距高點</th><th>收盤價距高點</th><th>臺灣50 20日線</th><th>臺灣50 60日線</th><th>5 日變化</th><th>10 日變化</th><th>上市 60日線</th><th>上櫃 60日線</th><th>上市新低</th><th>跌停占比</th><th>近5日曾跌停</th><th>無買單跌停</th><th>跌停股量比</th><th>全體量比</th><th>下跌成交值占比</th><th>前10大成交占比</th><th>壓力分數</th><th>廣度預警</th><th class="breadthwarn-late">融資餘額（億）</th><th class="breadthwarn-late">日增減</th><th class="breadthwarn-late">5 日 %</th><th class="breadthwarn-late">融資賣出＋現償（億）</th><th class="breadthwarn-late">融資買進（億）</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
   drawCaseLiq(xs, sl, marks);
 }
 const lockAll = () => cache.lockAll || (cache.lockAll = D.date.map((_, i) => { const a = Bx.twse.lock[i], b = Bx.tpex.lock[i], na = Bx.twse.n[i], nb = Bx.tpex.n[i]; return a == null || b == null ? null : (a * na + b * nb) / (na + nb); }));
@@ -337,14 +338,16 @@ export async function activate(context = {}) {
   loadedAt = Date.now();
   byId('status').textContent = '';
   wire(); syncThr(false); recompute();
+  const at = new Map(D.date.map((d, i) => [d, i]));
+  await Live.init(context, { lastDate: D.date.at(-1), daily: d => { const i = at.get(d); return i == null ? null : { ddLow: dd()[i], ddClose: D.tw_l[i] > 0 ? (1 + dd()[i]) * D.tw_c[i] / D.tw_l[i] - 1 : null, ld: ldAll()[i], lock: lockAll()[i], adv50: Bx.tw50.adv[i], mg: MGx?.amt1[i] }; } });
 }
-export function getCharts() { return Object.values(charts); }
-export function resize() { for (const c of Object.values(charts)) c.resize(); }
+export function getCharts() { return [...Object.values(charts), ...Live.getCharts()]; }
+export function resize() { for (const c of getCharts()) c.resize(); }
 export function onThemeChange() {
   if (!last) return;
   return preserveChartState(getCharts, () => {
     for (const c of Object.values(charts)) c.dispose();
     charts = {};
-    drawAll();
+    drawAll(); Live.redraw();
   });
 }

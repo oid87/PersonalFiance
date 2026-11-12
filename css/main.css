@@ -1770,6 +1770,11 @@
 #tab-breadthwarn .breadthwarn-tag--est { color:#a371f7; border:1px dotted #a371f7; }
 #tab-breadthwarn .breadthwarn-tag--na { color:var(--muted); border:1px dotted var(--muted); }
 #tab-breadthwarn .breadthwarn-h4 { margin:14px 0 4px; font-size:15px; }
+#tab-breadthwarn .breadthwarn-chart--live { height:560px; min-height:480px; }
+#tab-breadthwarn #breadthwarn-live-quality td, #tab-breadthwarn #breadthwarn-live-quality th { text-align:left; }
+#tab-breadthwarn #breadthwarn-live-quality td.breadthwarn-wrap { min-width:200px; }
+#tab-breadthwarn #breadthwarn-live-research table { margin:6px 0 10px; }
+#tab-breadthwarn .breadthwarn-tile--na .breadthwarn-v { color:var(--muted); font-size:16px; }
 #tab-breadthwarn .breadthwarn-late { background:color-mix(in srgb, #58a6ff 9%, transparent); }
 #tab-breadthwarn td.breadthwarn-wrap { white-space:normal; text-align:left; min-width:240px; }
 #tab-breadthwarn #breadthwarn-quality td, #tab-breadthwarn #breadthwarn-quality th { text-align:left; }

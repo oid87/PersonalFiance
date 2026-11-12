@@ -505,6 +505,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_tw_breadth_warn.py
 
+      - name: Update TW intraday replay (證交所盤後公布的每 5 秒委託成交統計 → 每分鐘序列)
+        continue-on-error: true
+        run: python scripts/fetch_tw_intraday.py
+
       - name: Pull new TWSE 集中市場月訊 PDF anchor (上市市值, 月度錨點)
         continue-on-error: true
         run: python scripts/fetch_taiwan_mktcap_anchor.py

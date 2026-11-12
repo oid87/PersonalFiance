@@ -3856,12 +3856,69 @@
         <li><b>加上廣度、跌停潮、融資，沒有比只看大盤跌多少更準。</b>六組模型逐年往前測（2010–2026），預測「20 日內再跌 10%」的分辨力：只看大盤 0.59，加廣度 0.57、加跌停潮 0.57、加融資 0.59、全部都加 0.51。改預測跌停潮、改測 2008 與 2011，結果一樣：沒有一組穩定勝出。</li>
         <li><b>單一指標裡最有用的是「近 5 日曾跌停的股票占比」</b>，分辨力 0.63，回撤深度 0.61，差距在誤差內。融資減少的速度只有 0.54–0.55。</li>
         <li><b>大盤已經跌超過 10% 之後，這些指標分不出「還會再跌」和「快到底了」</b>（分辨力 0.4–0.57，等於丟銅板）。</li>
-        <li><b>融資大減和跌停高峰幾乎同一天發生，不會提前。</b>2011、2015、2018、2020、2021、2024 都是同一天，2025 與 2026 晚一到兩天；而且融資當晚才公布。</li>
+        <li><b>融資大減多半和跌停高峰同一天發生，但有例外。</b>2011、2015、2018、2020、2021、2024 是同一天，2025 與 2026 晚一到兩天。2008 相反：最大單日減幅出現在跌停高峰前 26 個交易日（9 月中），之後還有更大的跌停潮。融資當晚才公布，沒有可用的領先性。</li>
         <li><b>等壓力緩和再買 00631L：中位數好一點，最差情況沒有改善。</b>00631L 上市以來 8 次回撤 −20%（7 次滿 120 日），直接買的中途最深跌幅中位 −18%，等廣度回升 −11%、等融資連兩日沒有大減 −7%。但含 2008 的 19 次模擬，各種等法的中位數都在 −13% 到 −17%，最差一次都是 −69% 到 −75%。</li>
         <li><b>建議：原本的回撤 −20%～−25% 模型不加新條件。</b>新指標只對少數幾次有效，對 2008 這種連續下跌沒有幫助。這頁的壓力數字適合拿來描述「現在是哪一種下跌」，不適合當買賣訊號。</li>
         <li><b>和第一版相比：</b>臺灣50 改用 2003 年起真正的成分股名單、2007–2012 改用交易所當時全部掛牌股票之後，主要數字幾乎沒變（分辨力差 0.01 以內），第一版結論維持。</li>
       </ul>
     </details>
+
+    <h3 class="breadthwarn-h" id="breadthwarn-live">盤中去槓桿壓力監測</h3>
+    <div id="breadthwarn-live-status" class="breadthwarn-now" aria-live="polite"></div>
+    <p class="breadthwarn-note">想看的事：一天之內，市場是不是從「一般下跌」變成「有人被迫賣、沒有人接」。這一區是觀察工具，不是預測最低點的訊號，也沒有「爆倉機率」：追繳與斷頭沒有公開資料可以對答案。<b>公開網站上沒有即時行情</b>（交易所的盤中資訊要簽約才能對外展示），下面的盤中紀錄是證交所<b>收盤後</b>公布的每 5 秒統計，當天傍晚更新。</p>
+    <h4 class="breadthwarn-h4">一天之內的變化（09:00–13:30，可選日期回放）</h4>
+    <div class="breadthwarn-params">
+      <label>看哪一天<select id="breadthwarn-live-day"></select></label>
+      <label>快速跳到<select id="breadthwarn-live-jump"><option value="">最近的交易日</option></select></label>
+    </div>
+    <div id="breadthwarn-live-tiles" class="breadthwarn-tiles"></div>
+    <p id="breadthwarn-live-daynote" class="breadthwarn-note"></p>
+    <div id="breadthwarn-live-chart" class="breadthwarn-chart breadthwarn-chart--live" role="img" aria-label="所選交易日 09:00 到 13:30：加權指數漲跌、買單與成交相對平常同時段的倍數、掛賣比掛買多多少"></div>
+    <p class="breadthwarn-note">三格共用時間。第二格：1＝和前 20 個交易日同一分鐘一樣多；<b>買單倍數掉到 1 以下＝買單比平常少</b>，成交倍數高於 1＝成交比平常多。第三格：掛賣減掛買占兩者合計的比例，平常是負的（掛買比較多），灰色虛線是前 20 日同一分鐘的中位數，藍線高出虛線越多＝賣單相對變多。全部是全市場（上市）合計，大型股影響最大；<b>看不到個別股票有沒有鎖跌停</b>。每一點都是交易所公布的值，沒有的分鐘留空、不補。</p>
+    <p class="breadthwarn-note"><b>兩種狀態怎麼分：</b>「賣壓大但有人接」＝指數跌、成交倍數明顯高於 1、買單倍數正常；「買方消失」＝指數跌、買單倍數明顯低於 1。成交量大只代表買賣雙方都多，不能解讀成有人在抄底。</p>
+    <p class="breadthwarn-note">最近 25 個交易日的盤中摘要。「買單最少」＝當天累積買單相對平常同時段最低的時候。<span class="breadthwarn-swipe">表格可左右滑。</span></p>
+    <div id="breadthwarn-live-days" class="table-scroll" tabindex="0" aria-label="最近交易日的盤中摘要"></div>
+
+    <details class="breadthwarn-details" open>
+      <summary>歷史驗證：盤中訊號有沒有提前能力</summary>
+      <div id="breadthwarn-live-research"></div>
+    </details>
+
+    <h4 class="breadthwarn-h4">融資維持率情境模擬（假設的單一部位，不是任何真實帳戶，也不是全市場統計）</h4>
+    <p class="breadthwarn-note">放在這裡的原因：急跌時常聽到「融資斷頭」，這個小工具讓你自己算，一筆融資部位要跌多少才會被通知補繳。全市場有多少人接近這條線沒有公開資料，算不出來。</p>
+    <div class="breadthwarn-params">
+      <label>買進時的融資成數<select id="breadthwarn-sim-ratio"><option value="0.6" selected>60%（上市櫃上限）</option><option value="0.5">50%</option><option value="0.4">40%</option><option value="">自己填目前維持率</option></select></label>
+      <label>目前維持率 <b id="breadthwarn-sim-m0-v"></b><input id="breadthwarn-sim-m0" type="range" min="125" max="260" step="1" value="167"></label>
+      <label>股價再跌 <b id="breadthwarn-sim-drop-v"></b><input id="breadthwarn-sim-drop" type="range" min="0" max="40" step="1" value="10"></label>
+      <label>追繳門檻<select id="breadthwarn-sim-thr"><option value="1.3" selected>130%（法規）</option><option value="1.4">140%（假設券商另有約定）</option><option value="1.5">150%（假設）</option></select></label>
+    </div>
+    <div id="breadthwarn-sim-out" class="breadthwarn-tiles"></div>
+    <p class="breadthwarn-note">金額以目前股票市值＝100 表示。<span class="breadthwarn-swipe">表格可左右滑。</span></p>
+    <div id="breadthwarn-sim-table" class="table-scroll" tabindex="0" aria-label="不同跌幅下的假設維持率"></div>
+    <details class="breadthwarn-details">
+      <summary>算法與制度（融資融券業務操作辦法第 53–55 條）</summary>
+      <ul>
+        <li><b>算法：</b>維持率＝股票市值 ÷ 融資金額。融資金額不隨股價變動，所以股價跌 10%，維持率就乘 0.9。用 60% 成數買進時是 166.7%，跌 22% 碰到 130%。「要還多少」＝融資金額 − 市值 ÷ 目標維持率，以目前市值＝100 表示。</li>
+        <li><b>只算單純融資：</b>真實帳戶是「整戶」計算，融資、融券、抵繳的其他擔保品合在一起，這裡沒有。</li>
+        <li><b>追繳不等於當場斷頭：</b>整戶維持率低於 130%，券商通知補繳，通知送達後 2 個營業日內補。期滿仍不足，下一個營業日起處分。期滿當天回到 130% 以上可以暫不處分，但之後任何一天再跌破、當天下午沒補，下一個營業日就處分。陸續補足差額或回到 166% 以上，追繳紀錄才取消。</li>
+        <li><b>各家不同：</b>條文有「除雙方另有約定者外」，券商可以訂更嚴的門檻或處理方式；140%、150% 兩個選項是假設，不是任何一家的實際規定。</li>
+        <li><b>臨時措施：</b>2020/3/19–6/10 與 2025/4/7–4/18 主管機關曾放寬可用來補繳的擔保品範圍。</li>
+        <li><b>期貨與槓桿 ETF 不同：</b>期貨是盤中即時計算，風險指標低於 25% 期貨商可以直接代為沖銷，沒有 2 天緩衝。00631L 這類槓桿 ETF 本身不會被追繳，但基金每天要調整期貨部位；用融資買 00631L 則適用上面的融資規則。</li>
+        <li><b>不知道的事：</b>每個帳戶的成本、融資本金、其他擔保品、現金，以及各券商的約定，都沒有公開資料。全市場有多少帳戶接近追繳線無法計算，這裡不提供那種數字。</li>
+      </ul>
+    </details>
+
+    <div id="breadthwarn-local" hidden>
+      <h4 class="breadthwarn-h4">本機即時快照（只在你自己的電腦上看得到，不會上傳）</h4>
+      <div id="breadthwarn-local-status" class="breadthwarn-now"></div>
+      <div id="breadthwarn-local-tiles" class="breadthwarn-tiles"></div>
+      <div id="breadthwarn-local-chart" class="breadthwarn-chart breadthwarn-chart--live" role="img" aria-label="本機快照：指數漲跌、跌停與沒有買單的占比、融資加權跌幅"></div>
+      <div id="breadthwarn-local-signals" class="table-scroll" tabindex="0" aria-label="本機快照的訊號紀錄"></div>
+    </div>
+
+    <h4 class="breadthwarn-h4">這一區的資料可靠性</h4>
+    <p class="breadthwarn-note"><span class="breadthwarn-swipe">表格可左右滑。</span></p>
+    <div id="breadthwarn-live-quality" class="table-scroll" tabindex="0" aria-label="盤中監測各項資料的來源、延遲與能否公開"></div>
 
     <h3 class="breadthwarn-h">自己調條件：這樣的預警準不準</h3>
     <div id="breadthwarn-params" class="breadthwarn-params" role="group" aria-label="預警參數">
@@ -3920,6 +3977,7 @@
       <label>報酬怎麼算<select id="breadthwarn-rbasis"><option value="t" selected>從進場日起持有</option><option value="cap">從事件隔天起算（等待時算現金）</option></select></label>
     </div>
     <p id="breadthwarn-repairnote" class="breadthwarn-note"></p>
+    <p class="breadthwarn-note">「0050 站回 150 日線（簡化版）」只測一個條件：大盤回撤到門檻後，0050 收盤由下往上站回 150 日線。它不等於完整的均線槓桿策略（QQQ／Nasdaq 期貨盤中碰 300MA 記一次 Reset、深度修正後站回 150MA 才啟動 00631L／QLD／USD，200MA 修正後突破 125／150MA 用 SSO），那套策略這裡沒有驗證。事件門檻的「回撤」一律指當日最低價 ÷ 近 252 日盤中最高價。</p>
     <p class="breadthwarn-note breadthwarn-swipe">表格可左右滑。</p>
     <div id="breadthwarn-repair" class="table-scroll" tabindex="0" aria-label="00631L 進場方式比較"></div>
     <details class="breadthwarn-details">
@@ -3932,10 +3990,10 @@
       <li><b>10/15–10/20：廣度先壞，流動性壓力還很輕。</b>10/15 臺灣50 站上 60 日線的比例 5 天少 30 點，上市＋上櫃跌停 1.8%（其中收盤沒有買單的 1.4%），大盤離高點才 6%。融資還沒有減少（5 日 +1.0%）。這一段比較像一般的價格修正。</li>
       <li><b>10/22、10/27：融資開始明顯減少</b>，各減 105 億（單日 −1.6%，歷史上排前 3%），但跌停只有 0.3%–0.5%。</li>
       <li><b>10/28 反彈不是只有權值股。</b>當天上市 66%、上櫃 67% 的股票上漲，上市股票平均漲 1.3%（加權 +2.0%）。但只維持一天，隔天只剩 22% 上漲；站上 60 日線的比例上市 46%、上櫃 38%，都沒回到月初。</li>
-      <li><b>11/3 是分水嶺。</b>融資單日減 229 億（−3.7%，2001 年以來排前 0.5%），上市＋上櫃跌停 3.9%，其中收盤沒有買單的 3.0%，只有 6% 的股票上漲。「融資單日減 ≥3% 而且跌停 ≥3%」過去出現 14 次，之後 20 日內再跌 10% 的有 5 次（36%），平常是 7%。這組門檻是看了 11/3 才訂的，只能當假說。</li>
+      <li><b>11/3 是歷史上少見的極端日，但還不是驗證過的預警條件。</b>融資單日減 229 億（−3.7%，2001 年以來排前 0.5%），上市＋上櫃跌停 3.9%，其中收盤沒有買單的 3.0%，只有 6% 的股票上漲。「融資單日減 ≥3% 而且跌停 ≥3%」過去出現 14 次，之後 20 日內再跌 10% 的有 5 次（36%），平常是 7%。這組門檻是看了 11/3 才訂的，區間很寬（16%–61%），只能當待驗證的假說，不能說 11/3 是統計上的最佳預警日。</li>
       <li><b>11/5 之前能不能警告：</b>11/3 收盤後跌停數字就看得到，融資要等當晚；最早 11/4 開盤前。比 11/5 早一天，比 11/6 低點早三天。10 月中的廣度預警更早，但那個燈九成是誤報。</li>
-      <li><b>11/6 有可以量到的緩和，但融資還在大減。</b>上市跌停從 5.5% 降到 2.2%，前一天跌停的股票只有 18% 繼續跌停；同一天融資減 424 億（−7.4%，史上前 0.1%），融資賣出 633 億。11/9 跌停 0.2%、74% 的股票上漲、融資回升 59 億。</li>
-      <li><b>和 2015、2020、2024、2025 比：</b>共同點是融資最大減幅落在跌停高峰當天或之後一兩天。不同點是這次跌停高峰只有 5.5%（2015 年 25%、2020 年 42%、2024 年 42%、2025 年 86%），融資卻減了 18%，跌幅集中在大型股（11/6 前 10 大成交占 47%）。</li>
+      <li><b>11/6 有可以量到的緩和，但融資還在大減。</b>上市跌停從 5.5% 降到 2.2%，前一天跌停的股票只有 18% 繼續跌停；同一天融資減 424 億（−7.4%，史上前 0.1%），融資賣出 633 億。11/9 跌停 0.2%、74% 的股票上漲、融資回升 59 億。這只是初步修復，資料到 11 月中為止，後面怎麼走還沒有驗證，不能說已經完成 V 型反彈。</li>
+      <li><b>和 2015、2020、2024、2025 比：</b>這幾次融資最大減幅都落在跌停高峰當天或之後一兩天（2008 是例外，早了 26 個交易日）。不同點是這次跌停高峰只有 5.5%（2015 年 25%、2020 年 42%、2024 年 42%、2025 年 86%），融資卻減了 18%，跌幅集中在大型股（11/6 前 10 大成交占 47%）。</li>
       <li><b>誠實的限制：</b>這裡只描述公開數字，不代表任何人當時實際用什麼方法判斷。委託簿深度沒有歷史資料，「買盤枯竭」只能用收盤時有沒有買單這一個時點來看。</li>
     </ul>
     <div id="breadthwarn-case-chart" class="breadthwarn-chart breadthwarn-chart--case" role="img" aria-label="2026 年 9 月中到 11 月：加權指數、三種範圍的廣度、創新低占比、跌停占比"></div>
