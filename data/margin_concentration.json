@@ -1,6 +1,6 @@
 {
-  "as_of": "2026-11-12",
-  "latest_data_date": "2026-11-12",
+  "as_of": "2026-11-13",
+  "latest_data_date": "2026-11-13",
   "assumed_loan_ratio": 0.6,
   "denominator_basis": "market_value (=official MarginPurchaseMoney loan_amount / assumed_loan_ratio)",
   "note": "個股融資餘額=FinMind TaiwanStockMarginPurchaseShortSale(張),融資市值=餘額(張)*1000*close/1e8(億元)。全市場融資=FinMind TaiwanStockTotalMarginPurchaseShortSale(即時抓取)。⚠️分子分母口徑對齊:FinMind個股融資dataset僅有張數無金額欄位,官方全市場MarginPurchaseMoney是『放款金額』(≈市值*融資成數)非市值,與分子(市值)直接相除會把佔比灌約1/成數倍。已將全市場分母除以ASSUMED_LOAN_RATIO=0.6(台股上市普通股一般融資成數,個股逐日實際成數無免費資料,best-effort近似)換算回市值基準,使分子分母口徑一致。候選池=TW50(50檔,來源zh.wikipedia.org/wiki/臺灣50指數 2026-07-09快照) + 人工整理中小型補充清單(44檔,2026-07-14整理,非官方指數成分,不保證涵蓋真正市值前120大),去重後共94檔。⚠️已知限制:歷史時序用『今日候選池』回溯篩選逐日前十大,不是『當時真正全市場前十大』,早期年份集中度可能被低估(候選池外的歷史融資大戶未被納入)。清算天數=融資今日餘額(張)/近20日日均成交量(張)。百分位=rolling rank(window>=樣本長度,純trailing,無未來函數)。個股流通股數(pct_of_own_market_cap)為best-effort:FinMind TaiwanStockBalanceSheet『股本合計』/10元面額,取不到留null。⚠️『佔全市場%』絕對水位受分母口徑影響(比部位市值口徑高約1.5x的best-effort近似),清算天數與集中度百分位(相對排序)不受此假設影響,為可信主指標。",
@@ -13,270 +13,270 @@
     {
       "stock_id": "2330",
       "name": "台積電",
-      "date": "2026-11-12",
-      "margin_money_yi": 754.79,
-      "pct_of_total_market_margin": 8.489,
-      "close": 2340.0,
-      "balance_lots": 32256.0,
-      "avg_vol20_lots": 39932.0,
+      "date": "2026-11-13",
+      "margin_money_yi": 760.84,
+      "pct_of_total_market_margin": 8.507,
+      "close": 2350.0,
+      "balance_lots": 32376.0,
+      "avg_vol20_lots": 40075.1,
       "clearance_days": 0.81,
-      "pct_of_own_market_cap": 0.124,
-      "shares_outstanding": 25932370100.0
+      "pct_of_own_market_cap": 0.125,
+      "shares_outstanding": 25932365000.0
     },
     {
       "stock_id": "2454",
       "name": "聯發科",
-      "date": "2026-11-12",
-      "margin_money_yi": 444.79,
-      "pct_of_total_market_margin": 5.003,
-      "close": 3850.0,
-      "balance_lots": 11553.0,
-      "avg_vol20_lots": 11979.0,
-      "clearance_days": 0.96,
-      "pct_of_own_market_cap": 0.72,
-      "shares_outstanding": 1603895400.0
+      "date": "2026-11-13",
+      "margin_money_yi": 482.58,
+      "pct_of_total_market_margin": 5.396,
+      "close": 4120.0,
+      "balance_lots": 11713.0,
+      "avg_vol20_lots": 12360.0,
+      "clearance_days": 0.95,
+      "pct_of_own_market_cap": 0.73,
+      "shares_outstanding": 1604952600.0
     },
     {
       "stock_id": "3443",
       "name": "創意",
-      "date": "2026-11-12",
-      "margin_money_yi": 302.06,
-      "pct_of_total_market_margin": 3.397,
-      "close": 7860.0,
-      "balance_lots": 3843.0,
-      "avg_vol20_lots": 2559.1,
-      "clearance_days": 1.5,
-      "pct_of_own_market_cap": 2.868,
+      "date": "2026-11-13",
+      "margin_money_yi": 335.19,
+      "pct_of_total_market_margin": 3.748,
+      "close": 8610.0,
+      "balance_lots": 3893.0,
+      "avg_vol20_lots": 2637.3,
+      "clearance_days": 1.48,
+      "pct_of_own_market_cap": 2.905,
       "shares_outstanding": 134011900.0
     },
     {
       "stock_id": "3037",
       "name": "欣興",
-      "date": "2026-11-12",
-      "margin_money_yi": 275.42,
-      "pct_of_total_market_margin": 3.098,
-      "close": 792.0,
-      "balance_lots": 34775.0,
-      "avg_vol20_lots": 25033.2,
-      "clearance_days": 1.39,
-      "pct_of_own_market_cap": 2.115,
+      "date": "2026-11-13",
+      "margin_money_yi": 277.69,
+      "pct_of_total_market_margin": 3.105,
+      "close": 785.0,
+      "balance_lots": 35374.0,
+      "avg_vol20_lots": 25632.0,
+      "clearance_days": 1.38,
+      "pct_of_own_market_cap": 2.152,
       "shares_outstanding": 1643916700.0
     },
     {
       "stock_id": "3105",
       "name": "穩懋",
-      "date": "2026-11-12",
-      "margin_money_yi": 231.95,
-      "pct_of_total_market_margin": 2.609,
-      "close": 517.0,
-      "balance_lots": 44865.0,
-      "avg_vol20_lots": 25057.9,
-      "clearance_days": 1.79,
-      "pct_of_own_market_cap": 10.583,
+      "date": "2026-11-13",
+      "margin_money_yi": 257.71,
+      "pct_of_total_market_margin": 2.882,
+      "close": 568.0,
+      "balance_lots": 45372.0,
+      "avg_vol20_lots": 25915.6,
+      "clearance_days": 1.75,
+      "pct_of_own_market_cap": 10.702,
       "shares_outstanding": 423940400.0
-    },
-    {
-      "stock_id": "3653",
-      "name": "健策",
-      "date": "2026-11-12",
-      "margin_money_yi": 222.52,
-      "pct_of_total_market_margin": 2.503,
-      "close": 5605.0,
-      "balance_lots": 3970.0,
-      "avg_vol20_lots": 2146.9,
-      "clearance_days": 1.85,
-      "pct_of_own_market_cap": 2.697,
-      "shares_outstanding": 147203900.0
     },
     {
       "stock_id": "2408",
       "name": "南亞科",
-      "date": "2026-11-12",
-      "margin_money_yi": 196.76,
-      "pct_of_total_market_margin": 2.213,
-      "close": 379.5,
-      "balance_lots": 51846.0,
-      "avg_vol20_lots": 50536.4,
-      "clearance_days": 1.03,
-      "pct_of_own_market_cap": 1.503,
+      "date": "2026-11-13",
+      "margin_money_yi": 196.82,
+      "pct_of_total_market_margin": 2.201,
+      "close": 377.0,
+      "balance_lots": 52206.0,
+      "avg_vol20_lots": 50307.1,
+      "clearance_days": 1.04,
+      "pct_of_own_market_cap": 1.513,
       "shares_outstanding": 3450205900.0
+    },
+    {
+      "stock_id": "3653",
+      "name": "健策",
+      "date": "2026-11-13",
+      "margin_money_yi": 196.38,
+      "pct_of_total_market_margin": 2.196,
+      "close": 5345.0,
+      "balance_lots": 3674.0,
+      "avg_vol20_lots": 2242.0,
+      "clearance_days": 1.64,
+      "pct_of_own_market_cap": 2.496,
+      "shares_outstanding": 147203900.0
     },
     {
       "stock_id": "3661",
       "name": "世芯-KY",
-      "date": "2026-11-12",
-      "margin_money_yi": 165.19,
-      "pct_of_total_market_margin": 1.858,
-      "close": 3675.0,
-      "balance_lots": 4495.0,
-      "avg_vol20_lots": 2226.3,
-      "clearance_days": 2.02,
-      "pct_of_own_market_cap": 5.206,
+      "date": "2026-11-13",
+      "margin_money_yi": 174.23,
+      "pct_of_total_market_margin": 1.948,
+      "close": 4020.0,
+      "balance_lots": 4334.0,
+      "avg_vol20_lots": 2302.3,
+      "clearance_days": 1.88,
+      "pct_of_own_market_cap": 5.019,
       "shares_outstanding": 86349600.0
     },
     {
       "stock_id": "2327",
       "name": "國巨*",
-      "date": "2026-11-12",
-      "margin_money_yi": 160.18,
-      "pct_of_total_market_margin": 1.802,
-      "close": 407.0,
-      "balance_lots": 39356.0,
-      "avg_vol20_lots": 43448.9,
-      "clearance_days": 0.91,
-      "pct_of_own_market_cap": 7.647,
+      "date": "2026-11-13",
+      "margin_money_yi": 163.7,
+      "pct_of_total_market_margin": 1.83,
+      "close": 411.0,
+      "balance_lots": 39829.0,
+      "avg_vol20_lots": 42931.5,
+      "clearance_days": 0.93,
+      "pct_of_own_market_cap": 7.739,
       "shares_outstanding": 514682700.0
     },
     {
       "stock_id": "2383",
       "name": "台光電",
-      "date": "2026-11-12",
-      "margin_money_yi": 154.18,
-      "pct_of_total_market_margin": 1.734,
-      "close": 4105.0,
-      "balance_lots": 3756.0,
-      "avg_vol20_lots": 4066.0,
-      "clearance_days": 0.92,
-      "pct_of_own_market_cap": 1.048,
+      "date": "2026-11-13",
+      "margin_money_yi": 163.25,
+      "pct_of_total_market_margin": 1.825,
+      "close": 4215.0,
+      "balance_lots": 3873.0,
+      "avg_vol20_lots": 4129.2,
+      "clearance_days": 0.94,
+      "pct_of_own_market_cap": 1.081,
       "shares_outstanding": 358321100.0
-    },
-    {
-      "stock_id": "8299",
-      "name": "群聯",
-      "date": "2026-11-12",
-      "margin_money_yi": 147.36,
-      "pct_of_total_market_margin": 1.657,
-      "close": 1635.0,
-      "balance_lots": 9013.0,
-      "avg_vol20_lots": 3469.7,
-      "clearance_days": 2.6,
-      "pct_of_own_market_cap": 4.07,
-      "shares_outstanding": 221439300.0
     },
     {
       "stock_id": "3008",
       "name": "大立光",
-      "date": "2026-11-12",
-      "margin_money_yi": 145.99,
-      "pct_of_total_market_margin": 1.642,
-      "close": 5055.0,
-      "balance_lots": 2888.0,
-      "avg_vol20_lots": 2799.7,
-      "clearance_days": 1.03,
-      "pct_of_own_market_cap": 2.208,
+      "date": "2026-11-13",
+      "margin_money_yi": 152.77,
+      "pct_of_total_market_margin": 1.708,
+      "close": 5310.0,
+      "balance_lots": 2877.0,
+      "avg_vol20_lots": 2690.1,
+      "clearance_days": 1.07,
+      "pct_of_own_market_cap": 2.2,
       "shares_outstanding": 130798200.0
+    },
+    {
+      "stock_id": "8299",
+      "name": "群聯",
+      "date": "2026-11-13",
+      "margin_money_yi": 145.98,
+      "pct_of_total_market_margin": 1.632,
+      "close": 1640.0,
+      "balance_lots": 8901.0,
+      "avg_vol20_lots": 3543.4,
+      "clearance_days": 2.51,
+      "pct_of_own_market_cap": 4.02,
+      "shares_outstanding": 221439300.0
     },
     {
       "stock_id": "2303",
       "name": "聯電",
-      "date": "2026-11-12",
-      "margin_money_yi": 127.18,
-      "pct_of_total_market_margin": 1.43,
-      "close": 101.0,
-      "balance_lots": 125921.0,
-      "avg_vol20_lots": 151279.7,
-      "clearance_days": 0.83,
-      "pct_of_own_market_cap": 1.002,
+      "date": "2026-11-13",
+      "margin_money_yi": 125.56,
+      "pct_of_total_market_margin": 1.404,
+      "close": 101.5,
+      "balance_lots": 123704.0,
+      "avg_vol20_lots": 150922.2,
+      "clearance_days": 0.82,
+      "pct_of_own_market_cap": 0.984,
       "shares_outstanding": 12570093900.0
-    },
-    {
-      "stock_id": "2344",
-      "name": "華邦電",
-      "date": "2026-11-12",
-      "margin_money_yi": 124.29,
-      "pct_of_total_market_margin": 1.398,
-      "close": 127.5,
-      "balance_lots": 97484.0,
-      "avg_vol20_lots": 66677.8,
-      "clearance_days": 1.46,
-      "pct_of_own_market_cap": 2.065,
-      "shares_outstanding": 4720490800.0
     },
     {
       "stock_id": "2317",
       "name": "鴻海",
-      "date": "2026-11-12",
-      "margin_money_yi": 122.69,
-      "pct_of_total_market_margin": 1.38,
-      "close": 240.0,
-      "balance_lots": 51121.0,
-      "avg_vol20_lots": 43598.1,
-      "clearance_days": 1.17,
-      "pct_of_own_market_cap": 0.363,
-      "shares_outstanding": 14073423900.0
+      "date": "2026-11-13",
+      "margin_money_yi": 122.16,
+      "pct_of_total_market_margin": 1.366,
+      "close": 241.0,
+      "balance_lots": 50690.0,
+      "avg_vol20_lots": 43915.4,
+      "clearance_days": 1.15,
+      "pct_of_own_market_cap": 0.36,
+      "shares_outstanding": 14075746500.0
     },
     {
-      "stock_id": "2308",
-      "name": "台達電",
-      "date": "2026-11-12",
-      "margin_money_yi": 115.0,
-      "pct_of_total_market_margin": 1.293,
-      "close": 1240.0,
-      "balance_lots": 9274.0,
-      "avg_vol20_lots": 16916.1,
-      "clearance_days": 0.55,
-      "pct_of_own_market_cap": 0.357,
-      "shares_outstanding": 2597543300.0
+      "stock_id": "2344",
+      "name": "華邦電",
+      "date": "2026-11-13",
+      "margin_money_yi": 120.96,
+      "pct_of_total_market_margin": 1.352,
+      "close": 125.0,
+      "balance_lots": 96765.0,
+      "avg_vol20_lots": 66191.3,
+      "clearance_days": 1.46,
+      "pct_of_own_market_cap": 2.05,
+      "shares_outstanding": 4720490800.0
     },
     {
       "stock_id": "1303",
       "name": "南亞",
-      "date": "2026-11-12",
-      "margin_money_yi": 112.28,
-      "pct_of_total_market_margin": 1.263,
-      "close": 293.0,
-      "balance_lots": 38320.0,
-      "avg_vol20_lots": 109270.9,
-      "clearance_days": 0.35,
-      "pct_of_own_market_cap": 0.483,
+      "date": "2026-11-13",
+      "margin_money_yi": 120.75,
+      "pct_of_total_market_margin": 1.35,
+      "close": 304.0,
+      "balance_lots": 39720.0,
+      "avg_vol20_lots": 105688.8,
+      "clearance_days": 0.38,
+      "pct_of_own_market_cap": 0.501,
       "shares_outstanding": 7930821600.0
+    },
+    {
+      "stock_id": "2308",
+      "name": "台達電",
+      "date": "2026-11-13",
+      "margin_money_yi": 118.37,
+      "pct_of_total_market_margin": 1.324,
+      "close": 1240.0,
+      "balance_lots": 9546.0,
+      "avg_vol20_lots": 17148.9,
+      "clearance_days": 0.56,
+      "pct_of_own_market_cap": 0.367,
+      "shares_outstanding": 2597543300.0
     },
     {
       "stock_id": "3481",
       "name": "群創",
-      "date": "2026-11-12",
-      "margin_money_yi": 105.87,
-      "pct_of_total_market_margin": 1.191,
-      "close": 38.85,
-      "balance_lots": 272510.0,
-      "avg_vol20_lots": 135721.6,
-      "clearance_days": 2.01,
-      "pct_of_own_market_cap": 3.411,
+      "date": "2026-11-13",
+      "margin_money_yi": 108.89,
+      "pct_of_total_market_margin": 1.218,
+      "close": 39.95,
+      "balance_lots": 272566.0,
+      "avg_vol20_lots": 136978.9,
+      "clearance_days": 1.99,
+      "pct_of_own_market_cap": 3.412,
       "shares_outstanding": 7989197400.0
     },
     {
       "stock_id": "3017",
       "name": "奇鋐",
-      "date": "2026-11-12",
-      "margin_money_yi": 88.77,
-      "pct_of_total_market_margin": 0.998,
-      "close": 2775.0,
-      "balance_lots": 3199.0,
-      "avg_vol20_lots": 3169.1,
-      "clearance_days": 1.01,
-      "pct_of_own_market_cap": 0.786,
+      "date": "2026-11-13",
+      "margin_money_yi": 90.84,
+      "pct_of_total_market_margin": 1.016,
+      "close": 3040.0,
+      "balance_lots": 2988.0,
+      "avg_vol20_lots": 3245.3,
+      "clearance_days": 0.92,
+      "pct_of_own_market_cap": 0.735,
       "shares_outstanding": 406802100.0
     },
     {
       "stock_id": "8996",
       "name": "高力",
-      "date": "2026-11-12",
-      "margin_money_yi": 84.83,
-      "pct_of_total_market_margin": 0.954,
-      "close": 1425.0,
-      "balance_lots": 5953.0,
-      "avg_vol20_lots": 4400.2,
-      "clearance_days": 1.35,
-      "pct_of_own_market_cap": 6.367,
-      "shares_outstanding": 93501500.0
+      "date": "2026-11-13",
+      "margin_money_yi": 89.71,
+      "pct_of_total_market_margin": 1.003,
+      "close": 1440.0,
+      "balance_lots": 6230.0,
+      "avg_vol20_lots": 4428.4,
+      "clearance_days": 1.41,
+      "pct_of_own_market_cap": 6.654,
+      "shares_outstanding": 93627300.0
     }
   ],
-  "leaderboard_top10_sum_pct_of_market": 32.706,
+  "leaderboard_top10_sum_pct_of_market": 33.638,
   "concentration_series": {
     "start_date": "2005-01-03",
-    "n_samples": 5373,
-    "current_value_pct": 32.705,
-    "current_percentile": 96.7,
+    "n_samples": 5374,
+    "current_value_pct": 33.638,
+    "current_percentile": 97.2,
     "data": [
       {
         "date": "2005-01-03",
@@ -2755,763 +2755,763 @@
       },
       {
         "date": "2007-01-02",
-        "top10_pct_of_market": 9.94,
-        "percentile": 0.2
+        "top10_pct_of_market": 10.64,
+        "percentile": 8.1
       },
       {
         "date": "2007-01-03",
-        "top10_pct_of_market": 9.864,
-        "percentile": 0.2
+        "top10_pct_of_market": 10.627,
+        "percentile": 7.8
       },
       {
         "date": "2007-01-04",
-        "top10_pct_of_market": 10.053,
-        "percentile": 0.6
+        "top10_pct_of_market": 10.782,
+        "percentile": 13.5
       },
       {
         "date": "2007-01-05",
-        "top10_pct_of_market": 9.766,
-        "percentile": 0.2
+        "top10_pct_of_market": 10.49,
+        "percentile": 4.8
       },
       {
         "date": "2007-01-08",
-        "top10_pct_of_market": 9.467,
-        "percentile": 0.2
+        "top10_pct_of_market": 10.11,
+        "percentile": 0.6
       },
       {
         "date": "2007-01-09",
-        "top10_pct_of_market": 9.558,
-        "percentile": 0.4
+        "top10_pct_of_market": 10.187,
+        "percentile": 1.2
       },
       {
         "date": "2007-01-10",
-        "top10_pct_of_market": 9.523,
-        "percentile": 0.4
+        "top10_pct_of_market": 10.116,
+        "percentile": 0.8
       },
       {
         "date": "2007-01-11",
-        "top10_pct_of_market": 9.417,
+        "top10_pct_of_market": 9.943,
         "percentile": 0.2
       },
       {
         "date": "2007-01-12",
-        "top10_pct_of_market": 9.587,
-        "percentile": 1.0
+        "top10_pct_of_market": 10.097,
+        "percentile": 0.4
       },
       {
         "date": "2007-01-15",
-        "top10_pct_of_market": 9.618,
-        "percentile": 1.2
-      },
-      {
-        "date": "2007-01-16",
-        "top10_pct_of_market": 9.559,
+        "top10_pct_of_market": 10.109,
         "percentile": 1.0
       },
       {
+        "date": "2007-01-16",
+        "top10_pct_of_market": 10.041,
+        "percentile": 0.4
+      },
+      {
         "date": "2007-01-17",
-        "top10_pct_of_market": 9.515,
-        "percentile": 0.6
+        "top10_pct_of_market": 10.025,
+        "percentile": 0.4
       },
       {
         "date": "2007-01-18",
-        "top10_pct_of_market": 9.514,
-        "percentile": 0.6
+        "top10_pct_of_market": 10.048,
+        "percentile": 0.8
       },
       {
         "date": "2007-01-19",
-        "top10_pct_of_market": 9.401,
+        "top10_pct_of_market": 9.921,
         "percentile": 0.2
       },
       {
         "date": "2007-01-22",
-        "top10_pct_of_market": 9.311,
+        "top10_pct_of_market": 9.855,
         "percentile": 0.2
       },
       {
         "date": "2007-01-23",
-        "top10_pct_of_market": 9.209,
-        "percentile": 0.2
+        "top10_pct_of_market": 9.888,
+        "percentile": 0.4
       },
       {
         "date": "2007-01-24",
-        "top10_pct_of_market": 9.328,
-        "percentile": 0.6
+        "top10_pct_of_market": 9.937,
+        "percentile": 0.8
       },
       {
         "date": "2007-01-25",
-        "top10_pct_of_market": 9.446,
+        "top10_pct_of_market": 9.979,
         "percentile": 1.2
       },
       {
         "date": "2007-01-26",
-        "top10_pct_of_market": 9.364,
+        "top10_pct_of_market": 9.927,
         "percentile": 0.8
       },
       {
         "date": "2007-01-29",
-        "top10_pct_of_market": 9.268,
-        "percentile": 0.4
+        "top10_pct_of_market": 9.799,
+        "percentile": 0.2
       },
       {
         "date": "2007-01-30",
-        "top10_pct_of_market": 9.331,
-        "percentile": 1.0
+        "top10_pct_of_market": 9.885,
+        "percentile": 0.6
       },
       {
         "date": "2007-01-31",
-        "top10_pct_of_market": 9.446,
+        "top10_pct_of_market": 9.979,
         "percentile": 1.7
       },
       {
         "date": "2007-02-01",
-        "top10_pct_of_market": 9.504,
-        "percentile": 2.3
+        "top10_pct_of_market": 10.003,
+        "percentile": 2.1
       },
       {
         "date": "2007-02-02",
-        "top10_pct_of_market": 9.594,
-        "percentile": 3.7
+        "top10_pct_of_market": 10.051,
+        "percentile": 2.9
       },
       {
         "date": "2007-02-05",
-        "top10_pct_of_market": 9.438,
-        "percentile": 1.7
+        "top10_pct_of_market": 9.985,
+        "percentile": 2.1
       },
       {
         "date": "2007-02-06",
-        "top10_pct_of_market": 9.537,
+        "top10_pct_of_market": 10.073,
         "percentile": 3.3
       },
       {
         "date": "2007-02-07",
-        "top10_pct_of_market": 9.349,
-        "percentile": 1.1
+        "top10_pct_of_market": 9.894,
+        "percentile": 1.0
       },
       {
         "date": "2007-02-08",
-        "top10_pct_of_market": 9.379,
-        "percentile": 1.5
-      },
-      {
-        "date": "2007-02-09",
-        "top10_pct_of_market": 9.334,
+        "top10_pct_of_market": 9.904,
         "percentile": 1.1
       },
       {
+        "date": "2007-02-09",
+        "top10_pct_of_market": 9.878,
+        "percentile": 0.6
+      },
+      {
         "date": "2007-02-12",
-        "top10_pct_of_market": 9.379,
-        "percentile": 1.9
+        "top10_pct_of_market": 9.873,
+        "percentile": 0.6
       },
       {
         "date": "2007-02-13",
-        "top10_pct_of_market": 9.45,
-        "percentile": 3.0
+        "top10_pct_of_market": 9.87,
+        "percentile": 0.6
       },
       {
         "date": "2007-02-14",
-        "top10_pct_of_market": 9.492,
-        "percentile": 3.4
+        "top10_pct_of_market": 9.912,
+        "percentile": 1.9
       },
       {
         "date": "2007-02-26",
-        "top10_pct_of_market": 9.476,
-        "percentile": 3.4
+        "top10_pct_of_market": 9.967,
+        "percentile": 2.8
       },
       {
         "date": "2007-02-27",
-        "top10_pct_of_market": 9.441,
-        "percentile": 2.6
+        "top10_pct_of_market": 9.928,
+        "percentile": 2.5
       },
       {
         "date": "2007-03-01",
-        "top10_pct_of_market": 9.595,
-        "percentile": 5.7
+        "top10_pct_of_market": 10.039,
+        "percentile": 4.2
       },
       {
         "date": "2007-03-02",
-        "top10_pct_of_market": 9.71,
-        "percentile": 6.0
+        "top10_pct_of_market": 10.079,
+        "percentile": 5.1
       },
       {
         "date": "2007-03-03",
         "top10_pct_of_market": 9.975,
-        "percentile": 6.8
-      },
-      {
-        "date": "2007-03-05",
-        "top10_pct_of_market": 9.349,
-        "percentile": 1.3
-      },
-      {
-        "date": "2007-03-06",
-        "top10_pct_of_market": 9.499,
-        "percentile": 4.1
-      },
-      {
-        "date": "2007-03-07",
-        "top10_pct_of_market": 9.51,
-        "percentile": 4.5
-      },
-      {
-        "date": "2007-03-08",
-        "top10_pct_of_market": 9.779,
-        "percentile": 6.9
-      },
-      {
-        "date": "2007-03-09",
-        "top10_pct_of_market": 9.67,
-        "percentile": 6.5
-      },
-      {
-        "date": "2007-03-12",
-        "top10_pct_of_market": 9.672,
-        "percentile": 6.7
-      },
-      {
-        "date": "2007-03-13",
-        "top10_pct_of_market": 9.658,
-        "percentile": 6.5
-      },
-      {
-        "date": "2007-03-14",
-        "top10_pct_of_market": 9.537,
-        "percentile": 5.4
-      },
-      {
-        "date": "2007-03-15",
-        "top10_pct_of_market": 9.645,
-        "percentile": 6.7
-      },
-      {
-        "date": "2007-03-16",
-        "top10_pct_of_market": 9.581,
-        "percentile": 5.9
-      },
-      {
-        "date": "2007-03-19",
-        "top10_pct_of_market": 9.703,
-        "percentile": 7.6
-      },
-      {
-        "date": "2007-03-20",
-        "top10_pct_of_market": 9.607,
-        "percentile": 6.6
-      },
-      {
-        "date": "2007-03-21",
-        "top10_pct_of_market": 9.553,
-        "percentile": 5.5
-      },
-      {
-        "date": "2007-03-22",
-        "top10_pct_of_market": 9.542,
-        "percentile": 5.5
-      },
-      {
-        "date": "2007-03-23",
-        "top10_pct_of_market": 9.616,
-        "percentile": 7.1
-      },
-      {
-        "date": "2007-03-26",
-        "top10_pct_of_market": 9.657,
-        "percentile": 7.7
-      },
-      {
-        "date": "2007-03-27",
-        "top10_pct_of_market": 9.609,
-        "percentile": 7.1
-      },
-      {
-        "date": "2007-03-28",
-        "top10_pct_of_market": 9.581,
-        "percentile": 6.2
-      },
-      {
-        "date": "2007-03-29",
-        "top10_pct_of_market": 9.719,
-        "percentile": 9.1
-      },
-      {
-        "date": "2007-03-30",
-        "top10_pct_of_market": 9.609,
-        "percentile": 7.4
-      },
-      {
-        "date": "2007-04-02",
-        "top10_pct_of_market": 9.459,
-        "percentile": 3.4
-      },
-      {
-        "date": "2007-04-03",
-        "top10_pct_of_market": 9.447,
         "percentile": 3.2
       },
       {
+        "date": "2007-03-05",
+        "top10_pct_of_market": 9.669,
+        "percentile": 0.2
+      },
+      {
+        "date": "2007-03-06",
+        "top10_pct_of_market": 9.838,
+        "percentile": 0.6
+      },
+      {
+        "date": "2007-03-07",
+        "top10_pct_of_market": 9.912,
+        "percentile": 2.2
+      },
+      {
+        "date": "2007-03-08",
+        "top10_pct_of_market": 10.166,
+        "percentile": 7.5
+      },
+      {
+        "date": "2007-03-09",
+        "top10_pct_of_market": 10.037,
+        "percentile": 4.8
+      },
+      {
+        "date": "2007-03-12",
+        "top10_pct_of_market": 10.075,
+        "percentile": 5.9
+      },
+      {
+        "date": "2007-03-13",
+        "top10_pct_of_market": 10.076,
+        "percentile": 6.1
+      },
+      {
+        "date": "2007-03-14",
+        "top10_pct_of_market": 9.932,
+        "percentile": 3.1
+      },
+      {
+        "date": "2007-03-15",
+        "top10_pct_of_market": 10.047,
+        "percentile": 5.5
+      },
+      {
+        "date": "2007-03-16",
+        "top10_pct_of_market": 9.956,
+        "percentile": 3.7
+      },
+      {
+        "date": "2007-03-19",
+        "top10_pct_of_market": 10.073,
+        "percentile": 6.3
+      },
+      {
+        "date": "2007-03-20",
+        "top10_pct_of_market": 9.981,
+        "percentile": 4.6
+      },
+      {
+        "date": "2007-03-21",
+        "top10_pct_of_market": 9.956,
+        "percentile": 3.7
+      },
+      {
+        "date": "2007-03-22",
+        "top10_pct_of_market": 9.94,
+        "percentile": 3.5
+      },
+      {
+        "date": "2007-03-23",
+        "top10_pct_of_market": 10.032,
+        "percentile": 5.7
+      },
+      {
+        "date": "2007-03-26",
+        "top10_pct_of_market": 10.087,
+        "percentile": 7.8
+      },
+      {
+        "date": "2007-03-27",
+        "top10_pct_of_market": 10.024,
+        "percentile": 5.5
+      },
+      {
+        "date": "2007-03-28",
+        "top10_pct_of_market": 9.993,
+        "percentile": 5.3
+      },
+      {
+        "date": "2007-03-29",
+        "top10_pct_of_market": 10.13,
+        "percentile": 9.4
+      },
+      {
+        "date": "2007-03-30",
+        "top10_pct_of_market": 10.035,
+        "percentile": 6.2
+      },
+      {
+        "date": "2007-04-02",
+        "top10_pct_of_market": 9.888,
+        "percentile": 1.6
+      },
+      {
+        "date": "2007-04-03",
+        "top10_pct_of_market": 9.872,
+        "percentile": 1.1
+      },
+      {
         "date": "2007-04-04",
-        "top10_pct_of_market": 9.187,
+        "top10_pct_of_market": 9.627,
         "percentile": 0.2
       },
       {
         "date": "2007-04-09",
-        "top10_pct_of_market": 8.849,
+        "top10_pct_of_market": 9.322,
         "percentile": 0.2
       },
       {
         "date": "2007-04-10",
-        "top10_pct_of_market": 8.734,
+        "top10_pct_of_market": 9.166,
         "percentile": 0.2
       },
       {
         "date": "2007-04-11",
-        "top10_pct_of_market": 8.89,
-        "percentile": 0.5
+        "top10_pct_of_market": 9.285,
+        "percentile": 0.4
       },
       {
         "date": "2007-04-12",
-        "top10_pct_of_market": 8.896,
-        "percentile": 0.7
+        "top10_pct_of_market": 9.244,
+        "percentile": 0.4
       },
       {
         "date": "2007-04-13",
-        "top10_pct_of_market": 8.698,
+        "top10_pct_of_market": 9.105,
         "percentile": 0.2
       },
       {
         "date": "2007-04-14",
         "top10_pct_of_market": 9.107,
-        "percentile": 1.1
+        "percentile": 0.4
       },
       {
         "date": "2007-04-16",
-        "top10_pct_of_market": 8.67,
+        "top10_pct_of_market": 9.07,
         "percentile": 0.2
       },
       {
         "date": "2007-04-17",
-        "top10_pct_of_market": 8.58,
+        "top10_pct_of_market": 8.99,
         "percentile": 0.2
       },
       {
         "date": "2007-04-18",
-        "top10_pct_of_market": 8.64,
+        "top10_pct_of_market": 9.054,
         "percentile": 0.4
       },
       {
         "date": "2007-04-19",
-        "top10_pct_of_market": 8.559,
+        "top10_pct_of_market": 8.971,
         "percentile": 0.2
       },
       {
         "date": "2007-04-20",
-        "top10_pct_of_market": 8.693,
-        "percentile": 0.9
+        "top10_pct_of_market": 9.13,
+        "percentile": 1.2
       },
       {
         "date": "2007-04-23",
         "top10_pct_of_market": 9.12,
-        "percentile": 2.1
+        "percentile": 1.2
       },
       {
         "date": "2007-04-24",
         "top10_pct_of_market": 9.144,
-        "percentile": 2.3
+        "percentile": 1.6
       },
       {
         "date": "2007-04-25",
         "top10_pct_of_market": 9.021,
-        "percentile": 1.9
+        "percentile": 0.5
       },
       {
         "date": "2007-04-26",
         "top10_pct_of_market": 8.974,
-        "percentile": 1.9
+        "percentile": 0.4
       },
       {
         "date": "2007-04-27",
         "top10_pct_of_market": 8.91,
-        "percentile": 1.9
+        "percentile": 0.2
       },
       {
         "date": "2007-04-30",
         "top10_pct_of_market": 8.992,
-        "percentile": 2.3
+        "percentile": 0.9
       },
       {
         "date": "2007-05-02",
         "top10_pct_of_market": 8.901,
-        "percentile": 1.9
+        "percentile": 0.2
       },
       {
         "date": "2007-05-03",
         "top10_pct_of_market": 8.907,
-        "percentile": 2.1
+        "percentile": 0.3
       },
       {
         "date": "2007-05-04",
         "top10_pct_of_market": 9.107,
-        "percentile": 3.1
+        "percentile": 2.3
       },
       {
         "date": "2007-05-07",
         "top10_pct_of_market": 9.344,
-        "percentile": 4.9
+        "percentile": 3.6
       },
       {
         "date": "2007-05-08",
         "top10_pct_of_market": 9.29,
-        "percentile": 4.2
+        "percentile": 3.5
       },
       {
         "date": "2007-05-09",
         "top10_pct_of_market": 9.224,
-        "percentile": 4.0
+        "percentile": 3.1
       },
       {
         "date": "2007-05-10",
         "top10_pct_of_market": 9.351,
-        "percentile": 5.7
+        "percentile": 4.1
       },
       {
         "date": "2007-05-11",
         "top10_pct_of_market": 9.346,
-        "percentile": 5.3
+        "percentile": 4.1
       },
       {
         "date": "2007-05-14",
         "top10_pct_of_market": 9.38,
-        "percentile": 6.5
+        "percentile": 4.5
       },
       {
         "date": "2007-05-15",
         "top10_pct_of_market": 9.453,
-        "percentile": 8.1
+        "percentile": 4.6
       },
       {
         "date": "2007-05-16",
         "top10_pct_of_market": 9.631,
-        "percentile": 12.7
+        "percentile": 5.0
       },
       {
         "date": "2007-05-17",
         "top10_pct_of_market": 9.695,
-        "percentile": 13.7
+        "percentile": 5.3
       },
       {
         "date": "2007-05-18",
         "top10_pct_of_market": 9.801,
-        "percentile": 14.7
+        "percentile": 5.6
       },
       {
         "date": "2007-05-21",
         "top10_pct_of_market": 9.73,
-        "percentile": 14.3
+        "percentile": 5.5
       },
       {
         "date": "2007-05-22",
         "top10_pct_of_market": 9.863,
-        "percentile": 15.0
+        "percentile": 6.3
       },
       {
         "date": "2007-05-23",
         "top10_pct_of_market": 9.721,
-        "percentile": 14.3
+        "percentile": 5.4
       },
       {
         "date": "2007-05-24",
         "top10_pct_of_market": 9.936,
-        "percentile": 15.4
+        "percentile": 9.2
       },
       {
         "date": "2007-05-25",
         "top10_pct_of_market": 10.037,
-        "percentile": 15.9
+        "percentile": 12.2
       },
       {
         "date": "2007-05-28",
         "top10_pct_of_market": 9.991,
-        "percentile": 15.9
+        "percentile": 11.2
       },
       {
         "date": "2007-05-29",
         "top10_pct_of_market": 9.953,
-        "percentile": 15.7
+        "percentile": 9.8
       },
       {
         "date": "2007-05-30",
         "top10_pct_of_market": 9.969,
-        "percentile": 15.9
+        "percentile": 10.5
       },
       {
         "date": "2007-05-31",
         "top10_pct_of_market": 10.192,
-        "percentile": 17.3
+        "percentile": 16.7
       },
       {
         "date": "2007-06-01",
         "top10_pct_of_market": 10.299,
-        "percentile": 18.7
+        "percentile": 18.0
       },
       {
         "date": "2007-06-04",
         "top10_pct_of_market": 10.444,
-        "percentile": 20.1
+        "percentile": 19.5
       },
       {
         "date": "2007-06-05",
         "top10_pct_of_market": 10.375,
-        "percentile": 19.4
+        "percentile": 18.8
       },
       {
         "date": "2007-06-06",
         "top10_pct_of_market": 10.374,
-        "percentile": 19.4
+        "percentile": 18.7
       },
       {
         "date": "2007-06-07",
         "top10_pct_of_market": 10.588,
-        "percentile": 22.7
+        "percentile": 22.2
       },
       {
         "date": "2007-06-08",
         "top10_pct_of_market": 10.469,
-        "percentile": 20.8
+        "percentile": 20.2
       },
       {
         "date": "2007-06-11",
         "top10_pct_of_market": 10.463,
-        "percentile": 20.8
+        "percentile": 20.1
       },
       {
         "date": "2007-06-12",
         "top10_pct_of_market": 10.581,
-        "percentile": 22.9
+        "percentile": 22.4
       },
       {
         "date": "2007-06-13",
         "top10_pct_of_market": 10.525,
-        "percentile": 21.9
+        "percentile": 21.4
       },
       {
         "date": "2007-06-14",
         "top10_pct_of_market": 10.522,
-        "percentile": 21.9
+        "percentile": 21.4
       },
       {
         "date": "2007-06-15",
         "top10_pct_of_market": 10.585,
-        "percentile": 23.3
+        "percentile": 22.8
       },
       {
         "date": "2007-06-20",
         "top10_pct_of_market": 10.319,
-        "percentile": 18.5
+        "percentile": 17.8
       },
       {
         "date": "2007-06-21",
         "top10_pct_of_market": 10.484,
-        "percentile": 21.4
+        "percentile": 20.8
       },
       {
         "date": "2007-06-22",
         "top10_pct_of_market": 10.646,
-        "percentile": 25.2
+        "percentile": 25.0
       },
       {
         "date": "2007-06-23",
         "top10_pct_of_market": 10.511,
-        "percentile": 22.0
+        "percentile": 21.5
       },
       {
         "date": "2007-06-25",
         "top10_pct_of_market": 10.349,
-        "percentile": 19.2
+        "percentile": 18.5
       },
       {
         "date": "2007-06-26",
         "top10_pct_of_market": 10.144,
-        "percentile": 16.5
+        "percentile": 15.5
       },
       {
         "date": "2007-06-27",
         "top10_pct_of_market": 10.058,
-        "percentile": 16.2
+        "percentile": 13.4
       },
       {
         "date": "2007-06-28",
         "top10_pct_of_market": 10.005,
-        "percentile": 15.8
+        "percentile": 11.6
       },
       {
         "date": "2007-06-29",
         "top10_pct_of_market": 10.034,
-        "percentile": 16.0
+        "percentile": 12.2
       },
       {
         "date": "2007-07-02",
         "top10_pct_of_market": 9.975,
-        "percentile": 15.4
+        "percentile": 10.2
       },
       {
         "date": "2007-07-03",
         "top10_pct_of_market": 10.086,
-        "percentile": 16.7
+        "percentile": 14.8
       },
       {
         "date": "2007-07-04",
         "top10_pct_of_market": 9.971,
-        "percentile": 15.4
+        "percentile": 10.2
       },
       {
         "date": "2007-07-05",
         "top10_pct_of_market": 9.98,
-        "percentile": 15.9
+        "percentile": 11.0
       },
       {
         "date": "2007-07-06",
         "top10_pct_of_market": 9.863,
-        "percentile": 14.4
+        "percentile": 6.1
       },
       {
         "date": "2007-07-09",
         "top10_pct_of_market": 10.041,
-        "percentile": 16.8
+        "percentile": 13.5
       },
       {
         "date": "2007-07-10",
         "top10_pct_of_market": 9.837,
-        "percentile": 14.3
+        "percentile": 5.8
       },
       {
         "date": "2007-07-11",
         "top10_pct_of_market": 9.674,
-        "percentile": 12.9
+        "percentile": 5.0
       },
       {
         "date": "2007-07-12",
         "top10_pct_of_market": 9.713,
-        "percentile": 13.5
+        "percentile": 5.3
       },
       {
         "date": "2007-07-13",
         "top10_pct_of_market": 9.648,
-        "percentile": 12.2
+        "percentile": 4.8
       },
       {
         "date": "2007-07-16",
         "top10_pct_of_market": 9.3,
-        "percentile": 4.2
+        "percentile": 3.5
       },
       {
         "date": "2007-07-17",
         "top10_pct_of_market": 9.43,
-        "percentile": 6.7
+        "percentile": 4.5
       },
       {
         "date": "2007-07-18",
         "top10_pct_of_market": 9.085,
-        "percentile": 2.7
+        "percentile": 1.8
       },
       {
         "date": "2007-07-19",
         "top10_pct_of_market": 9.191,
-        "percentile": 3.7
+        "percentile": 3.0
       },
       {
         "date": "2007-07-20",
         "top10_pct_of_market": 9.29,
-        "percentile": 4.5
+        "percentile": 3.8
       },
       {
         "date": "2007-07-23",
         "top10_pct_of_market": 9.328,
-        "percentile": 4.9
+        "percentile": 4.3
       },
       {
         "date": "2007-07-24",
         "top10_pct_of_market": 8.893,
-        "percentile": 1.6
+        "percentile": 0.2
       },
       {
         "date": "2007-07-25",
         "top10_pct_of_market": 9.488,
-        "percentile": 9.2
+        "percentile": 5.5
       },
       {
         "date": "2007-07-26",
         "top10_pct_of_market": 9.383,
-        "percentile": 7.1
+        "percentile": 5.2
       },
       {
         "date": "2007-07-27",
         "top10_pct_of_market": 9.548,
-        "percentile": 11.0
+        "percentile": 5.8
       },
       {
         "date": "2007-07-30",
         "top10_pct_of_market": 9.536,
-        "percentile": 10.6
+        "percentile": 5.8
       },
       {
         "date": "2007-07-31",
         "top10_pct_of_market": 9.405,
-        "percentile": 7.4
+        "percentile": 5.3
       },
       {
         "date": "2007-08-01",
         "top10_pct_of_market": 9.194,
-        "percentile": 3.9
+        "percentile": 3.3
       },
       {
         "date": "2007-08-02",
         "top10_pct_of_market": 9.448,
-        "percentile": 8.8
+        "percentile": 5.8
       },
       {
         "date": "2007-08-03",
         "top10_pct_of_market": 9.087,
-        "percentile": 3.0
+        "percentile": 2.0
       },
       {
         "date": "2007-08-06",
         "top10_pct_of_market": 8.976,
-        "percentile": 2.5
+        "percentile": 1.1
       },
       {
         "date": "2007-08-07",
         "top10_pct_of_market": 8.79,
-        "percentile": 1.2
+        "percentile": 0.2
       },
       {
         "date": "2007-08-08",
         "top10_pct_of_market": 9.004,
-        "percentile": 3.0
+        "percentile": 1.7
       },
       {
         "date": "2007-08-09",
         "top10_pct_of_market": 9.099,
-        "percentile": 3.6
+        "percentile": 2.6
       },
       {
         "date": "2007-08-10",
         "top10_pct_of_market": 9.107,
-        "percentile": 3.7
+        "percentile": 3.0
       },
       {
         "date": "2007-08-13",
         "top10_pct_of_market": 9.174,
-        "percentile": 4.5
+        "percentile": 4.0
       },
       {
         "date": "2007-08-14",
         "top10_pct_of_market": 8.894,
-        "percentile": 1.9
+        "percentile": 0.5
       },
       {
         "date": "2007-08-15",
         "top10_pct_of_market": 8.592,
-        "percentile": 0.5
+        "percentile": 0.2
       },
       {
         "date": "2007-08-16",
@@ -3521,202 +3521,202 @@
       {
         "date": "2007-08-17",
         "top10_pct_of_market": 8.634,
-        "percentile": 0.8
+        "percentile": 0.5
       },
       {
         "date": "2007-08-20",
         "top10_pct_of_market": 8.865,
-        "percentile": 2.0
+        "percentile": 0.8
       },
       {
         "date": "2007-08-21",
         "top10_pct_of_market": 8.761,
-        "percentile": 1.7
+        "percentile": 0.6
       },
       {
         "date": "2007-08-22",
         "top10_pct_of_market": 8.886,
-        "percentile": 2.3
+        "percentile": 1.1
       },
       {
         "date": "2007-08-23",
         "top10_pct_of_market": 9.024,
-        "percentile": 4.3
+        "percentile": 3.1
       },
       {
         "date": "2007-08-24",
         "top10_pct_of_market": 9.022,
-        "percentile": 4.3
+        "percentile": 3.1
       },
       {
         "date": "2007-08-27",
         "top10_pct_of_market": 8.92,
-        "percentile": 3.5
+        "percentile": 2.0
       },
       {
         "date": "2007-08-28",
         "top10_pct_of_market": 9.034,
-        "percentile": 4.7
+        "percentile": 3.5
       },
       {
         "date": "2007-08-29",
         "top10_pct_of_market": 9.027,
-        "percentile": 4.7
+        "percentile": 3.5
       },
       {
         "date": "2007-08-30",
         "top10_pct_of_market": 9.04,
-        "percentile": 5.0
+        "percentile": 3.8
       },
       {
         "date": "2007-08-31",
         "top10_pct_of_market": 9.345,
-        "percentile": 8.8
+        "percentile": 7.7
       },
       {
         "date": "2007-09-03",
         "top10_pct_of_market": 9.344,
-        "percentile": 8.8
+        "percentile": 7.7
       },
       {
         "date": "2007-09-04",
         "top10_pct_of_market": 9.359,
-        "percentile": 9.7
+        "percentile": 8.3
       },
       {
         "date": "2007-09-05",
         "top10_pct_of_market": 9.467,
-        "percentile": 12.5
+        "percentile": 9.4
       },
       {
         "date": "2007-09-06",
         "top10_pct_of_market": 9.782,
-        "percentile": 19.5
+        "percentile": 11.3
       },
       {
         "date": "2007-09-07",
         "top10_pct_of_market": 9.908,
-        "percentile": 20.3
+        "percentile": 13.9
       },
       {
         "date": "2007-09-10",
         "top10_pct_of_market": 10.007,
-        "percentile": 22.0
+        "percentile": 18.0
       },
       {
         "date": "2007-09-11",
         "top10_pct_of_market": 9.994,
-        "percentile": 21.8
+        "percentile": 17.7
       },
       {
         "date": "2007-09-12",
         "top10_pct_of_market": 10.059,
-        "percentile": 22.9
+        "percentile": 20.4
       },
       {
         "date": "2007-09-13",
         "top10_pct_of_market": 9.976,
-        "percentile": 21.4
+        "percentile": 16.6
       },
       {
         "date": "2007-09-14",
         "top10_pct_of_market": 10.029,
-        "percentile": 22.3
+        "percentile": 18.7
       },
       {
         "date": "2007-09-17",
         "top10_pct_of_market": 9.753,
-        "percentile": 19.0
+        "percentile": 11.2
       },
       {
         "date": "2007-09-19",
         "top10_pct_of_market": 9.49,
-        "percentile": 13.0
+        "percentile": 9.5
       },
       {
         "date": "2007-09-20",
         "top10_pct_of_market": 9.618,
-        "percentile": 16.8
+        "percentile": 10.0
       },
       {
         "date": "2007-09-21",
         "top10_pct_of_market": 9.933,
-        "percentile": 20.7
+        "percentile": 15.2
       },
       {
         "date": "2007-09-26",
         "top10_pct_of_market": 10.085,
-        "percentile": 23.7
+        "percentile": 22.0
       },
       {
         "date": "2007-09-27",
         "top10_pct_of_market": 10.252,
-        "percentile": 25.2
+        "percentile": 24.6
       },
       {
         "date": "2007-09-28",
         "top10_pct_of_market": 10.095,
-        "percentile": 24.0
+        "percentile": 22.3
       },
       {
         "date": "2007-09-29",
         "top10_pct_of_market": 10.243,
-        "percentile": 25.3
+        "percentile": 24.7
       },
       {
         "date": "2007-10-01",
         "top10_pct_of_market": 9.974,
-        "percentile": 21.4
+        "percentile": 16.7
       },
       {
         "date": "2007-10-02",
         "top10_pct_of_market": 10.11,
-        "percentile": 24.4
+        "percentile": 23.3
       },
       {
         "date": "2007-10-03",
         "top10_pct_of_market": 9.939,
-        "percentile": 20.7
+        "percentile": 15.4
       },
       {
         "date": "2007-10-04",
         "top10_pct_of_market": 10.087,
-        "percentile": 24.1
+        "percentile": 22.5
       },
       {
         "date": "2007-10-05",
         "top10_pct_of_market": 10.119,
-        "percentile": 24.8
+        "percentile": 23.8
       },
       {
         "date": "2007-10-08",
         "top10_pct_of_market": 10.248,
-        "percentile": 25.9
+        "percentile": 25.3
       },
       {
         "date": "2007-10-09",
         "top10_pct_of_market": 10.363,
-        "percentile": 27.9
+        "percentile": 27.3
       },
       {
         "date": "2007-10-11",
         "top10_pct_of_market": 10.475,
-        "percentile": 29.8
+        "percentile": 29.2
       },
       {
         "date": "2007-10-12",
         "top10_pct_of_market": 10.331,
-        "percentile": 27.6
+        "percentile": 27.0
       },
       {
         "date": "2007-10-15",
         "top10_pct_of_market": 10.344,
-        "percentile": 27.8
+        "percentile": 27.2
       },
       {
         "date": "2007-10-16",
         "top10_pct_of_market": 10.734,
-        "percentile": 35.9
+        "percentile": 35.8
       },
       {
         "date": "2007-10-17",
@@ -6401,632 +6401,632 @@
       {
         "date": "2009-12-08",
         "top10_pct_of_market": 10.547,
-        "percentile": 17.6
+        "percentile": 17.4
       },
       {
         "date": "2009-12-09",
         "top10_pct_of_market": 10.499,
-        "percentile": 17.3
+        "percentile": 17.0
       },
       {
         "date": "2009-12-10",
         "top10_pct_of_market": 10.184,
-        "percentile": 14.1
+        "percentile": 13.7
       },
       {
         "date": "2009-12-11",
         "top10_pct_of_market": 10.169,
-        "percentile": 14.1
+        "percentile": 13.7
       },
       {
         "date": "2009-12-14",
         "top10_pct_of_market": 10.065,
-        "percentile": 13.2
+        "percentile": 11.8
       },
       {
         "date": "2009-12-15",
         "top10_pct_of_market": 10.025,
-        "percentile": 12.6
+        "percentile": 10.7
       },
       {
         "date": "2009-12-16",
         "top10_pct_of_market": 9.963,
-        "percentile": 11.7
+        "percentile": 9.0
       },
       {
         "date": "2009-12-17",
         "top10_pct_of_market": 9.984,
-        "percentile": 12.3
+        "percentile": 10.0
       },
       {
         "date": "2009-12-18",
         "top10_pct_of_market": 9.969,
-        "percentile": 11.8
+        "percentile": 9.2
       },
       {
         "date": "2009-12-21",
         "top10_pct_of_market": 10.056,
-        "percentile": 13.3
+        "percentile": 11.9
       },
       {
         "date": "2009-12-22",
         "top10_pct_of_market": 10.023,
-        "percentile": 12.8
+        "percentile": 10.7
       },
       {
         "date": "2009-12-23",
         "top10_pct_of_market": 10.027,
-        "percentile": 12.9
+        "percentile": 11.0
       },
       {
         "date": "2009-12-24",
         "top10_pct_of_market": 9.797,
-        "percentile": 10.8
+        "percentile": 6.4
       },
       {
         "date": "2009-12-25",
         "top10_pct_of_market": 9.681,
-        "percentile": 9.9
+        "percentile": 5.9
       },
       {
         "date": "2009-12-28",
         "top10_pct_of_market": 9.747,
-        "percentile": 10.5
+        "percentile": 6.3
       },
       {
         "date": "2009-12-29",
         "top10_pct_of_market": 9.643,
-        "percentile": 9.3
+        "percentile": 5.6
       },
       {
         "date": "2009-12-30",
         "top10_pct_of_market": 9.634,
-        "percentile": 9.3
+        "percentile": 5.6
       },
       {
         "date": "2009-12-31",
         "top10_pct_of_market": 9.55,
-        "percentile": 8.1
+        "percentile": 5.4
       },
       {
         "date": "2010-01-04",
         "top10_pct_of_market": 9.513,
-        "percentile": 7.4
+        "percentile": 5.2
       },
       {
         "date": "2010-01-05",
         "top10_pct_of_market": 9.25,
-        "percentile": 3.9
+        "percentile": 3.5
       },
       {
         "date": "2010-01-06",
         "top10_pct_of_market": 9.479,
-        "percentile": 7.0
+        "percentile": 5.1
       },
       {
         "date": "2010-01-07",
         "top10_pct_of_market": 9.167,
-        "percentile": 3.4
+        "percentile": 3.1
       },
       {
         "date": "2010-01-08",
         "top10_pct_of_market": 9.121,
-        "percentile": 3.3
+        "percentile": 2.9
       },
       {
         "date": "2010-01-11",
         "top10_pct_of_market": 8.995,
-        "percentile": 2.2
+        "percentile": 1.5
       },
       {
         "date": "2010-01-12",
         "top10_pct_of_market": 9.064,
-        "percentile": 2.8
+        "percentile": 2.2
       },
       {
         "date": "2010-01-13",
         "top10_pct_of_market": 8.931,
-        "percentile": 1.9
+        "percentile": 1.1
       },
       {
         "date": "2010-01-14",
         "top10_pct_of_market": 8.956,
-        "percentile": 2.0
+        "percentile": 1.2
       },
       {
         "date": "2010-01-15",
         "top10_pct_of_market": 8.994,
-        "percentile": 2.3
+        "percentile": 1.7
       },
       {
         "date": "2010-01-18",
         "top10_pct_of_market": 8.906,
-        "percentile": 1.7
+        "percentile": 0.9
       },
       {
         "date": "2010-01-19",
         "top10_pct_of_market": 8.871,
-        "percentile": 1.2
+        "percentile": 0.6
       },
       {
         "date": "2010-01-20",
         "top10_pct_of_market": 8.858,
-        "percentile": 1.1
+        "percentile": 0.5
       },
       {
         "date": "2010-01-21",
         "top10_pct_of_market": 8.9,
-        "percentile": 1.8
+        "percentile": 1.0
       },
       {
         "date": "2010-01-22",
         "top10_pct_of_market": 9.102,
-        "percentile": 3.7
+        "percentile": 3.2
       },
       {
         "date": "2010-01-25",
         "top10_pct_of_market": 9.143,
-        "percentile": 4.1
+        "percentile": 3.8
       },
       {
         "date": "2010-01-26",
         "top10_pct_of_market": 8.991,
-        "percentile": 2.5
+        "percentile": 1.9
       },
       {
         "date": "2010-01-27",
         "top10_pct_of_market": 9.084,
-        "percentile": 3.5
+        "percentile": 3.0
       },
       {
         "date": "2010-01-28",
         "top10_pct_of_market": 9.319,
-        "percentile": 5.5
+        "percentile": 5.1
       },
       {
         "date": "2010-01-29",
         "top10_pct_of_market": 9.273,
-        "percentile": 5.2
+        "percentile": 4.8
       },
       {
         "date": "2010-02-01",
         "top10_pct_of_market": 9.254,
-        "percentile": 5.1
+        "percentile": 4.8
       },
       {
         "date": "2010-02-02",
         "top10_pct_of_market": 9.187,
-        "percentile": 4.7
+        "percentile": 4.4
       },
       {
         "date": "2010-02-03",
         "top10_pct_of_market": 9.427,
-        "percentile": 7.4
+        "percentile": 6.2
       },
       {
         "date": "2010-02-04",
         "top10_pct_of_market": 9.464,
-        "percentile": 8.2
+        "percentile": 6.6
       },
       {
         "date": "2010-02-05",
         "top10_pct_of_market": 9.254,
-        "percentile": 5.1
+        "percentile": 4.8
       },
       {
         "date": "2010-02-06",
         "top10_pct_of_market": 9.381,
-        "percentile": 7.1
+        "percentile": 6.2
       },
       {
         "date": "2010-02-08",
         "top10_pct_of_market": 9.552,
-        "percentile": 10.0
+        "percentile": 7.4
       },
       {
         "date": "2010-02-09",
         "top10_pct_of_market": 9.847,
-        "percentile": 13.2
+        "percentile": 9.1
       },
       {
         "date": "2010-02-10",
         "top10_pct_of_market": 9.907,
-        "percentile": 13.5
+        "percentile": 10.1
       },
       {
         "date": "2010-02-22",
         "top10_pct_of_market": 10.022,
-        "percentile": 15.2
+        "percentile": 13.1
       },
       {
         "date": "2010-02-23",
         "top10_pct_of_market": 10.069,
-        "percentile": 16.2
+        "percentile": 14.8
       },
       {
         "date": "2010-02-24",
         "top10_pct_of_market": 10.089,
-        "percentile": 16.5
+        "percentile": 15.6
       },
       {
         "date": "2010-02-25",
         "top10_pct_of_market": 10.08,
-        "percentile": 16.2
+        "percentile": 15.3
       },
       {
         "date": "2010-02-26",
         "top10_pct_of_market": 10.082,
-        "percentile": 16.3
+        "percentile": 15.4
       },
       {
         "date": "2010-03-01",
         "top10_pct_of_market": 10.158,
-        "percentile": 17.1
+        "percentile": 16.7
       },
       {
         "date": "2010-03-02",
         "top10_pct_of_market": 10.023,
-        "percentile": 15.2
+        "percentile": 13.1
       },
       {
         "date": "2010-03-03",
         "top10_pct_of_market": 10.004,
-        "percentile": 14.9
+        "percentile": 12.9
       },
       {
         "date": "2010-03-04",
         "top10_pct_of_market": 9.969,
-        "percentile": 14.1
+        "percentile": 11.6
       },
       {
         "date": "2010-03-05",
         "top10_pct_of_market": 10.126,
-        "percentile": 17.3
+        "percentile": 16.7
       },
       {
         "date": "2010-03-08",
         "top10_pct_of_market": 10.123,
-        "percentile": 17.2
+        "percentile": 16.7
       },
       {
         "date": "2010-03-09",
         "top10_pct_of_market": 10.019,
-        "percentile": 15.2
+        "percentile": 13.2
       },
       {
         "date": "2010-03-10",
         "top10_pct_of_market": 9.949,
-        "percentile": 13.9
+        "percentile": 11.1
       },
       {
         "date": "2010-03-11",
         "top10_pct_of_market": 9.887,
-        "percentile": 13.4
+        "percentile": 9.7
       },
       {
         "date": "2010-03-12",
         "top10_pct_of_market": 9.907,
-        "percentile": 13.5
+        "percentile": 10.1
       },
       {
         "date": "2010-03-15",
         "top10_pct_of_market": 9.786,
-        "percentile": 12.8
+        "percentile": 8.6
       },
       {
         "date": "2010-03-16",
         "top10_pct_of_market": 9.91,
-        "percentile": 13.7
+        "percentile": 10.4
       },
       {
         "date": "2010-03-17",
         "top10_pct_of_market": 10.034,
-        "percentile": 16.1
+        "percentile": 14.3
       },
       {
         "date": "2010-03-18",
         "top10_pct_of_market": 10.36,
-        "percentile": 19.8
+        "percentile": 19.5
       },
       {
         "date": "2010-03-19",
         "top10_pct_of_market": 10.528,
-        "percentile": 21.7
+        "percentile": 21.5
       },
       {
         "date": "2010-03-22",
         "top10_pct_of_market": 10.445,
-        "percentile": 20.5
+        "percentile": 20.2
       },
       {
         "date": "2010-03-23",
         "top10_pct_of_market": 10.516,
-        "percentile": 21.6
+        "percentile": 21.3
       },
       {
         "date": "2010-03-24",
         "top10_pct_of_market": 10.57,
-        "percentile": 22.2
+        "percentile": 21.9
       },
       {
         "date": "2010-03-25",
         "top10_pct_of_market": 10.637,
-        "percentile": 23.2
+        "percentile": 23.1
       },
       {
         "date": "2010-03-26",
         "top10_pct_of_market": 10.633,
-        "percentile": 23.1
+        "percentile": 23.0
       },
       {
         "date": "2010-03-29",
         "top10_pct_of_market": 10.58,
-        "percentile": 22.4
+        "percentile": 22.2
       },
       {
         "date": "2010-03-30",
         "top10_pct_of_market": 10.528,
-        "percentile": 21.7
+        "percentile": 21.5
       },
       {
         "date": "2010-03-31",
         "top10_pct_of_market": 10.528,
-        "percentile": 21.8
+        "percentile": 21.6
       },
       {
         "date": "2010-04-01",
         "top10_pct_of_market": 10.537,
-        "percentile": 21.9
+        "percentile": 21.7
       },
       {
         "date": "2010-04-02",
         "top10_pct_of_market": 10.502,
-        "percentile": 21.4
+        "percentile": 21.1
       },
       {
         "date": "2010-04-06",
         "top10_pct_of_market": 10.351,
-        "percentile": 19.7
+        "percentile": 19.4
       },
       {
         "date": "2010-04-07",
         "top10_pct_of_market": 10.341,
-        "percentile": 19.4
+        "percentile": 19.1
       },
       {
         "date": "2010-04-08",
         "top10_pct_of_market": 10.232,
-        "percentile": 18.3
+        "percentile": 18.0
       },
       {
         "date": "2010-04-09",
         "top10_pct_of_market": 10.398,
-        "percentile": 20.2
+        "percentile": 19.9
       },
       {
         "date": "2010-04-12",
         "top10_pct_of_market": 10.48,
-        "percentile": 21.1
+        "percentile": 20.8
       },
       {
         "date": "2010-04-13",
         "top10_pct_of_market": 10.344,
-        "percentile": 19.7
+        "percentile": 19.4
       },
       {
         "date": "2010-04-14",
         "top10_pct_of_market": 10.314,
-        "percentile": 19.0
+        "percentile": 18.7
       },
       {
         "date": "2010-04-15",
         "top10_pct_of_market": 10.217,
-        "percentile": 18.2
+        "percentile": 17.9
       },
       {
         "date": "2010-04-16",
         "top10_pct_of_market": 10.204,
-        "percentile": 18.1
+        "percentile": 17.8
       },
       {
         "date": "2010-04-19",
         "top10_pct_of_market": 10.05,
-        "percentile": 16.1
+        "percentile": 14.8
       },
       {
         "date": "2010-04-20",
         "top10_pct_of_market": 10.377,
-        "percentile": 20.4
+        "percentile": 20.1
       },
       {
         "date": "2010-04-21",
         "top10_pct_of_market": 10.722,
-        "percentile": 25.4
+        "percentile": 25.3
       },
       {
         "date": "2010-04-22",
         "top10_pct_of_market": 10.728,
-        "percentile": 25.5
+        "percentile": 25.4
       },
       {
         "date": "2010-04-23",
         "top10_pct_of_market": 10.657,
-        "percentile": 24.6
+        "percentile": 24.5
       },
       {
         "date": "2010-04-26",
         "top10_pct_of_market": 10.499,
-        "percentile": 21.8
+        "percentile": 21.6
       },
       {
         "date": "2010-04-27",
         "top10_pct_of_market": 10.271,
-        "percentile": 18.9
+        "percentile": 18.6
       },
       {
         "date": "2010-04-28",
         "top10_pct_of_market": 10.08,
-        "percentile": 16.5
+        "percentile": 15.6
       },
       {
         "date": "2010-04-29",
         "top10_pct_of_market": 10.21,
-        "percentile": 18.2
+        "percentile": 17.9
       },
       {
         "date": "2010-04-30",
         "top10_pct_of_market": 10.057,
-        "percentile": 16.2
+        "percentile": 14.9
       },
       {
         "date": "2010-05-03",
         "top10_pct_of_market": 10.216,
-        "percentile": 18.4
+        "percentile": 18.1
       },
       {
         "date": "2010-05-04",
         "top10_pct_of_market": 10.204,
-        "percentile": 18.2
+        "percentile": 17.9
       },
       {
         "date": "2010-05-05",
         "top10_pct_of_market": 10.022,
-        "percentile": 15.2
+        "percentile": 13.2
       },
       {
         "date": "2010-05-06",
         "top10_pct_of_market": 9.938,
-        "percentile": 13.6
+        "percentile": 10.9
       },
       {
         "date": "2010-05-07",
         "top10_pct_of_market": 9.941,
-        "percentile": 13.8
+        "percentile": 11.1
       },
       {
         "date": "2010-05-10",
         "top10_pct_of_market": 10.162,
-        "percentile": 18.1
+        "percentile": 17.6
       },
       {
         "date": "2010-05-11",
         "top10_pct_of_market": 10.097,
-        "percentile": 17.3
+        "percentile": 16.6
       },
       {
         "date": "2010-05-12",
         "top10_pct_of_market": 10.198,
-        "percentile": 18.4
+        "percentile": 18.1
       },
       {
         "date": "2010-05-13",
         "top10_pct_of_market": 10.43,
-        "percentile": 21.4
+        "percentile": 21.1
       },
       {
         "date": "2010-05-14",
         "top10_pct_of_market": 10.365,
-        "percentile": 20.9
+        "percentile": 20.6
       },
       {
         "date": "2010-05-17",
         "top10_pct_of_market": 10.015,
-        "percentile": 15.2
+        "percentile": 13.2
       },
       {
         "date": "2010-05-18",
         "top10_pct_of_market": 9.953,
-        "percentile": 13.9
+        "percentile": 11.3
       },
       {
         "date": "2010-05-19",
         "top10_pct_of_market": 10.05,
-        "percentile": 16.2
+        "percentile": 14.9
       },
       {
         "date": "2010-05-20",
         "top10_pct_of_market": 9.947,
-        "percentile": 13.8
+        "percentile": 11.2
       },
       {
         "date": "2010-05-21",
         "top10_pct_of_market": 9.753,
-        "percentile": 12.1
+        "percentile": 8.2
       },
       {
         "date": "2010-05-24",
         "top10_pct_of_market": 10.008,
-        "percentile": 15.3
+        "percentile": 13.4
       },
       {
         "date": "2010-05-25",
         "top10_pct_of_market": 9.683,
-        "percentile": 11.4
+        "percentile": 7.8
       },
       {
         "date": "2010-05-26",
         "top10_pct_of_market": 9.99,
-        "percentile": 15.0
+        "percentile": 12.9
       },
       {
         "date": "2010-05-27",
         "top10_pct_of_market": 10.21,
-        "percentile": 19.1
+        "percentile": 18.8
       },
       {
         "date": "2010-05-28",
         "top10_pct_of_market": 10.293,
-        "percentile": 20.3
+        "percentile": 20.0
       },
       {
         "date": "2010-05-31",
         "top10_pct_of_market": 10.556,
-        "percentile": 24.3
+        "percentile": 24.1
       },
       {
         "date": "2010-06-01",
         "top10_pct_of_market": 10.567,
-        "percentile": 24.4
+        "percentile": 24.2
       },
       {
         "date": "2010-06-02",
         "top10_pct_of_market": 10.439,
-        "percentile": 22.1
+        "percentile": 21.8
       },
       {
         "date": "2010-06-03",
         "top10_pct_of_market": 10.675,
-        "percentile": 26.4
+        "percentile": 26.3
       },
       {
         "date": "2010-06-04",
         "top10_pct_of_market": 10.587,
-        "percentile": 25.1
+        "percentile": 24.8
       },
       {
         "date": "2010-06-07",
         "top10_pct_of_market": 10.299,
-        "percentile": 20.4
+        "percentile": 20.1
       },
       {
         "date": "2010-06-08",
         "top10_pct_of_market": 10.675,
-        "percentile": 26.6
+        "percentile": 26.5
       },
       {
         "date": "2010-06-09",
         "top10_pct_of_market": 10.449,
-        "percentile": 22.5
+        "percentile": 22.2
       },
       {
         "date": "2010-06-10",
         "top10_pct_of_market": 10.626,
-        "percentile": 25.7
+        "percentile": 25.5
       },
       {
         "date": "2010-06-11",
         "top10_pct_of_market": 10.711,
-        "percentile": 27.2
+        "percentile": 27.1
       },
       {
         "date": "2010-06-14",
@@ -7071,7 +7071,7 @@
       {
         "date": "2010-06-25",
         "top10_pct_of_market": 10.752,
-        "percentile": 27.8
+        "percentile": 27.7
       },
       {
         "date": "2010-06-28",
@@ -7081,12 +7081,12 @@
       {
         "date": "2010-06-29",
         "top10_pct_of_market": 10.737,
-        "percentile": 27.6
+        "percentile": 27.5
       },
       {
         "date": "2010-06-30",
         "top10_pct_of_market": 10.723,
-        "percentile": 27.2
+        "percentile": 27.1
       },
       {
         "date": "2010-07-01",
@@ -7286,12 +7286,12 @@
       {
         "date": "2010-08-25",
         "top10_pct_of_market": 10.558,
-        "percentile": 23.5
+        "percentile": 23.3
       },
       {
         "date": "2010-08-26",
         "top10_pct_of_market": 10.633,
-        "percentile": 24.9
+        "percentile": 24.7
       },
       {
         "date": "2010-08-27",
@@ -7301,12 +7301,12 @@
       {
         "date": "2010-08-30",
         "top10_pct_of_market": 10.724,
-        "percentile": 26.6
+        "percentile": 26.5
       },
       {
         "date": "2010-08-31",
         "top10_pct_of_market": 10.716,
-        "percentile": 26.5
+        "percentile": 26.4
       },
       {
         "date": "2010-09-01",
@@ -8176,7 +8176,7 @@
       {
         "date": "2011-05-17",
         "top10_pct_of_market": 10.718,
-        "percentile": 23.6
+        "percentile": 23.5
       },
       {
         "date": "2011-05-18",
@@ -8291,7 +8291,7 @@
       {
         "date": "2011-06-20",
         "top10_pct_of_market": 10.611,
-        "percentile": 21.6
+        "percentile": 21.4
       },
       {
         "date": "2011-06-21",
@@ -8356,7 +8356,7 @@
       {
         "date": "2011-07-07",
         "top10_pct_of_market": 10.721,
-        "percentile": 23.2
+        "percentile": 23.1
       },
       {
         "date": "2011-07-08",
@@ -8366,22 +8366,22 @@
       {
         "date": "2011-07-11",
         "top10_pct_of_market": 10.501,
-        "percentile": 19.6
+        "percentile": 19.4
       },
       {
         "date": "2011-07-12",
         "top10_pct_of_market": 10.346,
-        "percentile": 17.6
+        "percentile": 17.4
       },
       {
         "date": "2011-07-13",
         "top10_pct_of_market": 10.322,
-        "percentile": 17.1
+        "percentile": 16.9
       },
       {
         "date": "2011-07-14",
         "top10_pct_of_market": 10.55,
-        "percentile": 20.4
+        "percentile": 20.2
       },
       {
         "date": "2011-07-15",
@@ -8391,12 +8391,12 @@
       {
         "date": "2011-07-18",
         "top10_pct_of_market": 10.521,
-        "percentile": 19.9
+        "percentile": 19.7
       },
       {
         "date": "2011-07-19",
         "top10_pct_of_market": 10.627,
-        "percentile": 21.9
+        "percentile": 21.7
       },
       {
         "date": "2011-07-20",
@@ -8431,47 +8431,47 @@
       {
         "date": "2011-07-28",
         "top10_pct_of_market": 10.606,
-        "percentile": 21.5
+        "percentile": 21.3
       },
       {
         "date": "2011-07-29",
         "top10_pct_of_market": 10.4,
-        "percentile": 18.3
+        "percentile": 18.0
       },
       {
         "date": "2011-08-01",
         "top10_pct_of_market": 10.512,
-        "percentile": 19.8
+        "percentile": 19.6
       },
       {
         "date": "2011-08-02",
         "top10_pct_of_market": 10.483,
-        "percentile": 19.2
+        "percentile": 19.0
       },
       {
         "date": "2011-08-03",
         "top10_pct_of_market": 10.553,
-        "percentile": 20.6
+        "percentile": 20.4
       },
       {
         "date": "2011-08-04",
         "top10_pct_of_market": 10.342,
-        "percentile": 17.3
+        "percentile": 17.1
       },
       {
         "date": "2011-08-05",
         "top10_pct_of_market": 9.519,
-        "percentile": 7.3
+        "percentile": 5.6
       },
       {
         "date": "2011-08-08",
         "top10_pct_of_market": 9.648,
-        "percentile": 9.0
+        "percentile": 6.2
       },
       {
         "date": "2011-08-09",
         "top10_pct_of_market": 10.194,
-        "percentile": 15.6
+        "percentile": 15.3
       },
       {
         "date": "2011-08-10",
@@ -8496,27 +8496,27 @@
       {
         "date": "2011-08-16",
         "top10_pct_of_market": 10.624,
-        "percentile": 22.1
+        "percentile": 21.9
       },
       {
         "date": "2011-08-17",
         "top10_pct_of_market": 10.576,
-        "percentile": 21.2
+        "percentile": 21.0
       },
       {
         "date": "2011-08-18",
         "top10_pct_of_market": 10.499,
-        "percentile": 19.6
+        "percentile": 19.4
       },
       {
         "date": "2011-08-19",
         "top10_pct_of_market": 10.345,
-        "percentile": 17.6
+        "percentile": 17.4
       },
       {
         "date": "2011-08-22",
         "top10_pct_of_market": 10.598,
-        "percentile": 21.7
+        "percentile": 21.5
       },
       {
         "date": "2011-08-23",
@@ -11731,7 +11731,7 @@
       {
         "date": "2014-03-28",
         "top10_pct_of_market": 10.771,
-        "percentile": 18.4
+        "percentile": 18.3
       },
       {
         "date": "2014-03-31",
@@ -11826,7 +11826,7 @@
       {
         "date": "2014-04-25",
         "top10_pct_of_market": 10.674,
-        "percentile": 16.6
+        "percentile": 16.5
       },
       {
         "date": "2014-04-28",
@@ -14196,7 +14196,7 @@
       {
         "date": "2016-03-30",
         "top10_pct_of_market": 10.013,
-        "percentile": 7.5
+        "percentile": 6.6
       },
       {
         "date": "2016-03-31",
@@ -14341,7 +14341,7 @@
       {
         "date": "2016-05-13",
         "top10_pct_of_market": 10.164,
-        "percentile": 9.0
+        "percentile": 8.8
       },
       {
         "date": "2016-05-16",
@@ -17346,27 +17346,27 @@
       {
         "date": "2018-10-19",
         "top10_pct_of_market": 10.629,
-        "percentile": 10.9
+        "percentile": 10.8
       },
       {
         "date": "2018-10-22",
         "top10_pct_of_market": 10.706,
-        "percentile": 11.7
+        "percentile": 11.6
       },
       {
         "date": "2018-10-23",
         "top10_pct_of_market": 10.346,
-        "percentile": 8.6
+        "percentile": 8.5
       },
       {
         "date": "2018-10-24",
         "top10_pct_of_market": 10.224,
-        "percentile": 7.8
+        "percentile": 7.7
       },
       {
         "date": "2018-10-25",
         "top10_pct_of_market": 9.857,
-        "percentile": 5.1
+        "percentile": 3.6
       },
       {
         "date": "2018-10-26",
@@ -27142,6 +27142,11 @@
         "date": "2026-11-12",
         "top10_pct_of_market": 32.705,
         "percentile": 96.7
+      },
+      {
+        "date": "2026-11-13",
+        "top10_pct_of_market": 33.638,
+        "percentile": 97.2
       }
     ]
   }

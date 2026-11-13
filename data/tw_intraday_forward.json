@@ -1,0 +1,19 @@
+{
+ "frozen": "2026-11-12",
+ "ver": "live-v1",
+ "kind": "post_close",
+ "note": "盤中委託統計的前瞻紀錄。指標定義固定為 ver 這一版（scripts/_tw_intraday.py），結案後不重新最佳化參數。每一列是當天收盤後公布的資料算出來的，recorded 是實際取得時間（UTC）；這不是盤中即時訊號。欄位：bp_min 累積委買倍數的盤中最低、cdev_max 委賣偏離的盤中最高（百分點）、vp 收盤時的成交金額倍數、missing 缺的分鐘數。",
+ "days": [
+  {
+   "date": "2026-11-13",
+   "recorded": "2026-11-13T17:37:46Z",
+   "ver": "live-v1",
+   "bp_min": 0.96,
+   "bp_t": "09:08",
+   "cdev_max": -2.5,
+   "cdev_t": "13:22",
+   "vp": 0.99,
+   "missing": 0
+  }
+ ]
+}

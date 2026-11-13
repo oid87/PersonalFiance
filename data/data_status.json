@@ -1,6 +1,6 @@
 {
- "generated": "2026-11-13T03:05:37Z",
- "expected": "2026-11-12",
+ "generated": "2026-11-13T17:38:02Z",
+ "expected": "2026-11-13",
  "rows": [
   {
    "key": "twii",
@@ -8,13 +8,13 @@
    "src": "Yahoo Finance ^TWII",
    "cadence": "每個交易日收盤後",
    "backfill": true,
-   "latest": "2026-11-12",
-   "expected": "2026-11-12",
+   "latest": "2026-11-13",
+   "expected": "2026-11-13",
    "lag": 0,
    "pending": [],
    "state": "ok",
    "cause": null,
-   "seen": "2026-11-12T09:29:57Z",
+   "seen": "2026-11-13T17:38:02Z",
    "note": "Yahoo 常在隔天清晨才補上當天那一列，所以夜間排程後落後 1 個交易日算正常。",
    "msg": null,
    "gaps": [],
@@ -26,13 +26,13 @@
    "src": "FinMind 日線與除權息、分割",
    "cadence": "每個交易日收盤後",
    "backfill": true,
-   "latest": "2026-11-12",
-   "expected": "2026-11-12",
+   "latest": "2026-11-13",
+   "expected": "2026-11-13",
    "lag": 0,
    "pending": [],
    "state": "ok",
    "cause": null,
-   "seen": "2026-11-12T09:29:57Z",
+   "seen": "2026-11-13T17:38:02Z",
    "note": "和加權指數對齊同一個日期軸，指數那一列還沒到時這裡也不會前進。",
    "msg": null,
    "gaps": [],
@@ -45,16 +45,16 @@
    "cadence": "每個交易日收盤後",
    "backfill": true,
    "latest": "2026-11-12",
-   "expected": "2026-11-12",
-   "lag": 0,
+   "expected": "2026-11-13",
+   "lag": 1,
    "pending": [],
-   "state": "ok",
-   "cause": null,
+   "state": "behind",
+   "cause": "source",
    "seen": "2026-11-12T09:29:57Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": false
+   "alert": true
   },
   {
    "key": "twse",
@@ -63,16 +63,16 @@
    "cadence": "每個交易日收盤後",
    "backfill": true,
    "latest": "2026-11-12",
-   "expected": "2026-11-12",
-   "lag": 0,
+   "expected": "2026-11-13",
+   "lag": 1,
    "pending": [],
-   "state": "ok",
-   "cause": null,
+   "state": "behind",
+   "cause": "source",
    "seen": "2026-11-12T09:29:57Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": false
+   "alert": true
   },
   {
    "key": "tpex",
@@ -81,16 +81,16 @@
    "cadence": "每個交易日收盤後",
    "backfill": true,
    "latest": "2026-11-12",
-   "expected": "2026-11-12",
-   "lag": 0,
+   "expected": "2026-11-13",
+   "lag": 1,
    "pending": [],
-   "state": "ok",
-   "cause": null,
+   "state": "behind",
+   "cause": "source",
    "seen": "2026-11-12T09:29:57Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": false
+   "alert": true
   },
   {
    "key": "margin",
@@ -98,17 +98,17 @@
    "src": "證交所、櫃買中心信用交易統計",
    "cadence": "每個交易日晚間",
    "backfill": true,
-   "latest": "2026-11-11",
-   "expected": "2026-11-12",
+   "latest": "2026-11-12",
+   "expected": "2026-11-13",
    "lag": 1,
    "pending": [],
-   "state": "waiting",
-   "cause": null,
-   "seen": null,
+   "state": "behind",
+   "cause": "source",
+   "seen": "2026-11-13T17:38:02Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": false
+   "alert": true
   },
   {
    "key": "ld",
@@ -117,16 +117,16 @@
    "cadence": "每個交易日收盤後",
    "backfill": true,
    "latest": "2026-11-12",
-   "expected": "2026-11-12",
-   "lag": 0,
+   "expected": "2026-11-13",
+   "lag": 1,
    "pending": [],
-   "state": "ok",
-   "cause": null,
+   "state": "behind",
+   "cause": "source",
    "seen": "2026-11-12T09:29:57Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": false
+   "alert": true
   },
   {
    "key": "intraday",
@@ -134,13 +134,13 @@
    "src": "證交所盤後資訊（政府開放資料 11671）",
    "cadence": "每個交易日收盤後公布",
    "backfill": false,
-   "latest": "2026-11-12",
-   "expected": "2026-11-12",
+   "latest": "2026-11-13",
+   "expected": "2026-11-13",
    "lag": 0,
    "pending": [],
    "state": "ok",
    "cause": null,
-   "seen": null,
+   "seen": "2026-11-13T17:38:02Z",
    "note": "下載點只提供最新一個交易日，錯過就無法回補，缺的日子會一直標示為缺漏。",
    "msg": null,
    "gaps": [
@@ -149,11 +149,67 @@
    "alert": false
   }
  ],
- "alerts": [],
+ "alerts": [
+  {
+   "key": "tw50",
+   "name": "臺灣50 市場廣度",
+   "state": "behind",
+   "cause": "source",
+   "latest": "2026-11-12",
+   "expected": "2026-11-13",
+   "lag": 1,
+   "backfill": true,
+   "msg": null
+  },
+  {
+   "key": "twse",
+   "name": "上市市場廣度",
+   "state": "behind",
+   "cause": "source",
+   "latest": "2026-11-12",
+   "expected": "2026-11-13",
+   "lag": 1,
+   "backfill": true,
+   "msg": null
+  },
+  {
+   "key": "tpex",
+   "name": "上櫃市場廣度",
+   "state": "behind",
+   "cause": "source",
+   "latest": "2026-11-12",
+   "expected": "2026-11-13",
+   "lag": 1,
+   "backfill": true,
+   "msg": null
+  },
+  {
+   "key": "margin",
+   "name": "融資餘額與買賣",
+   "state": "behind",
+   "cause": "source",
+   "latest": "2026-11-12",
+   "expected": "2026-11-13",
+   "lag": 1,
+   "backfill": true,
+   "msg": null
+  },
+  {
+   "key": "ld",
+   "name": "跌停與買盤（跌停家數、收盤無委買）",
+   "state": "behind",
+   "cause": "source",
+   "latest": "2026-11-12",
+   "expected": "2026-11-13",
+   "lag": 1,
+   "backfill": true,
+   "msg": null
+  }
+ ],
  "run": {
-  "id": "43356535233",
-  "url": "https://github.com/oid87/PersonalFiance/actions/runs/43356535233",
-  "job": "monitor"
+  "id": "43472577600",
+  "url": "https://github.com/oid87/PersonalFiance/actions/runs/43472577600",
+  "job": "tw"
  },
  "note": "各來源狀態是排程執行當下判斷的；頁面會另外用現在時間檢查這份檔案本身是不是太久沒更新。"
 }
