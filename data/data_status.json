@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-13T20:48:00Z",
+ "generated": "2026-11-14T01:15:03Z",
  "expected": "2026-11-13",
  "rows": [
   {
@@ -44,17 +44,17 @@
    "src": "Yahoo Finance 成分股日線（本頁自算）",
    "cadence": "每個交易日收盤後",
    "backfill": true,
-   "latest": "2026-11-12",
+   "latest": "2026-11-13",
    "expected": "2026-11-13",
-   "lag": 1,
+   "lag": 0,
    "pending": [],
-   "state": "behind",
-   "cause": "source",
-   "seen": "2026-11-12T09:29:57Z",
+   "state": "ok",
+   "cause": null,
+   "seen": "2026-11-14T01:15:03Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": true
+   "alert": false
   },
   {
    "key": "twse",
@@ -62,17 +62,17 @@
    "src": "Yahoo Finance 上市個股日線（本頁自算）",
    "cadence": "每個交易日收盤後",
    "backfill": true,
-   "latest": "2026-11-12",
+   "latest": "2026-11-13",
    "expected": "2026-11-13",
-   "lag": 1,
+   "lag": 0,
    "pending": [],
-   "state": "behind",
-   "cause": "source",
-   "seen": "2026-11-12T09:29:57Z",
+   "state": "ok",
+   "cause": null,
+   "seen": "2026-11-14T01:15:03Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": true
+   "alert": false
   },
   {
    "key": "tpex",
@@ -80,17 +80,17 @@
    "src": "Yahoo Finance 上櫃個股日線（本頁自算）",
    "cadence": "每個交易日收盤後",
    "backfill": true,
-   "latest": "2026-11-12",
+   "latest": "2026-11-13",
    "expected": "2026-11-13",
-   "lag": 1,
+   "lag": 0,
    "pending": [],
-   "state": "behind",
-   "cause": "source",
-   "seen": "2026-11-12T09:29:57Z",
+   "state": "ok",
+   "cause": null,
+   "seen": "2026-11-14T01:15:03Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": true
+   "alert": false
   },
   {
    "key": "margin",
@@ -98,17 +98,17 @@
    "src": "證交所、櫃買中心信用交易統計",
    "cadence": "每個交易日晚間",
    "backfill": true,
-   "latest": "2026-11-12",
+   "latest": "2026-11-13",
    "expected": "2026-11-13",
-   "lag": 1,
+   "lag": 0,
    "pending": [],
-   "state": "behind",
-   "cause": "source",
-   "seen": "2026-11-13T17:38:02Z",
+   "state": "ok",
+   "cause": null,
+   "seen": "2026-11-14T01:15:03Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": true
+   "alert": false
   },
   {
    "key": "ld",
@@ -116,17 +116,17 @@
    "src": "Yahoo 日線自算＋證交所、櫃買收盤行情",
    "cadence": "每個交易日收盤後",
    "backfill": true,
-   "latest": "2026-11-12",
+   "latest": "2026-11-13",
    "expected": "2026-11-13",
-   "lag": 1,
+   "lag": 0,
    "pending": [],
-   "state": "behind",
-   "cause": "source",
-   "seen": "2026-11-12T09:29:57Z",
+   "state": "ok",
+   "cause": null,
+   "seen": "2026-11-14T01:15:03Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": true
+   "alert": false
   },
   {
    "key": "intraday",
@@ -149,66 +149,10 @@
    "alert": false
   }
  ],
- "alerts": [
-  {
-   "key": "tw50",
-   "name": "臺灣50 市場廣度",
-   "state": "behind",
-   "cause": "source",
-   "latest": "2026-11-12",
-   "expected": "2026-11-13",
-   "lag": 1,
-   "backfill": true,
-   "msg": null
-  },
-  {
-   "key": "twse",
-   "name": "上市市場廣度",
-   "state": "behind",
-   "cause": "source",
-   "latest": "2026-11-12",
-   "expected": "2026-11-13",
-   "lag": 1,
-   "backfill": true,
-   "msg": null
-  },
-  {
-   "key": "tpex",
-   "name": "上櫃市場廣度",
-   "state": "behind",
-   "cause": "source",
-   "latest": "2026-11-12",
-   "expected": "2026-11-13",
-   "lag": 1,
-   "backfill": true,
-   "msg": null
-  },
-  {
-   "key": "margin",
-   "name": "融資餘額與買賣",
-   "state": "behind",
-   "cause": "source",
-   "latest": "2026-11-12",
-   "expected": "2026-11-13",
-   "lag": 1,
-   "backfill": true,
-   "msg": null
-  },
-  {
-   "key": "ld",
-   "name": "跌停與買盤（跌停家數、收盤無委買）",
-   "state": "behind",
-   "cause": "source",
-   "latest": "2026-11-12",
-   "expected": "2026-11-13",
-   "lag": 1,
-   "backfill": true,
-   "msg": null
-  }
- ],
+ "alerts": [],
  "run": {
-  "id": "43503179961",
-  "url": "https://github.com/oid87/PersonalFiance/actions/runs/43503179961",
+  "id": "43538167223",
+  "url": "https://github.com/oid87/PersonalFiance/actions/runs/43538167223",
   "job": "tw"
  },
  "note": "各來源狀態是排程執行當下判斷的；頁面會另外用現在時間檢查這份檔案本身是不是太久沒更新。"
