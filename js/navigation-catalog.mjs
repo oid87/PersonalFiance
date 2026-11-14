@@ -10,7 +10,7 @@ export const CATEGORIES = [
   { id: 'trend', label: '走勢與技術', pages: [
     { id: 'p-tech', label: '技術分析工作台', views: [
       view('trend', '趨勢'), view('pentagram', '五線譜'), view('position', '位階'),
-      view('madev', '乖離率'), view('struct', '結構判讀')] },
+      view('madev', '乖離率'), view('struct', '結構判讀'), view('tsi', 'TSI逆向訊號')] },
     { id: 'p-relstrength', label: '相對強度', views: [
       view('relstrength', 'NDX相對強度'), view('mag7spy', '七巨頭相對強度')] },
     { id: 'p-breadth', label: '市場廣度', views: [
@@ -103,6 +103,7 @@ const ALIASES = {
   nonnormalhist: ["過往觀察", "回測", "跌停", "跌停家數", "無觀察", "觀察類股", "極端狀態", "水溫走勢"],
   uscap: ["US Capitulation", "恐慌", "拋售", "Put/Call", "VIX", "VXN", "止穩", "capitulation"],
   qqqpanic: ["恐慌背離", "盤中急跌", "Fear & Greed", "F&G", "回測", "再破底", "panic divergence"],
+  tsi: ["TSI", "Signal Investor", "紫點", "綠點", "紅點", "週線訊號", "Stochastic", "MACD", "NDX", "逆向"],
   tqqqflow: ["TQQQ", "QLD", "資金流", "淨流入", "申購", "ETF flow", "ProShares", "ETFIQ", "回測"],
   fsi: ['FSI'], nfci: ['NFCI'], cpi: ['CPI'],
   gdp_productivity_decomp: ['GDP'], tw_jp_kr_gdp: ['GDP', '台灣'],

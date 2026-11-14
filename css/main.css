@@ -758,7 +758,7 @@
       /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
          保留原高度、改用放大圖表 */
       .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
-        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #vixspike-main-chart, #panicentry-main-chart, #breadthwarn-main-chart, #marketrisklab-main-chart, #breadthwarn-case-chart, #breadthwarn-caseliq-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #tsi-chart, #vixspike-main-chart, #panicentry-main-chart, #breadthwarn-main-chart, #marketrisklab-main-chart, #breadthwarn-case-chart, #breadthwarn-caseliq-chart,
         #kelly-chart, #roc4-chart, #val-chart) {
         max-height: calc(100dvh - 16px);
       }
@@ -1828,4 +1828,52 @@
 @media (max-width: 640px) {
   #tab-marketrisklab .mrl-chart-main { height:560px; }
   #tab-marketrisklab .mrl-cards { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+
+/* TSI 逆向訊號 */
+#tab-tsi .tsi-live { margin:6px 0 10px; padding:10px 12px; border:2px dashed #d29922; border-radius:8px; background:var(--panel); font-size:14px; line-height:1.7; }
+#tab-tsi .tsi-live[hidden] { display:none; }
+#tab-tsi .tsi-badge { display:inline-block; padding:0 8px; margin-right:6px; border-radius:999px; font-size:12px; font-weight:600; }
+#tab-tsi .tsi-badge-prov { background:#d29922; color:#fff; }
+#tab-tsi .tsi-badge-pend { background:#8b949e; color:#fff; }
+#tab-tsi .tsi-warn-line { color:#d29922; font-weight:600; }
+#tab-tsi .tsi-badge-conf { background:#3fb950; color:#fff; }
+#tab-tsi .tsi-head .section-title { font-size:19px; padding:0; border-top:0; margin:0; }
+#tab-tsi .tsi-head .status { border-top:0; padding:0; }
+#tab-tsi .tsi-warn { margin:6px 0 8px; padding:8px 12px; border-left:4px solid #a371f7; background:var(--panel); border-radius:6px; font-size:14px; line-height:1.7; }
+#tab-tsi .tsi-note { color:var(--muted); font-size:13px; line-height:1.6; margin:4px 0 8px; }
+#tab-tsi .tsi-h { margin:18px 0 6px; font-size:17px; }
+#tab-tsi .tsi-stats { display:grid; grid-template-columns:repeat(auto-fill, minmax(165px, 1fr)); gap:8px; margin:8px 0; }
+#tab-tsi .tsi-stat { display:flex; flex-direction:column; gap:2px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--panel); min-width:0; }
+#tab-tsi .tsi-stat.is-lit { border-color:#a371f7; border-width:2px; }
+#tab-tsi .tsi-stat b { font-size:18px; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+#tab-tsi .tsi-stat span { font-size:12px; color:var(--muted); }
+#tab-tsi .tsi-params { display:flex; flex-wrap:wrap; gap:8px 18px; margin:10px 0; }
+#tab-tsi .tsi-label { display:block; margin-bottom:4px; color:var(--muted); font-size:13px; }
+#tab-tsi .chip-row { display:flex; flex-wrap:wrap; gap:6px; }
+#tab-tsi .tsi-chart { width:100%; height:760px; margin:8px 0; }
+#tab-tsi .tsi-tablehead { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; margin:18px 0 6px; }
+#tab-tsi .tsi-tablehead .tsi-h { margin:0; }
+#tab-tsi .table-scroll { max-width:100%; overflow-x:auto; margin:4px 0 10px; }
+#tab-tsi .tsi-scroll { max-height:520px; overflow-y:auto; }
+#tab-tsi table { border-collapse:collapse; width:100%; font-size:14px; }
+#tab-tsi th, #tab-tsi td { padding:5px 8px; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap; font-variant-numeric:tabular-nums; }
+#tab-tsi #tsi-author td:last-child { white-space:normal; min-width:240px; color:var(--muted); font-size:12px; }
+#tab-tsi thead th { color:var(--muted); font-weight:600; position:sticky; top:0; background:var(--bg); }
+#tab-tsi .tsi-dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align:middle; }
+#tab-tsi .tsi-dot-purple { background:#a371f7; }
+#tab-tsi .tsi-dot-buy { background:#3fb950; }
+#tab-tsi .tsi-dot-cont { border:2px solid #3fb950; box-sizing:border-box; }
+#tab-tsi .tsi-dot-sell { background:#ef4444; }
+#tab-tsi .tsi-st { font-weight:600; }
+#tab-tsi .tsi-st-match { color:#3fb950; }
+#tab-tsi .tsi-st-miss { color:#ef4444; }
+#tab-tsi .tsi-st-provisional_match { color:#d29922; }
+#tab-tsi .tsi-st-unknown, #tab-tsi .tsi-st-not_applicable { color:var(--muted); }
+#tab-tsi .tsi-details { margin:12px 0; font-size:14px; line-height:1.7; }
+#tab-tsi .tsi-details summary { cursor:pointer; color:var(--muted); min-height:32px; }
+@media (max-width: 640px) {
+  #tab-tsi .tsi-stats { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  #tab-tsi .chip { min-height:44px; display:inline-flex; align-items:center; }
+  #tab-tsi .tsi-chart { height:680px; }
+  #tab-tsi th, #tab-tsi td { padding:5px 6px; font-size:13px; }
 }

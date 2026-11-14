@@ -44,6 +44,7 @@ run_script optional prep_relstrength.py
 run_script optional prep_vxnvix.py
 run_script optional fetch_leverage.py
 run_script optional fetch_proshares_flows.py
+run_script optional compute_tsi_weekly.py
 run_script optional fetch_fear_greed.py
 run_script optional fetch_aaii.py
 run_script optional fetch_taiwan_pcratio.py

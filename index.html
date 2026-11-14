@@ -2768,6 +2768,41 @@
     <p class="note-muted">研究資料與報告：<a href="docs/research/qqq-panic-divergence-events.csv">events.csv</a>、<a href="docs/research/qqq-panic-divergence-groups.csv">groups.csv</a>、<a href="docs/research/qqq-panic-divergence-matches.csv">matches.csv</a>、<a href="docs/research/qqq-panic-divergence-ma-breaks.csv">ma-breaks.csv</a>、<a href="docs/research/qqq-panic-divergence-backtest.md">回測數據</a>、<a href="docs/research/qqq-panic-divergence.md">方法與解讀</a>。本頁由 <code>js/tabs/qqqpanic_calc.mjs</code> 即時重算，與研究腳本共用同一引擎。</p>
   </section>
 
+  <section id="tab-tsi" class="tab-section" hidden>
+    <header class="tsi-head"><h2 class="section-title">TSI 逆向訊號（The Signal Investor Reconstruction）</h2><span id="tsi-asof" class="status"></span></header>
+    <p id="tsi-status" class="status" role="status" aria-live="polite">載入中…</p>
+    <p class="tsi-warn"><b>研究重建候選，非作者官方訊號。</b>依研究 V1.3.1 凍結公式，用 NDX 週線收盤後計算；尚未收盤的週不產生訊號。紅點不代表全部出場，續亮不是新交易。</p>
+    <h3 class="tsi-h">最新已完成週線</h3>
+    <div id="tsi-now" class="tsi-stats" aria-live="polite"></div>
+    <div class="tsi-tablehead"><h3 class="tsi-h">本週進行中週線</h3>
+      <div id="tsi-view" class="chip-row"><span class="chip" data-tsi-view="confirmed" data-tooltip="只看週收盤後正式確認的訊號。">只看已確認</span><span class="chip active" data-tsi-view="live" data-tooltip="另外顯示本週尚未收盤、依截至昨日收盤計算的暫時訊號；週五收盤前可能消失。">顯示進行中週線</span></div></div>
+    <div id="tsi-live" class="tsi-live" aria-live="polite"></div>
+    <div id="tsi-controls" class="tsi-params" role="group" aria-label="圖表設定">
+      <div><span class="tsi-label">模型</span><div id="tsi-model" class="chip-row"><span class="chip" data-tsi-model="F1" data-tooltip="只顯示三種事件：紫點、綠點（買進事件）、紅點。">F1（紫／綠／紅事件）</span><span class="chip active" data-tsi-model="F2" data-tooltip="F1 再加上綠點續亮（空心綠圈）：買進事件後 %K 仍低於 25 且上升的週。續亮不是新交易，買進事件數與 F1 相同。">F2（＋綠點續亮）</span></div></div>
+      <div><span class="tsi-label">QQQ 價格對照</span><div id="tsi-qqq" class="chip-row"><span class="chip active" data-tsi-qqq="off">關</span><span class="chip" data-tsi-qqq="on" data-tooltip="在主圖右軸疊上 QQQ 週收盤，只供價格對照，不影響訊號。">開（右軸）</span></div></div>
+    </div>
+    <p class="tsi-note">點圖例可開關各指標與訊號點。● 紫點＝%K 跌破 25；▲ 綠點＝%K 上穿 %D 且前週 %K&lt;25（買進事件）；○ 空心綠＝F2 續亮（狀態）；📍 紅點＝MACD 死叉且 %K 下降。</p>
+    <div id="tsi-chart" class="tsi-chart" role="img" aria-label="NDX 週線 K 棒與紫綠紅訊號點、Stochastic K/D 與 25 門檻、MACD 三格共用時間軸"></div>
+    <div class="tsi-tablehead"><h3 class="tsi-h">歷史事件</h3>
+      <div id="tsi-kind" class="chip-row"><span class="chip active" data-tsi-kind="all">全部</span><span class="chip" data-tsi-kind="purple" data-tooltip="紫點：%K 由 25 以上跌破 25，進入超賣區，等綠點確認。">紫點</span><span class="chip" data-tsi-kind="buy" data-tooltip="買進事件：前週 %K<25，這週 %K 上穿 %D。">買進事件</span><span class="chip" data-tsi-kind="cont" data-tooltip="F2 續亮：買進事件後 %K 仍 <25 且上升，狀態延續，不是新交易。">續亮</span><span class="chip" data-tsi-kind="sell" data-tooltip="紅點：MACD 下穿 Signal 且 %K 下降；動能轉弱，不等於全部出場。">紅點</span></div>
+      <div id="tsi-period" class="chip-row"><span class="chip active" data-tsi-period="all">全期</span><span class="chip" data-tsi-period="p2020">2020 起</span><span class="chip" data-tsi-period="p2010">2010–2019</span><span class="chip" data-tsi-period="p2000">1999–2009</span></div>
+    </div>
+    <p id="tsi-events-count" class="tsi-note"></p>
+    <div id="tsi-events" class="table-scroll tsi-scroll" tabindex="0" aria-label="歷史事件表"></div>
+    <h3 class="tsi-h">作者訊號驗證（前瞻追蹤）</h3>
+    <p class="tsi-note">只認作者公開、且確認為週線的訊號才評 MATCH／MISS；作者沒公開＝UNKNOWN。作者其他週期的 Red／Purple Dot（例如 2026-10-06 觸發 Hourly Sell 的紅點）不算週線證據。IN_SAMPLE＝已用於建模，不算樣本外成績。</p>
+    <p id="tsi-author-sum" class="tsi-note"></p>
+    <div id="tsi-author" class="table-scroll" tabindex="0" aria-label="作者訊號驗證表"></div>
+    <details class="tsi-details"><summary>公式與口徑</summary><ul>
+      <li>市場 NDX、週線（週一為週 key，最後交易日收盤確認；感恩節隔天等提前收盤日 13:00 ET）。</li>
+      <li>Stochastic(14,3,3)：K＝原始 %K 的 3 期均線，D＝K 的 3 期均線；MACD(12,26,9)。</li>
+      <li>PURPLE：%K 由 ≥25 跌破 25。BUY_EVENT：%K 上穿 %D 且前週 %K&lt;25。SELL：MACD 下穿 Signal 且 %K 較前週下降。</li>
+      <li>F1＝三種事件；F2＝F1＋買進事件後 %K 仍 &lt;25 且上升的續亮週。兩者買進事件完全相同。</li>
+      <li>公式凍結，不依績效選模型；網站只讀取 scripts/compute_tsi_weekly.py 算好的結果，與研究結果逐週比對一致。</li>
+      <li>資料：Yahoo ^NDX、QQQ 日線（原始價）。</li>
+    </ul></details>
+  </section>
+
   <section id="tab-tqqqflow" class="tab-section" hidden>
     <header class="tqqqflow-head"><h2 class="section-title">TQQQ 大額資金流入回測</h2><span id="tqqqflow-asof" class="status"></span></header>
     <p id="tqqqflow-status" class="status" role="status" aria-live="polite">載入中…</p>

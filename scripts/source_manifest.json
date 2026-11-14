@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 109,
+  "source_count": 111,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -3411,6 +3411,51 @@
       "status": "scheduled",
       "output_contracts": {
         "data/us_risk_observations.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/compute_tsi_weekly.py",
+      "outputs": [
+        "data/tsi_weekly.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tsi_weekly.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/prep_tsi_evidence.py",
+      "outputs": [
+        "data/tsi_evidence.json"
+      ],
+      "frequency": "manual",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [],
+      "status": "manual_research",
+      "output_contracts": {
+        "data/tsi_evidence.json": {
           "profile": "heterogeneous_object",
           "key_fields": [],
           "required_fields": [],

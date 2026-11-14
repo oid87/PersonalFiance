@@ -69,6 +69,10 @@ jobs:
         continue-on-error: true
         run: python scripts/fetch_leverage.py
 
+      - name: Compute TSI weekly F1/F2 reconstruction (tsi tab; completed weeks only)
+        continue-on-error: true
+        run: python scripts/compute_tsi_weekly.py
+
       - name: Fetch ProShares TQQQ/QLD NAV + shares (TQQQ flow study)
         continue-on-error: true
         run: python scripts/fetch_proshares_flows.py
