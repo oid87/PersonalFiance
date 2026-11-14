@@ -125,6 +125,18 @@ jobs:
         continue-on-error: true
         run: python scripts/compute_sentiment.py
 
+      - name: Fetch market risk lab extra prices (QLD/SSO/USD/RSP/^NDX/NQ=F)
+        continue-on-error: true
+        run: python scripts/run_step.py -- python scripts/fetch_market_risk_lab_prices.py
+
+      - name: Compute market risk lab signals (300MA Reset／150MA／SSO 規則、美股早期預警)
+        continue-on-error: true
+        run: python scripts/run_step.py -- python scripts/compute_market_risk_lab.py
+
+      - name: Market risk lab daily signal backtest (incremental; skips when inputs unchanged)
+        continue-on-error: true
+        run: python scripts/run_step.py -- python scripts/backtest_market_risk_lab.py
+
       - name: Fetch earnings dates
         continue-on-error: true
         run: python scripts/fetch_earnings.py
@@ -517,6 +529,14 @@ jobs:
       - name: Update TW breadth warning series (臺灣50／上市／上櫃 站上均線比例、新高新低、跌停與量能代理)
         continue-on-error: true
         run: python scripts/run_step.py -- python scripts/fetch_tw_breadth_warn.py
+
+      - name: Compute market risk lab signals (TW 收盤後更新台股區塊)
+        continue-on-error: true
+        run: python scripts/run_step.py -- python scripts/compute_market_risk_lab.py
+
+      - name: Market risk lab daily signal backtest (TW)
+        continue-on-error: true
+        run: python scripts/run_step.py -- python scripts/backtest_market_risk_lab.py
 
       - name: Update TW intraday replay (證交所盤後公布的每 5 秒委託成交統計 → 每分鐘序列)
         continue-on-error: true

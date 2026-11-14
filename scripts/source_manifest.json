@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 107,
+  "source_count": 109,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -3638,6 +3638,60 @@
           "null_policy": "non_nullable_required_only"
         },
         "data/tw_intraday_forward.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_market_risk_lab_prices.py",
+      "outputs": [
+        "data/market_risk_lab_prices.json"
+      ],
+      "frequency": "us_session",
+      "required": false,
+      "depends_on": [],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/market_risk_lab_prices.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/compute_market_risk_lab.py",
+      "outputs": [
+        "data/market_risk_lab.json"
+      ],
+      "frequency": "us_and_tw_sessions",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_stocks.py",
+        "scripts/fetch_market_risk_lab_prices.py",
+        "scripts/fetch_panic_entry.py",
+        "scripts/fetch_tw_breadth_warn.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "us",
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/market_risk_lab.json": {
           "profile": "heterogeneous_object",
           "key_fields": [],
           "required_fields": [],

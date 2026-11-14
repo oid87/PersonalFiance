@@ -234,6 +234,32 @@ def validate_forward_pe(path: Path, failures: list[str]) -> None:
     validate_forward_pe_rows(rows, path.name, failures)
 
 
+def validate_market_risk_lab(obj, label: str, failures: list[str]) -> None:
+    """market_risk_lab*.json：必要區塊、模型版本、右設限事件不得帶報酬。"""
+    if not isinstance(obj, dict):
+        failures.append(f"{label}: expected object")
+        return
+    for key in ("updated", "model_version", "input_hash"):
+        if not obj.get(key):
+            failures.append(f"{label}: missing {key}")
+    if label == "market_risk_lab.json":
+        for key in ("states", "events", "chart", "tw", "cases"):
+            if key not in obj:
+                failures.append(f"{label}: missing {key}")
+        dates = obj.get("chart", {}).get("us", {}).get("dates", [])
+        if not dates or dates != sorted(set(dates)):
+            failures.append(f"{label}: chart.us.dates empty or not ascending/unique")
+    if label == "market_risk_lab_backtest.json":
+        for vkey, v in obj.get("variants", {}).items():
+            for fam, s in v.get("signals", {}).items():
+                for e in s.get("events", []):
+                    for h, x in e.get("h", {}).items():
+                        if x.get("status") == "pending" and "ret" in x:
+                            failures.append(f"{label}: {vkey} {fam} {e.get('date')} h{h} pending event carries a return")
+                        if x.get("status") not in ("pending", "complete"):
+                            failures.append(f"{label}: {vkey} {fam} {e.get('date')} h{h} bad status")
+
+
 def validate_directory(data_dir: Path, *, shrink_from_head: bool = False,
                        baseline_dir: Path | None = None, macro: bool = True,
                        allow_partial: bool = False) -> tuple[int, list[str]]:
@@ -268,6 +294,8 @@ def validate_directory(data_dir: Path, *, shrink_from_head: bool = False,
             failures.append(f"{label}: invalid JSON ({exc})")
             continue
         validate_object(obj, label, failures, contracts.get(label))
+        if label.startswith("market_risk_lab") and label != "market_risk_lab_prices.json":
+            validate_market_risk_lab(obj, label, failures)
         previous = None
         if baseline_dir and (baseline_dir / label).exists():
             try:

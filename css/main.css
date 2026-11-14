@@ -758,7 +758,7 @@
       /* 其他頁的圖也一樣：捲到圖時整張在一屏內。多面板圖（3 個以上，或下方面板標籤密的）壓縮會重疊，
          保留原高度、改用放大圖表 */
       .tab-section :is(div[id*="chart"], #ul-corridor, #ul-buffer, #ul-supply, #struct-vpvr):not(#aaii-chart, #twsent-chart,
-        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #vixspike-main-chart, #panicentry-main-chart, #breadthwarn-main-chart, #breadthwarn-case-chart, #breadthwarn-caseliq-chart,
+        #twsent-chips-chart, #penta-chart, #marginalert-chart, #vs-chart, #pos-chart, #nonnormalhist-res-chart, #nonnormalhist-temp-chart, #nonnormalhist-chart, #nonnormalhist-us-chart, #uscap-chart, #tqqqflow-chart, #vixspike-main-chart, #panicentry-main-chart, #breadthwarn-main-chart, #marketrisklab-main-chart, #breadthwarn-case-chart, #breadthwarn-caseliq-chart,
         #kelly-chart, #roc4-chart, #val-chart) {
         max-height: calc(100dvh - 16px);
       }
@@ -1789,3 +1789,43 @@
 #tab-breadthwarn .breadthwarn-chart--main { height:760px; min-height:640px; }
 #tab-breadthwarn #breadthwarn-cmp td:first-child, #tab-breadthwarn #breadthwarn-repair td:first-child { white-space:normal; min-width:150px; }
 
+
+/* ── 市場預警與策略回測（marketrisklab）── */
+#tab-marketrisklab { padding: 0 12px 24px; }
+#tab-marketrisklab .mrl-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px 12px; padding:12px 0 4px; }
+#tab-marketrisklab .mrl-head .section-title { font-size:19px; padding:0; border-top:0; margin:0; }
+#tab-marketrisklab .mrl-head .status, #tab-marketrisklab > .status { border-top:0; padding:0; }
+#tab-marketrisklab .mrl-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px; margin:8px 0; }
+#tab-marketrisklab .mrl-card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:8px 10px; min-width:0; }
+#tab-marketrisklab .mrl-card-k { font-size:12px; color:var(--muted); }
+#tab-marketrisklab .mrl-card-v { font-size:15px; font-weight:600; margin:2px 0; overflow-wrap:anywhere; }
+#tab-marketrisklab .mrl-card-s, #tab-marketrisklab .mrl-sub { font-size:12px; color:var(--muted); }
+#tab-marketrisklab .mrl-sub { display:block; }
+#tab-marketrisklab td .mrl-sub, #tab-marketrisklab th .mrl-sub { display:block; font-weight:400; }
+#tab-marketrisklab .mrl-stale .mrl-card { border-color:#f0883e; }
+#tab-marketrisklab .mrl-controls { display:flex; flex-wrap:wrap; gap:8px 16px; margin:8px 0; }
+#tab-marketrisklab .mrl-group { display:flex; flex-wrap:wrap; align-items:center; gap:4px 6px; margin:4px 0; }
+#tab-marketrisklab .mrl-lbl { font-size:13px; color:var(--muted); }
+#tab-marketrisklab .chip { min-height:36px; }
+#tab-marketrisklab select { min-height:36px; background:var(--panel); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:2px 6px; }
+#tab-marketrisklab .mrl-h3 { font-size:16px; margin:18px 0 6px; }
+#tab-marketrisklab .mrl-chart-main { width:100%; height:620px; }
+#tab-marketrisklab .mrl-chart { width:100%; height:360px; }
+#tab-marketrisklab .mrl-chart-sm { width:100%; height:280px; }
+#tab-marketrisklab .mrl-table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; margin:6px 0; }
+#tab-marketrisklab .mrl-table { border-collapse:collapse; font-size:13px; min-width:100%; }
+#tab-marketrisklab .mrl-table th, #tab-marketrisklab .mrl-table td { border-bottom:1px solid var(--border); padding:4px 6px; text-align:right; white-space:nowrap; vertical-align:top; }
+#tab-marketrisklab .mrl-table th:first-child, #tab-marketrisklab .mrl-table td:first-child { text-align:left; white-space:normal; min-width:150px; }
+#tab-marketrisklab .mrl-table tr.mrl-sel { background:color-mix(in srgb, var(--border) 50%, transparent); }
+#tab-marketrisklab .mrl-neg { color:#ef4444; }
+#tab-marketrisklab .mrl-pending { color:#f0883e; margin-left:6px; }
+#tab-marketrisklab .mrl-tier { display:inline-block; font-size:12px; padding:1px 6px; border-radius:10px; border:1px solid var(--border); white-space:nowrap; }
+#tab-marketrisklab .mrl-tier-core { border-color:#3fb950; color:#3fb950; }
+#tab-marketrisklab .mrl-tier-rule { border-color:#58a6ff; color:#58a6ff; }
+#tab-marketrisklab .mrl-tier-aux { color:var(--muted); }
+#tab-marketrisklab .mrl-tier-research { border-color:#f0883e; color:#f0883e; }
+#tab-marketrisklab details summary { cursor:pointer; min-height:36px; line-height:36px; }
+@media (max-width: 640px) {
+  #tab-marketrisklab .mrl-chart-main { height:560px; }
+  #tab-marketrisklab .mrl-cards { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+}

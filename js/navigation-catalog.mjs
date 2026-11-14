@@ -82,6 +82,7 @@ export const CATEGORIES = [
       view('wkrev', '週K反轉'), view('qqqmacd', 'MACD死叉'), view('roc4', 'ROC4急漲急跌')] },
     { id: 'p-season', label: '季節性', views: [
       view('vixseason', 'VIX十年季節性'), view('elecseason', '選舉週期季節性')] },
+    { id: 'p-marketrisklab', label: '市場預警與策略回測', views: [view('marketrisklab', '市場預警與策略回測')] },
     { id: 'p-history', label: '歷史對照', views: [view('twcrash', '台股歷史股災'), view('wave', '波浪理論')] },
     { id: 'p-corr', label: '相關係數', views: [view('corr', '相關係數')] },
     { id: 'p-tools', label: '工具箱', views: [view('tools', '工具箱')] },
@@ -109,6 +110,7 @@ const ALIASES = {
   vix_term: ['VIX'], vvixregime: ['VIX'], vxnvix: ['VIX'],
   vixspike: ['VIX', 'VIX急升', 'VIX暴漲', '恐慌指數', '單日漲幅', '回測'],
   breadthwarn: ['廣度', '市場廣度', '流動性', '預警', '站上均線', '跌停', '新低', '臺灣50', '上市', '上櫃', '00631L', '巨人傑', '融資'],
+  marketrisklab: ['300MA', 'Reset', '150MA', '200MA', 'QLD', 'SSO', 'USD', '00631L', '深度修正', 'Minervini', '早期預警', '策略回測', 'NAV'],
   panicentry: ['恐慌', '回撤', '正二', '00631L', '0050', 'TWVIX', 'VXN', 'VXSMH', '國安基金', '台積電跌停', '進場', '回測'],
   qqqmacd: ['MACD'], valuation: ['P/E', 'PE'], fwdpe: ['P/E', 'PE'],
   semi_vs_spx_pe: ['P/E', 'PE'], sox_vs_tw_semi_pe: ['P/E', 'PE', '台灣'],

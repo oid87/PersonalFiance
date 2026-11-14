@@ -120,6 +120,8 @@ run_script optional fetch_tw50_ma_breadth.py
 run_script optional fetch_twvix.py
 run_script optional fetch_panic_entry.py
 run_script optional fetch_tw_breadth_warn.py
+run_script optional fetch_market_risk_lab_prices.py
+run_script optional compute_market_risk_lab.py
 run_script optional fetch_tw_intraday.py
 run_script optional fetch_banini.py
 run_script optional fetch_net_liquidity.py
