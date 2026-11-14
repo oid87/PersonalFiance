@@ -103,7 +103,7 @@ function mainOption() {
     axisPointer: { link: [{ xAxisIndex: 'all' }] },
     grid: [{ top: 40, height: '48%', left: 56, right: 16 }, { top: '64%', height: '14%', left: 56, right: 16 }, { top: '82%', height: '11%', left: 56, right: 16 }],
     xAxis: [xa(0), xa(1), xa(2)],
-    yAxis: [{ type: 'log', scale: true, gridIndex: 0 }, { scale: true, gridIndex: 1, splitNumber: 2, name: ui.market === 'TW' ? '融資' : '相對(起點=100)', nameTextStyle: { fontSize: 10 } },
+    yAxis: [{ type: 'log', scale: true, gridIndex: 0, min: (v) => v.min * 0.97, max: (v) => v.max * 1.03, axisLabel: { formatter: (v) => +v.toPrecision(3) } }, { scale: true, gridIndex: 1, splitNumber: 2, name: ui.market === 'TW' ? '融資' : '相對(起點=100)', nameTextStyle: { fontSize: 10 } },
       { scale: true, gridIndex: 2, splitNumber: 2, max: ui.market === 'TW' ? 100 : 100, min: 0 }],
     dataZoom: [{ type: 'inside', xAxisIndex: [0, 1, 2], startValue: Date.parse('2018-01-01') }, { type: 'slider', xAxisIndex: [0, 1, 2], bottom: 0, height: 16, startValue: Date.parse('2018-01-01') }],
     series: [...series, ...lower, ...third],
@@ -160,7 +160,7 @@ function strategyOption() {
   });
   return echartsBase({
     legend: { type: 'scroll', top: 0 }, tooltip: { trigger: 'axis', valueFormatter: x => (finite(x) ? Math.round(x).toLocaleString() : '—') },
-    grid: { top: 40, left: 64, right: 16, bottom: 40 }, xAxis: { type: 'time' }, yAxis: { type: 'log', scale: true },
+    grid: { top: 40, left: 64, right: 16, bottom: 40 }, xAxis: { type: 'time' }, yAxis: { type: 'log', scale: true, min: (v) => v.min * 0.97, max: (v) => v.max * 1.03, axisLabel: { formatter: (v) => +v.toPrecision(3) } },
     dataZoom: [{ type: 'inside' }, { type: 'slider', bottom: 0, height: 16 }], series,
   });
 }
