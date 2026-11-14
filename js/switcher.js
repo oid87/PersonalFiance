@@ -1,4 +1,5 @@
 // Tab dispatcher: selection changes immediately; activation and rendering may be async.
+import { fitToViewport } from './utils/fitViewport.js';
 import { captureChartState, preserveChartState, resizeVisibleCharts, restoreChartState } from './utils/chartLifecycle.js';
 import { clearRequestCacheForSignal } from './utils/data.js';
 
@@ -73,6 +74,7 @@ async function activateTab(id, section, entry, generation, controller) {
     });
     await Promise.race([run, timeout]);
     if (isCurrent()) {
+      fitToViewport(section);
       const currentCharts = chartsFor(entry);
       resizeVisibleCharts(() => currentCharts, section);
       for (const [index, saved] of existingCharts.entries()) {
@@ -103,6 +105,7 @@ export async function switchTo(id) {
 
   document.querySelectorAll(".tab-section").forEach(s => { s.hidden = true; });
   section.hidden = false;
+  fitToViewport(section);
   document.querySelectorAll(".view-btn").forEach(b =>
     b.classList.toggle("active", b.dataset.tab === id));
 
@@ -145,6 +148,7 @@ export async function resizeAll() {
     if (section?.hidden) return;
     if ((!entry.activated && !chartsFor(entry).length) || !module?.resize) return;
     try {
+      fitToViewport(section);
       await preserveChartState(() => chartsFor(entry), () => module.resize());
       resizeVisibleCharts(() => chartsFor(entry), section);
     } catch (err) { console.warn(`[tabs] ${entry.id} resize failed`, err); }

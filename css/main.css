@@ -254,7 +254,7 @@
     /* ── 趨勢 tab ─────────────────────────────────────────────────── */
     #chart {
       width: 100%;
-      height: calc(100vh - 194px - var(--cat-bar-h) - var(--fear-h));
+      height: calc(100vh - var(--fit-top, calc(194px + var(--cat-bar-h))) - var(--fear-h) - 12px);
       min-height: 300px;
       transition: height .2s ease;
     }
@@ -324,21 +324,21 @@
     /* ── 五線譜 tab ───────────────────────────────────────────────── */
     #penta-chart {
       width: 100%;
-      height: calc(100vh - 194px - var(--cat-bar-h));
+      height: calc(100vh - var(--fit-top, calc(194px + var(--cat-bar-h))) - 12px);
       min-height: 300px;
     }
 
     /* ── 宏觀 tab ─────────────────────────────────────────────────── */
     #macro-chart {
       width: 100%;
-      height: calc(100vh - 194px - var(--cat-bar-h));
+      height: calc(100vh - var(--fit-top, calc(194px + var(--cat-bar-h))) - 12px);
       min-height: 300px;
     }
 
     /* ── 相關係數 tab ─────────────────────────────────────────────── */
     #corr-chart {
       width: 100%;
-      height: calc(100vh - 194px - var(--cat-bar-h));
+      height: calc(100vh - var(--fit-top, calc(194px + var(--cat-bar-h))) - 12px);
       min-height: 300px;
     }
 
@@ -346,7 +346,7 @@
     .sector-scroll-hint { padding: 6px 16px 0; font-size: 12px; color: var(--muted); text-align: center; }
     #sector-chart {
       width: 100%;
-      height: calc(100vh - 194px - var(--cat-bar-h));
+      height: calc(100vh - var(--fit-top, calc(194px + var(--cat-bar-h))) - 12px);
       min-height: 300px;
     }
 
@@ -608,7 +608,7 @@
     .bc-count { font-size: 12px; color: var(--muted); margin-top: 2px; }
     .bc-signal{ font-size: 13px; font-weight: 600; margin-top: 4px; }
     #breadth-range-picker { display: flex; gap: 4px; margin-left: auto; }
-    #breadth-chart { width: 100%; height: calc(100vh - 310px - var(--cat-bar-h)); min-height: 280px; }
+    #breadth-chart { width: 100%; height: calc(100vh - var(--fit-top, calc(310px + var(--cat-bar-h))) - 12px); min-height: 280px; }
 
     /* ── Mobile RWD ───────────────────────────────────────────────── */
     @media (max-width: 768px) {
