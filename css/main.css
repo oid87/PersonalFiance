@@ -1828,6 +1828,7 @@
 @media (max-width: 640px) {
   #tab-marketrisklab .mrl-chart-main { height:560px; }
   #tab-marketrisklab .mrl-cards { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+}
 
 /* TSI 逆向訊號 */
 #tab-tsi .tsi-live { margin:6px 0 10px; padding:10px 12px; border:2px dashed #d29922; border-radius:8px; background:var(--panel); font-size:14px; line-height:1.7; }
