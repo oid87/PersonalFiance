@@ -1,5 +1,5 @@
 {
-  "updated": "2026-11-13",
+  "updated": "2026-11-14",
   "note": "WSJ 官方指數級 PE 快照(週更,週五 as-of)。fpe=forward、tpe=trailing、yld=殖利率。ticker: INX=S&P500, RIXF=NASDAQ100, RUT=Russell2000, DJI/DJT/DJU=道瓊三指數。不可重生史料。",
   "data": [
     {
@@ -2206,6 +2206,48 @@
       "fpe": 24.0049965161405,
       "tpe": 18.28,
       "yld": 2.88
+    },
+    {
+      "date": "2026-11-13",
+      "ticker": "DJI",
+      "fpe": 19.4502369956627,
+      "tpe": 20.3,
+      "yld": 1.52
+    },
+    {
+      "date": "2026-11-13",
+      "ticker": "DJT",
+      "fpe": 25.4131713068852,
+      "tpe": 27.79,
+      "yld": 1.26
+    },
+    {
+      "date": "2026-11-13",
+      "ticker": "DJU",
+      "fpe": 24.1559015657994,
+      "tpe": 18.37,
+      "yld": 2.93
+    },
+    {
+      "date": "2026-11-13",
+      "ticker": "INX",
+      "fpe": 18.75,
+      "tpe": 23.25,
+      "yld": 1.09
+    },
+    {
+      "date": "2026-11-13",
+      "ticker": "RIXF",
+      "fpe": 20.66,
+      "tpe": 29.55,
+      "yld": 0.59
+    },
+    {
+      "date": "2026-11-13",
+      "ticker": "RUT",
+      "fpe": 26.65,
+      "tpe": 33.56,
+      "yld": 1.55
     }
   ]
 }
