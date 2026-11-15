@@ -40,11 +40,11 @@ const CARD_GROUPS = [
   { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['KOSPI', '韓股', 'kospi']] },
   { group: 'B', title: '金融市場', cards: [['US10Y', '美債 10Y', 'us10y', 'yield'], ['DXY', '美元指數', 'dxy'], ['GOLD', '黃金', 'gold'], ['OIL', '布蘭特原油', 'oil'], ['VIX', 'VIX', 'vix'], ['VXN', 'VXN'], ['FG', '恐懼貪婪', null, 'score'], ['BTC', '比特幣']] },
   { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '台股市場廣度', 'breadth', 'ratio'], ['LIMIT_DOWN', '跌停家數', null, 'count'], ['NO_OBS', '無觀察類股', null, 'days']] },
-  { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield'], ['US_BREADTH', '美股市場廣度', null, 'ratio']] },
+  { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield'], ['US_BREADTH', '美股市場廣度', null, 'ratio'], ['MARGIN_DIST', '個股維持率 <150%', null, 'ratio']] },
 ];
 // 卡片上的英文代號（實際用的標的；指標類用通用簡稱）
 const TICKERS = { SOX: '^SOX', NDX: 'QQQ', SPX: 'VOO', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
-  FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'TW Breadth', US_BREADTH: 'SPY', LIMIT_DOWN: 'TWSE+TPEx', NO_OBS: 'TWSE+TPEx',
+  FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'TW Breadth', US_BREADTH: 'SPY', LIMIT_DOWN: 'TWSE+TPEx', NO_OBS: 'TWSE+TPEx', MARGIN_DIST: '非ETF',
   N225: 'N225', HSI: 'HSI', SSE: 'SSE', STOXX50E: 'SX5E', US2Y: 'US2Y' };
 const CARD_BY_SERIES = new Map(CARD_GROUPS.flatMap(g => g.cards.map(c => [c[0], c])));
 // 點卡片的大圖左欄：為什麼把這張圖放進儀表板（本專案整理，用自己的話寫）
@@ -69,6 +69,7 @@ const REASONS = {
   LIMIT_DOWN: '上市＋上櫃股票當天收在跌停的家數。平常個位數到幾十家；幾百家以上代表恐慌性賣壓，2025-04-07 有 1,702 家。只顯示，不計分；會用在下方「情緒」那一格。',
   NO_OBS: '近 22 個交易日（約一個月）中，盤面完全沒有「觀察類股」的天數。觀察類股看的是個股的「第一根且帶大量」：當天上漲、收盤創近 20 日新高、成交量 ≥ 2 倍 10 日均量（且達全市場日均量的萬分之 2，約 1,000 張）。全市場（上市＋上櫃）這類股票的比例落在過去一年最低 4%＝無觀察類股日。不看族群、也不是只看 0050。算法與 2013 起的回測見「過往觀察」頁。整天找不到代表市場沒有新的強勢股；1 天提高注意、3 天以上是極端情境 2 的條件之一、5 天以上極度恐慌。另一個看族群的版本在「無主流日」頁（創 60 日新高、量 ≥ 2 倍 20 日均量、漲 ≥ 3%，同產業 ≥ 3 檔才算主流族群，分有／稍微有／完全沒有三級，2022 起），這格的燈號仍用本版。',
   US_BREADTH: 'S&P 500（SPY）成分股中，股價站上 200 日線的比例。低於 50% 代表多數美股已轉弱，可對照台股廣度看是不是全球一起收窄。',
+  MARGIN_DIST: '上市＋上櫃個股（排除 ETF）的融資，依估算維持率分四區，按融資金額加權：低於 130% 已在追繳／斷頭、130–140% 是下一批、140–150% 預備、150% 以上安全。主數字是低於 150% 的合計占比，越高代表越多融資接近追繳。交易所不公布逐檔維持率，這是本站估算：資買以當日收盤當成本，資賣與現償 75% 先出最新、25% 等比例，維持率＝收盤÷(成本×60%)，不含整戶合併與補繳。過去研究顯示維持率只能同步確認、沒有領先效果，所以只顯示不計分，用來看斷頭擴散到多廣。',
   N225: '第三層以後的市場，用來確認是不是全球同步轉弱。',
   HSI: '中港資金與中國景氣的溫度計，用來確認是不是全球同步轉弱。',
   SSE: '中國內需與政策的溫度計，用來確認是不是全球同步轉弱。',
@@ -76,7 +77,7 @@ const REASONS = {
   US2Y: '和 10Y 比較看殖利率曲線：2Y 高於 10Y（倒掛）是長循環訊號，只註記不計分。',
 };
 // 大圖的參考線（訊號門檻）
-const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75], US_BREADTH: [50], LIMIT_DOWN: [N.NO_OBS.limitDownExtreme], NO_OBS: [N.NO_OBS.start, 5] };   // 訊號 id，或不計分卡片的序列 id
+const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75], US_BREADTH: [50], MARGIN_DIST: [20, 40], LIMIT_DOWN: [N.NO_OBS.limitDownExtreme], NO_OBS: [N.NO_OBS.start, 5] };   // 訊號 id，或不計分卡片的序列 id
 // 資金流向：現金為王的 4 檔（state.js CK_ASSETS）＋ SPY 只顯示
 const CASH_LABELS = { GLD: '黃金（GLD）', BTC: '比特幣', TLT: '美債（TLT）', QQQ: 'QQQ', SPY: 'SPY' };
 const CASH_ASSETS = [...CK_ASSETS, { key: 'SPY', color: '#a371f7', file: 'data/SPY.json', displayOnly: true }];
@@ -260,7 +261,24 @@ function quoteCard([id, name, sigId, kind = 'px'], now) {
   foot.append(q.stale ? `資料停在 ${q.date}` : `週 ${fmtChange(q.w1, q.w1Pct, kind, q.last, true)}`);
   if (state === 'on' && sig.tags.length) foot.append('・', node('b', sig.tags.join('・')));
   el.append(foot);
+  if (id === 'MARGIN_DIST' && !q.stale) { const bar = marginDistBar(rawData?.MARGIN_DIST?.at(-1)); if (bar) el.append(bar); }
   if (DOWNTURN_IDS.has(id) && !q.stale) { const dt = downturnLine(N.maDownturn(ctx.s[id], now.date)); if (dt) el.append(dt); }
+  return el;
+}
+
+// ── 個股融資維持率四區（不計分）───────────────────────────────────────────
+const MD_ZONES = [['lt130', '<130', '#c62828'], ['b130', '130–140', '#ef6c00'], ['b140', '140–150', '#f9a825'], ['ge150', '≥150', '#9e9e9e']];
+function marginDistBar(r) {
+  if (!r) return null;
+  const el = node('div', null, { class: 'nonnormal-q-dt', title: '融資金額加權占比（估算）' });
+  const bar = node('div', null, { 'aria-hidden': 'true', style: 'display:flex;width:100%;height:8px;border-radius:4px;overflow:hidden;margin:2px 0 3px' });
+  for (const [k, , c] of MD_ZONES) bar.append(node('span', null, { style: `width:${Math.max(0, r[k] || 0)}%;background:${c}` }));
+  el.append(bar);
+  for (const [k, label, c] of MD_ZONES) {
+    const row = node('span', null, { class: 'nonnormal-q-dt-row' });
+    row.append(node('span', '■', { style: `color:${c};margin-right:4px`, 'aria-hidden': 'true' }), node('span', label, { class: 'nonnormal-q-dt-k' }), ` ${(r[k] ?? 0).toFixed(1)}%`);
+    el.append(row);
+  }
   return el;
 }
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "source_count": 111,
+  "source_count": 112,
   "sources": [
     {
       "script": "scripts/compute_sentiment.py",
@@ -2780,6 +2780,57 @@
           ]
         },
         "data/tw_daily_stats_cache.json": {
+          "profile": "heterogeneous_object",
+          "key_fields": [],
+          "required_fields": [],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only"
+        }
+      }
+    },
+    {
+      "script": "scripts/fetch_tw_margin_stock_dist.py",
+      "outputs": [
+        "data/tw_margin_stock_dist.json",
+        "data/tw_margin_stock_state.json"
+      ],
+      "frequency": "tw_session",
+      "required": false,
+      "depends_on": [
+        "scripts/fetch_tw_daily_stats.py"
+      ],
+      "validation_profile": "per_output",
+      "routes": [
+        "tw",
+        "local"
+      ],
+      "status": "scheduled",
+      "output_contracts": {
+        "data/tw_margin_stock_dist.json": {
+          "profile": "dated_rows",
+          "key_fields": [
+            "date"
+          ],
+          "required_fields": [
+            "date",
+            "lt130",
+            "b130",
+            "b140",
+            "ge150",
+            "lt150"
+          ],
+          "numeric_policy": "finite_when_present",
+          "null_policy": "non_nullable_required_only",
+          "numeric_fields": [
+            "b130",
+            "b140",
+            "ge150",
+            "lt130",
+            "lt150",
+            "margin_yi"
+          ]
+        },
+        "data/tw_margin_stock_state.json": {
           "profile": "heterogeneous_object",
           "key_fields": [],
           "required_fields": [],

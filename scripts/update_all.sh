@@ -117,6 +117,7 @@ run_script optional fetch_credit.py
 run_script optional fetch_bdc.py
 run_script optional fetch_tw_sector_flow.py
 run_script optional fetch_tw_daily_stats.py
+run_script optional fetch_tw_margin_stock_dist.py
 run_script optional fetch_tw50_ma_breadth.py
 run_script optional fetch_twvix.py
 run_script optional fetch_panic_entry.py
