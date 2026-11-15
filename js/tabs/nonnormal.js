@@ -396,9 +396,10 @@ function cashHighDrop(key, base) {
   let from = null;
   for (const [d] of data) if (base && ckWeekStart(d) === base.w) from = d;
   if (!from) return null;
-  let hi = -Infinity, date = null, lastC = null;
-  for (const [d, c] of data) if (d >= from) { if (c > hi) { hi = c; date = d; } lastC = c; }
-  return lastC && hi > 0 ? { dd: lastC / hi - 1, date } : null;
+  let hi = -Infinity, date = null, lastC = null, lo = Infinity, loDate = null;
+  for (const [d, c] of data) if (d >= from) { if (c > hi) { hi = c; date = d; lo = c; loDate = d; } if (c < lo) { lo = c; loDate = d; } lastC = c; }
+  // 低點＝期間高點之後的最低收盤；hl＝高點→低點，lr＝低點→現在
+  return lastC && hi > 0 ? { dd: lastC / hi - 1, date, hl: lo / hi - 1, loDate, lr: lastC / lo - 1 } : null;
 }
 function cashReturns(k) {
   const rows = ck.rows, last = rows.at(-1), base = rows.at(-1 - k);
@@ -437,7 +438,7 @@ function renderCash() {
   const rets = cashReturns(cashWin), max = Math.max(...rets.map(r => Math.abs(r.ret ?? 0)), 1e-9);
   const y10 = tenYearBp(cashWin);
   const head = node('div', null, { class: 'nonnormal-rank-row nonnormal-rank-head' });
-  head.append(node('span', ''), node('span', ''), node('span', `${cashWin} 週漲跌`, { class: 'nonnormal-rank-val' }), node('span', '期間高點→現在', { class: 'nonnormal-rank-val', title: '這段期間內收盤最高點到最新收盤的跌幅（0% 表示現在就是期間最高）' }));
+  head.append(node('span', ''), node('span', ''), node('span', `${cashWin} 週漲跌`, { class: 'nonnormal-rank-val' }), node('span', '高點→低點', { class: 'nonnormal-rank-val', style: 'grid-column:span 2;text-align:center;white-space:nowrap', title: '期間收盤最高點，到高點之後最低收盤的跌幅' }), node('span', '低點→現在', { class: 'nonnormal-rank-val', title: '高點之後的最低收盤到最新收盤的漲跌（0% 表示現在就是低點）' }));
   byId('cash-rank').replaceChildren(head, ...rets.map(r => {
     const row = node('div', null, { class: 'nonnormal-rank-row' }), bar = node('span', null, { class: 'nonnormal-rank-bar' });
     bar.style.width = `${(Math.abs(r.ret ?? 0) / max) * 50}%`;   // 中線＝0：漲往右、跌往左
@@ -447,8 +448,9 @@ function renderCash() {
     const track = node('span', null, { class: 'nonnormal-rank-track' });
     track.append(bar);
     row.append(label, track, node('span', finite(r.ret) ? signed(r.ret * 100, 1) + '%' : '—', { class: 'nonnormal-rank-val ' + dirClass(r.ret) }),
-      node('span', r.hi ? `${(r.hi.dd * 100).toFixed(1)}%` : '—', { class: 'nonnormal-rank-val ' + (r.hi && r.hi.dd < -0.0005 ? dirClass(-1) : ''), title: r.hi ? `期間收盤高點 ${r.hi.date}` : '' }),
-      node('small', r.hi ? r.hi.date.slice(5).replace('-', '/') : '', { class: 'nonnormal-rank-hd' }));
+      node('span', r.hi ? `${(r.hi.hl * 100).toFixed(1)}%` : '—', { class: 'nonnormal-rank-val ' + (r.hi && r.hi.hl < -0.0005 ? dirClass(-1) : ''), title: r.hi ? `期間收盤高點 ${r.hi.date} → 低點 ${r.hi.loDate}` : '' }),
+      node('small', r.hi ? `${r.hi.date.slice(5).replace('-', '/')}→${r.hi.loDate.slice(5).replace('-', '/')}` : '', { class: 'nonnormal-rank-hd' }),
+      node('span', r.hi ? signed(r.hi.lr * 100, 1) + '%' : '—', { class: 'nonnormal-rank-val ' + (r.hi && Math.abs(r.hi.lr) > 0.0005 ? dirClass(r.hi.lr) : ''), title: r.hi ? `低點 ${r.hi.loDate} → 最新收盤（現在高點→現在 ${(r.hi.dd * 100).toFixed(1)}%）` : '' }));
     if (r.key === 'TLT' && y10) row.append(node('small', `同期 10Y 殖利率 ${signed(y10.bp, 0)}bp${y10.lag ? `（10Y 資料到 ${y10.asOf.slice(5).replace('-', '/')}）` : ''}`, {
       class: 'nonnormal-rank-note', title: '1bp＝0.01 個百分點；殖利率跌＝債券漲。TLT 是 20 年以上長債，和 10Y 不會完全同步。' }));
     return row;
