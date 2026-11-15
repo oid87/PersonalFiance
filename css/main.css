@@ -1878,3 +1878,60 @@
   #tab-tsi .tsi-chart { height:680px; }
   #tab-tsi th, #tab-tsi td { padding:5px 6px; font-size:13px; }
 }
+
+/* ── uspeakrisk 美股高檔風險研究 ─────────────────────────────── */
+.uspr { max-width: 1100px; }
+.uspr-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; }
+.uspr-verdict { font-size: 16px; line-height: 1.6; border-left: 4px solid #d29922; background: var(--panel); padding: 10px 14px; border-radius: 6px; margin: 8px 0; }
+.uspr-plain { font-size: 14px; line-height: 1.7; margin: 4px 0 8px; }
+.uspr-swipe { display: none; margin: 6px 0 0; }
+.uspr-lede { font-size: 15px; color: var(--muted); margin: 4px 0 10px; }
+.uspr-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+.uspr-summary, .uspr-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin: 10px 0; min-width: 0; }
+.uspr-summary h3 { margin: 0 0 6px; font-size: 15px; }
+.uspr-summary ul, .uspr-list { margin: 6px 0; padding-left: 20px; line-height: 1.7; }
+.uspr-h { margin: 26px 0 6px; font-size: 17px; scroll-margin-top: 80px; }
+.uspr-note { color: var(--text); font-size: 13px; line-height: 1.7; margin: 6px 0; }
+.uspr-cap { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 6px 0 0; }
+.uspr-dim { color: var(--muted); font-size: 12px; }
+.uspr-cardhead { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.uspr-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.uspr-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.uspr-chart { width: 100%; height: 300px; }
+.uspr-chart--short { height: 220px; }
+.uspr-chart--tall { height: 380px; }
+.uspr-filters { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; margin: 6px 0; }
+.uspr-filters select, .uspr-filters input[type=date] { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; font-size: 13px; }
+.uspr-table { border-collapse: collapse; width: 100%; font-size: 13px; }
+.uspr-table th, .uspr-table td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; white-space: nowrap; }
+.uspr-table th { color: var(--muted); font-weight: 600; }
+.uspr-table tbody tr[data-d] { cursor: pointer; }
+.uspr-table tbody tr[data-d]:hover, .uspr-table tr.uspr-sel { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+#uspeakrisk-evtable { max-height: none; }
+.uspr-card .table-scroll { max-height: 360px; overflow-y: auto; }
+.uspr-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+.uspr-detail { font-size: 13px; line-height: 1.7; margin-top: 8px; }
+.uspr-detail:empty { display: none; }
+.uspr-msg { font-size: 13px; color: var(--muted); margin: 4px 0; }
+.uspr-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin: 6px 0; }
+.uspr-tile { border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; background: var(--bg); }
+.uspr-k { font-size: 12px; color: var(--muted); }
+.uspr-v { font-size: 18px; font-weight: 600; margin: 2px 0; }
+.uspr-s { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.uspr-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0 12px; }
+.uspr-case { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; }
+.uspr-callout { border-left: 3px solid var(--accent); padding: 6px 10px; background: var(--bg); font-size: 13px; }
+.uspr-timeline { padding-left: 20px; line-height: 1.7; font-size: 13px; }
+.uspr-details { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+.uspr-details summary { cursor: pointer; font-weight: 600; }
+.uspr-dl dt { font-weight: 600; margin-top: 10px; }
+.uspr-dl dd { margin: 2px 0 0 0; font-size: 13px; line-height: 1.7; color: var(--text); }
+.uspr-concl { line-height: 1.9; font-size: 14px; padding-left: 22px; }
+.uspr-disclaimer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 14px; }
+@media (max-width: 640px) {
+  .uspr-summary, .uspr-card { padding: 10px; }
+  .uspr-chart--tall { height: 320px; }
+  .uspr-swipe { display: block; }
+  .uspr-verdict { font-size: 15px; }
+  .uspr-table th, .uspr-table td { padding: 5px 6px; font-size: 12px; }
+}
