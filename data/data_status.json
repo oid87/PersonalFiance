@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-16T23:11:19Z",
+ "generated": "2026-11-17T04:56:28Z",
  "expected": "2026-11-16",
  "rows": [
   {
@@ -151,9 +151,9 @@
  ],
  "alerts": [],
  "run": {
-  "id": "43975108462",
-  "url": "https://github.com/oid87/PersonalFiance/actions/runs/43975108462",
-  "job": "tw"
+  "id": "44020522790",
+  "url": "https://github.com/oid87/PersonalFiance/actions/runs/44020522790",
+  "job": "monitor"
  },
  "note": "各來源狀態是排程執行當下判斷的；頁面會另外用現在時間檢查這份檔案本身是不是太久沒更新。"
 }
