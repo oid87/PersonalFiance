@@ -49,7 +49,7 @@ const TICKERS = { SOX: '^SOX', NDX: 'QQQ', SPX: 'VOO', US_MARGIN: 'FINRA', KOSPI
 const CARD_BY_SERIES = new Map(CARD_GROUPS.flatMap(g => g.cards.map(c => [c[0], c])));
 // 點卡片的大圖左欄：為什麼把這張圖放進儀表板（本專案整理，用自己的話寫）
 const REASONS = {
-  US_MARGIN: '美國 FINRA 融資餘額（Margin Debt，月資料，約次月第三週公布）。借錢買股的總額，創新高後回落常代表槓桿開始撤退。見頂只能事後確認、到回撤的時間差很大，只顯示不計分。',
+  US_MARGIN: '借錢買股的總額（FINRA 月資料）。創新高後回落＝槓桿開始撤退。',
   SOX: '台股權重最大的是半導體。費半是電子股的領先指標，急跌常在隔天反映到台股。',
   NDX: '美國科技股的資金風向。台股電子供應鏈的終端需求和評價跟著它走。',
   SPX: '全球風險偏好的基準。大跌時外資通常同步減碼新興市場，台股也在其中。',
@@ -270,10 +270,10 @@ function quoteCard([id, name, sigId, kind = 'px'], now) {
   return el;
 }
 
-// ── 美股融資餘額（FINRA，月資料，不計分）：近 15 個月，對照 S&P 500 ─────────────
-const UM_MONTHS = 15;
+// ── 美股融資餘額（FINRA，月資料，不計分）：近 18 個月，對照 S&P 500 ─────────────
+const UM_MONTHS = 18;
 const monthEndOf = ym => { const [y, m] = ym.split('-').map(Number); return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10); };
-/** 近 15 個月的融資餘額、近 12 個月高點與 S&P 500 日線（從第一個月月初起）。 */
+/** 近 18 個月的融資餘額、近 12 個月高點與 S&P 500 日線（從第一個月月初起）。 */
 function usMarginView() {
   if (!usMargin?.rows.length || !usMargin.spx.length) return null;
   const rows = usMargin.rows.slice(-UM_MONTHS).map(r => ({ ym: r.date.slice(0, 7), end: monthEndOf(r.date.slice(0, 7)), v: r.debit / 1e6 }));   // 百萬 → 兆美元
@@ -287,6 +287,12 @@ function usMarginView() {
     spxSinceHi: base ? spx.at(-1)[1] / base - 1 : null };
 }
 const tn = v => `$${v.toFixed(2)}T`;
+/** FINRA 每月約第三週（約 20 日前後）公布上個月數據：最新是 YYYY-MM → 下一筆（下個月的數據）約在再下個月 20 日。 */
+function umNextUpdate(lastYm) {
+  const [y, m] = lastYm.split('-').map(Number), d = new Date(Date.UTC(y, m + 1, 20));
+  const iso = d.toISOString().slice(0, 10), late = Date.now() > d.getTime() + 7 * 864e5;
+  return { iso, md: `${d.getUTCMonth() + 1}/${d.getUTCDate()}`, late };
+}
 const UM_WARN_MONTHS = 3, UM_MAS = [100, 125, 150];
 const MM_URL = 'https://www.macromicro.me/charts/415/us-margin-debt';
 /** VOO 收盤對 100／125／150 日線的距離（儀表板的 S&P 500 卡也是 VOO）。 */
@@ -335,29 +341,26 @@ function usMarginCard(name) {
   const warn = v.monthsSinceHi >= UM_WARN_MONTHS;
   if (warn) { el.classList.add('nonnormal-q--on'); head.append(node('span', '警訊', { class: 'nonnormal-q-flag' })); }
   const foot = node('p', null, { class: 'nonnormal-q-foot' });
-  if (v.monthsSinceHi > 0) foot.append(`距 ${v.hi.ym} 高點 ${signed(v.offHi * 100, 1)}%・`, warn ? node('b', `${v.monthsSinceHi} 個月未創高`) : `${v.monthsSinceHi} 個月未創高`);
+  if (v.monthsSinceHi > 0) foot.append(`高點 ${signed(v.offHi * 100, 1)}%・`, warn ? node('b', `${v.monthsSinceHi} 月未創高`) : `${v.monthsSinceHi} 月未創高`);
   else foot.append('創近 12 月新高');
   el.append(foot);
-  const dt = node('div', null, { class: 'nonnormal-q-dt' });
-  const leg = (c, t) => { const r = node('span', null, { class: 'nonnormal-q-dt-row' }); r.append(node('span', '━', { style: `color:${c};margin-right:4px`, 'aria-hidden': 'true' }), t); return r; };
-  dt.append(leg('var(--text)', '融資（月）'), leg('#58a6ff', 'S&P 500・近 15 月'));
+  const dt = node('div', null, { class: 'nonnormal-q-dt', title: '黑＝融資（月）、藍＝S&P 500，近 18 個月' });
+  const nu = umNextUpdate(v.last.ym), nr = node('span', null, { class: 'nonnormal-q-dt-row' });
+  nr.append(node('span', '下次更新', { class: 'nonnormal-q-dt-k' }), ' ', node('span', nu.late ? `${nu.md} 逾期` : `約 ${nu.md}`, nu.late ? { class: 'nonnormal-dt-on' } : {}));
+  dt.append(nr);
   const g = vooMaGap();
-  if (g) for (const [k, x] of g.gaps) {
+  if (g) {
     const r = node('span', null, { class: 'nonnormal-q-dt-row' });
-    r.append(node('span', `VOO ${k}MA`, { class: 'nonnormal-q-dt-k' }), ' ', finite(x) ? node('span', x <= 0 ? `跌破 ${signed(x * 100, 1)}%` : `${signed(x * 100, 1)}%`, x <= 0 ? { class: 'nonnormal-dt-on' } : {}) : '—');
+    r.append(node('span', 'VOO 破', { class: 'nonnormal-q-dt-k' }), ' ', node('span', g.gaps.filter(([, x]) => finite(x) && x <= 0).map(([k]) => k).join('/') || '無', { class: g.gaps.some(([, x]) => x <= 0) ? 'nonnormal-dt-on' : '' }), 'MA');
     dt.append(r);
   }
   el.append(dt);
   return el;
 }
 const UM_BACKTEST = [
-  '1997 年起，融資創歷史新高後回落 ≥ 5% 共 8 次（1998、2000、2007、2014、2015、2018、2021、2025）。',
-  '高點月底起 12 個月內，S&P 500 出現 ≥ 10% 回撤 7/8 次（88%）；隨便挑一個月份起算是 63%。12 個月最大回撤中位數 -19%（隨便挑 -12%）。',
-  '高點到 S&P 500 跌 10%：10～374 個交易日，中位數約 80 個交易日（約 4 個月）。2000 年兩週就到、2014 年拖了一年半。',
-  '等數據公布、確認回落時（高點後 1～6 個月），之後 12 個月 S&P 500 報酬中位數反而 +11%：不少跌幅在確認前已發生，或很快收復。',
-  '警訊（連 3 個月未創新高，1997 年起 12 次）：公布時站上均線者，63 個交易日內碰到 VOO 100／125／150MA 分別 5/8、5/8、6/9（隨便挑：67%、57%、52%）；126 日內 6/8、7/8、8/9（91%、82%、74%）。',
-  '只有 150MA 比隨便挑多一點（約多 15 個百分點）；100、125MA 本來就常碰到，沒有增量。12 次一年內都碰過三條線。',
-  '結論：「見頂後一年內大概率有一段 10%+ 回撤」可信；「約 120 天後回撤」只是中位數，不能拿來抓時間。樣本只有 8 次，2000／2007 兩次空頭權重大。',
+  '見頂後 12 個月內 S&P 500 回撤 ≥ 10%：7/8 次（平常 63%）。',
+  '到跌 10% 的時間：中位數約 4 個月，但快的兩週、慢的一年半，不能抓時間。',
+  '連 3 個月未創高後 3 個月內碰到 150MA：6/9（平常 52%）；100／125MA 沒比平常多。',
 ];
 function drawUsMargin() {
   const v = usMarginView(), [, name] = detail;
@@ -371,33 +374,34 @@ function drawUsMargin() {
   const sec = (title, ...kids) => { const el = node('section'); el.append(node('h4', title), ...kids); return el; };
   const ul = node('ul', null, { class: 'nonnormal-why-list' });
   for (const t of UM_BACKTEST) ul.append(node('li', t));
-  const now = v.monthsSinceHi > 0
-    ? `${v.last.ym} 為 ${tn(v.last.v)}，距近 12 個月高點 ${v.hi.ym}（${tn(v.hi.v)}）${signed(v.offHi * 100, 1)}%，已過 ${v.monthsSinceHi} 個月；高點月底至今 S&P 500 ${finite(v.spxSinceHi) ? signed(v.spxSinceHi * 100, 1) + '%' : '—'}。`
-    : `${v.last.ym} 創近 12 個月新高 ${tn(v.last.v)}。`;
-  const g = vooMaGap(), gapTxt = g ? `　VOO 對 ${g.gaps.map(([k, x]) => `${k}MA ${finite(x) ? signed(x * 100, 1) + '%' : '—'}`).join('、')}（${g.date}）。` : '';
-  const link = node('p'); link.append('對照：', node('a', '財經 M 平方 FINRA 融資餘額', { href: MM_URL, target: '_blank', rel: 'noopener' }));
-  byId('dialog-why').replaceChildren(sec('為什麼看這個', node('p', REASONS.US_MARGIN)), sec('現在', node('p', now + (v.monthsSinceHi >= UM_WARN_MONTHS ? `連 ${v.monthsSinceHi} 個月未創新高＝警訊。` : '') + gapTxt)), sec('回測：見頂後多久回撤', ul), sec('外部參考', link));
+  const g = vooMaGap();
+  const now = v.monthsSinceHi > 0 ? `距 ${v.hi.ym} 高點 ${signed(v.offHi * 100, 1)}%，${v.monthsSinceHi} 個月未創高${v.monthsSinceHi >= UM_WARN_MONTHS ? '（警訊）' : ''}。` : '創近 12 個月新高。';
+  const gapTxt = g ? `VOO 對 ${g.gaps.map(([k, x]) => `${k}MA ${finite(x) ? signed(x * 100, 1) + '%' : '—'}`).join('、')}。` : '';
+  const link = node('p'); link.append(node('a', '財經 M 平方對照圖 ↗', { href: MM_URL, target: '_blank', rel: 'noopener' }));
+  const nu = umNextUpdate(v.last.ym);
+  const upd = `更新：每月約第三週（約 20 日前後）公布上個月數據。下次約 ${nu.iso}（${+v.last.ym.slice(5) % 12 + 1} 月數據）${nu.late ? '，已逾期仍未更新' : ''}。`;
+  byId('dialog-why').replaceChildren(sec('為什麼看這個', node('p', REASONS.US_MARGIN)), sec('現在', node('p', now), node('p', gapTxt), node('p', upd)), sec('回測（1997 起）', ul), link);
   if (!charts[1]) charts[1] = echarts.init(byId('dialog-chart'), isLight() ? null : 'dark');
   const sv = [...v.spx.map(r => r[1]), ...UM_MAS.flatMap(k => spxMa(k, v.spx[0][0]).map(r => r[1]))], mv = v.rows.map(r => r.v);
   // 縱軸跟可見資料：最低 -10%、最高 +10%
   chartOption(1, {
     animation: false,
-    legend: { top: 0, right: 0, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: ['融資餘額（左，兆美元）', 'S&P 500（右）', ...UM_MAS.map(k => `S&P ${k}MA`)] },
-    grid: { left: 8, right: 8, top: 30, bottom: 4, containLabel: true },
+    legend: { top: 0, right: 0, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: ['融資（左,$T）', 'S&P 500', ...UM_MAS.map(k => `${k}MA`)] },
+    grid: { left: 8, right: 8, top: mob() ? 52 : 40, bottom: 4, containLabel: true },
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'time', axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: '{yy}/{MM}' } },
+    xAxis: { type: 'time', axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: '{yy}/{MM}', hideOverlap: true }, splitNumber: mob() ? 4 : 8 },
     yAxis: [
       { type: 'value', min: +(Math.min(...mv) * 0.9).toFixed(2), max: +(Math.max(...mv) * 1.1).toFixed(2), axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: x => x.toFixed(2) }, splitLine: { lineStyle: { color: PALETTE.grid } } },
       { type: 'value', min: Math.floor(Math.min(...sv) * 0.9), max: Math.ceil(Math.max(...sv) * 1.1), axisLabel: { color: '#58a6ff', fontSize: 12, formatter: x => Math.round(x).toLocaleString('en-US') }, splitLine: { show: false } },
     ],
     dataZoom: [],
     series: [
-      { name: '融資餘額（左，兆美元）', type: 'line', data: v.rows.map(r => [r.end, +r.v.toFixed(3)]), symbolSize: 5, lineStyle: { width: 2, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
+      { name: '融資（左,$T）', type: 'line', data: v.rows.map(r => [r.end, +r.v.toFixed(3)]), symbolSize: 5, lineStyle: { width: 2, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
         tooltip: { valueFormatter: x => tn(x) },
         markLine: { silent: true, symbol: 'none', lineStyle: { type: 'dashed', color: '#ef4444' }, label: { formatter: `高點 ${v.hi.ym}`, color: '#ef4444', fontSize: 11 }, data: [{ xAxis: v.hi.end }] } },
-      { name: 'S&P 500（右）', type: 'line', yAxisIndex: 1, data: v.spx, showSymbol: false, lineStyle: { width: 1.4, color: '#58a6ff' }, itemStyle: { color: '#58a6ff' },
+      { name: 'S&P 500', type: 'line', yAxisIndex: 1, data: v.spx, showSymbol: false, lineStyle: { width: 1.4, color: '#58a6ff' }, itemStyle: { color: '#58a6ff' },
         tooltip: { valueFormatter: x => x.toLocaleString('en-US', { maximumFractionDigits: 2 }) } },
-      ...UM_MAS.map((k, i) => ({ name: `S&P ${k}MA`, type: 'line', yAxisIndex: 1, data: spxMa(k, v.spx[0][0]), showSymbol: false,
+      ...UM_MAS.map((k, i) => ({ name: `${k}MA`, type: 'line', yAxisIndex: 1, data: spxMa(k, v.spx[0][0]), showSymbol: false,
         lineStyle: { width: 1, type: 'dashed', color: ['#e3b341', '#a371f7', '#ef6c00'][i] }, itemStyle: { color: ['#e3b341', '#a371f7', '#ef6c00'][i] },
         tooltip: { valueFormatter: x => x.toLocaleString('en-US', { maximumFractionDigits: 0 }) } })),
     ],
