@@ -1248,6 +1248,11 @@ function wire() {
   if (wired) return;
   wired = true;
   wireInfo();
+  for (const c of $('range-chips')?.querySelectorAll('.chip[data-y]') ?? []) {
+    const d = new Date((raw?.lastDate || new Date().toISOString().slice(0, 10)) + 'T00:00:00Z');
+    d.setUTCMonth(d.getUTCMonth() - Math.round(Number(c.dataset.y) * 12));
+    c.dataset.s = d.toISOString().slice(0, 10);
+  }
   chipPicker($('range-chips'), 's', v => { ui.start = v; rerun(false); });
   wireStress();
   wireStressChart();
