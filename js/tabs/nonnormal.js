@@ -37,18 +37,19 @@ const HELP = {
 // 報價卡：[序列, 名稱, 對應訊號, 格式]。格式 px＝價格、yield＝殖利率（漲跌用 bp）、ratio＝百分比（漲跌用百分點）、score＝0–100 分數（漲跌用點）、
 // count＝家數、days＝天數（這兩種不畫均線）。
 const CARD_GROUPS = [
-  { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['KOSPI', '韓股', 'kospi']] },
+  { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['US_MARGIN', '美股融資餘額', null, 'usmargin'], ['KOSPI', '韓股', 'kospi']] },
   { group: 'B', title: '金融市場', cards: [['US10Y', '美債 10Y', 'us10y', 'yield'], ['DXY', '美元指數', 'dxy'], ['GOLD', '黃金', 'gold'], ['OIL', '布蘭特原油', 'oil'], ['VIX', 'VIX', 'vix'], ['VXN', 'VXN'], ['FG', '恐懼貪婪', null, 'score'], ['BTC', '比特幣']] },
   { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '台股市場廣度', 'breadth', 'ratio'], ['LIMIT_DOWN', '跌停家數', null, 'count'], ['NO_OBS', '無觀察類股', null, 'days']] },
   { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield'], ['US_BREADTH', '美股市場廣度', null, 'ratio'], ['MARGIN_DIST', '個股維持率 <150%', null, 'ratio']] },
 ];
 // 卡片上的英文代號（實際用的標的；指標類用通用簡稱）
-const TICKERS = { SOX: '^SOX', NDX: 'QQQ', SPX: 'VOO', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
+const TICKERS = { SOX: '^SOX', NDX: 'QQQ', SPX: 'VOO', US_MARGIN: 'FINRA', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
   FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'TW Breadth', US_BREADTH: 'SPY', LIMIT_DOWN: 'TWSE+TPEx', NO_OBS: 'TWSE+TPEx', MARGIN_DIST: '非ETF',
   N225: 'N225', HSI: 'HSI', SSE: 'SSE', STOXX50E: 'SX5E', US2Y: 'US2Y' };
 const CARD_BY_SERIES = new Map(CARD_GROUPS.flatMap(g => g.cards.map(c => [c[0], c])));
 // 點卡片的大圖左欄：為什麼把這張圖放進儀表板（本專案整理，用自己的話寫）
 const REASONS = {
+  US_MARGIN: '美國 FINRA 融資餘額（Margin Debt，月資料，約次月第三週公布）。借錢買股的總額，創新高後回落常代表槓桿開始撤退。見頂只能事後確認、到回撤的時間差很大，只顯示不計分。',
   SOX: '台股權重最大的是半導體。費半是電子股的領先指標，急跌常在隔天反映到台股。',
   NDX: '美國科技股的資金風向。台股電子供應鏈的終端需求和評價跟著它走。',
   SPX: '全球風險偏好的基準。大跌時外資通常同步減碼新興市場，台股也在其中。',
@@ -105,7 +106,7 @@ function table(id, headers, rows) {
 }
 
 // 上市融資維持率口徑（排除 ETF／含 ETF），記在本機，讀寫失敗就用預設
-let rawData = null, soxxRows = [];   // soxxRows：費半成交量（^SOX 沒有量，借 SOXX）
+let rawData = null, soxxRows = [], usMargin = null;   // usMargin：{ rows:[{date,debit}], spx:[[date,close]] }   // soxxRows：費半成交量（^SOX 沒有量，借 SOXX）
 let marginBasis = (() => { try { return localStorage.getItem('nonnormal-margin-basis') === 'all' ? 'all' : 'ex'; } catch { return 'ex'; } })();
 
 // ── data ────────────────────────────────────────────────────────────────
@@ -119,6 +120,8 @@ async function load(context = {}) {
   }));
   const ckGot = await loadCash(context);
   const soxx = await requestJSON('data/SOXX.json', { signal: context.signal }).then(j => j?.data || [], () => []);
+  const [liq, gspc] = await Promise.all(['liquidity', 'SP500'].map(f => requestJSON(`data/${f}.json`, { signal: context.signal }).catch(() => null)));
+  usMargin = liq?.margin && gspc?.data ? { rows: liq.margin.filter(r => finite(r.debit)), spx: gspc.data.filter(r => finite(r.close)).map(r => [r.date, r.close]) } : null;
   if (context.signal?.aborted || context.isCurrent?.() === false) return false;
   rawData = Object.fromEntries(got);
   soxxRows = soxx;
@@ -238,6 +241,7 @@ function sparkline(q, noMa = false) {
 }
 
 function quoteCard([id, name, sigId, kind = 'px'], now) {
+  if (id === 'US_MARGIN') return usMarginCard(name);
   const q = N.quote(ctx.s[id], now.date, { mas: MAS });
   const sig = sigId ? now.signals.find(s => s.id === sigId) : null;
   let state = sig?.state || null;
@@ -264,6 +268,100 @@ function quoteCard([id, name, sigId, kind = 'px'], now) {
   if (id === 'MARGIN_DIST' && !q.stale) { const bar = marginDistBar(rawData?.MARGIN_DIST?.at(-1)); if (bar) el.append(bar); }
   if (DOWNTURN_IDS.has(id) && !q.stale) { const dt = downturnLine(N.maDownturn(ctx.s[id], now.date)); if (dt) el.append(dt); }
   return el;
+}
+
+// ── 美股融資餘額（FINRA，月資料，不計分）：近 15 個月，對照 S&P 500 ─────────────
+const UM_MONTHS = 15;
+const monthEndOf = ym => { const [y, m] = ym.split('-').map(Number); return new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10); };
+/** 近 15 個月的融資餘額、近 12 個月高點與 S&P 500 日線（從第一個月月初起）。 */
+function usMarginView() {
+  if (!usMargin?.rows.length || !usMargin.spx.length) return null;
+  const rows = usMargin.rows.slice(-UM_MONTHS).map(r => ({ ym: r.date.slice(0, 7), end: monthEndOf(r.date.slice(0, 7)), v: r.debit / 1e6 }));   // 百萬 → 兆美元
+  const last = rows.at(-1), prev = rows.at(-2);
+  const all = usMargin.rows, ath = all.reduce((a, r) => (r.debit > a.debit ? r : a), all[0]);
+  const win = rows.slice(-12), hi = win.reduce((a, r) => (r.v > a.v ? r : a), win[0]);
+  const from = rows[0].ym + '-01', spx = usMargin.spx.filter(([d]) => d >= from);
+  const mAfter = (a, b) => (+b.slice(0, 4) - +a.slice(0, 4)) * 12 + (+b.slice(5, 7) - +a.slice(5, 7));
+  const k = spx.findIndex(([d]) => d > hi.end), base = k > 0 ? spx[k - 1][1] : null;
+  return { rows, last, prev, hi, ath: { ym: ath.date.slice(0, 7), v: ath.debit / 1e6 }, spx, offHi: last.v / hi.v - 1, monthsSinceHi: mAfter(hi.ym, last.ym),
+    spxSinceHi: base ? spx.at(-1)[1] / base - 1 : null };
+}
+const tn = v => `$${v.toFixed(2)}T`;
+function usMarginCard(name) {
+  const v = usMarginView();
+  const el = node('article', null, { class: `nonnormal-q${v ? '' : ' nonnormal-q--na'}`, 'data-series': 'US_MARGIN', tabindex: '0', role: 'button', 'aria-haspopup': 'dialog', 'aria-label': `${name}：開啟大圖與說明` });
+  el.title = '點兩下：大圖與說明';
+  const head = node('div', null, { class: 'nonnormal-q-head' }), title = node('span', null, { class: 'nonnormal-q-title' });
+  title.append(node('span', name, { class: 'nonnormal-q-name' }), node('span', 'FINRA', { class: 'nonnormal-q-tk' }));
+  head.append(title, node('span', 'ⓘ', { class: 'nonnormal-q-hint', 'aria-hidden': 'true' }));
+  el.append(head);
+  if (!v) { el.append(node('div', '—', { class: 'nonnormal-q-val' }), node('p', '尚無資料', { class: 'nonnormal-q-foot' })); return el; }
+  const chg = v.prev ? v.last.v / v.prev.v - 1 : null;
+  el.append(node('div', tn(v.last.v), { class: 'nonnormal-q-val ' + dirClass(chg) }),
+    node('div', `${v.last.ym} 月 ${finite(chg) ? signed(chg * 100, 1) + '%' : '—'}`, { class: 'nonnormal-q-chg ' + dirClass(chg) }));
+  // 迷你圖：融資餘額（月點連線）＋ S&P 500（日線，藍），各自正規化；x 依日期
+  const W = 120, H = 40, t0 = Date.parse(v.rows[0].ym + '-01'), t1 = Date.parse(v.spx.at(-1)[0]), span = t1 - t0 || 1;
+  const x = d => (Math.min(Date.parse(d), t1) - t0) / span * W;
+  const scale = vals => { const lo = Math.min(...vals), hi = Math.max(...vals); return val => H - 2 - ((val - lo) / (hi - lo || 1)) * (H - 4); };
+  const ym = scale(v.rows.map(r => r.v)), ys = scale(v.spx.map(r => r[1]));
+  const svg = document.createElementNS(SVG, 'svg');
+  for (const [k, val] of [['viewBox', `0 0 ${W} ${H}`], ['preserveAspectRatio', 'none'], ['class', 'nonnormal-spark'], ['aria-hidden', 'true']]) svg.setAttribute(k, val);
+  const add = (cls, d) => { const p = document.createElementNS(SVG, 'path'); p.setAttribute('class', cls); p.setAttribute('d', d); svg.append(p); };
+  add('ma100', v.spx.map(([d, c], i) => `${i ? 'L' : 'M'}${x(d).toFixed(1)},${ys(c).toFixed(1)}`).join(''));
+  add('px', v.rows.map((r, i) => `${i ? 'L' : 'M'}${x(r.end).toFixed(1)},${ym(r.v).toFixed(1)}`).join(''));
+  el.append(svg);
+  el.append(node('p', v.monthsSinceHi > 0 ? `距 ${v.hi.ym} 高點 ${signed(v.offHi * 100, 1)}%・${v.monthsSinceHi} 個月` : '創近 12 月新高', { class: 'nonnormal-q-foot' }));
+  const dt = node('div', null, { class: 'nonnormal-q-dt' });
+  const leg = (c, t) => { const r = node('span', null, { class: 'nonnormal-q-dt-row' }); r.append(node('span', '━', { style: `color:${c};margin-right:4px`, 'aria-hidden': 'true' }), t); return r; };
+  dt.append(leg('var(--text)', '融資（月）'), leg('#58a6ff', 'S&P 500・近 15 月'));
+  el.append(dt);
+  return el;
+}
+const UM_BACKTEST = [
+  '1997 年起，融資創歷史新高後回落 ≥ 5% 共 8 次（1998、2000、2007、2014、2015、2018、2021、2025）。',
+  '高點月底起 12 個月內，S&P 500 出現 ≥ 10% 回撤 7/8 次（88%）；隨便挑一個月份起算是 63%。12 個月最大回撤中位數 -19%（隨便挑 -12%）。',
+  '高點到 S&P 500 跌 10%：10～374 個交易日，中位數約 80 個交易日（約 4 個月）。2000 年兩週就到、2014 年拖了一年半。',
+  '等數據公布、確認回落時（高點後 1～6 個月），之後 12 個月 S&P 500 報酬中位數反而 +11%：不少跌幅在確認前已發生，或很快收復。',
+  '結論：「見頂後一年內大概率有一段 10%+ 回撤」可信；「約 120 天後回撤」只是中位數，不能拿來抓時間。樣本只有 8 次，2000／2007 兩次空頭權重大。',
+];
+function drawUsMargin() {
+  const v = usMarginView(), [, name] = detail;
+  byId('dialog-title').replaceChildren(name, node('small', ' FINRA Margin Debt', { class: 'nonnormal-dialog-tk' }));
+  const sub = byId('dialog-sub');
+  sub.replaceChildren();
+  if (!v) { sub.textContent = '尚無資料'; charts[1]?.clear(); return; }
+  const chg = v.prev ? v.last.v / v.prev.v - 1 : null;
+  sub.append(node('b', tn(v.last.v), { class: dirClass(chg) }), ' ', node('span', finite(chg) ? signed(chg * 100, 1) + '%' : '', { class: dirClass(chg) }), node('span', `　${v.last.ym}（月資料）`, { class: 'nonnormal-flat' }),
+    ' ', node('span', '只顯示，不計分', { class: 'nonnormal-why-state nonnormal-why-state--ref' }));
+  const sec = (title, ...kids) => { const el = node('section'); el.append(node('h4', title), ...kids); return el; };
+  const ul = node('ul', null, { class: 'nonnormal-why-list' });
+  for (const t of UM_BACKTEST) ul.append(node('li', t));
+  const now = v.monthsSinceHi > 0
+    ? `${v.last.ym} 為 ${tn(v.last.v)}，距近 12 個月高點 ${v.hi.ym}（${tn(v.hi.v)}）${signed(v.offHi * 100, 1)}%，已過 ${v.monthsSinceHi} 個月；高點月底至今 S&P 500 ${finite(v.spxSinceHi) ? signed(v.spxSinceHi * 100, 1) + '%' : '—'}。`
+    : `${v.last.ym} 創近 12 個月新高 ${tn(v.last.v)}。`;
+  byId('dialog-why').replaceChildren(sec('為什麼看這個', node('p', REASONS.US_MARGIN)), sec('現在', node('p', now)), sec('回測：見頂後多久回撤', ul));
+  if (!charts[1]) charts[1] = echarts.init(byId('dialog-chart'), isLight() ? null : 'dark');
+  const sv = v.spx.map(r => r[1]), mv = v.rows.map(r => r.v);
+  // 縱軸跟可見資料：最低 -10%、最高 +10%
+  chartOption(1, {
+    animation: false,
+    legend: { top: 0, right: 0, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: ['融資餘額（左，兆美元）', 'S&P 500（右）'] },
+    grid: { left: 8, right: 8, top: 30, bottom: 4, containLabel: true },
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'time', axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: '{yy}/{MM}' } },
+    yAxis: [
+      { type: 'value', min: +(Math.min(...mv) * 0.9).toFixed(2), max: +(Math.max(...mv) * 1.1).toFixed(2), axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: x => x.toFixed(2) }, splitLine: { lineStyle: { color: PALETTE.grid } } },
+      { type: 'value', min: Math.floor(Math.min(...sv) * 0.9), max: Math.ceil(Math.max(...sv) * 1.1), axisLabel: { color: '#58a6ff', fontSize: 12, formatter: x => Math.round(x).toLocaleString('en-US') }, splitLine: { show: false } },
+    ],
+    dataZoom: [],
+    series: [
+      { name: '融資餘額（左，兆美元）', type: 'line', data: v.rows.map(r => [r.end, +r.v.toFixed(3)]), symbolSize: 5, lineStyle: { width: 2, color: PALETTE.text }, itemStyle: { color: PALETTE.text },
+        tooltip: { valueFormatter: x => tn(x) },
+        markLine: { silent: true, symbol: 'none', lineStyle: { type: 'dashed', color: '#ef4444' }, label: { formatter: `高點 ${v.hi.ym}`, color: '#ef4444', fontSize: 11 }, data: [{ xAxis: v.hi.end }] } },
+      { name: 'S&P 500（右）', type: 'line', yAxisIndex: 1, data: v.spx, showSymbol: false, lineStyle: { width: 1.4, color: '#58a6ff' }, itemStyle: { color: '#58a6ff' },
+        tooltip: { valueFormatter: x => x.toLocaleString('en-US', { maximumFractionDigits: 2 }) } },
+    ],
+  });
 }
 
 // ── 個股融資維持率四區（不計分）───────────────────────────────────────────
@@ -347,6 +445,7 @@ function openDetail(def) {
 function drawDetail() {
   const dlg = byId('dialog');
   if (!detail || !dlg.open || !ctx) return;
+  if (detail[0] === 'US_MARGIN') return drawUsMargin();
   const [id, name, sigId, kind = 'px'] = detail, now = weeks.at(-1);
   const q = N.quote(ctx.s[id], now.date, { mas: MAS }), sig = sigId ? now.signals.find(x => x.id === sigId) : null;
   byId('dialog-title').replaceChildren(name, TICKERS[id] ? node('small', ` ${TICKERS[id]}`, { class: 'nonnormal-dialog-tk' }) : '');
