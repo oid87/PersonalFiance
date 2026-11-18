@@ -287,6 +287,28 @@ function usMarginView() {
     spxSinceHi: base ? spx.at(-1)[1] / base - 1 : null };
 }
 const tn = v => `$${v.toFixed(2)}T`;
+const UM_WARN_MONTHS = 3, UM_MAS = [100, 125, 150];
+const MM_URL = 'https://www.macromicro.me/charts/415/us-margin-debt';
+/** VOO 收盤對 100／125／150 日線的距離（儀表板的 S&P 500 卡也是 VOO）。 */
+function vooMaGap() {
+  const s = ctx?.s?.SPX, n = s?.close?.length || 0;
+  if (!n) return null;
+  return { date: s.dates[n - 1], gaps: UM_MAS.map(k => {
+    if (n < k) return [k, null];
+    const ma = s.close.slice(n - k).reduce((a, b) => a + b, 0) / k;
+    return [k, s.close[n - 1] / ma - 1];
+  }) };
+}
+/** 指定日期序列上的 N 日均線（S&P 500 指數，大圖用）。 */
+function spxMa(k, from) {
+  const all = usMargin.spx, out = [];
+  let sum = 0;
+  for (let i = 0; i < all.length; i++) {
+    sum += all[i][1]; if (i >= k) sum -= all[i - k][1];
+    if (i >= k - 1 && all[i][0] >= from) out.push([all[i][0], +(sum / k).toFixed(2)]);
+  }
+  return out;
+}
 function usMarginCard(name) {
   const v = usMarginView();
   const el = node('article', null, { class: `nonnormal-q${v ? '' : ' nonnormal-q--na'}`, 'data-series': 'US_MARGIN', tabindex: '0', role: 'button', 'aria-haspopup': 'dialog', 'aria-label': `${name}：開啟大圖與說明` });
@@ -310,10 +332,21 @@ function usMarginCard(name) {
   add('ma100', v.spx.map(([d, c], i) => `${i ? 'L' : 'M'}${x(d).toFixed(1)},${ys(c).toFixed(1)}`).join(''));
   add('px', v.rows.map((r, i) => `${i ? 'L' : 'M'}${x(r.end).toFixed(1)},${ym(r.v).toFixed(1)}`).join(''));
   el.append(svg);
-  el.append(node('p', v.monthsSinceHi > 0 ? `距 ${v.hi.ym} 高點 ${signed(v.offHi * 100, 1)}%・${v.monthsSinceHi} 個月` : '創近 12 月新高', { class: 'nonnormal-q-foot' }));
+  const warn = v.monthsSinceHi >= UM_WARN_MONTHS;
+  if (warn) { el.classList.add('nonnormal-q--on'); head.append(node('span', '警訊', { class: 'nonnormal-q-flag' })); }
+  const foot = node('p', null, { class: 'nonnormal-q-foot' });
+  if (v.monthsSinceHi > 0) foot.append(`距 ${v.hi.ym} 高點 ${signed(v.offHi * 100, 1)}%・`, warn ? node('b', `${v.monthsSinceHi} 個月未創高`) : `${v.monthsSinceHi} 個月未創高`);
+  else foot.append('創近 12 月新高');
+  el.append(foot);
   const dt = node('div', null, { class: 'nonnormal-q-dt' });
   const leg = (c, t) => { const r = node('span', null, { class: 'nonnormal-q-dt-row' }); r.append(node('span', '━', { style: `color:${c};margin-right:4px`, 'aria-hidden': 'true' }), t); return r; };
   dt.append(leg('var(--text)', '融資（月）'), leg('#58a6ff', 'S&P 500・近 15 月'));
+  const g = vooMaGap();
+  if (g) for (const [k, x] of g.gaps) {
+    const r = node('span', null, { class: 'nonnormal-q-dt-row' });
+    r.append(node('span', `VOO ${k}MA`, { class: 'nonnormal-q-dt-k' }), ' ', finite(x) ? node('span', x <= 0 ? `跌破 ${signed(x * 100, 1)}%` : `${signed(x * 100, 1)}%`, x <= 0 ? { class: 'nonnormal-dt-on' } : {}) : '—');
+    dt.append(r);
+  }
   el.append(dt);
   return el;
 }
@@ -322,6 +355,8 @@ const UM_BACKTEST = [
   '高點月底起 12 個月內，S&P 500 出現 ≥ 10% 回撤 7/8 次（88%）；隨便挑一個月份起算是 63%。12 個月最大回撤中位數 -19%（隨便挑 -12%）。',
   '高點到 S&P 500 跌 10%：10～374 個交易日，中位數約 80 個交易日（約 4 個月）。2000 年兩週就到、2014 年拖了一年半。',
   '等數據公布、確認回落時（高點後 1～6 個月），之後 12 個月 S&P 500 報酬中位數反而 +11%：不少跌幅在確認前已發生，或很快收復。',
+  '警訊（連 3 個月未創新高，1997 年起 12 次）：公布時站上均線者，63 個交易日內碰到 VOO 100／125／150MA 分別 5/8、5/8、6/9（隨便挑：67%、57%、52%）；126 日內 6/8、7/8、8/9（91%、82%、74%）。',
+  '只有 150MA 比隨便挑多一點（約多 15 個百分點）；100、125MA 本來就常碰到，沒有增量。12 次一年內都碰過三條線。',
   '結論：「見頂後一年內大概率有一段 10%+ 回撤」可信；「約 120 天後回撤」只是中位數，不能拿來抓時間。樣本只有 8 次，2000／2007 兩次空頭權重大。',
 ];
 function drawUsMargin() {
@@ -339,13 +374,15 @@ function drawUsMargin() {
   const now = v.monthsSinceHi > 0
     ? `${v.last.ym} 為 ${tn(v.last.v)}，距近 12 個月高點 ${v.hi.ym}（${tn(v.hi.v)}）${signed(v.offHi * 100, 1)}%，已過 ${v.monthsSinceHi} 個月；高點月底至今 S&P 500 ${finite(v.spxSinceHi) ? signed(v.spxSinceHi * 100, 1) + '%' : '—'}。`
     : `${v.last.ym} 創近 12 個月新高 ${tn(v.last.v)}。`;
-  byId('dialog-why').replaceChildren(sec('為什麼看這個', node('p', REASONS.US_MARGIN)), sec('現在', node('p', now)), sec('回測：見頂後多久回撤', ul));
+  const g = vooMaGap(), gapTxt = g ? `　VOO 對 ${g.gaps.map(([k, x]) => `${k}MA ${finite(x) ? signed(x * 100, 1) + '%' : '—'}`).join('、')}（${g.date}）。` : '';
+  const link = node('p'); link.append('對照：', node('a', '財經 M 平方 FINRA 融資餘額', { href: MM_URL, target: '_blank', rel: 'noopener' }));
+  byId('dialog-why').replaceChildren(sec('為什麼看這個', node('p', REASONS.US_MARGIN)), sec('現在', node('p', now + (v.monthsSinceHi >= UM_WARN_MONTHS ? `連 ${v.monthsSinceHi} 個月未創新高＝警訊。` : '') + gapTxt)), sec('回測：見頂後多久回撤', ul), sec('外部參考', link));
   if (!charts[1]) charts[1] = echarts.init(byId('dialog-chart'), isLight() ? null : 'dark');
-  const sv = v.spx.map(r => r[1]), mv = v.rows.map(r => r.v);
+  const sv = [...v.spx.map(r => r[1]), ...UM_MAS.flatMap(k => spxMa(k, v.spx[0][0]).map(r => r[1]))], mv = v.rows.map(r => r.v);
   // 縱軸跟可見資料：最低 -10%、最高 +10%
   chartOption(1, {
     animation: false,
-    legend: { top: 0, right: 0, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: ['融資餘額（左，兆美元）', 'S&P 500（右）'] },
+    legend: { top: 0, right: 0, textStyle: { color: PALETTE.muted, fontSize: 12 }, data: ['融資餘額（左，兆美元）', 'S&P 500（右）', ...UM_MAS.map(k => `S&P ${k}MA`)] },
     grid: { left: 8, right: 8, top: 30, bottom: 4, containLabel: true },
     tooltip: { trigger: 'axis' },
     xAxis: { type: 'time', axisLabel: { color: PALETTE.muted, fontSize: 12, formatter: '{yy}/{MM}' } },
@@ -360,6 +397,9 @@ function drawUsMargin() {
         markLine: { silent: true, symbol: 'none', lineStyle: { type: 'dashed', color: '#ef4444' }, label: { formatter: `高點 ${v.hi.ym}`, color: '#ef4444', fontSize: 11 }, data: [{ xAxis: v.hi.end }] } },
       { name: 'S&P 500（右）', type: 'line', yAxisIndex: 1, data: v.spx, showSymbol: false, lineStyle: { width: 1.4, color: '#58a6ff' }, itemStyle: { color: '#58a6ff' },
         tooltip: { valueFormatter: x => x.toLocaleString('en-US', { maximumFractionDigits: 2 }) } },
+      ...UM_MAS.map((k, i) => ({ name: `S&P ${k}MA`, type: 'line', yAxisIndex: 1, data: spxMa(k, v.spx[0][0]), showSymbol: false,
+        lineStyle: { width: 1, type: 'dashed', color: ['#e3b341', '#a371f7', '#ef6c00'][i] }, itemStyle: { color: ['#e3b341', '#a371f7', '#ef6c00'][i] },
+        tooltip: { valueFormatter: x => x.toLocaleString('en-US', { maximumFractionDigits: 0 }) } })),
     ],
   });
 }
