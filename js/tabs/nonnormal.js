@@ -456,6 +456,66 @@ function downturnText(r) {
   return lines;
 }
 
+// ── 週線九轉（TD Setup，近 2 年，不計分）：VOO／QQQ／SOXX ─────────────────────
+// 規則：本週收盤 < 4 週前收盤＝買進計數 +1（> 為賣出計數），中斷就歸零；數到 9 標記一次後重新起算。
+const TD_MARKETS = [['VOO', () => ctx.s.SPX], ['QQQ', () => ctx.s.NDX], ['SOXX', () => ({ dates: soxxRows.map(r => r.date), close: soxxRows.map(r => r.close) })]];
+const TD_WEEKS = 104;
+function weeklyCloses(s) {
+  const out = [];
+  s?.dates?.forEach((d, i) => {
+    const c = s.close[i]; if (!finite(c)) return;
+    const t = new Date(d + 'T00:00:00Z'), day = t.getUTCDay();
+    t.setUTCDate(t.getUTCDate() - (day === 0 ? 6 : day - 1));
+    const wk = t.toISOString().slice(0, 10);
+    if (out.at(-1)?.wk === wk) { out.at(-1).close = c; out.at(-1).date = d; } else out.push({ wk, date: d, close: c });
+  });
+  return out;
+}
+function tdSetup(w) {
+  let buy = 0, sell = 0;
+  return w.map((x, i) => {
+    if (i < 4) return { buy: 0, sell: 0, nine: null };
+    const ref = w[i - 4].close;
+    buy = x.close < ref ? (buy >= 9 ? 1 : buy + 1) : 0;
+    sell = x.close > ref ? (sell >= 9 ? 1 : sell + 1) : 0;
+    return { buy, sell, nine: buy === 9 ? 'buy' : sell === 9 ? 'sell' : null };
+  });
+}
+function tdCard(name, s) {
+  const el = node('article', null, { class: 'nonnormal-q' });
+  const head = node('div', null, { class: 'nonnormal-q-head' }), title = node('span', null, { class: 'nonnormal-q-title' });
+  title.append(node('span', name, { class: 'nonnormal-q-name' }), node('span', '週線', { class: 'nonnormal-q-tk' }));
+  head.append(title);
+  el.append(head);
+  const all = weeklyCloses(s);
+  if (all.length < 10) { el.append(node('p', '尚無資料', { class: 'nonnormal-q-foot' })); return el; }
+  const td = tdSetup(all), k0 = Math.max(0, all.length - TD_WEEKS), w = all.slice(k0), t = td.slice(k0), cur = td.at(-1);
+  const dir = cur.buy > 0 ? 'buy' : cur.sell > 0 ? 'sell' : null, n = dir === 'buy' ? cur.buy : cur.sell;
+  if (dir && n >= 7) { head.append(node('span', dir === 'buy' ? `買${n}` : `賣${n}`, { class: 'nonnormal-q-flag' })); if (dir === 'buy') el.classList.add('nonnormal-q--on'); }
+  el.append(node('div', dir ? `${dir === 'buy' ? '買進' : '賣出'} ${n}/9` : '無計數', { class: 'nonnormal-q-val ' + (dir === 'buy' ? 'nonnormal-down' : dir === 'sell' ? 'nonnormal-up' : 'nonnormal-flat') }));
+  const W = 120, H = 40, vals = w.map(x => x.close), lo = Math.min(...vals), hi = Math.max(...vals);
+  const x = i => (i / (w.length - 1 || 1)) * W, y = v => H - 3 - ((v - lo) / (hi - lo || 1)) * (H - 6);
+  const svg = document.createElementNS(SVG, 'svg');
+  for (const [a, b] of [['viewBox', `0 0 ${W} ${H}`], ['preserveAspectRatio', 'none'], ['class', 'nonnormal-spark'], ['aria-hidden', 'true']]) svg.setAttribute(a, b);
+  const p = document.createElementNS(SVG, 'path'); p.setAttribute('class', 'px'); p.setAttribute('d', w.map((r, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(r.close).toFixed(1)}`).join('')); svg.append(p);
+  const nines = [];
+  t.forEach((r, i) => { if (!r.nine) return; nines.push([w[i].date, r.nine]);
+    const c = document.createElementNS(SVG, 'circle'); c.setAttribute('cx', x(i).toFixed(1)); c.setAttribute('cy', y(w[i].close).toFixed(1)); c.setAttribute('r', '2.6');
+    c.setAttribute('style', `fill:${r.nine === 'buy' ? '#16a34a' : '#ef4444'};stroke:none`); svg.append(c); });
+  el.append(svg);
+  const last = nines.at(-1);
+  el.append(node('p', last ? `上次 9：${last[0]} ${last[1] === 'buy' ? '買' : '賣'}・近 2 年 ${nines.filter(r => r[1] === 'buy').length} 買 ${nines.filter(r => r[1] === 'sell').length} 賣` : '近 2 年沒有 9', { class: 'nonnormal-q-foot' }));
+  return el;
+}
+function tdGroup() {
+  const head = node('div', null, { class: 'nonnormal-group-head' }), h = node('h3', '週線九轉（近 2 年，不計分）');
+  h.append(' ', infoButton('神奇九轉（TD Setup）週線：本週收盤低於 4 週前收盤＝買進計數加 1，高於＝賣出計數加 1，中斷歸零；連 9 週＝一次 9。綠點＝買進 9（跌勢可能力竭）、紅點＝賣出 9（漲勢可能力竭）。只是提示，不計入亮燈。卡片 7 以上標示。', '說明：週線九轉'));
+  head.append(h);
+  const grid = node('div', null, { class: 'nonnormal-cards' });
+  grid.append(...TD_MARKETS.map(([name, get]) => tdCard(name, get())));
+  return [head, grid];
+}
+
 function renderCards(now) {
   const legend = node('span', null, { class: 'nonnormal-legend' });
   legend.append(node('span', '點兩下卡片：大圖與說明', { class: 'nonnormal-legend-hint' }), node('span', '近 6 個月'));
@@ -472,7 +532,7 @@ function renderCards(now) {
     if (gi === 0) head.append(legend);
     const grid = node('div', null, { class: 'nonnormal-cards' });
     grid.append(...cards.map(c => quoteCard(c, now)));
-    return [head, grid];
+    return gi === 0 ? [head, grid, ...tdGroup()] : [head, grid];
   }));
 }
 
