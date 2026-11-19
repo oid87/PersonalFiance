@@ -1,5 +1,5 @@
 {
- "generated": "2026-11-18T21:42:54Z",
+ "generated": "2026-11-19T03:56:25Z",
  "expected": "2026-11-18",
  "rows": [
   {
@@ -48,13 +48,13 @@
    "expected": "2026-11-18",
    "lag": 1,
    "pending": [],
-   "state": "behind",
-   "cause": "source",
+   "state": "waiting",
+   "cause": null,
    "seen": "2026-11-17T22:06:01Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": true
+   "alert": false
   },
   {
    "key": "twse",
@@ -66,13 +66,13 @@
    "expected": "2026-11-18",
    "lag": 1,
    "pending": [],
-   "state": "behind",
-   "cause": "source",
+   "state": "waiting",
+   "cause": null,
    "seen": "2026-11-17T22:06:01Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": true
+   "alert": false
   },
   {
    "key": "tpex",
@@ -84,13 +84,13 @@
    "expected": "2026-11-18",
    "lag": 1,
    "pending": [],
-   "state": "behind",
-   "cause": "source",
+   "state": "waiting",
+   "cause": null,
    "seen": "2026-11-17T22:06:01Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": true
+   "alert": false
   },
   {
    "key": "margin",
@@ -102,13 +102,13 @@
    "expected": "2026-11-18",
    "lag": 1,
    "pending": [],
-   "state": "behind",
-   "cause": "source",
+   "state": "waiting",
+   "cause": null,
    "seen": "2026-11-17T22:06:01Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": true
+   "alert": false
   },
   {
    "key": "ld",
@@ -120,13 +120,13 @@
    "expected": "2026-11-18",
    "lag": 1,
    "pending": [],
-   "state": "behind",
-   "cause": "source",
+   "state": "waiting",
+   "cause": null,
    "seen": "2026-11-17T22:06:01Z",
    "note": null,
    "msg": null,
    "gaps": [],
-   "alert": true
+   "alert": false
   },
   {
    "key": "intraday",
@@ -149,67 +149,11 @@
    "alert": false
   }
  ],
- "alerts": [
-  {
-   "key": "tw50",
-   "name": "臺灣50 市場廣度",
-   "state": "behind",
-   "cause": "source",
-   "latest": "2026-11-17",
-   "expected": "2026-11-18",
-   "lag": 1,
-   "backfill": true,
-   "msg": null
-  },
-  {
-   "key": "twse",
-   "name": "上市市場廣度",
-   "state": "behind",
-   "cause": "source",
-   "latest": "2026-11-17",
-   "expected": "2026-11-18",
-   "lag": 1,
-   "backfill": true,
-   "msg": null
-  },
-  {
-   "key": "tpex",
-   "name": "上櫃市場廣度",
-   "state": "behind",
-   "cause": "source",
-   "latest": "2026-11-17",
-   "expected": "2026-11-18",
-   "lag": 1,
-   "backfill": true,
-   "msg": null
-  },
-  {
-   "key": "margin",
-   "name": "融資餘額與買賣",
-   "state": "behind",
-   "cause": "source",
-   "latest": "2026-11-17",
-   "expected": "2026-11-18",
-   "lag": 1,
-   "backfill": true,
-   "msg": null
-  },
-  {
-   "key": "ld",
-   "name": "跌停與買盤（跌停家數、收盤無委買）",
-   "state": "behind",
-   "cause": "source",
-   "latest": "2026-11-17",
-   "expected": "2026-11-18",
-   "lag": 1,
-   "backfill": true,
-   "msg": null
-  }
- ],
+ "alerts": [],
  "run": {
-  "id": "44402372233",
-  "url": "https://github.com/oid87/PersonalFiance/actions/runs/44402372233",
-  "job": "tw"
+  "id": "44454806056",
+  "url": "https://github.com/oid87/PersonalFiance/actions/runs/44454806056",
+  "job": "monitor"
  },
  "note": "各來源狀態是排程執行當下判斷的；頁面會另外用現在時間檢查這份檔案本身是不是太久沒更新。"
 }
