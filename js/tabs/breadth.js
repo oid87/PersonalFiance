@@ -253,7 +253,7 @@ export function renderBreadthChart() {
     ],
     series: [line(cfg().overlayName, sessions.map(s => s.close), 1, '#a371f7'),
       line(`${cfg().overlayName} ${maWindow}MA`, sessions.map(s => s.ma), 1, '#d2a8ff', { lineStyle: { color: '#d2a8ff', type: 'dashed' } }),
-      line(`${maWindow}日均線以上`, sessions.map(s => s.pct), 0, '#58a6ff', { markLine: { silent: true, symbol: 'none', data: [15,25,50,75,85].map(yAxis => ({ yAxis, label: { formatter: `${yAxis}%` } })) } }),
+      line(`${maWindow}日均線以上`, sessions.map(s => s.pct), 0, '#58a6ff', { markLine: { silent: true, symbol: 'none', data: [[15,'投降','#f85149'],[25,'恐懼','#f0883e'],[50,'',null],[75,'貪婪',null],[85,'狂熱',null]].map(([yAxis, tag, c]) => ({ yAxis, label: { formatter: tag ? `${yAxis}% ${tag}` : `${yAxis}%` }, ...(c ? { lineStyle: { color: c, type: 'dashed', width: 1.4 } } : {}) })) } }),
       line('90交易日完整滾動高點', dates.map(date => c.peakByDate[date]), 0, '#8b949e'),
       ...overlaySeries, marker('興登堡觸發（簡化版）', c.hindenburgDates, 'pin', '#f85149'),
       marker('研究保留訊號', study?.events.map(e => e.date) ?? [], 'triangle', '#e3b341')],
@@ -288,6 +288,7 @@ export async function init(context = {}) {
   if (bindOnce(el('breadth-retry'))) el('breadth-retry').addEventListener('click', () => selectUniverse(universe));
   if (loaded) { refreshView(); resize(); return; }
   await selectUniverse(universe, context);
+  if (!overlays['F&G'].active && el('breadth-fg-toggle')) toggleOverlay('F&G', el('breadth-fg-toggle'));
 }
 
 export function onThemeChange(light) {
