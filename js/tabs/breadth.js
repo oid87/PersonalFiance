@@ -10,7 +10,7 @@ const UNIVERSE_CONFIG = {
   TW50: { dataFile: 'data/breadth_tw50.json', overlayFile: 'data/0050.TW.json', overlayName: '0050', label: '台灣50' },
 };
 const cache = new Map();
-const overlays = { 'F&G': { file: 'data/fear_greed.json', active: false, rows: null, error: null }, RSP: { file: 'data/RSP.json', active: false, rows: null, error: null } };
+const overlays = { VIX: { file: 'data/VIX.json', active: false, rows: null, error: null }, 'F&G': { file: 'data/fear_greed.json', active: false, rows: null, error: null }, RSP: { file: 'data/RSP.json', active: false, rows: null, error: null } };
 let universe = 'SP500', maWindow = 20, range = '3Y', requestSequence = 0;
 let loaded = null, breadthChart = null, chartDates = [];
 const el = id => document.getElementById(id);
@@ -189,12 +189,13 @@ export function renderBreadthChart() {
   const line = (name, data, axis, color, extra = {}) => ({ name, type: 'line', data, yAxisIndex: axis, symbol: 'none', connectNulls: false, itemStyle: { color }, lineStyle: { color, width: 1.6 }, ...extra });
   const fg = overlays['F&G'], rsp = overlays.RSP;
   const fgMap = fg.active && fg.rows ? new Map(fg.rows.map(r => [r.date, r.value])) : null;
+  const vix = overlays.VIX, vixMap = vix.active && vix.rows ? new Map(vix.rows.map(r => [r.date, r.close])) : null;
   const start = cutoff(range, c.latestBreadthDate);
   const startIdx = start ? Math.max(0, dates.findIndex(d => d >= start)) : 0;
   const thresholds = [[15,'投降','#f85149'],[25,'恐懼','#f0883e'],[50,'',null],[75,'貪婪',null],[85,'狂熱',null]];
   breadthChart.setOption(echartsBase({
     grid: { top: 28, bottom: 64, left: mob() ? 44 : 56, right: mob() ? 52 : 68 },
-    legend: { top: 0, data: [cfg().overlayName, ...(rsp.active ? ['RSP 等權'] : []), `${maWindow}日均線以上`, ...(fgMap ? ['F&G'] : [])] },
+    legend: { top: 0, data: [cfg().overlayName, ...(rsp.active ? ['RSP 等權'] : []), `${maWindow}日均線以上`, ...(fgMap ? ['F&G'] : []), ...(vixMap ? ['VIX'] : [])] },
     tooltip: { trigger: 'axis', confine: true, formatter(params) {
       const entries = Array.isArray(params) ? params : [params];
       let html = `<b>${entries[0]?.axisValue ?? ''}</b>`;
@@ -202,7 +203,7 @@ export function renderBreadthChart() {
         if (!Number.isFinite(p.value)) continue;
         const pct = p.seriesName.includes('均線以上');
         const raw = p.seriesName === 'RSP 等權' ? rspRaw.get(entries[0].axisValue) : null;
-        html += `<div>${p.marker}${p.seriesName}: ${number(raw ?? p.value, pct || p.seriesName === 'F&G' ? 1 : 2)}${pct ? '%' : ''}</div>`;
+        html += `<div>${p.marker}${p.seriesName}: ${number(raw ?? p.value, pct || p.seriesName === 'F&G' || p.seriesName === 'VIX' ? 1 : 2)}${pct ? '%' : ''}</div>`;
       }
       return html;
     } },
@@ -218,6 +219,7 @@ export function renderBreadthChart() {
       ...(rsp.active ? [line('RSP 等權', dates.map(() => null), 1, '#3fb950')] : []),
       line(`${maWindow}日均線以上`, sessions.map(s => s.pct), 0, '#58a6ff', { markLine: { silent: true, symbol: 'none', data: thresholds.map(([yAxis, tag, color]) => ({ yAxis, label: { formatter: tag ? `${yAxis}% ${tag}` : `${yAxis}%` }, ...(color ? { lineStyle: { color, type: 'dashed', width: 1.4 } } : {}) })) } }),
       ...(fgMap ? [line('F&G', dates.map(d => fgMap.get(d) ?? null), 0, '#e3b341', { lineStyle: { color: '#e3b341', width: 1.2, opacity: 0.85 } })] : []),
+      ...(vixMap ? [line('VIX', dates.map(d => vixMap.get(d) ?? null), 0, '#f85149', { lineStyle: { color: '#f85149', width: 1.2, opacity: 0.85 } })] : []),
     ],
   }), { notMerge: true });
   alignRsp();
@@ -252,11 +254,11 @@ export async function init(context = {}) {
   chipPicker(el('breadth-universe-picker'), 'breadth-universe', value => selectUniverse(value));
   chipPicker(el('breadth-ma-picker'), 'breadth-ma', value => { maWindow = +value; refreshView(); });
   chipPicker(el('breadth-range-picker'), 'breadth-range', value => { range = value; renderBreadthChart(); });
-  for (const [name, id] of [['F&G','breadth-fg-toggle'],['RSP','breadth-rsp-toggle']]) if (bindOnce(el(id))) el(id).addEventListener('click', () => toggleOverlay(name, el(id)));
+  for (const [name, id] of [['VIX','breadth-vix-toggle'],['F&G','breadth-fg-toggle'],['RSP','breadth-rsp-toggle']]) if (bindOnce(el(id))) el(id).addEventListener('click', () => toggleOverlay(name, el(id)));
   if (bindOnce(el('breadth-retry'))) el('breadth-retry').addEventListener('click', () => selectUniverse(universe));
   if (loaded) { refreshView(); resize(); return; }
   await selectUniverse(universe, context);
-  for (const [name, id] of [['F&G','breadth-fg-toggle'],['RSP','breadth-rsp-toggle']]) if (!overlays[name].active && el(id)) toggleOverlay(name, el(id));
+  for (const [name, id] of [['VIX','breadth-vix-toggle'],['F&G','breadth-fg-toggle'],['RSP','breadth-rsp-toggle']]) if (!overlays[name].active && el(id)) toggleOverlay(name, el(id));
 }
 
 export function onThemeChange() {
