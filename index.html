@@ -842,16 +842,15 @@
           <span class="chip" data-breadth-universe="TW50" data-tooltip="對應 0050 · 臺灣50指數(台灣前 50 大),台版超大型股廣度">台灣50</span>
         </div>
         <div class="picker-row" id="breadth-ma-picker">
-          <span class="chip" data-breadth-ma="20" data-tooltip="成分股站上 20MA 比例 + ETF自身 20MA（右軸）">20MA</span>
-          <span class="chip active" data-breadth-ma="50" data-tooltip="成分股站上 50MA 比例 + ETF自身 50MA（右軸）">50MA</span>
+          <span class="chip active" data-breadth-ma="20" data-tooltip="成分股站上 20MA 比例 + ETF自身 20MA（右軸）">20MA</span>
+          <span class="chip" data-breadth-ma="50" data-tooltip="成分股站上 50MA 比例 + ETF自身 50MA（右軸）">50MA</span>
           <span class="chip" data-breadth-ma="200" data-tooltip="成分股站上 200MA 比例 + ETF自身 200MA（右軸）">200MA</span>
         </div>
-        <span id="breadth-vix-toggle" class="chip" data-tooltip="疊加 VIX 恐慌指數（右軸）">VIX</span>
-        <span id="breadth-fg-toggle"  class="chip" data-tooltip="疊加 Fear &amp; Greed 指數（右軸 0-100）">F&amp;G</span>
-        <span id="breadth-rsp-toggle" class="chip" data-tooltip="疊加 RSP 等權 ETF（起點對齊主 ETF，價格軸）">RSP</span>
+        <span id="breadth-fg-toggle"  class="chip" data-tooltip="疊加 Fear &amp; Greed 指數（左軸 0-100，2011 起）">F&amp;G</span>
+        <span id="breadth-rsp-toggle" class="chip" data-tooltip="疊加 RSP 等權 ETF（以可見區間第一天對齊 VOO，價格軸）">RSP</span>
         <div id="breadth-range-picker">
           <span class="chip" data-breadth-range="1Y" data-tooltip="近1年">1Y</span>
-          <span class="chip active" data-breadth-range="2Y" data-tooltip="近2年">2Y</span>
+          <span class="chip active" data-breadth-range="3Y" data-tooltip="近3年">3Y</span>
           <span class="chip" data-breadth-range="5Y" data-tooltip="近5年">5Y</span>
           <span class="chip" data-breadth-range="MAX" data-tooltip="全部歷史">MAX</span>
         </div>
@@ -861,53 +860,10 @@
     <div id="breadth-chart"></div>
     <div class="status" id="breadth-status">切換至此 tab 自動載入…</div>
     <button type="button" id="breadth-retry" hidden>重試載入所選股票群</button>
-    <section id="breadth-study" aria-label="廣度描述性事件研究">
-      <h3>廣度事件研究</h3>
-      <div class="breadth-study-controls">
-        <label>事件 <select id="breadth-study-signal"><option value="down">廣度跌破50%</option><option value="up">廣度站回50%</option><option value="divergence">ETF在均線上／廣度低於50%</option></select></label>
-        <label>研究範圍 <select id="breadth-study-range"><option value="MAX">全部歷史</option><option value="5Y">近5年</option><option value="2Y">近2年</option></select></label>
-        <label>路徑與明細 <select id="breadth-study-horizon"><option value="5">5交易日</option><option value="10">10交易日</option><option value="21">21交易日</option><option value="42">42交易日</option><option value="63" selected>63交易日</option><option value="126">126交易日</option><option value="252">252交易日</option></select></label>
-      </div>
-      <p>訊號日收盤起算、收盤價格報酬、不含股利再投資與交易成本；描述性研究，非可成交策略。現有成分股回填／混合批次可能有倖存者與前視偏誤。</p>
-      <p class="breadth-method">今昨跨越50%；ETF在均線上／廣度低於50%首次成立；全史固定20交易日冷卻後才限制事件日期。基準為所有同條件資料有效日期、不去重，仍可能重疊。研究範圍與上方主圖期間獨立。</p>
-      <div id="breadth-study-status" role="status">等待資料</div>
-      <div class="breadth-table-scroll" tabindex="0" aria-label="七個研究期間統計"><table id="breadth-study-table"></table></div>
-      <p class="breadth-path-key">藍線：固定完整樣本中位數；藍色陰影：P25–P75；橙線：所選事件。訊號日（第0交易日）=100。</p>
-      <div id="breadth-study-chart"></div>
-      <p id="breadth-study-selection"></p>
-      <details open><summary>逐次保留事件與當日證據</summary><div class="breadth-table-scroll breadth-events-scroll" tabindex="0"><table id="breadth-study-events"></table></div></details>
-    </section>
-    <section id="breadth-advanced-panel" aria-label="固定S&P500指數 A-D 與 McClellan 研究">
-      <h3>P3 / P4 / P5：A-D 與 McClellan 本機研究</h3>
-      <p><strong>固定S&amp;P500指數；不跟隨上方股票群切換。</strong> SP500 A-D 與 NYSE McClellan 使用不同母體。</p>
-      <div class="advanced-controls"><label>本機 JSON（最多10 MiB）<input id="breadth-advanced-file" type="file" accept=".json,application/json"></label><button id="breadth-advanced-clear" type="button">清除</button><button id="breadth-advanced-template" type="button">下載空白格式</button><button id="breadth-advanced-project" type="button">載入專案自算 S&P500 A/D</button></div>
-      <p>資料不上傳、不保存；重新載入頁面即清除。空白格式需填入真實資料後才能匯入。<a href="docs/breadth_p3p4p5_import.md" target="_blank" rel="noopener">匯入格式說明</a></p>
-      <div id="breadth-advanced-status" role="status" aria-live="polite">等待匯入本機 JSON</div>
-      <p id="breadth-advanced-metadata"></p>
-      <details><summary>方法與限制</summary>
-        <p>P3：A-D 跌破同段200 session均線，前252 session每天嚴格在均線上。缺口後A-D重設基準。P4：NYSE EMA alpha 0.1 / 0.05，Oscillator=快−慢，Summation累加；暖機252筆。P4事件要求當日Summation&lt;−500，前252個benchmark sessions皆已暖機、校準且Summation≥−500。沒有供應者校準seed時門檻事件停用；NYSE開始後有缺口則後續停止。</p>
-        <p>raw net=A−D；ratio net=1000×(A−D)/(A+D)，排除平盤。raw中性+1000、ratio中性0；兩版本−500意義不同。校準seed表示首筆前一有效session；匯入者須保證連續完整，檔案本身無法驗證。未校準首筆net種兩EMA，Summation=0。</p>
-        <p>P5：兩原始事件相差不超過5個benchmark sessions，在較晚事件日觸發，屬本專案自訂規則。日期軸僅為匯入benchmark記錄的sessions，非完整交易所日曆；252 sessions不保證等於一年。</p>
-        <p>缺乏PIT歷史成分或未知母體會有倖存者、選樣與前視偏誤。價格口徑由匯入者聲明，非交易策略、非Bluekurtic重現，未驗證附件版本。全史先20 session冷卻再限制研究日期；基準為各訊號可判定日期，不篩門檻、不去重。</p>
-      </details>
-      <div id="breadth-advanced-results" hidden>
-      <p>訊號日收盤起算，收盤價格報酬；不含股利再投資、交易成本。僅供描述性研究，非可成交交易策略。</p>
-      <div class="advanced-controls"><label>事件<select id="breadth-advanced-signal"><option value="ad">P3 SP500 A-D</option><option value="mc">P4 NYSE McClellan</option><option value="joint">P5 聯合事件</option></select></label><label>圖表與研究範圍<select id="breadth-advanced-range"><option value="MAX">MAX</option><option value="5Y">5Y</option><option value="2Y">2Y</option></select></label><label>路徑與明細<select id="breadth-advanced-horizon"><option value="5">5 session</option><option value="10">10 session</option><option value="21">21 session</option><option value="42">42 session</option><option value="63" selected>63 session</option><option value="126">126 session</option><option value="252">252 session</option></select></label></div>
-      <p>範圍相對benchmark尾日回推曆年，保留全史計算的指標。三角：紅色P3/P4、綠色P5；滑鼠查看日期，逐事件證據見下表。</p>
-      <div id="breadth-advanced-ad-chart" class="advanced-chart" role="img" aria-label="S&P500價格、A-D與200MA"></div>
-      <div id="breadth-advanced-osc-chart" class="advanced-chart" role="img" aria-label="NYSE Oscillator"></div>
-      <div id="breadth-advanced-sum-chart" class="advanced-chart" role="img" aria-label="NYSE Summation"></div>
-      <div id="breadth-advanced-study-status" role="status"></div>
-      <div class="advanced-table-scroll" tabindex="0"><table id="breadth-advanced-table"></table></div>
-      <p>路徑第0 session=100；藍色中位數，虛線P25/P75，橙色選取事件。分位線各日使用同一組完整樣本；未完成／缺價事件排除分位計算。</p>
-      <div id="breadth-advanced-path-chart" class="advanced-chart" role="img" aria-label="固定樣本事件路徑"></div><p id="breadth-advanced-selection"></p>
-      <details open><summary>事件日期與原始證據</summary><div class="advanced-table-scroll" tabindex="0"><table id="breadth-advanced-events"></table></div></details>
-      </div>
-    </section>
     <div class="info-panel">
       <div class="info-panel-header"><i class="chevron">▶</i> 如何解讀市場廣度？</div>
       <div class="info-panel-body">
-        <p>市場廣度衡量所選股票群中站上20／50／200日均線的比例；右軸是對應ETF與ETF自身同窗均線。S&amp;P 500配SPY，Nasdaq-100配QQQ，市值前50代理股票群配XLG，台灣50配0050。</p>
+        <p>市場廣度衡量所選股票群中站上20／50／200日均線的比例；右軸是對應ETF價格。S&amp;P 500配VOO（另可疊 RSP 等權、F&amp;G），Nasdaq-100配QQQ，市值前50代理股票群配XLG，台灣50配0050。</p>
         <p>MA比例不是A-D漲跌家數線。50%代表多數股票是否站上均線；卡片門檻僅供描述當前參與程度，不能由此推論未來報酬。</p>
         <p>市寬動能使用ETF交易日軸上完整90日廣度峰值，與90交易日前的完整90日峰值比較；窗口內缺資料就不計算。</p>
         <h4>52週新高／新低與興登堡簡化版</h4>

@@ -1,20 +1,18 @@
-import { initAdvancedPanel, advancedThemeChange, resizeAdvancedPanel } from './breadthAdvancedPanel.js';
 import { isLight, mob, PALETTE, echartsBase } from '../utils/theme.js';
 import { bindOnce, chipPicker } from '../utils/dom.js';
 import { buildBreadthContext, getBreadthDenominator } from './breadthSignals.mjs';
-import { evaluateEventStudy, HORIZONS } from '../utils/eventStudy.mjs';
 import { requestJSON, clearRequestCache } from '../utils/data.js';
 
 const UNIVERSE_CONFIG = {
-  SP500: { dataFile: 'data/breadth.json', overlayFile: 'data/SPY.json', overlayName: 'SPY', label: 'S&P 500' },
+  SP500: { dataFile: 'data/breadth.json', histFile: 'data/breadth_sp500_hist20.json', overlayFile: 'data/VOO.json', overlayName: 'VOO', label: 'S&P 500' },
   NDX: { dataFile: 'data/breadth_ndx.json', overlayFile: 'data/QQQ.json', overlayName: 'QQQ', label: 'Nasdaq-100' },
   XLG: { dataFile: 'data/breadth_xlg.json', overlayFile: 'data/XLG.json', overlayName: 'XLG', label: '市值前50代理股票群' },
   TW50: { dataFile: 'data/breadth_tw50.json', overlayFile: 'data/0050.TW.json', overlayName: '0050', label: '台灣50' },
 };
 const cache = new Map();
-const overlays = { VIX: { file: 'data/VIX.json', active: false, rows: null, error: null }, 'F&G': { file: 'data/fear_greed.json', active: false, rows: null, error: null }, RSP: { file: 'data/RSP.json', active: false, rows: null, error: null } };
-let universe = 'SP500', maWindow = 50, range = '2Y', requestSequence = 0;
-let loaded = null, breadthChart = null, studyChart = null, study = null, selectedDate = null;
+const overlays = { 'F&G': { file: 'data/fear_greed.json', active: false, rows: null, error: null }, RSP: { file: 'data/RSP.json', active: false, rows: null, error: null } };
+let universe = 'SP500', maWindow = 20, range = '3Y', requestSequence = 0;
+let loaded = null, breadthChart = null, chartDates = [];
 const el = id => document.getElementById(id);
 const number = (value, digits = 2) => Number.isFinite(value) ? value.toFixed(digits) : '—';
 const percent = value => Number.isFinite(value) ? `${number(value)}%` : '—';
@@ -93,12 +91,9 @@ function validateData(file, payload) {
 }
 
 function clearView() {
-  loaded = null; study = null; selectedDate = null;
-  breadthChart?.clear(); studyChart?.clear();
+  loaded = null;
+  breadthChart?.clear();
   el('breadth-regime').textContent = '資料不足';
-  el('breadth-study-status').textContent = '等待股票群資料';
-  el('breadth-study-table').replaceChildren(); el('breadth-study-events').replaceChildren();
-  el('breadth-study-selection').textContent = '';
   document.querySelectorAll('#breadth-top .bc-pct, #breadth-top .bc-count, #breadth-top .bc-signal').forEach(node => { node.textContent = '—'; });
 }
 
@@ -111,7 +106,10 @@ async function selectUniverse(next, context = {}) {
   try {
     if (!cache.has(next)) {
       const config = UNIVERSE_CONFIG[next];
-      const [data, pricesJson] = await Promise.all([readData(config.dataFile, context), readData(config.overlayFile, context)]);
+      const [data, pricesJson, hist] = await Promise.all([readData(config.dataFile, context), readData(config.overlayFile, context),
+        config.histFile ? requestJSON(config.histFile, { signal: context.signal }).catch(() => null) : null]);
+      // 20MA 回補：breadth.json 2019-11 起，之前用研究資料的 point-in-time 自算值（只有 above20_pct）
+      if (hist?.data?.length) { const first = data.data[0].date; data.data = [...hist.data.filter(r => r.date < first), ...data.data]; data.histUntil = first; }
       if (sequence !== requestSequence || context.signal?.aborted || (context.isCurrent && !context.isCurrent())) return;
       const prices = pricesJson.data;
       const contexts = Object.fromEntries([20, 50, 200].map(window => [window, buildBreadthContext(data.data, prices, window)]));
@@ -143,7 +141,7 @@ function refreshStatus() {
   if (!loaded) return;
   const c = context();
   const overlayStatus = Object.entries(overlays).filter(([, o]) => o.active).map(([name, o]) => `${name}：${o.error ? '載入失敗（再點兩次重試）' : o.rows ? o.rows.at(-1).date : '載入中'}`).join(' · ');
-  el('breadth-status').textContent = `${cfg().label}／${cfg().overlayName} · 卡片廣度日期 ${c.latestBreadthDate} · ETF最後日期 ${c.latestPriceDate} · 共同可用日期 ${c.commonDate ?? '—'}。兩者可能不同步。${overlayStatus}`;
+  el('breadth-status').textContent = `${cfg().label}／${cfg().overlayName} · 卡片廣度日期 ${c.latestBreadthDate} · ETF最後日期 ${c.latestPriceDate} · 共同可用日期 ${c.commonDate ?? '—'}。兩者可能不同步。${loaded.data.histUntil && maWindow === 20 ? ` 20MA 在 ${loaded.data.histUntil} 前是研究資料回補（歷史成分股覆蓋 66–84%，弱勢期可能偏高）。` : ''}${overlayStatus}`;
 }
 
 function refreshView() {
@@ -174,96 +172,69 @@ function refreshView() {
     const label = current.close === current.ma ? `價格持平、廣度${strongBreadth ? '較強' : '較弱'}` : strongPrice ? strongBreadth ? '價格與廣度均強' : '價格強、廣度弱' : strongBreadth ? '價格弱、廣度較強' : '價格與廣度均弱';
     el('breadth-regime').textContent = `${current.date} · ${cfg().overlayName} ${number(current.close)}／${maWindow}MA ${number(current.ma)}（${current.close === current.ma ? '持平' : strongPrice ? '上方' : '下方'}） · 廣度 ${percent(current.pct)}（${strongBreadth ? '多數 ≥50%' : '未達多數50%'}） · ${label}`;
   }
-  refreshStatus(); renderStudy();
+  refreshStatus(); renderBreadthChart();
 }
 
-function renderStudy() {
-  if (!loaded) return;
-  const c = context(), horizon = +el('breadth-study-horizon').value;
-  study = evaluateEventStudy({ prices: loaded.prices, events: c.signals[el('breadth-study-signal').value], eligibleDates: c.eligibleDates, horizons: HORIZONS, from: cutoff(el('breadth-study-range').value, c.latestBreadthDate), pathHorizon: horizon });
-  if (!study.events.some(event => event.date === selectedDate)) selectedDate = null;
-  const stats = study.stats.find(row => row.horizon === horizon);
-  el('breadth-study-status').textContent = `原始事件 ${study.rawN}／20交易日冷卻後 ${study.keptN} · ${horizon}交易日有效 n=${stats.n} · 排除：未完成 ${stats.excluded.incomplete}、缺價 ${stats.excluded.missingPrice} · 重疊對數 ${stats.overlapPairs}/${stats.possiblePairs}。${stats.n < 10 ? '小樣本（n<10），結果可能不穩定。' : ''}資料軸為ETF有記錄的交易日，非完整交易所日曆。`;
-  const headings = ['交易日','有效n','平均報酬','中位報酬','上漲率','基準有效n','基準平均','基準中位','基準上漲率','平均報酬差（pp）','平均訊號日起最大虧損','最差訊號日起最大虧損','平均期間最大回撤','最差期間最大回撤'];
-  el('breadth-study-table').innerHTML = `<thead><tr>${headings.map(text => `<th>${text}</th>`).join('')}</tr></thead><tbody>${study.stats.map(s => `<tr data-horizon="${s.horizon}"><td>${s.horizon}</td><td>${s.n}</td>${[s.mean,s.median,s.winRate].map(value => `<td>${percent(value)}</td>`).join('')}<td>${s.baseline.n}</td>${[s.baseline.mean,s.baseline.median,s.baseline.winRate].map(value => `<td>${percent(value)}</td>`).join('')}<td>${s.mean == null || s.baseline.mean == null ? '—' : number(s.mean - s.baseline.mean)}</td>${[s.meanMaxLoss,s.worstMaxLoss,s.meanMdd,s.worstMdd].map(value => `<td>${percent(value)}</td>`).join('')}</tr>`).join('')}</tbody>`;
-  el('breadth-study-events').innerHTML = `<thead><tr><th>訊號日期／選取</th><th>廣度</th><th>前日廣度</th><th>ETF收盤／均線</th><th>${horizon}交易日報酬</th><th>訊號日起最大虧損</th><th>期間最大回撤</th><th>完成狀態</th></tr></thead><tbody>${[...study.events].reverse().map(event => {
-    const outcome = event.outcomes[horizon];
-    return `<tr><td><button type="button" data-event-date="${event.date}" aria-pressed="${selectedDate === event.date}">${event.date}</button></td><td>${percent(event.pct)}</td><td>${percent(event.previousPct)}</td><td>${number(event.close)} / ${number(event.ma)}</td><td>${percent(outcome.forwardReturnPct)}</td><td>${percent(outcome.maxLossPct)}</td><td>${percent(outcome.mddPct)}</td><td>${outcome.status === 'complete' ? '已完成' : outcome.status === 'incomplete' ? '未完成' : '缺價'}${outcome.exitDate ? ` · ${outcome.exitDate}` : ''}</td></tr>`;
-  }).join('')}</tbody>`;
-  if (!study.events.length) el('breadth-study-events').innerHTML += '<caption>此條件與範圍無保留事件</caption>';
-  renderStudyChart(); renderBreadthChart();
-}
-
-function renderStudyChart() {
-  if (!study) return;
-  if (!studyChart) studyChart = echarts.init(el('breadth-study-chart'), isLight() ? null : 'dark');
-  const paths = study.paths, individual = paths.individual.find(path => path.date === selectedDate);
-  el('breadth-study-selection').textContent = individual ? `選取 ${individual.date}：${individual.complete ? '完整路徑' : '未完成或缺價，缺口後不補線'}；訊號日=100` : '點選下方事件日期查看個別路徑。';
-  studyChart.setOption(echartsBase({
-    title: { text: `固定完整樣本 n=${paths.n} · ${paths.horizon}交易日`, textStyle: { color: PALETTE.text, fontSize: 13 } },
-    tooltip: { confine: true },
-    graphic: paths.n ? [] : [{ type: 'text', left: 'center', top: '45%', style: { text: '無完整事件可計算分位帶', fill: PALETTE.muted } }],
-    grid: { top: 44, bottom: 58 },
-    xAxis: { data: paths.points.map(point => point.offset), name: '交易日', nameLocation: 'middle', nameGap: 30 }, yAxis: { scale: true, name: '訊號日=100' },
-    series: [
-      { name: 'P25底', type: 'line', stack: 'band', data: paths.points.map(p => p.p25), symbol: 'none', lineStyle: { opacity: 0 }, areaStyle: { opacity: 0 }, tooltip: { show: false } },
-      { name: 'P25–P75帶寬', type: 'line', stack: 'band', data: paths.points.map(p => p.p75 == null ? null : p.p75-p.p25), symbol: 'none', lineStyle: { opacity: 0 }, areaStyle: { color: '#58a6ff', opacity: 0.18 }, tooltip: { show: false } },
-      { name: '中位數', type: 'line', data: paths.points.map(p => p.median), symbol: 'none', lineStyle: { color: '#58a6ff', width: 2 } },
-      ...(individual ? [{ name: `${individual.date}${individual.complete ? '' : '（未完成／缺價）'}`, type: 'line', data: individual.values, connectNulls: false, symbol: 'none', lineStyle: { color: '#f0883e', width: 2 } }] : []),
-    ],
-  }), { notMerge: true });
-}
 
 export function renderBreadthChart() {
   if (!loaded) return;
-  if (!breadthChart) breadthChart = echarts.init(el('breadth-chart'), isLight() ? null : 'dark');
-  const c = context(), start = cutoff(range, c.latestBreadthDate);
-  const sessions = c.sessions.filter(s => s.date >= loaded.data.data[0].date && s.date <= c.commonDate && (!start || s.date >= start));
-  const dates = sessions.map(s => s.date), dateSet = new Set(dates);
-  const priceMap = new Map(sessions.map(s => [s.date,s.close]));
-  const line = (name, data, axis, color, extra = {}) => ({ name, type: 'line', data, yAxisIndex: axis, symbol: 'none', connectNulls: false, lineStyle: { color, width: 1.7 }, ...extra });
-  const marker = (name, eventDates, symbol, color) => ({ name, type: 'scatter', data: eventDates.filter(d => dateSet.has(d)).map(d => [d, priceMap.get(d)]), yAxisIndex: 1, symbol, symbolSize: 16, itemStyle: { color } });
-  const overlaySeries = Object.entries(overlays).filter(([, o]) => o.active && o.rows).map(([name, o]) => {
-    const values = new Map(o.rows.map(row => [row.date, row.close ?? row.value]));
-    if (name === 'RSP') {
-      // 等權 ETF 以可見區間第一天對齊主 ETF 價格，畫在價格軸上比走勢
-      const base = dates.find(date => values.get(date) && priceMap.get(date));
-      const k = base ? priceMap.get(base) / values.get(base) : null;
-      return line('RSP（等權，起點對齊）', dates.map(date => k && values.get(date) ? values.get(date) * k : null), 1, '#3fb950');
-    }
-    return line(name, dates.map(date => values.get(date) ?? null), 2, name === 'VIX' ? '#f0883e' : '#e3b341');
-  });
+  if (!breadthChart) {
+    breadthChart = echarts.init(el('breadth-chart'), isLight() ? null : 'dark');
+    breadthChart.on('datazoom', () => alignRsp());
+  }
+  const c = context();
+  const sessions = c.sessions.filter(s => s.date >= loaded.data.data[0].date && s.date <= c.commonDate);
+  const dates = sessions.map(s => s.date);
+  chartDates = dates;
+  const line = (name, data, axis, color, extra = {}) => ({ name, type: 'line', data, yAxisIndex: axis, symbol: 'none', connectNulls: false, itemStyle: { color }, lineStyle: { color, width: 1.6 }, ...extra });
+  const fg = overlays['F&G'], rsp = overlays.RSP;
+  const fgMap = fg.active && fg.rows ? new Map(fg.rows.map(r => [r.date, r.value])) : null;
+  const start = cutoff(range, c.latestBreadthDate);
+  const startIdx = start ? Math.max(0, dates.findIndex(d => d >= start)) : 0;
+  const thresholds = [[15,'投降','#f85149'],[25,'恐懼','#f0883e'],[50,'',null],[75,'貪婪',null],[85,'狂熱',null]];
   breadthChart.setOption(echartsBase({
-    dataZoom: [], grid: { top: 28, bottom: 36, left: mob() ? 44 : 56, right: mob() ? 52 : 68 },
-    tooltip: { confine: true, formatter(params) {
+    grid: { top: 28, bottom: 64, left: mob() ? 44 : 56, right: mob() ? 52 : 68 },
+    legend: { top: 0, data: [cfg().overlayName, ...(rsp.active ? ['RSP 等權'] : []), `${maWindow}日均線以上`, ...(fgMap ? ['F&G'] : [])] },
+    tooltip: { trigger: 'axis', confine: true, formatter(params) {
       const entries = Array.isArray(params) ? params : [params];
-      const date = entries[0]?.axisValue ?? entries[0]?.value?.[0];
-      const session = sessions.find(s => s.date === date);
-      let html = `<b>${date ?? ''}</b>`;
+      let html = `<b>${entries[0]?.axisValue ?? ''}</b>`;
       for (const p of entries) {
-        const value = Array.isArray(p.value) ? p.value[1] : p.value;
-        if (!Number.isFinite(value)) continue;
-        html += `<div>${p.marker}${p.seriesName}: ${number(value, 2)}${p.seriesIndex === 2 || p.seriesIndex === 3 ? '%' : ''}</div>`;
-      }
-      if (session?.row) for (const window of [20,50,200]) {
-        const denominator = getBreadthDenominator(session.row, window);
-        html += `<div>${window}MA: ${session.row[`above${window}_count`] ?? '—'} / ${denominator ?? '分母未記錄'}</div>`;
+        if (!Number.isFinite(p.value)) continue;
+        const pct = p.seriesName.includes('均線以上');
+        const raw = p.seriesName === 'RSP 等權' ? rspRaw.get(entries[0].axisValue) : null;
+        html += `<div>${p.marker}${p.seriesName}: ${number(raw ?? p.value, pct || p.seriesName === 'F&G' ? 1 : 2)}${pct ? '%' : ''}</div>`;
       }
       return html;
     } },
+    dataZoom: [{ type: 'inside', startValue: startIdx, endValue: dates.length - 1 }, { type: 'slider', height: 22, bottom: 8, startValue: startIdx, endValue: dates.length - 1 }],
     xAxis: { data: dates, boundaryGap: false },
     yAxis: [
       { type: 'value', min: 0, max: 100, axisLabel: { color: PALETTE.muted, formatter: '{value}%' }, splitLine: { lineStyle: { color: PALETTE.grid } } },
-      { type: 'value', position: 'right', scale: true, axisLabel: { color: PALETTE.muted }, splitLine: { show: false } },
-      { type: 'value', position: 'right', axisLabel: { show: false }, splitLine: { show: false } },
+      { type: 'value', position: 'right', axisLabel: { color: PALETTE.muted }, splitLine: { show: false },
+        min: v => Math.floor(v.min * 0.9), max: v => Math.ceil(v.max * 1.1) },
     ],
-    series: [line(cfg().overlayName, sessions.map(s => s.close), 1, '#a371f7'),
-      line(`${cfg().overlayName} ${maWindow}MA`, sessions.map(s => s.ma), 1, '#d2a8ff', { lineStyle: { color: '#d2a8ff', type: 'dashed' } }),
-      line(`${maWindow}日均線以上`, sessions.map(s => s.pct), 0, '#58a6ff', { markLine: { silent: true, symbol: 'none', data: [[15,'投降','#f85149'],[25,'恐懼','#f0883e'],[50,'',null],[75,'貪婪',null],[85,'狂熱',null]].map(([yAxis, tag, c]) => ({ yAxis, label: { formatter: tag ? `${yAxis}% ${tag}` : `${yAxis}%` }, ...(c ? { lineStyle: { color: c, type: 'dashed', width: 1.4 } } : {}) })) } }),
-      line('90交易日完整滾動高點', dates.map(date => c.peakByDate[date]), 0, '#8b949e'),
-      ...overlaySeries, marker('興登堡觸發（簡化版）', c.hindenburgDates, 'pin', '#f85149'),
-      marker('研究保留訊號', study?.events.map(e => e.date) ?? [], 'triangle', '#e3b341')],
+    series: [
+      line(cfg().overlayName, sessions.map(s => s.close), 1, '#a371f7'),
+      ...(rsp.active ? [line('RSP 等權', dates.map(() => null), 1, '#3fb950')] : []),
+      line(`${maWindow}日均線以上`, sessions.map(s => s.pct), 0, '#58a6ff', { markLine: { silent: true, symbol: 'none', data: thresholds.map(([yAxis, tag, color]) => ({ yAxis, label: { formatter: tag ? `${yAxis}% ${tag}` : `${yAxis}%` }, ...(color ? { lineStyle: { color, type: 'dashed', width: 1.4 } } : {}) })) } }),
+      ...(fgMap ? [line('F&G', dates.map(d => fgMap.get(d) ?? null), 0, '#e3b341', { lineStyle: { color: '#e3b341', width: 1.2, opacity: 0.85 } })] : []),
+    ],
   }), { notMerge: true });
+  alignRsp();
+}
+
+// RSP 跟 VOO 價位不同：以目前可見區間第一天對齊 VOO，拖拉縮放後重新對齊
+let rspRaw = new Map();
+function alignRsp() {
+  const rsp = overlays.RSP;
+  if (!breadthChart || !loaded || !rsp.active || !rsp.rows) return;
+  rspRaw = new Map(rsp.rows.map(r => [r.date, r.close]));
+  const zoom = breadthChart.getOption().dataZoom?.[0] ?? {};
+  const from = Number.isFinite(zoom.startValue) ? zoom.startValue : 0;
+  const price = new Map(context().sessions.map(s => [s.date, s.close]));
+  const base = chartDates.slice(from).find(d => rspRaw.get(d) && price.get(d));
+  const k = base ? price.get(base) / rspRaw.get(base) : null;
+  breadthChart.setOption({ series: [{ name: 'RSP 等權', data: chartDates.map(d => k && rspRaw.get(d) ? +(rspRaw.get(d) * k).toFixed(2) : null) }] });
 }
 
 async function toggleOverlay(name, button) {
@@ -278,29 +249,18 @@ async function toggleOverlay(name, button) {
 }
 
 export async function init(context = {}) {
-  initAdvancedPanel();
   chipPicker(el('breadth-universe-picker'), 'breadth-universe', value => selectUniverse(value));
   chipPicker(el('breadth-ma-picker'), 'breadth-ma', value => { maWindow = +value; refreshView(); });
   chipPicker(el('breadth-range-picker'), 'breadth-range', value => { range = value; renderBreadthChart(); });
-  for (const id of ['breadth-study-signal','breadth-study-range','breadth-study-horizon']) if (bindOnce(el(id))) el(id).addEventListener('change', renderStudy);
-  if (bindOnce(el('breadth-study-events'))) el('breadth-study-events').addEventListener('click', event => {
-    const button = event.target.closest('button[data-event-date]');
-    if (!button) return;
-    selectedDate = button.dataset.eventDate;
-    el('breadth-study-events').querySelectorAll('button').forEach(node => node.setAttribute('aria-pressed', String(node === button)));
-    renderStudyChart();
-  });
-  for (const [name, id] of [['VIX','breadth-vix-toggle'],['F&G','breadth-fg-toggle'],['RSP','breadth-rsp-toggle']]) if (bindOnce(el(id))) el(id).addEventListener('click', () => toggleOverlay(name, el(id)));
+  for (const [name, id] of [['F&G','breadth-fg-toggle'],['RSP','breadth-rsp-toggle']]) if (bindOnce(el(id))) el(id).addEventListener('click', () => toggleOverlay(name, el(id)));
   if (bindOnce(el('breadth-retry'))) el('breadth-retry').addEventListener('click', () => selectUniverse(universe));
   if (loaded) { refreshView(); resize(); return; }
   await selectUniverse(universe, context);
   for (const [name, id] of [['F&G','breadth-fg-toggle'],['RSP','breadth-rsp-toggle']]) if (!overlays[name].active && el(id)) toggleOverlay(name, el(id));
 }
 
-export function onThemeChange(light) {
-  advancedThemeChange();
-  for (const chart of [breadthChart,studyChart]) chart?.dispose();
-  breadthChart = null; studyChart = null;
-  if (loaded) { renderBreadthChart(); renderStudyChart(); }
+export function onThemeChange() {
+  breadthChart?.dispose(); breadthChart = null;
+  if (loaded) renderBreadthChart();
 }
-export function resize() { breadthChart?.resize(); studyChart?.resize(); resizeAdvancedPanel(); }
+export function resize() { breadthChart?.resize(); }
