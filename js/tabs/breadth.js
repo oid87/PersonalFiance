@@ -12,7 +12,7 @@ const UNIVERSE_CONFIG = {
   TW50: { dataFile: 'data/breadth_tw50.json', overlayFile: 'data/0050.TW.json', overlayName: '0050', label: '台灣50' },
 };
 const cache = new Map();
-const overlays = { VIX: { file: 'data/VIX.json', active: false, rows: null, error: null }, 'F&G': { file: 'data/fear_greed.json', active: false, rows: null, error: null } };
+const overlays = { VIX: { file: 'data/VIX.json', active: false, rows: null, error: null }, 'F&G': { file: 'data/fear_greed.json', active: false, rows: null, error: null }, RSP: { file: 'data/RSP.json', active: false, rows: null, error: null } };
 let universe = 'SP500', maWindow = 50, range = '2Y', requestSequence = 0;
 let loaded = null, breadthChart = null, studyChart = null, study = null, selectedDate = null;
 const el = id => document.getElementById(id);
@@ -225,6 +225,12 @@ export function renderBreadthChart() {
   const marker = (name, eventDates, symbol, color) => ({ name, type: 'scatter', data: eventDates.filter(d => dateSet.has(d)).map(d => [d, priceMap.get(d)]), yAxisIndex: 1, symbol, symbolSize: 16, itemStyle: { color } });
   const overlaySeries = Object.entries(overlays).filter(([, o]) => o.active && o.rows).map(([name, o]) => {
     const values = new Map(o.rows.map(row => [row.date, row.close ?? row.value]));
+    if (name === 'RSP') {
+      // 等權 ETF 以可見區間第一天對齊主 ETF 價格，畫在價格軸上比走勢
+      const base = dates.find(date => values.get(date) && priceMap.get(date));
+      const k = base ? priceMap.get(base) / values.get(base) : null;
+      return line('RSP（等權，起點對齊）', dates.map(date => k && values.get(date) ? values.get(date) * k : null), 1, '#3fb950');
+    }
     return line(name, dates.map(date => values.get(date) ?? null), 2, name === 'VIX' ? '#f0883e' : '#e3b341');
   });
   breadthChart.setOption(echartsBase({
@@ -284,11 +290,11 @@ export async function init(context = {}) {
     el('breadth-study-events').querySelectorAll('button').forEach(node => node.setAttribute('aria-pressed', String(node === button)));
     renderStudyChart();
   });
-  for (const [name, id] of [['VIX','breadth-vix-toggle'],['F&G','breadth-fg-toggle']]) if (bindOnce(el(id))) el(id).addEventListener('click', () => toggleOverlay(name, el(id)));
+  for (const [name, id] of [['VIX','breadth-vix-toggle'],['F&G','breadth-fg-toggle'],['RSP','breadth-rsp-toggle']]) if (bindOnce(el(id))) el(id).addEventListener('click', () => toggleOverlay(name, el(id)));
   if (bindOnce(el('breadth-retry'))) el('breadth-retry').addEventListener('click', () => selectUniverse(universe));
   if (loaded) { refreshView(); resize(); return; }
   await selectUniverse(universe, context);
-  if (!overlays['F&G'].active && el('breadth-fg-toggle')) toggleOverlay('F&G', el('breadth-fg-toggle'));
+  for (const [name, id] of [['F&G','breadth-fg-toggle'],['RSP','breadth-rsp-toggle']]) if (!overlays[name].active && el(id)) toggleOverlay(name, el(id));
 }
 
 export function onThemeChange(light) {
