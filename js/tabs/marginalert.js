@@ -27,7 +27,7 @@ let raw = null;        // { twii, margin, ratio, ratioInfo, partial }
 let res = null;        // runFullBacktest 結果
 let sel = null;        // 目前選擇門檻×閘門的事件評估
 let fear = null;       // 恐懼貪婪 × 目前警報 的對照（無 F&G 資料時為 null）
-let ui = { fg: true, fearThr: 15, th: 3, gate: 0, caseId: 'A', lookback: 120, entry: 'nextOpen', cooldown: 10, minIdxDrop: 1, start: PAGE_START, end: null };
+let ui = { fg: true, fearThr: 15, th: 3, gate: 0, caseId: 'A', lookback: 120, entry: 'nextOpen', cooldown: 10, minIdxDrop: 1, start: PAGE_START, end: null, mgnWin: 60 };
 let wired = false;
 let stressH = null;    // analyzeHistory 快取（與參考日、Beta 情境無關）
 let stressOv = null;   // signalOverlap 快取
@@ -252,7 +252,36 @@ function swingTable(d) {
   if (!x || !m) return '';
   const tx = raw?.txSw?.get(d.date);
   const mp = pctChg(d.margin, m.hi), dv = divergence(d);
-  return drawTable(d, tx) + `<div style="font-size:11px">融資較 60 日高 ${sg(d.margin - m.hi, 0)} 億（${sg(mp, 1)}%）</div>` + (dv ? `<div style="font-size:11px">${dv}</div>` : '');
+  const mh = marginHigh(d.date);
+  const mline = mh
+    ? `融資較 ${ui.mgnWin} 日高（${mh.hiDate}，${nf(mh.hi)}）${sg(d.margin - mh.hi, 0)} 億（${sg(pctChg(d.margin, mh.hi), 1)}%）` +
+      (mh.loDate !== d.date && mh.lo < d.margin ? `<br>高→之後最低（${mh.loDate}，${nf(mh.lo)}）${hot(sg(pctChg(mh.lo, mh.hi), 1) + '%')}` : '')
+    : `融資較 60 日高 ${sg(d.margin - m.hi, 0)} 億（${sg(mp, 1)}%）`;
+  return drawTable(d, tx) + `<div style="font-size:11px">${mline}</div>` + (dv ? `<div style="font-size:11px">${dv}</div>` : '');
+}
+// 融資高點窗（ui.mgnWin 交易日，含當日，融資自身日曆）：高點與之後（含當日）最低點；依窗長快取高點索引
+let mgnHiCache = { n: 0, idx: null };
+const MGN_WIN_PRESETS = [60, 120, 252, 500];
+const clampMgnWin = v => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(2500, Math.max(5, n)) : 60; };
+function marginHigh(date) {
+  const r = raw?.margin, n = ui.mgnWin;
+  if (!r?.length) return null;
+  if (mgnHiCache.n !== n || !mgnHiCache.idx) {
+    const idx = new Map(), dq = [];
+    r.forEach((x, i) => {
+      while (dq.length && r[dq.at(-1)].margin_money <= x.margin_money) dq.pop();
+      dq.push(i);
+      if (dq[0] <= i - n) dq.shift();
+      idx.set(x.date, [dq[0], i]);
+    });
+    mgnHiCache = { n, idx };
+  }
+  const hit = mgnHiCache.idx.get(date);
+  if (!hit) return null;
+  const [hj, i] = hit;
+  let lj = hj;
+  for (let j = hj; j <= i; j++) if (r[j].margin_money < r[lj].margin_money) lj = j;
+  return { hi: r[hj].margin_money, hiDate: r[hj].date, lo: r[lj].margin_money, loDate: r[lj].date };
 }
 // 60 日盤中高點 → 之後最低點（加權／台指期日盤／夜盤／合併）
 function drawTable(d, tx) {
@@ -1152,11 +1181,14 @@ function syncChips() {
   val('gate-select', ui.gate); val('fg-select', ui.fg ? 'on' : 'off'); val('lb-select', ui.lookback);
   val('entry-select', ui.entry); val('mind-select', ui.minIdxDrop); val('case-select', ui.caseId);
   val('fear-range', ui.fearThr);
+  const mPreset = MGN_WIN_PRESETS.includes(ui.mgnWin);
+  val('mgnwin-select', mPreset ? ui.mgnWin : 'custom');
+  const mi = $('mgnwin-input'); if (mi) { mi.style.display = mPreset ? 'none' : ''; mi.value = ui.mgnWin; }
   const fv = $('fear-val'); if (fv) fv.textContent = ui.fearThr;
   val('cooldown', ui.cooldown); val('start', ui.start); val('end', ui.end);
   for (const c of $('range-chips')?.querySelectorAll('.chip') ?? []) c.classList.toggle('active', c.dataset.s === ui.start);
   const line = $('params-line');
-  if (line) line.textContent = `融資≤-${ui.th}%｜閘門${ui.gate ? `≥${ui.gate}%` : '無'}｜F&G ${ui.fg ? `顯示 <${ui.fearThr}` : '隱藏'}｜${ui.lookback}日高點｜隔日${ui.entry === 'nextOpen' ? '開盤' : '收盤'}｜冷卻${ui.cooldown}日｜${ui.start}～${ui.end}`;
+  if (line) line.textContent = `融資≤-${ui.th}%｜閘門${ui.gate ? `≥${ui.gate}%` : '無'}｜F&G ${ui.fg ? `顯示 <${ui.fearThr}` : '隱藏'}｜${ui.lookback}日高點｜隔日${ui.entry === 'nextOpen' ? '開盤' : '收盤'}｜冷卻${ui.cooldown}日｜融資高點窗${ui.mgnWin}日｜${ui.start}～${ui.end}`;
 }
 function renderZone() {
   const el = $('zone');
@@ -1266,12 +1298,17 @@ function wire() {
   });
   on('gate-select', e => { ui.gate = Number(e.target.value); deriveSelection(); syncChips(); draw(); });
   on('lb-select', e => { ui.lookback = Number(e.target.value); rerun(false); });
+  on('mgnwin-select', e => {
+    if (e.target.value === 'custom') { $('mgnwin-input').style.display = ''; $('mgnwin-input').focus(); return; }
+    ui.mgnWin = Number(e.target.value); syncChips(); draw();
+  });
+  on('mgnwin-input', e => { ui.mgnWin = clampMgnWin(e.target.value); syncChips(); draw(); });
   on('entry-select', e => { ui.entry = e.target.value; rerun(false); });
   on('mind-select', e => { ui.minIdxDrop = Number(e.target.value); rerun(false); });
   on('case-select', e => { ui.caseId = e.target.value; $('t-case').innerHTML = tableCase(); zoomToCase(); });
   $('run')?.addEventListener('click', () => rerun(true));
   $('reset')?.addEventListener('click', () => {
-    ui = { fg: true, fearThr: 15, th: 3, gate: 0, caseId: 'A', lookback: 120, entry: 'nextOpen', cooldown: 10, minIdxDrop: 1, start: PAGE_START, end: raw.lastDate };
+    ui = { fg: true, fearThr: 15, th: 3, gate: 0, caseId: 'A', lookback: 120, entry: 'nextOpen', cooldown: 10, minIdxDrop: 1, start: PAGE_START, end: raw.lastDate, mgnWin: 60 };
     rerun(false);
   });
   for (const id of ['th-input', 'cooldown', 'start', 'end']) on(id, () => rerun(true));
