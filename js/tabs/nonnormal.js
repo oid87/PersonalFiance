@@ -37,14 +37,14 @@ const HELP = {
 // 報價卡：[序列, 名稱, 對應訊號, 格式]。格式 px＝價格、yield＝殖利率（漲跌用 bp）、ratio＝百分比（漲跌用百分點）、score＝0–100 分數（漲跌用點）、
 // count＝家數、days＝天數（這兩種不畫均線）。
 const CARD_GROUPS = [
-  { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['US_MARGIN', '美股融資餘額', null, 'usmargin'], ['KOSPI', '韓股', 'kospi']] },
+  { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['US_BREADTH20', 'S&P 500 寬度', null, 'ratio'], ['US_MARGIN', '美股融資餘額', null, 'usmargin'], ['KOSPI', '韓股', 'kospi']] },
   { group: 'B', title: '金融市場', cards: [['US10Y', '美債 10Y', 'us10y', 'yield'], ['DXY', '美元指數', 'dxy'], ['GOLD', '黃金', 'gold'], ['OIL', '布蘭特原油', 'oil'], ['VIX', 'VIX', 'vix'], ['VXN', 'VXN'], ['FG', '恐懼貪婪', null, 'score'], ['BTC', '比特幣']] },
   { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '台股市場廣度', 'breadth', 'ratio'], ['LIMIT_DOWN', '跌停家數', null, 'count'], ['NO_OBS', '無觀察類股', null, 'days']] },
   { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield'], ['US_BREADTH', '美股市場廣度', null, 'ratio'], ['MARGIN_DIST', '個股維持率 <150%', null, 'ratio']] },
 ];
 // 卡片上的英文代號（實際用的標的；指標類用通用簡稱）
 const TICKERS = { SOX: '^SOX', NDX: 'QQQ', SPX: 'VOO', US_MARGIN: 'FINRA', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
-  FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'TW Breadth', US_BREADTH: 'SPY', LIMIT_DOWN: 'TWSE+TPEx', NO_OBS: 'TWSE+TPEx', MARGIN_DIST: '非ETF',
+  FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'TW Breadth', US_BREADTH: 'SPY', US_BREADTH20: '20MA', LIMIT_DOWN: 'TWSE+TPEx', NO_OBS: 'TWSE+TPEx', MARGIN_DIST: '非ETF',
   N225: 'N225', HSI: 'HSI', SSE: 'SSE', STOXX50E: 'SX5E', US2Y: 'US2Y' };
 const CARD_BY_SERIES = new Map(CARD_GROUPS.flatMap(g => g.cards.map(c => [c[0], c])));
 // 點卡片的大圖左欄：為什麼把這張圖放進儀表板（本專案整理，用自己的話寫）
@@ -69,6 +69,7 @@ const REASONS = {
   BREADTH_PCT: '台股偏多家數占比（偏多／偏多＋偏空）。指數上漲但多數個股不漲＝廣度收窄，上漲只靠少數權值股撐著。',
   LIMIT_DOWN: '上市＋上櫃股票當天收在跌停的家數。平常個位數到幾十家；幾百家以上代表恐慌性賣壓，2025-04-07 有 1,702 家。只顯示，不計分；會用在下方「情緒」那一格。',
   NO_OBS: '近 22 個交易日（約一個月）中，盤面完全沒有「觀察類股」的天數。觀察類股看的是個股的「第一根且帶大量」：當天上漲、收盤創近 20 日新高、成交量 ≥ 2 倍 10 日均量（且達全市場日均量的萬分之 2，約 1,000 張）。全市場（上市＋上櫃）這類股票的比例落在過去一年最低 4%＝無觀察類股日。不看族群、也不是只看 0050。算法與 2013 起的回測見「過往觀察」頁。整天找不到代表市場沒有新的強勢股；1 天提高注意、3 天以上是極端情境 2 的條件之一、5 天以上極度恐慌。另一個看族群的版本在「無主流日」頁（創 60 日新高、量 ≥ 2 倍 20 日均量、漲 ≥ 3%，同產業 ≥ 3 檔才算主流族群，分有／稍微有／完全沒有三級，2022 起），這格的燈號仍用本版。',
+  US_BREADTH20: 'S&P 500 成分股收盤站上 20 日線的比例（市場寬度・快），對照 VOO。>85% 狂熱、>75% 貪婪、<25% 恐懼、<15% 投降。歷史上落底前幾乎都會跌到 25% 以下，但跌破 25% 不等於落底，大跌時常再往下到 15% 以下。',
   US_BREADTH: 'S&P 500（SPY）成分股中，股價站上 200 日線的比例。低於 50% 代表多數美股已轉弱，可對照台股廣度看是不是全球一起收窄。',
   MARGIN_DIST: '上市＋上櫃個股（排除 ETF）的融資，依估算維持率分四區，按融資金額加權：低於 130% 已在追繳／斷頭、130–140% 是下一批、140–150% 預備、150% 以上安全。主數字是低於 150% 的合計占比，越高代表越多融資接近追繳。交易所不公布逐檔維持率，這是本站估算：資買以當日收盤當成本，資賣與現償 75% 先出最新、25% 等比例，維持率＝收盤÷(成本×60%)，不含整戶合併與補繳。過去研究顯示維持率只能同步確認、沒有領先效果，所以只顯示不計分，用來看斷頭擴散到多廣。',
   N225: '第三層以後的市場，用來確認是不是全球同步轉弱。',
@@ -78,7 +79,7 @@ const REASONS = {
   US2Y: '和 10Y 比較看殖利率曲線：2Y 高於 10Y（倒掛）是長循環訊號，只註記不計分。',
 };
 // 大圖的參考線（訊號門檻）
-const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75], US_BREADTH: [50], MARGIN_DIST: [20, 40], LIMIT_DOWN: [N.NO_OBS.limitDownExtreme], NO_OBS: [N.NO_OBS.start, 5] };   // 訊號 id，或不計分卡片的序列 id
+const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75], US_BREADTH: [50], US_BREADTH20: [85, 75, 25, 15], MARGIN_DIST: [20, 40], LIMIT_DOWN: [N.NO_OBS.limitDownExtreme], NO_OBS: [N.NO_OBS.start, 5] };   // 訊號 id，或不計分卡片的序列 id
 // 資金流向：現金為王的 4 檔（state.js CK_ASSETS）＋ SPY 只顯示
 const CASH_LABELS = { GLD: '黃金（GLD）', BTC: '比特幣', TLT: '美債（TLT）', QQQ: 'QQQ', SPY: 'SPY' };
 const CASH_ASSETS = [...CK_ASSETS, { key: 'SPY', color: '#a371f7', file: 'data/SPY.json', displayOnly: true }];
@@ -242,6 +243,7 @@ function sparkline(q, noMa = false) {
 
 function quoteCard([id, name, sigId, kind = 'px'], now) {
   if (id === 'US_MARGIN') return usMarginCard(name);
+  if (id === 'US_BREADTH20') return spxBreadthCard(name, now);
   const q = N.quote(ctx.s[id], now.date, { mas: MAS });
   const sig = sigId ? now.signals.find(s => s.id === sigId) : null;
   let state = sig?.state || null;
@@ -267,6 +269,43 @@ function quoteCard([id, name, sigId, kind = 'px'], now) {
   el.append(foot);
   if (id === 'MARGIN_DIST' && !q.stale) { const bar = marginDistBar(rawData?.MARGIN_DIST?.at(-1)); if (bar) el.append(bar); }
   if (DOWNTURN_IDS.has(id) && !q.stale) { const dt = downturnLine(N.maDownturn(ctx.s[id], now.date)); if (dt) el.append(dt); }
+  return el;
+}
+
+// ── S&P 500 寬度（20MA，不計分）：近半年 VOO＋寬度，85／75／25／15 區間 ─────────
+const BW_ZONES = [[85, '狂熱', 'nonnormal-up'], [75, '貪婪', 'nonnormal-up'], [25, '中性', ''], [15, '恐懼', 'nonnormal-down'], [-1, '投降', 'nonnormal-down']];
+const BW_LINES = [[85, '#a371f7'], [75, '#3fb950'], [25, '#f0883e'], [15, '#f85149']];
+const bwZone = v => BW_ZONES.find(([t]) => v > t) || BW_ZONES.at(-1);
+function spxBreadthCard(name, now) {
+  const q = N.quote(ctx.s.US_BREADTH20, now.date, { mas: [] });
+  const el = node('article', null, { class: `nonnormal-q${q && !q.stale ? '' : ' nonnormal-q--na'}`, 'data-series': 'US_BREADTH20', tabindex: '0', role: 'button', 'aria-haspopup': 'dialog', 'aria-label': `${name}：開啟大圖與說明` });
+  el.title = '點兩下：大圖與說明';
+  const head = node('div', null, { class: 'nonnormal-q-head' }), title = node('span', null, { class: 'nonnormal-q-title' });
+  title.append(node('span', name, { class: 'nonnormal-q-name' }), node('span', '20MA', { class: 'nonnormal-q-tk' }));
+  head.append(title, node('span', 'ⓘ', { class: 'nonnormal-q-hint', 'aria-hidden': 'true' }));
+  el.append(head);
+  if (!q) { el.append(node('div', '—', { class: 'nonnormal-q-val' }), node('p', '尚無資料', { class: 'nonnormal-q-foot' })); return el; }
+  const [, zone, zcls] = bwZone(q.last);
+  if (q.last < 25) { el.classList.add('nonnormal-q--on'); head.append(node('span', zone, { class: 'nonnormal-q-flag' })); }
+  el.append(node('div', fmtValue(q.last, 'ratio'), { class: 'nonnormal-q-val ' + dirClass(q.chg) }),
+    node('div', fmtChange(q.chg, q.chgPct, 'ratio', q.last), { class: 'nonnormal-q-chg ' + dirClass(q.chg) }));
+  // 迷你圖：寬度固定 0–100（藍）＋ VOO 自己正規化（灰）；虛線 85／75／25／15
+  const W = 120, H = 40, t0 = Date.parse(q.from), t1 = Date.parse(q.dates.at(-1)), span = t1 - t0 || 1;
+  const x = d => (Date.parse(d) - t0) / span * W, yb = v => H - 1 - v / 100 * (H - 2);
+  const spx = ctx.s.SPX, voo = spx ? spx.dates.map((d, i) => [d, spx.close[i]]).filter(([d, c]) => d >= q.from && d <= q.dates.at(-1) && finite(c)) : [];
+  const lo = Math.min(...voo.map(r => r[1])), hi = Math.max(...voo.map(r => r[1]));
+  const yv = v => H - 2 - (v - lo) / (hi - lo || 1) * (H - 4);
+  const svg = document.createElementNS(SVG, 'svg');
+  for (const [k, val] of [['viewBox', `0 0 ${W} ${H}`], ['preserveAspectRatio', 'none'], ['class', 'nonnormal-spark'], ['aria-hidden', 'true']]) svg.setAttribute(k, val);
+  const add = (cls, d, style) => { const p = document.createElementNS(SVG, 'path'); p.setAttribute('class', cls); p.setAttribute('d', d); if (style) p.setAttribute('style', style); svg.append(p); };
+  for (const [t, c] of BW_LINES) add('', `M0,${yb(t).toFixed(1)}L${W},${yb(t).toFixed(1)}`, `stroke:${c};stroke-width:1.2;stroke-dasharray:3 2;fill:none`);
+  if (voo.length) add('ma100', voo.map(([d, c], i) => `${i ? 'L' : 'M'}${x(d).toFixed(1)},${yv(c).toFixed(1)}`).join(''));
+  add('px', q.close.map((v, i) => finite(v) ? `${i && finite(q.close[i - 1]) ? 'L' : 'M'}${x(q.dates[i]).toFixed(1)},${yb(v).toFixed(1)}` : '').join(''));
+  el.append(svg);
+  const foot = node('p', null, { class: 'nonnormal-q-foot' });
+  foot.append(q.stale ? `資料停在 ${q.date}・` : '', node('b', `${zone}區`, { class: zcls }), '・');
+  BW_LINES.forEach(([t, c], i) => foot.append(node('span', `${t}`, { style: `color:${c};font-weight:600` }), i < 3 ? '/' : '%'));
+  el.append(foot);
   return el;
 }
 

@@ -184,8 +184,9 @@ def run(*, get_tickers: Callable[[], list[str]], out_path: Path, min_coverage: i
     # ── Freshness check FIRST — skip Wikipedia + yfinance if not needed ──
     if existing:
         last_date  = existing[-1]["date"]
-        days_stale = (today - date.fromisoformat(last_date)).days
-        if days_stale <= FRESHNESS_DAYS:
+        # 只有已經有最近一個平日（今天或上週五）才跳過；原本「4 天內都算新鮮」會讓廣度落後 2–3 個交易日
+        expected = today - timedelta(days=max(0, today.weekday() - 4))
+        if date.fromisoformat(last_date) >= expected:
             print(f"Data is fresh (last: {last_date}), skipping.")
             return
 

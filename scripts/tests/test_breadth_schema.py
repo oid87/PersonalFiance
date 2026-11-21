@@ -87,7 +87,7 @@ class BreadthRunTests(unittest.TestCase):
         _breadth.run(get_tickers=self.tickers, out_path=self.path, min_coverage=1, label="Test index")
 
     def test_fresh_legacy_schema_skips_download_and_does_not_rewrite(self):
-        before = self.seed([legacy_row(date.today() - timedelta(days=2))])
+        before = self.seed([legacy_row(date.today())])
         with patch.object(_breadth, "fetch_prices") as fetch:
             self.run_breadth()
         fetch.assert_not_called()

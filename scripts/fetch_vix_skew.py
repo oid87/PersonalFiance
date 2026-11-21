@@ -45,7 +45,11 @@ def is_fresh() -> bool:
         if "term_structure" not in d:
             return False  # force one-time refresh to backfill new term-structure fields
         updated = d.get("updated", "")
-        return (date.today() - date.fromisoformat(updated)).days <= FRESHNESS_DAYS
+        # 只有最後一筆資料已經是最近一個平日才跳過（原本看 updated 3 天內，會落後 1–3 個交易日）
+        today = date.today()
+        expected = today - timedelta(days=max(0, today.weekday() - 4))
+        last = (d.get("history") or [{}])[-1].get("d", "")
+        return bool(last) and date.fromisoformat(last) >= expected
     except Exception:
         return False
 

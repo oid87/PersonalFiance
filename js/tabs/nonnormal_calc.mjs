@@ -50,6 +50,7 @@ export const SERIES = [
   { id: 'VIX', file: 'VIX.json', label: 'VIX' },
   { id: 'VXN', file: 'VXN.json', label: 'VXN', ref: true },
   { id: 'FG', file: 'fear_greed.json', label: 'CNN 恐懼貪婪指數', field: 'value', ref: true },
+  { id: 'US_BREADTH20', file: 'breadth.json', label: 'S&P 500 成分股站上 20 日線比例', field: 'above20_pct', ref: true },
   { id: 'US_BREADTH', file: 'breadth.json', label: '美股市場廣度（S&P 500 成分股站上 200 日線比例）', field: 'above200_pct', ref: true },
   { id: 'BTC', file: 'BTC.json', label: '比特幣', ref: true },
   { id: 'MARGIN_DIST', file: 'tw_margin_stock_dist.json', label: '個股融資維持率低於 150% 的融資金額占比（估算）', field: 'lt150', ref: true },
