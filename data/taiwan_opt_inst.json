@@ -7220,6 +7220,15 @@
       "put_dealer": -625,
       "put_trust": 380,
       "put_foreign": 751
+    },
+    {
+      "date": "2026-11-24",
+      "call_dealer": -2042,
+      "call_trust": -20491,
+      "call_foreign": 12188,
+      "put_dealer": -2610,
+      "put_trust": 280,
+      "put_foreign": 1727
     }
   ]
 }
