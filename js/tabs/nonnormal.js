@@ -1,6 +1,6 @@
 // 極端狀態儀表板 — 每週一次的多重確認儀表板（描述性，不是買賣訊號）。
 // 引擎：js/tabs/nonnormal_calc.mjs（與 scripts/research/backtest_nonnormal.mjs 共用）。
-// 版面：等級橫幅 → 報價卡（最新值、日漲跌、近 6 個月走勢＋50／100 日均線，亮燈卡加紅框；點卡片開大圖；六個股市卡另列 50／100 日線下彎，不計分）→ 資金流向（現金為王，
+// 版面：等級橫幅 → 報價卡（最新值、日漲跌、近 9 個月走勢＋50／100 日均線，亮燈卡加紅框；點卡片開大圖；六個股市卡另列 50／100 日線下彎，不計分）→ 資金流向（現金為王，
 // 與 cashking 頁共用 cashking_calc.mjs）→ 時間差 → 位階與極端情境（五格、水溫表＋加權現況、極端情境 1～3，不計分）→ 轉機；
 // 共振歷史與水溫走勢兩張歷史圖在子頁「過往觀察」（nonnormal_history.js）。
 // 案例回測與閾值來源收在頁尾 <details>，打開才算。
@@ -26,7 +26,7 @@ const DOUBLE_TAP_MS = 500;
 const HELP = {
   breakout: '右側（上漲突破）訊號，只是描述，不計入上方亮燈數。突破＝收盤創 N 個交易日新高（3 個月、半年、1 年、2 年、5 年、10 年，取最長的那個）。量能＝當天成交量 ÷ 前 63 個交易日（約 3 個月）均量：≥ 2 倍關注，≥ 3／5／10 倍密切關注。費半價格用 ^SOX、成交量借用 SOXX。指數層級的 2 倍量很少見（2007 起加權只有 3 次）；ETF 在季底、指數調整日量會暴增，倍數可能被灌大。',
   level: '0–1 個亮：常態（單一訊號視為雜訊）｜2–3：留意｜≥4 且橫跨 ≥2 組：警戒｜≥6 且三組都亮：高度警戒。每週五評估，本週未結束時用最新資料日。',
-  downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近半年均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
+  downturn: '卡片下方「50MA／100MA」：均線下彎＝今天的均線值低於前一個交易日。日期＝從近 9 個月均線高點開始下彎的那天，「連 N 日」＝目前連續下彎幾個交易日（中間翻上一天就重算）。兩條同時下彎連續 ≥ 5 個交易日標「持續」（5 日門檻取自回測樣本）。只是預警，不計入上方亮燈數與等級。歷史上短暫下彎（5 日內翻回）多半是雜訊，連續較久才常伴隨較深的回落（2010 起 SOXX／QQQ／VOO／道瓊回測，13 個案例，門檻取自同一批樣本）。',
   liq: '從加權指數近 120 個交易日的盤中最高點往下算。-14%～-16%：高點買進的融資開始被追繳（第一波）；-24%：大盤融資維持率貼近 130% 追繳線（第二波），2015 年後每次跌破國安基金都進場。是否跌破看盤中最低價。歷史統計，不是預測；圖與逐波段表在「台股融資警報」頁。',
   leadlag: '櫃買先跌破、加權未破：先提高警覺。加權破、櫃買抗跌：中小型股開始有信心。',
   stance: '大跌時用來判斷「跌多深、到第幾個極端情境」，平常大多是空的。五格＝五種大跌時的訊號，條件成立就亮（●），「亮 N 格」＝其中幾格成立。定位＝加權水溫是不是冰水（含急凍）；位置＝加權離 5 年線 3% 以內或跌破，或權值 100 大有 30% 以上收在 5 年線下；壓力＝融資維持率（上市／上櫃取低者）近 30 日低於 150%；情緒＝VIX 近 30 日盤中最高 ≥ 30、近 22 個交易日無觀察類股 ≥ 3 天、或近 30 日有一天跌停 ≥ 300 家（任一）；外部＝費半／那斯達克／S&P 500／韓股至少 2 個轉弱，或護盤基金進場。亮 1 格提高警覺，3–4 格才算強烈訊號。水溫（日線）：10 日、50 日、200 日三條均線的方向（各和 1、5、21 個交易日前比，變化在 ±0.10%／±0.25%／±0.5% 內算走平 →）＋價格離 200 日線多遠。依序判斷：短、中都下彎且跌破極冷線（當時以前離 200 日線最深的 15%）＝冰水，長線也下彎是灰犀牛型、長線還沒下彎是急凍；三線都上揚且站上過熱線（最遠的 5%）＝滾水；跌破 200 日線 3% 以上＝冷水；±3% 內＝溫水；站上 3% 以上且長線上揚＝熱水，長線還沒翻上＝溫水。2／5／10 年線用月線 24／60／120 個月均線，收盤不高於均線 3% 就算「到」。極端情境 1～3＝指數（大盤 ETF）可以考慮進場的時機，越後面越極端（跌得更深、恐慌更重），通常一個比一個晚出現：每個情境的條件逐項列出，可判斷的條件有 ≥ 75% 成立＝到位、≥ 50%＝接近。歷史上條件很少全部同時成立。',
@@ -36,19 +36,19 @@ const HELP = {
 
 // 報價卡：[序列, 名稱, 對應訊號, 格式]。格式 px＝價格、yield＝殖利率（漲跌用 bp）、ratio＝百分比（漲跌用百分點）、score＝0–100 分數（漲跌用點）、
 // count＝家數、days＝天數（這兩種不畫均線）。
-const CARD_GROUPS = [
+export const CARD_GROUPS = [
   { group: 'A', title: '國際股市', cards: [['SOX', '費半', 'sox'], ['NDX', '那斯達克', 'ndx'], ['SPX', 'S&P 500', 'spx'], ['US_BREADTH20', 'S&P 500 寬度', null, 'ratio'], ['US_MARGIN', '美股融資餘額', null, 'usmargin'], ['KOSPI', '韓股', 'kospi']] },
   { group: 'B', title: '金融市場', cards: [['US10Y', '美債 10Y', 'us10y', 'yield'], ['DXY', '美元指數', 'dxy'], ['GOLD', '黃金', 'gold'], ['OIL', '布蘭特原油', 'oil'], ['VIX', 'VIX', 'vix'], ['VXN', 'VXN'], ['FG', '恐懼貪婪', null, 'score'], ['BTC', '比特幣']] },
   { group: 'C', title: '台股內部', cards: [['TWII', '加權'], ['TWOII', '櫃買', 'otc'], ['MARGIN', '上市融資維持率', 'margin', 'ratio'], ['MARGIN_OTC', '上櫃融資維持率', 'margin', 'ratio'], ['BREADTH_PCT', '台股市場廣度', 'breadth', 'ratio'], ['LIMIT_DOWN', '跌停家數', null, 'count'], ['NO_OBS', '無觀察類股', null, 'days']] },
   { group: null, title: '參考（不計分）', cards: [['N225', '日經 225'], ['HSI', '恆生'], ['SSE', '上證'], ['STOXX50E', '歐股 50'], ['US2Y', '美債 2Y', null, 'yield'], ['US_BREADTH', '美股市場廣度', null, 'ratio'], ['MARGIN_DIST', '個股維持率 <150%', null, 'ratio']] },
 ];
 // 卡片上的英文代號（實際用的標的；指標類用通用簡稱）
-const TICKERS = { SOX: '^SOX', NDX: 'QQQ', SPX: 'VOO', US_MARGIN: 'FINRA', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
+export const TICKERS = { SOX: '^SOX', NDX: 'QQQ', SPX: 'VOO', US_MARGIN: 'FINRA', KOSPI: 'KOSPI', US10Y: 'US10Y', DXY: 'DXY', GOLD: 'GC=F', OIL: 'BZ=F', VIX: 'VIX', VXN: 'VXN',
   FG: 'F&G', BTC: 'BTC', TWII: 'TAIEX', TWOII: 'TPEX', MARGIN: 'TWSE', MARGIN_OTC: 'TPEX', BREADTH_PCT: 'TW Breadth', US_BREADTH: 'SPY', US_BREADTH20: '20MA', LIMIT_DOWN: 'TWSE+TPEx', NO_OBS: 'TWSE+TPEx', MARGIN_DIST: '非ETF',
   N225: 'N225', HSI: 'HSI', SSE: 'SSE', STOXX50E: 'SX5E', US2Y: 'US2Y' };
 const CARD_BY_SERIES = new Map(CARD_GROUPS.flatMap(g => g.cards.map(c => [c[0], c])));
 // 點卡片的大圖左欄：為什麼把這張圖放進儀表板（本專案整理，用自己的話寫）
-const REASONS = {
+export const REASONS = {
   US_MARGIN: '借錢買股的總額（FINRA 月資料）。創新高後回落＝槓桿開始撤退。',
   SOX: '台股權重最大的是半導體。費半是電子股的領先指標，急跌常在隔天反映到台股。',
   NDX: '美國科技股的資金風向。台股電子供應鏈的終端需求和評價跟著它走。',
@@ -79,7 +79,7 @@ const REASONS = {
   US2Y: '和 10Y 比較看殖利率曲線：2Y 高於 10Y（倒掛）是長循環訊號，只註記不計分。',
 };
 // 大圖的參考線（訊號門檻）
-const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75], US_BREADTH: [50], US_BREADTH20: [85, 75, 25, 15], MARGIN_DIST: [20, 40], LIMIT_DOWN: [N.NO_OBS.limitDownExtreme], NO_OBS: [N.NO_OBS.start, 5] };   // 訊號 id，或不計分卡片的序列 id
+export const REF_LINES = { vix: [20, 30], margin: [150, 130], breadth: [50], FG: [25, 75], US_BREADTH: [50], US_BREADTH20: [85, 75, 25, 15], MARGIN_DIST: [20, 40], LIMIT_DOWN: [N.NO_OBS.limitDownExtreme], NO_OBS: [N.NO_OBS.start, 5] };   // 訊號 id，或不計分卡片的序列 id
 // 資金流向：現金為王的 4 檔（state.js CK_ASSETS）＋ SPY 只顯示
 const CASH_LABELS = { GLD: '黃金（GLD）', BTC: '比特幣', TLT: '美債（TLT）', QQQ: 'QQQ', SPY: 'SPY' };
 const CASH_ASSETS = [...CK_ASSETS, { key: 'SPY', color: '#a371f7', file: 'data/SPY.json', displayOnly: true }];
@@ -220,7 +220,7 @@ function sparkline(q, noMa = false) {
   const W = 120, H = 40, n = q.close.length;
   const vals = [...q.close, ...(noMa ? [] : MAS.flatMap(k => q.ma[k]))].filter(finite);
   const lo = Math.min(...vals), hi = Math.max(...vals);
-  // x 依日期：資料比 6 個月短（例如上櫃維持率 2026-08-24 起）時只畫在右側，不拉滿整個寬度
+  // x 依日期：資料比 9 個月短（例如上櫃維持率 2026-08-24 起）時只畫在右側，不拉滿整個寬度
   const t0 = Date.parse(q.from), t1 = Date.parse(q.dates.at(-1)), span = t1 - t0 || 1;
   const x = i => ((Date.parse(q.dates[i]) - t0) / span) * W, y = v => H - 2 - ((v - lo) / (hi - lo || 1)) * (H - 4);
   const path = arr => {
@@ -272,7 +272,7 @@ function quoteCard([id, name, sigId, kind = 'px'], now) {
   return el;
 }
 
-// ── S&P 500 寬度（20MA，不計分）：近半年 VOO＋寬度，85／75／25／15 區間 ─────────
+// ── S&P 500 寬度（20MA，不計分）：近 9 個月 VOO＋寬度，85／75／25／15 區間 ─────────
 const BW_ZONES = [[85, '狂熱', 'nonnormal-up'], [75, '貪婪', 'nonnormal-up'], [25, '中性', ''], [15, '恐懼', 'nonnormal-down'], [-1, '投降', 'nonnormal-down']];
 const BW_LINES = [[85, '#a371f7'], [75, '#3fb950'], [25, '#f0883e'], [15, '#f85149']];
 const bwZone = v => BW_ZONES.find(([t]) => v > t) || BW_ZONES.at(-1);
@@ -482,7 +482,7 @@ function downturnLine(r) {
   if (r.sustained) el.append(node('span', `兩線同彎 ${r.bothRun} 日・持續`, { class: 'nonnormal-dt-sus' }));
   return el;
 }
-/** 大圖左欄的下彎說明：起跌日（近半年均線高點後一天）與目前連續天數分開寫。 */
+/** 大圖左欄的下彎說明：起跌日（近 9 個月均線高點後一天）與目前連續天數分開寫。 */
 function downturnText(r) {
   if (!r || r.stale) return null;
   const lines = N.DOWNTURN.mas.map(k => {
@@ -557,7 +557,7 @@ function tdGroup() {
 
 function renderCards(now) {
   const legend = node('span', null, { class: 'nonnormal-legend' });
-  legend.append(node('span', '點兩下卡片：大圖與說明', { class: 'nonnormal-legend-hint' }), node('span', '近 6 個月'));
+  legend.append(node('span', '點兩下卡片：大圖與說明', { class: 'nonnormal-legend-hint' }), node('span', '近 9 個月'));
   for (const [cls, text] of [['px', '收盤'], ['ma50', '50MA'], ['ma100', '100MA']]) { const s = node('span'); s.append(node('i', null, { class: 'nonnormal-key--' + cls }), text); legend.append(s); }
   byId('cards').replaceChildren(...CARD_GROUPS.flatMap(({ group, title, cards }, gi) => {
     const head = node('div', null, { class: 'nonnormal-group-head' });
@@ -575,12 +575,29 @@ function renderCards(now) {
   }));
 }
 
-// ── detail dialog（點卡片：同樣半年，但用完整座標與 tooltip 看精確值）────────
-const valueFmt = (kind, ref) => v => (!finite(v) ? '—' : kind === 'yield' ? v.toFixed(2) + '%' : kind === 'ratio' ? v.toFixed(1) + '%' : kind === 'score' ? v.toFixed(1)
+// ── detail dialog（點卡片：同樣 9 個月，但用完整座標與 tooltip 看精確值）────────
+export const valueFmt = (kind, ref) => v => (!finite(v) ? '—' : kind === 'yield' ? v.toFixed(2) + '%' : kind === 'ratio' ? v.toFixed(1) + '%' : kind === 'score' ? v.toFixed(1)
   : NO_MA.has(kind) ? Math.round(v).toLocaleString('en-US')
   : v.toLocaleString('en-US', { minimumFractionDigits: pxDigits(ref), maximumFractionDigits: pxDigits(ref) }));
+// 大圖的跳轉按鈕：15 年歷史（同一條序列）＋站上更詳細的頁面
+const DETAIL_LINKS = {
+  SOX: [['madev', '乖離率']], NDX: [['relstrength', 'NDX 相對強度'], ['qqqpanic', 'QQQ 恐慌背離回測']], SPX: [['madev', '乖離率'], ['uspeakrisk', '美股高檔風險研究']],
+  US_BREADTH20: [['breadth', '市場廣度']], US_BREADTH: [['breadth', '市場廣度']], US_MARGIN: [['marginglobal', '全球融資餘額'], ['liquidity', '流動性×槓桿']],
+  US10Y: [['usmacro', '美國總經']], US2Y: [['usmacro', '美國總經']], DXY: [['usdliq', '美元流動性']], GOLD: [['cashking', '現金為王']], BTC: [['cashking', '現金為王']],
+  VIX: [['vixspike', 'VIX 急升回測'], ['vixskew', 'VIX-SKEW']], VXN: [['vxnvix', 'VXN-VIX 價差']], FG: [['fgparts', '恐懼貪婪七分項']],
+  TWII: [['twcrash', '台股歷史股災'], ['twzone', '台股底部區域']], MARGIN: [['marginalert', '台股融資去槓桿警報']], MARGIN_OTC: [['marginalert', '台股融資去槓桿警報']],
+  BREADTH_PCT: [['breadthwarn', '市場廣度與流動性預警'], ['twbreadthls', '台股多空家數']], MARGIN_DIST: [['marginmap', '融資斷頭地圖']],
+  LIMIT_DOWN: [['nonnormalhist', '過往觀察（跌停回測）']], NO_OBS: [['nonnormalhist', '過往觀察'], ['noobs', '無觀察類股回測'], ['mainstream', '無主流日']],
+};
+function renderDetailLinks(id) {
+  const host = byId('dialog-links');
+  if (!host) return;
+  const links = [[`nonnormallong&focus=${id.toLowerCase().replace(/_/g, '-')}`, '看 15 年歷史'], ...(DETAIL_LINKS[id] || [])];
+  host.replaceChildren(...links.map(([tab, label]) => node('a', label + ' →', { href: '#tab=' + tab })));
+}
 function openDetail(def) {
   detail = def;
+  renderDetailLinks(def[0]);
   const dlg = byId('dialog');
   if (!dlg.open) dlg.showModal();
   drawDetail();
@@ -603,7 +620,7 @@ function drawDetail() {
   if (!charts[1]) charts[1] = echarts.init(byId('dialog-chart'), isLight() ? null : 'dark');
   const fmt = valueFmt(kind, q.last);
   const lines = (REF_LINES[sigId] || REF_LINES[id] || []).map(v => ({ yAxis: v, label: { formatter: fmt(v), color: PALETTE.muted, fontSize: 11 } }));
-  // 六個股市：在對應均線上標起跌日（近半年高點後一天）
+  // 六個股市：在對應均線上標起跌日（近 9 個月高點後一天）
   const dt = DOWNTURN_IDS.has(id) ? N.maDownturn(ctx.s[id], now.date) : null;
   const turn = (k, color) => {
     const date = dt && !dt.stale && dt.ma[k].run > 0 ? (dt.ma[k].fromHigh?.date || dt.ma[k].since) : null;
@@ -720,7 +737,7 @@ function renderCash() {
 function drawCash() {
   if (!ck?.raw) return;
   if (!charts[2]) charts[2] = echarts.init(byId('cash-chart'), isLight() ? null : 'dark');
-  const end = weeks.at(-1).date, from = new Date(Date.parse(end) - 183 * 86400000).toISOString().slice(0, 10);
+  const end = weeks.at(-1).date, from = new Date(Date.parse(end) - 274 * 86400000).toISOString().slice(0, 10);
   const series = CASH_ASSETS.map(a => {
     const rows = (ck.raw[a.key] || []).filter(([d]) => d >= from && d <= end);
     const base = rows[0]?.[1];
@@ -987,7 +1004,7 @@ function renderSources() {
   const items = [
     '均線 100／200／400 日；急跌／急漲＝20 個交易日內的高低點。費半用 ^SOX，原油用布蘭特。',
     '融資維持率為本站計算（含 ETF）：上市 2004 起；上櫃 2026-08-24 起（TPEx 融資餘額）。廣度為多空家數近似，2024-04 起。',
-    '卡片：近 6 個月收盤與 50／100 日均線，紅漲綠跌；亮燈的卡片加紅框。',
+    '卡片：近 9 個月收盤與 50／100 日均線，紅漲綠跌；亮燈的卡片加紅框。',
   ];
   if (missing.length) items.unshift(`載入失敗：${missing.join('、')}`);
   byId('notes').replaceChildren(...items.map(t => node('li', t)));
@@ -1032,6 +1049,7 @@ function wire() {
   const dlg = byId('dialog');
   dlg.querySelector('.nonnormal-dialog-close').addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });   // 點背景關閉
+  byId('dialog-links')?.addEventListener('click', e => { if (e.target.closest('a')) dlg.close(); });   // 跳到其他頁前先關大圖
   dlg.addEventListener('close', () => { detail = null; });
   const lazy = (id, fn) => byId(id).addEventListener('toggle', e => { if (e.target.open && ctx) { try { fn(); } catch (err) { byId('status').textContent = '計算失敗：' + err.message; } } });
   lazy('water-details', drawWater);

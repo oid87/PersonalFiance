@@ -162,15 +162,15 @@ test('margin: the lower of 上市 and 上櫃 decides; 上櫃 alone counts when �
   assert.equal(sig(N.evaluateWeek(N.buildContext(stale), last), 'margin').state, 'off');
 });
 
-test('quote: last value, day and week change, ~6-month window with 50/100-day averages from full history', () => {
+test('quote: last value, day and week change, ~9-month window with 50/100-day averages from full history', () => {
   const closes = DATES.map((_, i) => 100 + i);
   const ctx = N.buildContext(rawWith({ SOX: rows(DATES, closes) }));
   const q = N.quote(ctx.s.SOX, last);
   assert.equal(q.last, 100 + DATES.length - 1);
   assert.equal(q.chg, 1);
   assert.equal(q.w1, 5, 'five business days back');
-  assert.equal(q.dates[0], '2023-09-21');
-  assert.ok(q.dates.length > 125 && q.dates.length < 135, String(q.dates.length));
+  assert.equal(q.dates[0], '2023-06-22');
+  assert.ok(q.dates.length > 185 && q.dates.length < 200, String(q.dates.length));
   assert.equal(q.ma[50][0], q.close[0] - 24.5, 'MA50 defined on the window\'s first day');
   assert.equal(q.ma[100].at(-1), q.last - 49.5);
   assert.equal(q.stale, false);

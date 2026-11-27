@@ -42,7 +42,7 @@ export const CATEGORIES = [
   ] },
   { id: 'risk', label: '波動與風險', pages: [
     { id: 'p-extreme', label: '極端狀態', views: [
-      view('nonnormal', '極端狀態儀表板'), view('nonnormalhist', '過往觀察'), view('mainstream', '無主流日'), view('noobs', '無觀察類股回測'), view('twzone', '台股底部區域')] },
+      view('nonnormal', '極端狀態儀表板'), view('nonnormalhist', '過往觀察'), view('nonnormallong', '15 年歷史'), view('mainstream', '無主流日'), view('noobs', '無觀察類股回測'), view('twzone', '台股底部區域')] },
     { id: 'p-usalert', label: '美股警報', views: [
       view('usrisk', '美股風險觀察'), view('uscap', '美股恐慌拋售警報'),
       view('qqqpanic', 'QQQ恐慌背離回測'), view('tqqqflow', 'TQQQ資金流回測')] },
@@ -101,6 +101,7 @@ const ALIASES = {
   twlevetf: ["槓桿", "反向", "正2", "反1", "00631L", "00632R", "ETF", "熱力圖"],
   twheatmap: ["熱力圖", "族群", "產業", "漲跌", "台股", "heatmap"],
   mainstream: ["無主流", "主流族群", "族群", "觀察類股", "強勢股", "創高", "爆量"],
+  nonnormallong: ["15 年", "15年", "長期歷史", "歷史走勢", "極端狀態"],
   nonnormalhist: ["過往觀察", "回測", "跌停", "跌停家數", "無觀察", "觀察類股", "極端狀態", "水溫走勢"],
   uscap: ["US Capitulation", "恐慌", "拋售", "Put/Call", "VIX", "VXN", "止穩", "capitulation"],
   qqqpanic: ["恐慌背離", "盤中急跌", "Fear & Greed", "F&G", "回測", "再破底", "panic divergence"],

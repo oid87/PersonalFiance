@@ -1936,3 +1936,18 @@
   .uspr-table th, .uspr-table td { padding: 5px 6px; font-size: 12px; }
 }
 #tab-nonnormal .nonnormal-rank-head span { white-space:nowrap; }
+
+/* 極端狀態：大圖跳轉按鈕＋15 年歷史頁 */
+.nonnormal-dialog-links { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+.nonnormal-dialog-links a { font-size:13px; padding:2px 10px; border:1px solid var(--border); border-radius:999px; color:var(--text); text-decoration:none; background:var(--panel); }
+.nonnormal-dialog-links a:hover { border-color:var(--muted); }
+.nonnormallong-nav { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 12px; }
+.nonnormallong-nav .chip { text-decoration:none; }
+.nonnormallong-group { margin:18px 0 6px; font-size:16px; }
+.nonnormallong-item { border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:12px; background:var(--panel); scroll-margin-top:80px; }
+.nonnormallong-item-head { display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; }
+.nonnormallong-item-head h4 { margin:0; font-size:15px; }
+.nonnormallong-item-head small, .nonnormallong-meta { color:var(--muted); font-size:12px; }
+.nonnormallong-chart { height:300px; width:100%; }
+.nonnormallong-empty { height:auto; color:var(--muted); padding:12px 0; }
+@media (max-width:600px) { .nonnormallong-chart { height:240px; } }

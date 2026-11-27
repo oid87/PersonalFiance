@@ -66,6 +66,7 @@ export async function load(context = {}) {
   return true;
 }
 export const missingFiles = () => missing;
+export const getContext = () => ctx;
 
 // 兩張圖都在頁面中段：第一次捲到附近（前後 400px）才畫
 const watchers = new Map();
